@@ -115,6 +115,12 @@ export function isReservedErrorCode(code: number): boolean {
  * Missing required metadata is `invalid params`, not a defaulted value: inferring
  * a version or a capability from a preceding request is exactly what P26-02
  * forbids, and defaulting is inference with extra steps.
+ *
+ * The REQUIRED set is taken from the pinned revision schema's `RequestMetaObject`,
+ * which requires `clientCapabilities` and `protocolVersion` — and NOT `clientInfo`.
+ * Requiring `clientInfo` here would reject a request the schema admits, which is a
+ * conformance failure in the opposite direction from accepting too much.
+ *
  * @param params - the request parameters.
  * @returns the parsed metadata.
  * @throws WireError `-32602` when a required key is absent or malformed.
@@ -135,17 +141,6 @@ export function parseRequestMetadata(params: Record<string, unknown> | undefined
       `params._meta["${META_KEYS.protocolVersion}"] is required and must be a string`,
     )
   }
-  const clientInfo = record[META_KEYS.clientInfo]
-  if (typeof clientInfo !== 'object' || clientInfo === null) {
-    throw new WireError(
-      ERROR_CODES.invalidParams,
-      `params._meta["${META_KEYS.clientInfo}"] is required`,
-    )
-  }
-  const info = clientInfo as Record<string, unknown>
-  if (typeof info.name !== 'string' || typeof info.version !== 'string') {
-    throw new WireError(ERROR_CODES.invalidParams, 'clientInfo needs a name and a version')
-  }
   const capabilities = record[META_KEYS.clientCapabilities]
   if (typeof capabilities !== 'object' || capabilities === null || Array.isArray(capabilities)) {
     throw new WireError(
@@ -153,11 +148,28 @@ export function parseRequestMetadata(params: Record<string, unknown> | undefined
       `params._meta["${META_KEYS.clientCapabilities}"] is required and must be an object`,
     )
   }
+  // Optional in the schema, so absent is admitted; present-but-malformed is not,
+  // because a client that sends half an Implementation has sent a broken one.
+  const clientInfo = record[META_KEYS.clientInfo]
+  let info: { name: string; version: string } = { name: 'unknown', version: 'unknown' }
+  if (clientInfo !== undefined) {
+    if (typeof clientInfo !== 'object' || clientInfo === null) {
+      throw new WireError(
+        ERROR_CODES.invalidParams,
+        `params._meta["${META_KEYS.clientInfo}"], when present, must be an object`,
+      )
+    }
+    const candidate = clientInfo as Record<string, unknown>
+    if (typeof candidate.name !== 'string' || typeof candidate.version !== 'string') {
+      throw new WireError(ERROR_CODES.invalidParams, 'clientInfo needs a name and a version')
+    }
+    info = { name: candidate.name, version: candidate.version }
+  }
   return {
     protocolVersion,
     // Self-reported and therefore for DIAGNOSTICS only: P26-02 is explicit that
     // clientInfo is not authentication, so nothing here is ever used to authorize.
-    clientInfo: { name: info.name, version: info.version },
+    clientInfo: info,
     clientCapabilities: capabilities as Record<string, unknown>,
   }
 }
@@ -235,10 +247,25 @@ export function unsupportedRequiredCapabilities(required: readonly string[]): st
 }
 
 /**
+ * The caching fields every cacheable result must carry (P26-14).
+ *
+ * Taken from the pinned schema's `CacheableResult`, which REQUIRES `cacheScope` and
+ * `ttlMs` on `DiscoverResult` and `ListToolsResult` alike. Tool Mode's
+ * authorization-filtered catalogs are private, so the default TTL is zero and the
+ * scope is private — a shared cache keyed on tool names would leak one caller's
+ * permitted set to another.
+ * @returns the caching fields.
+ */
+export function cacheableResultFields(): { readonly cacheScope: string; readonly ttlMs: number } {
+  return { cacheScope: 'private', ttlMs: 0 }
+}
+
+/**
  * Build a successful result envelope (P26-04).
  *
  * Every modern result carries `resultType`, and `serverInfo` rides in result
- * metadata per the revision's guidance.
+ * metadata per the revision's guidance — `ResultMetaObject` admits exactly that
+ * one key, which is what this writes.
  * @param result - the method-specific fields.
  * @param serverInfo - this server's identity.
  * @returns the result object, including `resultType` and `_meta`.
@@ -250,7 +277,9 @@ export function successResult(
   return {
     ...result,
     resultType: 'complete',
-    _meta: { [META_KEYS.serverInfo]: { name: serverInfo.name, version: serverInfo.version } },
+    _meta: {
+      [META_KEYS.serverInfo]: { name: serverInfo.name, version: serverInfo.version },
+    },
   }
 }
 

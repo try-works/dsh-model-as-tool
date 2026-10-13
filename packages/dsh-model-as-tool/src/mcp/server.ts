@@ -15,13 +15,14 @@
  */
 
 import {
-  ADVERTISED_FEATURES,
   assertHeadersMatch,
+  cacheableResultFields,
+  implementedCapabilities,
+  SUPPORTED_PROTOCOL_VERSIONS,
   ERROR_CODES,
   errorResponse,
   negotiateVersion,
   parseRequestMetadata,
-  PROTOCOL_VERSION,
   successResult,
   toolErrorResult,
   unsupportedRequiredCapabilities,
@@ -146,7 +147,7 @@ export async function dispatch(
     switch (request.method) {
       case 'server/discover':
         return {
-          response: { jsonrpc: '2.0', id, result: successResult(discoverResult(host), host.serverInfo) },
+          response: { jsonrpc: '2.0', id, result: successResult(discoverResult(), host.serverInfo) },
           httpStatus: 200,
         }
       case 'tools/list':
@@ -161,6 +162,9 @@ export async function dispatch(
                 tools: [...host.listTools()]
                   .sort((left, right) => left.name.localeCompare(right.name))
                   .map(toMcpTool),
+                // Required by the schema's CacheableResult; omitting them makes the
+                // result non-conformant even though the tool list is correct.
+                ...cacheableResultFields(),
               },
               host.serverInfo,
             ),
@@ -233,14 +237,33 @@ async function callTool(
   }
 }
 
-/** The `server/discover` result. */
-function discoverResult(host: McpHost): Record<string, unknown> {
+/** The `server/discover` result, in the shape the pinned schema requires. */
+function discoverResult(): Record<string, unknown> {
   return {
-    protocolVersion: PROTOCOL_VERSION,
-    serverInfo: { name: host.serverInfo.name, version: host.serverInfo.version },
-    // The machine-readable matrix (P26-12), including what is NOT implemented, so
-    // a client can tell "absent" from "unmentioned".
-    features: ADVERTISED_FEATURES.map(entry => ({ ...entry })),
+    // `supportedVersions` is the field the schema defines; there is no
+    // `protocolVersion` on a DiscoverResult, which is the mistake pinning the schema
+    // caught. A client learns the versions the server speaks, not one it picked.
+    supportedVersions: [...SUPPORTED_PROTOCOL_VERSIONS],
+    capabilities: serverCapabilities(),
+    ...cacheableResultFields(),
+  }
+}
+
+/**
+ * The capabilities this server advertises.
+ *
+ * Derived from the feature matrix rather than restated, so the matrix a client
+ * reads and the capabilities it is offered cannot disagree. P26-12: a feature is
+ * advertised only when it is genuinely implemented.
+ * @returns the `ServerCapabilities` object.
+ */
+function serverCapabilities(): Record<string, unknown> {
+  const implemented = new Set(implementedCapabilities())
+  return {
+    ...implemented.has('tools') ? { tools: {} } : {},
+    ...implemented.has('prompts') ? { prompts: {} } : {},
+    ...implemented.has('resources/subscribe') ? { resources: {} } : {},
+    ...implemented.has('logging') ? { logging: {} } : {},
   }
 }
 

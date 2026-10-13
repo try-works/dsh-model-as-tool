@@ -87,23 +87,27 @@ describe('P26-02 — required per-request metadata', () => {
     )
   })
 
-  it('rejects a missing clientInfo or clientCapabilities', () => {
+  it('requires clientCapabilities but ADMITS a request without clientInfo', () => {
+    // The pinned schema's RequestMetaObject requires protocolVersion and
+    // clientCapabilities only. Requiring clientInfo here would reject a request the
+    // schema admits - a conformance failure in the opposite direction from
+    // accepting too much, and the reason the schema is pinned rather than recalled.
+    const withoutInfo = parseRequestMetadata({
+      _meta: {
+        [META_KEYS.protocolVersion]: PROTOCOL_VERSION,
+        [META_KEYS.clientCapabilities]: {},
+      },
+    })
+    assert.equal(withoutInfo.clientInfo.name, 'unknown')
+
     assert.throws(
       () => parseRequestMetadata({ _meta: { [META_KEYS.protocolVersion]: PROTOCOL_VERSION } }),
-      /clientInfo.*required/,
-    )
-    assert.throws(
-      () => parseRequestMetadata({
-        _meta: {
-          [META_KEYS.protocolVersion]: PROTOCOL_VERSION,
-          [META_KEYS.clientInfo]: { name: 'a', version: '1' },
-        },
-      }),
       /clientCapabilities.*required/,
     )
   })
 
-  it('rejects a clientInfo without both fields', () => {
+  it('rejects a clientInfo that is present but malformed', () => {
+    // Absent is admitted; half an Implementation is a broken one.
     assert.throws(
       () => parseRequestMetadata({
         _meta: {

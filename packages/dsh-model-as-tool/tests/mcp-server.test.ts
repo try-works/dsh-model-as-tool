@@ -157,15 +157,45 @@ describe('P26-05 — header mismatches are refused', () => {
 })
 
 describe('MCP-05 / MCP-06 — discovery', () => {
-  it('server/discover reports the revision and the feature matrix', async () => {
+  it('server/discover carries the fields the pinned schema REQUIRES', async () => {
     const { host } = makeHost()
     const { response } = await dispatch(request('server/discover'), host)
     const result = resultOf(response)
-    assert.equal(result?.protocolVersion, PROTOCOL_VERSION)
-    const features = result?.features as { feature: string; implemented: boolean }[]
-    // P26-12: the matrix is machine-readable, including what is NOT implemented, so
-    // a client can tell "absent" from "unmentioned".
-    assert.ok(features.some(entry => entry.feature === 'tasks' && entry.implemented === false))
+    // DiscoverResult requires exactly these. An earlier implementation returned
+    // protocolVersion/serverInfo/features, none of which the definition declares —
+    // which is what pinning the schema caught and a reading of the prose did not.
+    assert.ok(Array.isArray(result?.supportedVersions), 'supportedVersions is required')
+    assert.deepEqual(result?.supportedVersions, ['2026-07-28'])
+    assert.equal(typeof result?.capabilities, 'object', 'capabilities is required')
+    assert.equal(result?.resultType, 'complete')
+    // CacheableResult fields, also required (P26-14).
+    assert.equal(result?.cacheScope, 'private')
+    assert.equal(result?.ttlMs, 0)
+    // And none of the fields the schema does NOT define.
+    for (const absent of ['protocolVersion', 'serverInfo', 'features']) {
+      assert.equal(absent in (result ?? {}), false, `DiscoverResult must not carry ${absent}`)
+    }
+  })
+
+  it('advertises only capabilities the server implements', async () => {
+    const { host } = makeHost()
+    const { response } = await dispatch(request('server/discover'), host)
+    const capabilities = resultOf(response)?.capabilities as Record<string, unknown>
+    // P26-12: do not advertise a feature merely because a type exists.
+    assert.ok('tools' in capabilities)
+    for (const absent of ['prompts', 'resources', 'logging']) {
+      assert.equal(absent in capabilities, false, `${absent} must not be advertised`)
+    }
+  })
+
+  it('tools/list carries the cacheable fields the schema requires', async () => {
+    const { host } = makeHost()
+    const { response } = await dispatch(request('tools/list'), host)
+    const result = resultOf(response)
+    // ListToolsResult requires cacheScope and ttlMs as well as tools and resultType;
+    // a correct tool list is still a non-conformant result without them.
+    assert.equal(result?.cacheScope, 'private')
+    assert.equal(result?.ttlMs, 0)
   })
 
   it('tools/list is deterministically ordered', async () => {
