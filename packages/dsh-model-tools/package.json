@@ -13,26 +13,27 @@
   "license": "MIT",
   "type": "module",
   "main": "lib/index.js",
-  "types": "lib/types/index.d.ts",
+  "types": "lib/index.d.ts",
   "exports": {
     ".": {
-      "types": "./lib/types/index.d.ts",
+      "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
     "./catalog": {
-      "types": "./lib/types/catalog.d.ts",
+      "types": "./lib/catalog.d.ts",
       "default": "./lib/catalog.js"
     },
     "./src/*": "./src/*",
     "./catalog/desert-ant-models.json": "./catalog/desert-ant-models.json",
+    "./catalog/playbooks.json": "./catalog/playbooks.json",
     "./package.json": "./package.json"
   },
   "files": [
-    "lib/index.js",
-    "lib/catalog.js",
-    "lib/types/**/*.js",
-    "lib/types/**/*.d.ts",
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "lib/**/*.d.ts.map",
     "catalog/desert-ant-models.json",
+    "catalog/playbooks.json",
     "cordis.patch.yml",
     "README.md"
   ],
@@ -58,6 +59,14 @@
     "onnxruntime-node": "^1.20.0"
   },
   "scripts": {
-    "test": "node --test tests/"
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test tests/*.test.ts",
+    "prepack": "tsc -p tsconfig.build.json",
+    "prepare": "tsc -p tsconfig.build.json"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
   }
 }

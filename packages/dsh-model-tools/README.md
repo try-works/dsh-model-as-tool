@@ -93,18 +93,54 @@ reason instead of silently doing nothing.
 
 ## Install
 
-The package is a DSH bundle. Install it into a profile with `plugin_manager`'s
-`install_bundle` action, or add the row from [`cordis.patch.yml`](cordis.patch.yml)
-to the profile's own patch file.
+The package is a DSH bundle: `package.json` declares
+`dsh.bundle.patch: ./cordis.patch.yml`, and that patch is the single `insert`
+row a profile mounts. Install it with `plugin_manager`'s `install_bundle`
+action, or copy the row from [`cordis.patch.yml`](cordis.patch.yml) into the
+profile's own patch file.
+
+The package builds itself on install: `prepare` runs `tsc` from `src/` into
+`lib/`, which is the entry point `main` and `exports` advertise. A registry
+tarball ships `lib/` prebuilt by `prepack`, so a consumer needs no toolchain.
 
 Model packages are **optional dependencies**: install only the ones you want.
 
 ```sh
-npm i @desert-ant-labs/tongue          # language detection, works everywhere
+npm i @desert-ant-labs/tongue                 # language detection, works everywhere
 npm i @desert-ant-labs/voz onnxruntime-node   # transcription on Windows/Linux/macOS
 ```
 
 The plugin never bundles or re-hosts model weights.
+
+## Development
+
+```sh
+npm install          # devDependencies: tsc, tsx, and the two model packages
+npm run link:dsh     # point @deepseek-ai/* peers at a DSH checkout
+npm run verify       # typecheck -> build -> 35 tests -> built-artifact check
+```
+
+`link:dsh` exists because `@deepseek-ai/*` are **peer** dependencies — DSH
+supplies them at runtime, so locally they must be pointed at a checkout:
+
+```sh
+node scripts/link-dsh.mjs --checkout /path/to/deepseek-harness
+```
+
+Run it again after any `npm install`: npm prunes anything in `node_modules` it
+does not own, which includes those links.
+
+`npm run verify` ends with `verify:built`, which loads `lib/index.js` — resolved
+through the package's own `main`, under plain Node with no TypeScript loader —
+and runs a real inference. That is the artifact DSH loads, so it is the only
+build whose behaviour proves the plugin is installable; passing tests against
+`src/` under `tsx` does not.
+
+| Command | Purpose |
+| --- | --- |
+| `npm run demo` | Mount the plugin on a real context and print what it registered |
+| `npm run gen-docs` | Regenerate the data-derived docs from the catalog |
+| `npm run bridge` | Run the reference bridge for an Apple/Linux machine |
 
 ## Configuration
 
@@ -152,12 +188,14 @@ npm packages locally and never ships, mirrors or proxies the weights.
 ## Tests
 
 ```sh
-node --import tsx --test tests/plugin.test.ts
+npm run verify        # from the repository root
 ```
 
 The suite boots the plugin on a real Cordis context with the shipping
 `ToolRuntime`, `SystemPrompt` and `SkillRegistry`, then drives the registered
-tools through `ctx.tools.execute` — including a real Tongue inference.
+tools through `ctx.tools.execute` — including a real Tongue inference. The
+transport suite injects its command runner and HTTP poster, so the CLI and bridge
+failure paths are covered without a process or a socket.
 
 ## Design notes
 

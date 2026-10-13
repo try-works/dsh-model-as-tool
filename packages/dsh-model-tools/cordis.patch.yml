@@ -21,5 +21,19 @@
         exposeUnavailable: false
         # Publish one skill per registered tool, teaching when to use it.
         registerSkills: true
-        # Register the `model_tools` inspection tool.
+        # Register the `model_tools` inspection and install tool.
         registerControlTool: true
+        # Allow in-process npm packages. Set false to force every call through
+        # the CLI or the bridge below.
+        allowNpm: true
+        # The Desert Ant CLI, auto-detected on PATH (macOS and Linux). It can run
+        # every shipping model, so it is the route that needs no extra service.
+        cli:
+          enabled: true
+          command: desertant
+        # A bridge on a machine that can run what this one cannot — most
+        # importantly the Apple-only models. Leave the endpoint empty to disable.
+        # See scripts/desert-ant-bridge.mjs; the plugin never hosts this itself.
+        remote:
+          endpoint: ''
+          token: ''

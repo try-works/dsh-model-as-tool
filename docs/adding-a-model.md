@@ -174,11 +174,14 @@ reaching for the wrong model when two are similar.
 ## 5. Verify
 
 ```sh
-cd packages/dsh-model-tools
-node --import tsx --test tests/plugin.test.ts     # boots the plugin on a real context
-npx tsc --noEmit -p tsconfig.json                 # types
-node ../../scripts/gen-docs.mjs                   # regenerate the data-derived docs
+npm run verify        # typecheck -> build -> tests -> built-artifact check
+npm run gen-docs      # regenerate the data-derived docs
 ```
+
+`verify` is the gate that matters: it typechecks, builds `lib/`, runs the test
+suites, and finally loads the **built** artifact through the package's `main`
+under plain Node and runs a real inference. A change that passes only against
+`src/` under `tsx` is not verified — `main` is what DSH loads.
 
 Then check the three surfaces agree:
 
@@ -208,4 +211,5 @@ import('./src/index.ts').then(async () => {
 - [ ] Adapter imports lazily, caches, clears on failure, forwards `signal`.
 - [ ] Playbook entry written, including anti-triggers.
 - [ ] `model_tools list` reports the model with an accurate reason.
-- [ ] Tests, typecheck and doc regeneration pass.
+- [ ] `npm run verify` passes, including the built-artifact check.
+- [ ] `npm run gen-docs` regenerated the docs.
