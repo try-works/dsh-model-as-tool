@@ -112,12 +112,32 @@
     "EXT-34": {
       "status": "PARTIAL",
       "evidence": "All 15 published codes exist with the operation, safe recovery advice and a retryable flag DERIVED from the code so a permission refusal cannot be mistaken for a transient fault. Recovery text is passed through a sanitiser that strips credential- and path-shaped spans. Remaining: the codes are not yet raised by install/activate/uninstall, which do not exist."
+    },
+    "EXT-07": {
+      "status": "PARTIAL",
+      "evidence": "stagedInstall returns `activation: \"inactive\"` as an explicit field so a caller cannot mistake a successful install for a usable tool, and it imports nothing: the test fixture ships an entry that THROWS on import, so reaching the assertions proves installation never executed it. No inference, no warming, no tool or skill publication. Remaining: no inventory and no activation path, so the state an install produces is not yet persisted or readable."
+    },
+    "EXT-08": {
+      "status": "PARTIAL",
+      "evidence": "The ordered pipeline exists: fetch into a unique quarantine directory -> verify SHA-512 -> list entries -> validate the entry list -> extract -> discover as data -> promote by atomic rename -> write a receipt -> remove quarantine on every path. Fetch and extract are INJECTED, so the SDK stays free of a network stack and an archive library and every rejection path is drivable in tests. Remaining: dependency resolution and locking, the permission/licence/platform preview, and operator approval are not implemented."
+    },
+    "EXT-11": {
+      "status": "PARTIAL",
+      "evidence": "Entry-list validation refuses traversal, absolute paths, drive letters, UNC, backslashes, NUL bytes, Windows reserved device names, segments ending in a dot or space, duplicates, Windows case collisions, symlinks and hardlinks, plus entry-count, per-entry, total-byte and expansion-ratio bounds. Tested against REAL zip archives built at the byte level, because adm-zip sanitizes entry names on write and therefore cannot produce the hostile archives these defenses exist to refuse; a raw ZIP writer in the test suite supplies the bytes. The extractor re-asserts confinement at the write, so a bypassed validator still cannot escape. Remaining: fetch time limits are passed through but not enforced by the SDK, which owns no network stack."
+    },
+    "EXT-33": {
+      "status": "PARTIAL",
+      "evidence": "An operator-owned store layout exists: <store>/extensions/<identity>/<version>, keyed by identity AND version so an update installs side by side rather than mutating a live directory, with a unique per-attempt quarantine under <store>/.staging and an install receipt. The identity is VALIDATED as a legal package name rather than escaped, so an implausible identity is refused instead of being silently installed under a mangled name. Remaining: no profile state, no dependency locks, no cleanup-pending tombstones."
     }
   },
   "acceptance": {
     "AT-13": {
       "status": "PARTIAL",
       "evidence": "Windows traversal, absolute-path escape, junction escape, device/UNC paths and unauthorized roots are all refused, with Unicode and space-containing valid paths admitted (authority.test.ts, real filesystem). Remaining: the artifact/receipt identifier half of the test, which needs a receipt store that does not exist yet."
+    },
+    "AT-01": {
+      "status": "NOT_RUN",
+      "evidence": "Requires a clean compatible DSH installation and a built tarball of the Tool Mode bundle. The packages build and install individually, but the bundle does not exist yet."
     }
   }
 }

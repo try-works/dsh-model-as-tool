@@ -19,7 +19,7 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **1** / 210 (0%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **186**
+- Requirements NOT_RUN: **182**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
@@ -38,7 +38,7 @@ is the honest default rather than an omission.
 | RES | 10 | 0 | 0 | 10 | 0 |
 | CODE | 12 | 0 | 0 | 12 | 0 |
 | OBS | 5 | 0 | 0 | 5 | 0 |
-| EXT | 36 | 0 | 6 | 30 | 0 |
+| EXT | 36 | 0 | 10 | 26 | 0 |
 | HLM | 14 | 0 | 0 | 14 | 0 |
 | RCP | 12 | 0 | 0 | 12 | 0 |
 | DEC | 8 | 0 | 0 | 6 | 2 |
@@ -218,11 +218,11 @@ is the honest default rather than an omission.
 | EXT-04 | All packages can be deactivated. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-05 | One model or executor can supply several tools. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-06 | Required sources. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-07 | Install is not activate. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-08 | Staged installation. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-07 | Install is not activate. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | stagedInstall returns `activation: "inactive"` as an explicit field so a caller cannot mistake a successful install for a usable tool, and it imports nothing: the test fixture ships an entry that THROWS on import, so reaching the assertions proves installation never executed it. No inference, no warming, no tool or skill publication. Remaining: no inventory and no activation path, so the state an install produces is not yet persisted or readable. |
+| EXT-08 | Staged installation. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | The ordered pipeline exists: fetch into a unique quarantine directory -> verify SHA-512 -> list entries -> validate the entry list -> extract -> discover as data -> promote by atomic rename -> write a receipt -> remove quarantine on every path. Fetch and extract are INJECTED, so the SDK stays free of a network stack and an archive library and every rejection path is drivable in tests. Remaining: dependency resolution and locking, the permission/licence/platform preview, and operator approval are not implemented. |
 | EXT-09 | Dependency isolation. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-10 | No installation scripts. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-11 | Archive and source defenses. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-11 | Archive and source defenses. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | Entry-list validation refuses traversal, absolute paths, drive letters, UNC, backslashes, NUL bytes, Windows reserved device names, segments ending in a dot or space, duplicates, Windows case collisions, symlinks and hardlinks, plus entry-count, per-entry, total-byte and expansion-ratio bounds. Tested against REAL zip archives built at the byte level, because adm-zip sanitizes entry names on write and therefore cannot produce the hostile archives these defenses exist to refuse; a raw ZIP writer in the test suite supplies the bytes. The extractor re-asserts confinement at the write, so a bypassed validator still cannot escape. Remaining: fetch time limits are passed through but not enforced by the SDK, which owns no network stack. |
 | EXT-12 | Integrity is not trust. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-13 | Static discovery. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | discoverExtension reads package.json and the manifest as BOUNDED data (256 KB / 512 KB limits) and never imports the entry: the test fixture writes an entry that throws on import, and reaching the assertions proves it never ran. It enforces name, version, type:module, an explicit exports map, the toolMode.manifest field, containment of the manifest path, and rejects malformed or oversized JSON as INVALID_EXTENSION. Remaining: quarantine fetch, archive inspection and the install/activate lifecycle are not implemented. |
 | EXT-14 | Manifest fields. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | extension-manifest-1.1.0.schema.json ships with the SDK and is enforced at runtime via Ajv 2020-12. Beyond the schema it checks exact id/version agreement with the package, unique local ids per contribution kind, duplicate caller-facing tool NAMES reported as TOOL_NAME_CONFLICT, referenced files that must exist, paths that must not escape the package, and unknown REQUIRED features blocking activation as INCOMPATIBLE_PROTOCOL. Unknown top-level fields are rejected while the x- vendor namespace is admitted. Remaining: asset-lock validation (EXT-15) and keyed digests. |
@@ -244,7 +244,7 @@ is the honest default rather than an omission.
 | EXT-30 | Updates and rollback. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-31 | Operator experience. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-32 | Discovery and management permissions. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-33 | Store layout and immutable lock. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-33 | Store layout and immutable lock. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | An operator-owned store layout exists: <store>/extensions/<identity>/<version>, keyed by identity AND version so an update installs side by side rather than mutating a live directory, with a unique per-attempt quarantine under <store>/.staging and an install receipt. The identity is VALIDATED as a legal package name rather than escaped, so an implausible identity is refused instead of being silently installed under a mangled name. Remaining: no profile state, no dependency locks, no cleanup-pending tombstones. |
 | EXT-34 | Errors. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | All 15 published codes exist with the operation, safe recovery advice and a retryable flag DERIVED from the code so a permission refusal cannot be mistaken for a transient fault. Recovery text is passed through a sanitiser that strips credential- and path-shaped spans. Remaining: the codes are not yet raised by install/activate/uninstall, which do not exist. |
 | EXT-35 | Provenance and telemetry. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-36 | Author kit and independent proof. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
@@ -355,7 +355,7 @@ is the honest default rather than an omission.
 
 | ID | Test | Status | Evidence |
 | --- | --- | --- | --- |
-| AT-01 | Install the built tarball into a clean compatible DSH installation on Windows without source symlinks, TypeScript loaders or co... | NOT_RUN | — |
+| AT-01 | Install the built tarball into a clean compatible DSH installation on Windows without source symlinks, TypeScript loaders or co... | NOT_RUN | Requires a clean compatible DSH installation and a built tarball of the Tool Mode bundle. The packages build and install individually, but the bundle does not exist yet.<br>NOT_RUN: requires a clean compatible DSH installation and a built tarball install. The current package is published and installable (verified for @try-works/... |
 | AT-02 | Start with no optional weights, no cloud credentials and no browser. Diagnostics work; discovery downloads nothing; unavailable... | NOT_RUN | — |
 | AT-03 | The embedded MCP server starts/stops with plugin configuration; port conflict, malformed config and restart behave predictably. | NOT_RUN | — |
 | AT-04 | A genuine 2026-07-28 reference client and an independent protocol probe/client both discover and invoke tools using the modern ... | NOT_RUN | — |

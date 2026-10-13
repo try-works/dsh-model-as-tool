@@ -51,3 +51,25 @@ export {
   MAX_PACKAGE_JSON_BYTES,
   type ExtensionDiscovery,
 } from './discovery.ts'
+
+export {
+  DEFAULT_ARCHIVE_LIMITS,
+  findPackageRoot,
+  validateArchiveEntries,
+  verifyIntegrity,
+  type ArchiveEntry,
+  type ArchiveEntryKind,
+  type ArchiveLimits,
+} from './install/archive.ts'
+
+export {
+  DEFAULT_INSTALL_LIMITS,
+  installPathFor,
+  stagedInstall,
+  type ArchiveSource,
+  type InstallLimits,
+  type InstallSource,
+  type StagedInstallResult,
+} from './install/staged.ts'
+
+export { createZipArchiveSource } from './install/zip-source.ts'
