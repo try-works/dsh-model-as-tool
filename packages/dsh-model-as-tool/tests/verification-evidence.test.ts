@@ -235,3 +235,48 @@ describe('TDD-06 — every recorded status is one of the five vocabulary values'
     }
   })
 })
+describe('the README states the same counts the evidence does', () => {
+  /**
+   * A README quoting counts that have drifted is worse than one quoting none, because a
+   * reader has no way to tell which numbers are current. These are checked rather than
+   * trusted, in the same spirit as the traceability table being generated.
+   */
+  it('quotes the inventory counts it claims', () => {
+    const readme = readFileSync('README.md', 'utf8')
+    const requirements = JSON.parse(readFileSync(REQUIREMENTS, 'utf8')).requirements
+    const counts = { DONE: 0, PARTIAL: 0, BLOCKED: 0, NOT_RUN: 0 }
+    for (const item of requirements) counts[item.requirementStatus] += 1
+    // The README states these in prose: "3 are done, 95 are partial, 6 are blocked and
+    // 213 were never started".
+    // The counts sit inside one bold span, so the `**` closes after the LAST number
+    // rather than after the first.
+    const stated = readme.match(
+      /(\d+) are done, (\d+) are\s+partial, (\d+) are blocked and\s+(\d+) were never started/,
+    )
+    assert.ok(stated, 'the README must state the four counts')
+    assert.deepEqual(
+      [Number(stated[1]), Number(stated[2]), Number(stated[3]), Number(stated[4])],
+      [counts.DONE, counts.PARTIAL, counts.BLOCKED, counts.NOT_RUN],
+      'the README counts have drifted from the evidence',
+    )
+  })
+
+  it('states the tracked total it claims', () => {
+    const readme = readFileSync('README.md', 'utf8')
+    const inventory = JSON.parse(readFileSync(REQUIREMENTS, 'utf8'))
+    /**
+     * `requirementCount` counts EVERY tracked item, acceptance tests included, so the
+     * normative figure has to be derived rather than read. The field name is misleading
+     * and this is the one place that has to know it.
+     */
+    const normative = inventory.requirements.filter(entry => !entry.id.startsWith('AT-')).length
+    // Prose wraps, so a count and its noun may be separated by a newline.`n    assert.match(readme, new RegExp(`${normative}\\s+requirements`))
+    assert.match(readme, new RegExp(`${inventory.acceptanceTestCount}\\s+acceptance tests`))
+  })
+
+  it('points a reader at the generated final report', () => {
+    // The honest summary must be reachable from the front door.
+    const readme = readFileSync('README.md', 'utf8')
+    assert.match(readme, /verification\/FINAL-REPORT\.md/)
+  })
+})
