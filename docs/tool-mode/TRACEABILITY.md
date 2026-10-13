@@ -19,7 +19,7 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **3** / 227 (1%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **143**
+- Requirements NOT_RUN: **137**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
@@ -28,7 +28,7 @@ is the honest default rather than an omission.
 | --- | ---: | ---: | ---: | ---: | ---: |
 | BASE | 14 | 2 | 4 | 8 | 0 |
 | ARCH | 6 | 0 | 5 | 1 | 0 |
-| RUN | 8 | 0 | 0 | 8 | 0 |
+| RUN | 8 | 0 | 6 | 2 | 0 |
 | MCP | 13 | 0 | 11 | 2 | 0 |
 | SEC | 10 | 0 | 4 | 6 | 0 |
 | DECL | 8 | 0 | 4 | 4 | 0 |
@@ -81,14 +81,14 @@ is the honest default rather than an omission.
 
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| RUN-01 | Plugin mode. | 4. Installation, startup, and lifecycle | NOT_RUN | — |
-| RUN-02 | Embedded server. | 4. Installation, startup, and lifecycle | NOT_RUN | — |
-| RUN-03 | Headless mode. | 4. Installation, startup, and lifecycle | NOT_RUN | — |
-| RUN-04 | Proposed command contract. | 4. Installation, startup, and lifecycle | NOT_RUN | — |
-| RUN-05 |  | 4. Installation, startup, and lifecycle | NOT_RUN | — |
-| RUN-06 |  | 4. Installation, startup, and lifecycle | NOT_RUN | — |
-| RUN-07 |  | 4. Installation, startup, and lifecycle | NOT_RUN | — |
-| RUN-08 |  | 4. Installation, startup, and lifecycle | NOT_RUN | — |
+| RUN-01 | Plugin mode. | 4. Installation, startup, and lifecycle | PARTIAL | The MCP listener lifecycle is a SEPARATE object from the plugin registration state, which is what makes the requirement satisfiable: disabling the server stops its listener and its owned work, and a test asserts it does not disable unrelated DSH tools, because the two are independently stoppable rather than one flag. Remaining: there is no configuration switch that enables or disables MCP export from the plugin, so the separate lifecycle exists but nothing wires it to a setting; and disabling the whole plugin relies on Cordis effect disposal, which releases registrations but has not been exercised against a running listener. |
+| RUN-02 | Embedded server. | 4. Installation, startup, and lifecycle | PARTIAL | The listener is a Node HTTP listener owned by the plugin effect, built on node:http rather than on a DSH route, so no upstream DSH patch is required to open an MCP endpoint - which is what the requirement asks for. It is not SDK-backed, and cannot be: the published SDK does not support revision 2026-07-28, so the listener is a schema-conformant adaptation under MCP-01. The requirement prefers an SDK-backed listener, and the honest position is that the SDK cannot be the basis for this revision yet. Remaining: DSH route reuse was not evaluated, because no documented DSH route API with the necessary lifecycle and transport behaviour was found; if one exists, reusing it would be preferable to a second listener. |
+| RUN-03 | Headless mode. | 4. Installation, startup, and lifecycle | NOT_RUN | No headless launcher exists. Nothing boots a minimal DSH composition with the Tool Mode host and MCP export enabled, so there is no launch path for a user without an interactive DSH session. |
+| RUN-04 | Proposed command contract. | 4. Installation, startup, and lifecycle | NOT_RUN | No package binary for launching the server is declared. The operator CLI (dsh-tool-mode) and the stdio bridge (dsh-tool-mode-mcp-stdio) exist, but neither starts a listener, and no command documented for that purpose exists. |
+| RUN-05 |  | 4. Installation, startup, and lifecycle | PARTIAL | A startup policy type encodes the prohibition rather than leaving it to a comment: preparesModels and resolvesPackages are FALSE literals in the type, so a caller cannot construct a policy that permits them, and startupPermits refuses prepare-model, resolve-package and download-weights while permitting restore-active, inspect-assets and read-manifests. Discovery is genuinely static and read-only: discoverExtension reads package.json and the manifest as BOUNDED DATA and imports nothing, which is asserted by a test whose fixture ships an entry that THROWS on import. Remaining: nothing is RESTORED at startup, because there is no profile store and no activation surface to restore from; and the startup path is a policy with no caller, so the prohibition is enforced where it is consulted and nothing consults it yet. |
+| RUN-06 |  | 4. Installation, startup, and lifecycle | PARTIAL | READINESS IS A DERIVED STATE, not a flag: it is true only after BOTH bind and initialisation succeeded, and the observable event order is asserted as bind, initialise, ready. A bind that fails never reaches initialise, and an initialisation that fails CLOSES the bound listener rather than leaving a port that answers nothing. A PORT CONFLICT IS REPORTED, NOT RESOLVED. EADDRINUSE returns PORT_IN_USE with a remedy naming both forbidden resolutions in as many words - the server will not take the port by force or move silently - and the lifecycle reports no port at all after a conflict, so nothing can relocate without saying so. A FAILED START CANNOT CRASH THE HOST, asserted across all three failure modes: the result is RETURNED rather than thrown, which is the difference between one feature being unavailable and the host going down. Remaining: the listener is not actually started from the plugin, so these behaviours are exercised against a synthetic host; and the HTTP server factory does not yet route its bind failure through this lifecycle. |
+| RUN-07 |  | 4. Installation, startup, and lifecycle | PARTIAL | THE ORDER IS THE REQUIREMENT ORDER and is asserted: refuse new work, cancel owned foreground invocations, wait within a DOCUMENTED grace period, terminate what remains, close the transport and release the port. Work adopted during the shutdown window is REFUSED, because it would otherwise be left running. WORK THAT OUTLIVES THE GRACE PERIOD IS TERMINATED AND REPORTED AS SUCH - a test holds a cancel that never resolves and asserts it appears in terminated rather than cancelled, and that withinGrace is false. A cancel that hangs must not hold shutdown open forever, nor be reported as stopped. WORK BELONGING TO ANOTHER OWNER IS NEVER TOUCHED. A test adopts work for two owners, stops as one, and asserts the other is neither cancelled nor terminated and is reported as untouched, because a model process serving another still-authorized owner is not this lifecycle to kill. Remaining: the grace period is asserted against a synthetic host and no real process is terminated, because there is no managed worker runtime; and no registrations are removed because the lifecycle is not yet wired to the plugin registration state. |
+| RUN-08 |  | 4. Installation, startup, and lifecycle | PARTIAL | The host package builds real JavaScript and declarations: a build pipeline compiles it, verify:built proves the built artifact loads through package main under plain Node, and prepack/prepare run the build so a packed tarball carries it. Windows installation from a tarball was exercised earlier when the package was published as @try-works/dsh-model-as-tool@0.1.1. Remaining: the tarball has not been re-verified since the MCP, licensing and lifecycle modules were added, so the built-artifact check covers the package as it was then rather than as it is now; and the extension packages are not published at all. |
 
 ## MCP — 13 requirement(s)
 

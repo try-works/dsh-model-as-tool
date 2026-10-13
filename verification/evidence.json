@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-13T19:40:26.283Z",
+  "generatedAt": "2026-10-13T19:47:24.185Z",
   "git": {
-    "commit": "f114c74791f68a964089a9426dffb7cfa45ce3a3",
+    "commit": "5b78c2b0f2eaa2ce5e4ee36c408c9808c59d8a22",
     "branch": "main",
     "dirty": true
   },
@@ -57,9 +57,9 @@
   ],
   "counts": {
     "PASS": 3,
-    "FAIL": 78,
+    "FAIL": 84,
     "BLOCKED": 3,
-    "NOT_RUN": 233,
+    "NOT_RUN": 227,
     "NOT_APPLICABLE": 0
   },
   "requirements": [
@@ -311,9 +311,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/mcp/http.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "The MCP listener lifecycle is a SEPARATE object from the plugin registration state, which is what makes the requirement satisfiable: disabling the server stops its listener and its owned work, and a test asserts it does not disable unrelated DSH tools, because the two are independently stoppable rather than one flag. Remaining: there is no configuration switch that enables or disables MCP export from the plugin, so the separate lifecycle exists but nothing wires it to a setting; and disabling the whole plugin relies on Cordis effect disposal, which releases registrations but has not been exercised against a running listener."
     },
     {
       "id": "RUN-02",
@@ -323,9 +323,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/mcp/http.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "The listener is a Node HTTP listener owned by the plugin effect, built on node:http rather than on a DSH route, so no upstream DSH patch is required to open an MCP endpoint - which is what the requirement asks for. It is not SDK-backed, and cannot be: the published SDK does not support revision 2026-07-28, so the listener is a schema-conformant adaptation under MCP-01. The requirement prefers an SDK-backed listener, and the honest position is that the SDK cannot be the basis for this revision yet. Remaining: DSH route reuse was not evaluated, because no documented DSH route API with the necessary lifecycle and transport behaviour was found; if one exists, reusing it would be preferable to a second listener."
     },
     {
       "id": "RUN-03",
@@ -337,7 +337,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "NOT_RUN",
       "testStatus": "NOT_RUN",
-      "evidence": null
+      "evidence": "No headless launcher exists. Nothing boots a minimal DSH composition with the Tool Mode host and MCP export enabled, so there is no launch path for a user without an interactive DSH session."
     },
     {
       "id": "RUN-04",
@@ -349,7 +349,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "NOT_RUN",
       "testStatus": "NOT_RUN",
-      "evidence": null
+      "evidence": "No package binary for launching the server is declared. The operator CLI (dsh-tool-mode) and the stdio bridge (dsh-tool-mode-mcp-stdio) exist, but neither starts a listener, and no command documented for that purpose exists."
     },
     {
       "id": "RUN-05",
@@ -359,9 +359,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/mcp/http.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "A startup policy type encodes the prohibition rather than leaving it to a comment: preparesModels and resolvesPackages are FALSE literals in the type, so a caller cannot construct a policy that permits them, and startupPermits refuses prepare-model, resolve-package and download-weights while permitting restore-active, inspect-assets and read-manifests. Discovery is genuinely static and read-only: discoverExtension reads package.json and the manifest as BOUNDED DATA and imports nothing, which is asserted by a test whose fixture ships an entry that THROWS on import. Remaining: nothing is RESTORED at startup, because there is no profile store and no activation surface to restore from; and the startup path is a policy with no caller, so the prohibition is enforced where it is consulted and nothing consults it yet."
     },
     {
       "id": "RUN-06",
@@ -371,9 +371,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/mcp/http.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "READINESS IS A DERIVED STATE, not a flag: it is true only after BOTH bind and initialisation succeeded, and the observable event order is asserted as bind, initialise, ready. A bind that fails never reaches initialise, and an initialisation that fails CLOSES the bound listener rather than leaving a port that answers nothing. A PORT CONFLICT IS REPORTED, NOT RESOLVED. EADDRINUSE returns PORT_IN_USE with a remedy naming both forbidden resolutions in as many words - the server will not take the port by force or move silently - and the lifecycle reports no port at all after a conflict, so nothing can relocate without saying so. A FAILED START CANNOT CRASH THE HOST, asserted across all three failure modes: the result is RETURNED rather than thrown, which is the difference between one feature being unavailable and the host going down. Remaining: the listener is not actually started from the plugin, so these behaviours are exercised against a synthetic host; and the HTTP server factory does not yet route its bind failure through this lifecycle."
     },
     {
       "id": "RUN-07",
@@ -383,9 +383,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/mcp/http.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "THE ORDER IS THE REQUIREMENT ORDER and is asserted: refuse new work, cancel owned foreground invocations, wait within a DOCUMENTED grace period, terminate what remains, close the transport and release the port. Work adopted during the shutdown window is REFUSED, because it would otherwise be left running. WORK THAT OUTLIVES THE GRACE PERIOD IS TERMINATED AND REPORTED AS SUCH - a test holds a cancel that never resolves and asserts it appears in terminated rather than cancelled, and that withinGrace is false. A cancel that hangs must not hold shutdown open forever, nor be reported as stopped. WORK BELONGING TO ANOTHER OWNER IS NEVER TOUCHED. A test adopts work for two owners, stops as one, and asserts the other is neither cancelled nor terminated and is reported as untouched, because a model process serving another still-authorized owner is not this lifecycle to kill. Remaining: the grace period is asserted against a synthetic host and no real process is terminated, because there is no managed worker runtime; and no registrations are removed because the lifecycle is not yet wired to the plugin registration state."
     },
     {
       "id": "RUN-08",
@@ -395,9 +395,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/mcp/http.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "The host package builds real JavaScript and declarations: a build pipeline compiles it, verify:built proves the built artifact loads through package main under plain Node, and prepack/prepare run the build so a packed tarball carries it. Windows installation from a tarball was exercised earlier when the package was published as @try-works/dsh-model-as-tool@0.1.1. Remaining: the tarball has not been re-verified since the MCP, licensing and lifecycle modules were added, so the built-artifact check covers the package as it was then rather than as it is now; and the extension packages are not published at all."
     },
     {
       "id": "MCP-01",
@@ -3905,14 +3905,14 @@
     "ARCH-04 is NOT_RUN",
     "ARCH-05 is FAIL",
     "ARCH-06 is FAIL",
-    "RUN-01 is NOT_RUN",
-    "RUN-02 is NOT_RUN",
+    "RUN-01 is FAIL",
+    "RUN-02 is FAIL",
     "RUN-03 is NOT_RUN",
     "RUN-04 is NOT_RUN",
-    "RUN-05 is NOT_RUN",
-    "RUN-06 is NOT_RUN",
-    "RUN-07 is NOT_RUN",
-    "RUN-08 is NOT_RUN",
+    "RUN-05 is FAIL",
+    "RUN-06 is FAIL",
+    "RUN-07 is FAIL",
+    "RUN-08 is FAIL",
     "MCP-01 is FAIL",
     "MCP-02 is FAIL",
     "MCP-03 is FAIL",
@@ -4209,14 +4209,6 @@
     "BASE-12",
     "BASE-13",
     "BASE-14",
-    "RUN-01",
-    "RUN-02",
-    "RUN-03",
-    "RUN-04",
-    "RUN-05",
-    "RUN-06",
-    "RUN-07",
-    "RUN-08",
     "MCP-07",
     "MCP-11",
     "SEC-01",
