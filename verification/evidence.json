@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-13T20:22:37.477Z",
+  "generatedAt": "2026-10-13T20:25:38.191Z",
   "git": {
-    "commit": "f6017eaebac477e54d99ff4b5b7093c6563966c0",
+    "commit": "9639c0bb84f39119fede21713415cd483f5e7167",
     "branch": "main",
     "dirty": true
   },
@@ -57,9 +57,9 @@
   ],
   "counts": {
     "PASS": 3,
-    "FAIL": 88,
-    "BLOCKED": 3,
-    "NOT_RUN": 223,
+    "FAIL": 91,
+    "BLOCKED": 5,
+    "NOT_RUN": 218,
     "NOT_APPLICABLE": 0
   },
   "requirements": [
@@ -781,7 +781,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "PARTIAL",
       "testStatus": "FAIL",
-      "evidence": "Availability verified only: google/embeddinggemma-2 exists on Hugging Face ungated (124,930 downloads). No adapter, packaging or modality test exists yet."
+      "evidence": "The EmbeddingGemma 2 identity is recorded as the model card describes it: version 2, a modular 740M model supporting text, code, images, audio and video in a SHARED embedding space, with 768-dimensional embeddings reducible to 512, 256 and 128. The reduced widths are asserted as a set rather than inferred, because a reduction applied inconsistently produces vectors that cannot be compared with each other. The substitution rule is enforced: an embedding space may stand in for another only when the DIMENSIONS MATCH, and the refusal names BOTH widths. EmbeddingGemma 2 at 768 replacing MiniLM at 384 is refused, with the description stating that existing vectors are not comparable and require an explicit re-index - because comparing different-width vectors produces meaningless similarity rather than an error. Remaining: NO EmbeddingGemma 2 IMPLEMENTATION EXISTS. Nothing downloads it, converts it, quantizes it or runs it, so the runtime and artifact manifest the requirement asks for does not exist and the exact conversion, quantization and preprocessing are unrecorded because there is no artifact to describe. The identity is modelled; the model is absent."
     },
     {
       "id": "MODEL-02",
@@ -791,9 +791,9 @@
       "owningModule": "packages/tool-mode-contracts/src/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "BLOCKED",
+      "testStatus": "BLOCKED",
+      "evidence": "BLOCKED ON A MISSING PUBLISHED PACKAGE, verified earlier and re-checked: npm `laya-ts` returns 404, so there is no published Node entry point for the Laya decision model. Without it the local implementation cannot use Laya actual trained decision heads and tokenizer/config, which is what the requirement demands rather than a replacement chat prompt. What IS recorded and enforced: an embedding-based label scorer is a different contract from the probabilistic decision contract, and the contract registry has no decision contract registered at all - so the mis-mapping the requirement warns about cannot occur, because nothing implements it. Jev is recorded as an explicitly remote alternative rather than a local one. Remaining: everything the requirement asks for, pending a published Laya package."
     },
     {
       "id": "MODEL-03",
@@ -803,9 +803,9 @@
       "owningModule": "packages/tool-mode-contracts/src/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "BLOCKED",
+      "testStatus": "BLOCKED",
+      "evidence": "BLOCKED ON A MISSING NODE DISTRIBUTION, verified earlier: Needle exists (github.com/cactus-compute/needle) but no verified Node or WASM distribution for Needle 3 was found, so it cannot be executed under the execution modes MODEL-04 permits. What IS enforced is the prohibition the requirement names: nothing advertises Needle as a general-purpose instruction or chat model, and nothing uses an autonomous execute/run helper to dispatch DSH tools, because there is no Needle adapter to do either. The bounded proposal/extraction shape the requirement asks for is the shape the contract registry would require. Remaining: everything the requirement asks for, pending a verified Node distribution."
     },
     {
       "id": "MODEL-04",
@@ -815,9 +815,9 @@
       "owningModule": "packages/tool-mode-contracts/src/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "The permitted and refused execution modes are encoded and each refusal carries a reason: pure JS/WASM usable in plain Node, prebuilt ONNX Runtime for Node and a managed native Windows executable are ACCEPTED; Python-required, WSL-required, Docker-required, GPU-required, browser-only and consumer-compile are all REFUSED. The Python distinction the requirement draws is preserved rather than flattened: the refusal says Python may be used by MAINTAINERS to export and verify artifacts but must not be required on an end user machine. A browser-only API is refused with the reason the requirement gives - it does not establish Node support. The only two runnable implementations satisfy this in fact: Tongue is pure JavaScript needing no runtime, and Voz uses prebuilt ONNX Runtime for Node. No consumer compile, WSL, Docker or GPU is required by either. Remaining: nothing CHECKS an extension against these modes at install or activation time, so the verdict is computable and unconsulted, and a future extension declaring a refused mode would not be stopped by the host."
     },
     {
       "id": "MODEL-05",
@@ -827,9 +827,9 @@
       "owningModule": "packages/tool-mode-contracts/src/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "A QUALIFICATION RECORD requires all eight fields the requirement names - model revision, exported artifact SHA, tokenizer, processor, engine and package version, Node ABI, architecture and execution provider - and reports EVERY missing field rather than the first, so one pass tells a maintainer everything left to record. An empty string counts as MISSING rather than as recorded, because a field present but blank is a gap wearing the shape of an answer. The rule that a platform table, a successful package import or a runnable base model is NOT proof of correct inference is enforced structurally: those are not fields of the record, so none of them can satisfy it. DISCOVERY DESCRIBES THE INTERSECTION. A model can support a modality while the selected adapter does not, so the advertisable set is the intersection of the two, and the description NAMES the model-only modalities rather than omitting them - a reader must not be left to infer that the model lacks video when in fact the adapter does. Remaining: no real model has a qualification record, because the two runnable implementations do not publish one, so the record is enforced by test and unpopulated in practice. There are no real Windows CPU tests for the adapters, which the requirement demands, and no adapter support is declared anywhere for an intersection to be computed from."
     },
     {
       "id": "MODEL-06",
@@ -839,9 +839,9 @@
       "owningModule": "packages/tool-mode-contracts/src/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "Capability resolves to THREE DISTINCT STATES - supported, unsupported and unknown - and a test asserts the set has three members rather than two, because the requirement says to record unknown and unsupported SEPARATELY and collapsing them lets an unevaluated capability be reported as a known absence. An unevaluated capability is NOT inferred from a sibling: text support says nothing about video support, so an unobserved video capability stays unknown however well text performs. A MODEL NAME IS NEVER A CAPABILITY TEST. modelNameImpliesCapability returns false so the prohibition is asserted rather than merely intended, since a rule that lives only in a comment is one a future branch will not read. Remaining: the resolver is not wired to a real DSH provider, so the current provider and model are not actually resolved through DSH as the requirement asks; nothing records which provider was current for a past decision; and adding a compatible DSH provider has not been demonstrated to need no recipe change, because there are no recipes."
     },
     {
       "id": "TOOL-01",
@@ -3945,11 +3945,11 @@
     "DECL-07 is FAIL",
     "DECL-08 is FAIL",
     "MODEL-01 is FAIL",
-    "MODEL-02 is NOT_RUN",
-    "MODEL-03 is NOT_RUN",
-    "MODEL-04 is NOT_RUN",
-    "MODEL-05 is NOT_RUN",
-    "MODEL-06 is NOT_RUN",
+    "MODEL-02 is BLOCKED",
+    "MODEL-03 is BLOCKED",
+    "MODEL-04 is FAIL",
+    "MODEL-05 is FAIL",
+    "MODEL-06 is FAIL",
     "TOOL-01 is FAIL",
     "TOOL-02 is NOT_RUN",
     "TOOL-03 is FAIL",
@@ -4217,11 +4217,6 @@
     "SEC-07",
     "SEC-08",
     "SEC-09",
-    "MODEL-02",
-    "MODEL-03",
-    "MODEL-04",
-    "MODEL-05",
-    "MODEL-06",
     "TOOL-02",
     "TOOL-04",
     "TOOL-05",
