@@ -19,7 +19,7 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **2** / 210 (1%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **163**
+- Requirements NOT_RUN: **160**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
@@ -29,8 +29,8 @@ is the honest default rather than an omission.
 | BASE | 14 | 2 | 4 | 8 | 0 |
 | ARCH | 6 | 0 | 0 | 6 | 0 |
 | RUN | 8 | 0 | 0 | 8 | 0 |
-| MCP | 13 | 0 | 7 | 6 | 0 |
-| SEC | 10 | 0 | 3 | 7 | 0 |
+| MCP | 13 | 0 | 9 | 4 | 0 |
+| SEC | 10 | 0 | 4 | 6 | 0 |
 | DECL | 8 | 0 | 4 | 4 | 0 |
 | TOOL | 6 | 0 | 2 | 4 | 0 |
 | MODEL | 6 | 0 | 1 | 5 | 0 |
@@ -94,8 +94,8 @@ is the honest default rather than an omission.
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | MCP-01 |  | 5. MCP export requirements | PARTIAL | A schema-conformant adaptation of revision 2026-07-28 exists, and conformance is now VERIFIED AGAINST THE PINNED UPSTREAM SCHEMA rather than against a reading of the prose. The official schema.json, schema.ts and schema.mdx are pinned under docs/tool-mode/specs/mcp-2026-07-28/ at commit 5f5440bb26a62e2cf3440b92da5a667efa03b267 (resolved from the 2026-07-28 tag, so the pin is immutable rather than a moving ref), with SHA-256 digests asserted by test so a later edit to the pinned copy is detected. It is a self-contained 2020-12 schema with no remote $ref, checked by test. Pinning immediately found THREE REAL CONFORMANCE ERRORS in code that had passed every hand-written test: a DiscoverResult carrying three fields the definition does not declare and NONE of the five it requires; a ListToolsResult missing cacheScope and ttlMs, which the definition requires; and a metadata parser requiring clientInfo where the schema makes it optional, so it rejected requests the schema admits. All three are fixed and every message the server sends is now validated against the pinned definitions by Ajv (DiscoverResultResponse, ListToolsResultResponse, CallToolResultResponse for both success and tool-error, JSONRPCErrorResponse, HeaderMismatchError). Remaining: the HTTP transport, SSE response channel, subscriptions/listen, normalised cancellation and the stdio bridge executable do not exist; the protocol/client compatibility matrix is not yet recorded as a released artifact.<br>VERIFIED BLOCKER: the latest published @modelcontextprotocol/sdk (1.32.1) declares LATEST_PROTOCOL_VERSION=2025-11-25 and SUPPORTED_PROTOCOL_VERSIONS=[2025-1... |
-| MCP-02 |  | 5. MCP export requirements | NOT_RUN | — |
-| MCP-03 |  | 5. MCP export requirements | NOT_RUN | — |
+| MCP-02 |  | 5. MCP export requirements | PARTIAL | The loopback HTTP endpoint exists and is proven to bind and serve a real request over a real socket: startHttpServer refuses a non-loopback bind address AT STARTUP rather than warning and binding anyway, which is the only enforcement that cannot be forgotten later, and it listens on the loopback interface specifically rather than on all interfaces. The path, port and body limit are configurable, defaulting to /mcp, 3765 and 4 MiB. The handler is a pure function of a request description, so every refusal path is testable without a port. Remaining: no TLS (loopback only, so none is needed), and LAN/public binding is out of scope for the first release as the requirement states. |
+| MCP-03 |  | 5. MCP export requirements | PARTIAL | Two simultaneous authorized clients with INDEPENDENT tokens are proven to work against the same host, and one client credential is refused by another client endpoint, which is what independently revocable credentials mean in practice. Three interleaved requests each echo their own id. Remaining: the stdio bridge executable does not exist, so stdio-only clients cannot connect yet; nothing yet runs two clients against one long-lived server process, only against two handler instances sharing a host surface. |
 | MCP-04 |  | 5. MCP export requirements | PARTIAL | A modern tools/list and tools/call are proven to be processable as the FIRST application request, with no initialize handshake and no protocol session, because the dispatch layer is stateless by construction: there is no session table to require one. Two successive dispatches producing equal results is the observable evidence that nothing accumulated, and the responses are validated against the pinned schema. Remaining: the exact SDK version and protocol/client compatibility matrix are not recorded as a released artifact, which the requirement names explicitly; no legacy translation mode is offered or tested. |
 | MCP-05 |  | 5. MCP export requirements | PARTIAL | server/discover returns the revision, the server identity and the full feature matrix including what is NOT implemented, so a client can distinguish absent from unmentioned. Tool discovery and invocation are implemented with deterministic ordering and a JSON-RPC error for an unknown method rather than a pretence of service. Remaining: authorized catalog subscriptions (subscriptions/listen), transport-specific cancellation, and the HTTP endpoint itself are not implemented. |
 | MCP-06 |  | 5. MCP export requirements | PARTIAL | tools/list is deterministically ordered (asserted), and the surface lists what the host reports as authorized rather than a global catalog. The publication surface already withholds a tool whose selected implementation is not callable and reports readiness instead (EXT-24), so an unprepared catalog entry does not become an inference leaf. Remaining: the caller-permitted set is not yet computed per grant at the MCP boundary, and the requirement that installed-but-cold models count as callable is not exercised because there is no preparation lifecycle. |
@@ -112,7 +112,7 @@ is the honest default rather than an omission.
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | SEC-01 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
-| SEC-02 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
+| SEC-02 |  | 6. Caller identity, permissions, and data boundaries | PARTIAL | All five named controls are implemented and tested: the LOOPBACK check reads the socket address rather than a caller-supplied header, because trusting a header would make the binding decorative; Host is therefore not the check; approved ORIGINS are an allow-list and an unapproved browser origin is refused while a request with no Origin is admitted, which is the non-browser case; request SIZE is limited and the limit is enforced DURING the read rather than after it, since buffering an unbounded body to measure it defeats the limit; and AUTHENTICATION is required on every request including discovery, with the token compared in constant time and never echoed in a failure response. CORS is not authentication, proven by a test where an approved origin with a bad token still returns 401. Remaining: the OAuth 2.1 resource-server profile is not implemented, so audience and scope validation do not exist. |
 | SEC-03 |  | 6. Caller identity, permissions, and data boundaries | PARTIAL | createGrant models allowedTools, approvedRoots, remoteDestinations, hostedCode, recordingPolicy and limits; authorizeTool/authorizeDestination refuse before any model work. Defaults are conservative (no hosted code, no recording, no roots, so it fails closed). Remaining: per-application independently revocable credentials (SEC-01) and harness-executor profiles are not implemented, and the interactive grant covers the standard tools rather than being created per client. |
 | SEC-04 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
 | SEC-05 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |

@@ -208,6 +208,30 @@
     "MCP-14": {
       "status": "PARTIAL",
       "evidence": "The revision declared TTL/cache-scope mechanism is used: cacheable results carry cacheScope private and ttlMs 0, which the pinned CacheableResult definition REQUIRES on DiscoverResult and ListToolsResult alike, asserted by test and by schema validation. Zero TTL with a private scope is the correct default for an authorization-filtered catalog: a shared cache keyed on tool names would leak one caller permitted set to another. Remaining: nothing caches yet, so the fields state the policy rather than govern a cache; authorization is not recomputed per invocation at the MCP boundary because the caller-permitted set is not yet computed there."
+    },
+    "MCP-02": {
+      "status": "PARTIAL",
+      "evidence": "The loopback HTTP endpoint exists and is proven to bind and serve a real request over a real socket: startHttpServer refuses a non-loopback bind address AT STARTUP rather than warning and binding anyway, which is the only enforcement that cannot be forgotten later, and it listens on the loopback interface specifically rather than on all interfaces. The path, port and body limit are configurable, defaulting to /mcp, 3765 and 4 MiB. The handler is a pure function of a request description, so every refusal path is testable without a port. Remaining: no TLS (loopback only, so none is needed), and LAN/public binding is out of scope for the first release as the requirement states."
+    },
+    "MCP-03": {
+      "status": "PARTIAL",
+      "evidence": "Two simultaneous authorized clients with INDEPENDENT tokens are proven to work against the same host, and one client credential is refused by another client endpoint, which is what independently revocable credentials mean in practice. Three interleaved requests each echo their own id. Remaining: the stdio bridge executable does not exist, so stdio-only clients cannot connect yet; nothing yet runs two clients against one long-lived server process, only against two handler instances sharing a host surface."
+    },
+    "SEC-02": {
+      "status": "PARTIAL",
+      "evidence": "All five named controls are implemented and tested: the LOOPBACK check reads the socket address rather than a caller-supplied header, because trusting a header would make the binding decorative; Host is therefore not the check; approved ORIGINS are an allow-list and an unapproved browser origin is refused while a request with no Origin is admitted, which is the non-browser case; request SIZE is limited and the limit is enforced DURING the read rather than after it, since buffering an unbounded body to measure it defeats the limit; and AUTHENTICATION is required on every request including discovery, with the token compared in constant time and never echoed in a failure response. CORS is not authentication, proven by a test where an approved origin with a bad token still returns 401. Remaining: the OAuth 2.1 resource-server profile is not implemented, so audience and scope validation do not exist."
+    },
+    "P26-15": {
+      "status": "PARTIAL",
+      "evidence": "Static-token custom authentication is implemented and is explicitly NOT claimed as OAuth: authProfile() reports oauth21ResourceServer false with a note stating the profile is not implemented and is not claimed, and claimsOAuthConformance() returns false so a status report or compatibility matrix cannot assert otherwise by accident. Plain unauthenticated loopback is not available: every request including server/discover needs a credential. Credentials are per-client and independently revocable in the sense that each client endpoint validates its own token. Remaining: no OAuth 2.1 resource-server implementation, no protected-resource or authorization-server metadata, no audience or scope validation, no challenge flow beyond a bare WWW-Authenticate: Bearer, and no dynamic registration. P26-15 permits the static-token mode only while forbidding the conformance claim, which is the line this implementation holds."
+    },
+    "P26-16": {
+      "status": "PARTIAL",
+      "evidence": "Tested here: origin rejection, invalid and missing tokens, mixed clients with independent credentials, token leakage (a failure response is asserted not to contain either the configured token or the presented one), and header/version errors. Remaining: expired and wrong-audience tokens and insufficient scopes do not exist because there is no OAuth profile; bridge credential protection is untested because the bridge does not exist; headless operation fails with actionable guidance for a missing token but no interactive approval path exists."
+    },
+    "P26-07": {
+      "status": "DONE",
+      "evidence": "No resumability is implemented, and the absence is asserted rather than assumed: sending Last-Event-ID changes neither the status nor the body, because there is no replay path to enter, and the response advertises no event-stream channel it does not serve. A retry is therefore a new request with fresh authorization, which is what the requirement asks for. This is a small requirement satisfied by not building the thing it forbids."
     }
   },
   "acceptance": {
