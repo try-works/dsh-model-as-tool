@@ -1,6 +1,6 @@
 # Tool Mode release report
 
-Generated 2026-10-13T20:10:10.510Z from commit `b07208d47ebae58d09a6b12aced0b5ad60728e10` (working tree DIRTY, so this describes a state that exists in no commit).
+Generated 2026-10-13T20:19:34.415Z from commit `45d880a89ed9019ed088c9035d66c92eef7b6a58` (working tree DIRTY, so this describes a state that exists in no commit).
 
 ## How to reproduce
 
@@ -12,7 +12,7 @@ requirements needing either are recorded as BLOCKED or NOT_RUN rather than PASS.
 
 | Package | Version |
 |---|---|
-| `@try-works/dsh-model-as-tool` | 0.1.2 |
+| `@try-works/dsh-model-as-tool` | 0.1.3 |
 | `@try-works/tool-mode-contracts` | 0.1.0 |
 | `@try-works/tool-mode-extension-sdk` | 0.1.0 |
 | `@try-works/extension-desert-ant-tongue` | 0.1.0 |
