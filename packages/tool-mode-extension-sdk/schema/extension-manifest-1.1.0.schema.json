@@ -67,6 +67,42 @@
       }
     },
     "configurationSchema": { "type": "string", "pattern": "^\\./" },
+    "licenses": {
+      "description": "Per-layer licences (LIC-01). An adapter's licence says nothing about the weights it loads, so each layer is declared separately and a MISSING layer is reported as a gap rather than defaulted.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["layer", "name", "url", "openSource", "redistribution", "attributionRequired"],
+        "properties": {
+          "layer": { "enum": ["code", "engine", "weights", "conversion-artifacts", "sdk"] },
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "url": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "openSource": {
+            "description": "Whether the licence is OSI-approved open source. Source-available is NOT open source (LIC-02).",
+            "type": "boolean"
+          },
+          "redistribution": {
+            "description": "Whether these bytes may be redistributed inside a package. `unclear` is treated as NOT permitted.",
+            "enum": ["permitted", "not-permitted", "unclear"]
+          },
+          "attributionRequired": { "type": "boolean" },
+          "attributionText": { "type": "string", "maxLength": 500 },
+          "obligations": { "type": "array", "items": { "type": "string", "maxLength": 500 } }
+        }
+      }
+    },
+    "network": {
+      "description": "Declared network behaviour (LIC-04). Declared rather than assumed, because an implementation that must report telemetry cannot be described as network-free.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredTelemetry", "otherNetworkUse"],
+      "properties": {
+        "requiredTelemetry": { "type": "boolean" },
+        "otherNetworkUse": { "type": "boolean" },
+        "telemetryContent": { "type": "array", "items": { "type": "string", "maxLength": 300 } }
+      }
+    },
     "permissions": {
       "description": "Requests privileges; it does not grant them (EXT-14). The host applies its own export policy on top (EXT-23).",
       "type": "object",

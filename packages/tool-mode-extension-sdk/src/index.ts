@@ -127,3 +127,23 @@ export {
   type CliIo,
   type CliOptions,
 } from './cli.ts'
+export {
+  describeNetwork,
+  desertAntLabsLicense,
+  exportDecision,
+  isUsablePermissionRecord,
+  LICENSE_LAYERS,
+  mayPackageWeights,
+  missingNotices,
+  noNetworkEligibility,
+  resolveLicenses,
+  type LayerLicense,
+  type LicenseLayer,
+  type NetworkBehaviour,
+  type NoNetworkVerdict,
+  type PermissionBasis,
+  type PermissionRecord,
+  type PermissionScope,
+  type Redistribution,
+  type ResolvedLicenseRecord,
+} from './licensing.ts'

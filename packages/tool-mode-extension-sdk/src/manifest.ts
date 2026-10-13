@@ -52,6 +52,15 @@ export interface ExtensionManifest {
     readonly isolation?: 'managed-process' | 'host-inline'
   }
   readonly configurationSchema?: string
+  /**
+   * Per-layer licences (LIC-01).
+   *
+   * Absent means UNDECLARED, which the resolution reports as a gap for every layer
+   * rather than treating silence as permission.
+   */
+  readonly licenses?: readonly ManifestLicense[]
+  /** Declared network behaviour (LIC-04). */
+  readonly network?: ManifestNetwork
   readonly permissions: {
     readonly networkOrigins: readonly string[]
     readonly inputFiles: boolean
@@ -65,6 +74,25 @@ export interface ExtensionManifest {
   readonly skills: readonly ManifestSkill[]
   /** True when a 1.0 manifest was normalized to module execution (EXT-16). */
   readonly normalizedFrom?: string
+}
+
+/** One layer's licence, as the manifest declares it (LIC-01). */
+export interface ManifestLicense {
+  readonly layer: 'code' | 'engine' | 'weights' | 'conversion-artifacts' | 'sdk'
+  readonly name: string
+  readonly url: string
+  readonly openSource: boolean
+  readonly redistribution: 'permitted' | 'not-permitted' | 'unclear'
+  readonly attributionRequired: boolean
+  readonly attributionText?: string
+  readonly obligations?: readonly string[]
+}
+
+/** Declared network behaviour (LIC-04). */
+export interface ManifestNetwork {
+  readonly requiredTelemetry: boolean
+  readonly otherNetworkUse: boolean
+  readonly telemetryContent?: readonly string[]
 }
 
 /** A declared model and its asset set. */

@@ -16,6 +16,14 @@
 import { readFileSync, statSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import { ManagementError } from './errors.ts'
+import {
+  describeNetwork,
+  noNetworkEligibility,
+  resolveLicenses,
+  type LicenseLayer,
+  type NoNetworkVerdict,
+  type ResolvedLicenseRecord,
+} from './licensing.ts'
 import { MAX_MANIFEST_BYTES, validateManifest, type ExtensionManifest } from './manifest.ts'
 
 /** Largest `package.json` accepted, in bytes. */
@@ -39,6 +47,25 @@ export interface ExtensionDiscovery {
   readonly entryPath?: string
   /** The validated manifest. */
   readonly manifest: ExtensionManifest
+  /**
+   * The resolved per-layer licence record (LIC-01).
+   *
+   * Produced by discovery rather than left to a consumer, so every caller resolves
+   * the same way and a package that declares no licences gets the same explicit gap
+   * report as one that declares an incomplete set.
+   */
+  readonly licenses: ResolvedLicenseRecord
+  /** The layers the package did NOT declare, which are gaps rather than defaults. */
+  readonly licenseGaps: readonly LicenseLayer[]
+  /**
+   * Whether the package is eligible for a strict no-network deployment (LIC-04).
+   *
+   * Derived from the declaration, and a package that declares nothing is NOT
+   * eligible: silence about telemetry cannot be read as an absence of telemetry.
+   */
+  readonly noNetwork: NoNetworkVerdict
+  /** How the package may truthfully describe its network behaviour. */
+  readonly networkDescription: string
   /** The declared public exports, which discovery requires to be explicit. */
   readonly exports: readonly string[]
 }
@@ -196,13 +223,54 @@ export function discoverExtension(packageDir: string): ExtensionDiscovery {
     )
   }
 
+  // Named alidated because manifest already holds the parsed package.json above.
+  const validated = validateManifest(raw, { packageName, packageVersion, packageDir: root })
+
+  /**
+   * Licence resolution happens HERE rather than being left to each consumer.
+   *
+   * Every caller then resolves the same way, and a package that declares nothing gets
+   * the same explicit gap report as one that declares an incomplete set — rather than
+   * one consumer treating silence as permission and another not.
+   */
+  const { record: licenses, gaps: licenseGaps } = resolveLicenses(
+    packageName,
+    (validated.licenses ?? []).map((entry: NonNullable<typeof validated.licenses>[number]) => ({
+      layer: entry.layer,
+      name: entry.name,
+      url: entry.url,
+      openSource: entry.openSource,
+      redistribution: entry.redistribution,
+      attributionRequired: entry.attributionRequired,
+      ...entry.attributionText === undefined ? {} : { attributionText: entry.attributionText },
+      obligations: entry.obligations ?? [],
+    })),
+  )
+
+  /**
+   * Network behaviour is TAKEN FROM THE DECLARATION, and a package that declares
+   * nothing is treated as telemetry-bearing rather than telemetry-free: silence about
+   * telemetry cannot be read as an absence of telemetry (LIC-04).
+   */
+  const declaredNetwork = validated.network ?? { requiredTelemetry: true, otherNetworkUse: true }
+  const networkBehaviour = {
+    extensionId: packageName,
+    requiredTelemetry: declaredNetwork.requiredTelemetry,
+    otherNetworkUse: declaredNetwork.otherNetworkUse,
+    ...declaredNetwork.telemetryContent === undefined ? {} : { telemetryContent: declaredNetwork.telemetryContent },
+  }
+
   return {
     packageName,
     packageVersion,
     packageDir: root,
     manifestPath,
     ...entryPath === undefined ? {} : { entryPath },
-    manifest: validateManifest(raw, { packageName, packageVersion, packageDir: root }),
+    manifest: validated,
     exports: Object.keys(exportsField),
+    licenses,
+    licenseGaps,
+    noNetwork: noNetworkEligibility(networkBehaviour),
+    networkDescription: describeNetwork(networkBehaviour),
   }
 }
