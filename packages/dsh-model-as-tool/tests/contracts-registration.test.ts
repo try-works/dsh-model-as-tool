@@ -191,8 +191,49 @@ describe('BASE-03 — the deprecated alias is opt-in', () => {
   })
 })
 
-describe('contract failures surface as tool errors', () => {
-  it('rejects an argument the contract forbids', async () => {
+describe('BASE-05 / SEC-06 — the host enforces authority before inference', () => {
+  it('refuses a path outside the grant instead of transcribing it', async () => {
+    // No roots approved: the default deployment fails closed.
+    const ctx = await mountPlugin({ approvedRoots: [] })
+    const result = await call(ctx, 'stt_transcribe', {
+      audio: { path: join(tmpdir(), 'definitely-absent-audio.wav') },
+    })
+    assert.equal(result.isError, true)
+    if (!result.isError) throw new Error('expected failure')
+    assert.match(result.error.message, /absolute|outside every root|not admitted|does not exist/i)
+  })
+
+  it('fails before loading the model, not after', async () => {
+    // Voz holds roughly 1.2 GB once loaded. If authorization ran after loading,
+    // this call would be slow and memory-hungry; refusing first is the point
+    // (AT-12: fail before inference).
+    const ctx = await mountPlugin({ approvedRoots: [] })
+    const started = Date.now()
+    const result = await call(ctx, 'stt_transcribe', {
+      audio: { path: join(tmpdir(), 'absent-audio.wav') },
+    })
+    const elapsed = Date.now() - started
+    assert.equal(result.isError, true)
+    assert.ok(elapsed < 5000, 'refusal took ' + elapsed + 'ms, suggesting the model loaded first')
+  })
+
+  it('admits a path under an approved root', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'tm-approved-'))
+    tmpDirs.push(dir)
+    const audio = join(dir, 'present.wav')
+    writeFileSync(audio, 'RIFF....')
+    const ctx = await mountPlugin({ approvedRoots: [dir] })
+    // The path is authorized, so the call proceeds to the model and fails THERE
+    // (the fixture is not real audio). The distinction that matters is that the
+    // refusal is no longer an authorization refusal.
+    const result = await call(ctx, 'stt_transcribe', { audio: { path: audio } })
+    if (result.isError) {
+      assert.doesNotMatch(result.error.message, /outside every root approved/)
+    }
+  })
+})
+
+describe('contract failures surface as tool errors', () => {  it('rejects an argument the contract forbids', async () => {
     const ctx = await mountPlugin()
     const result = await call(ctx, 'lang_detect', { text: 'Hello', top: 999 })
     assert.equal(result.isError, true)

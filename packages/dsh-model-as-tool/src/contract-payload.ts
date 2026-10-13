@@ -94,6 +94,43 @@ function transcribePayload(
 }
 
 /**
+ * Translate a contract's validated arguments into an adapter's native shape.
+ *
+ * This is the input half of the same seam as {@link toContractPayload}. An adapter
+ * speaks its SDK's vocabulary — `audio_path` — while the contract publishes the
+ * caller's vocabulary — `audio.path`. Without this translation the contract layer
+ * would be cosmetic: the model would advertise one shape and the implementation
+ * would read another, and every call would fail on a name that no longer exists.
+ *
+ * The contract is the authority here too, so the mapping is explicit and total
+ * rather than a spread that happens to overlap.
+ * @param contractId - the contract the call was validated against.
+ * @param contractArgs - the validated contract arguments.
+ * @returns the arguments the selected adapter expects.
+ */
+export function toNativeArgs(
+  contractId: string,
+  contractArgs: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  switch (contractId) {
+    case 'stt.transcribe': {
+      const audio = contractArgs.audio as { path?: unknown } | undefined
+      return {
+        audio_path: audio?.path,
+        // The contract defaults `timestamps` to none, while the adapter defaults
+        // its own flag to true. Mapping explicitly keeps the contract's default
+        // authoritative instead of letting the adapter's leak through.
+        include_words: contractArgs.timestamps === 'word',
+        ...contractArgs.language === undefined ? {} : { language: contractArgs.language },
+      }
+    }
+    default:
+      // `text.language_detect` already shares its argument names with the adapter.
+      return { ...contractArgs }
+  }
+}
+
+/**
  * Translate a native implementation result into the payload its contract declares.
  * @param contractId - the contract the implementation was selected for.
  * @param native - the adapter's native result.

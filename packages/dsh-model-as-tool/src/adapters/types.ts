@@ -11,6 +11,7 @@
  */
 
 import type { ModelCatalogEntry } from '../types.ts'
+import type { InvocationAuthority } from '../authority.ts'
 
 /** A lossless JSON value, the only thing a tool body may return. */
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
@@ -21,6 +22,16 @@ export interface AdapterInvocation {
   readonly args: Readonly<Record<string, unknown>>
   /** Caller cancellation, forwarded by the tool body. */
   readonly signal: AbortSignal
+  /**
+   * Trusted authority for this call (BASE-05).
+   *
+   * An implementation MUST resolve a caller-supplied path through
+   * `authority.resolvePath` rather than opening the argument directly: the
+   * authority is constructed by the host and cannot be supplied or widened by a
+   * request. It is optional only so a test can drive an adapter without a grant;
+   * a host always provides one.
+   */
+  readonly authority?: InvocationAuthority
 }
 
 /** One model's invocation strategy. */

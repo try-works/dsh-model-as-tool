@@ -93,10 +93,17 @@ export function createVozAdapter(entry: ModelCatalogEntry): ModelAdapter | undef
 
   return {
     modelId: entry.id,
-    async invoke({ args, signal }): Promise<Record<string, JsonValue>> {
+    async invoke({ args, signal, authority }): Promise<Record<string, JsonValue>> {
       throwIfAborted(signal)
-      const audioPath = requireString(args, 'audio_path')
+      const requested = requireString(args, 'audio_path')
       const includeWords = optionalBoolean(args, 'include_words', true)
+
+      // SEC-06: a caller-supplied path is authorized before it is opened, and the
+      // CANONICAL path is what gets opened. Validating the string and then opening
+      // it would leave a check-then-open window a symlink could win.
+      const audioPath = authority === undefined
+        ? requested
+        : authority.resolvePath(requested)
 
       const voz = await load()
       throwIfAborted(signal)

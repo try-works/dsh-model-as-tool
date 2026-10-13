@@ -25,7 +25,13 @@ import {
   type ToolMeta,
 } from '@try-works/tool-mode-contracts'
 import type { ModelCatalogEntry, ModelRoute } from './types.ts'
-import { toContractPayload } from './contract-payload.ts'
+import { toContractPayload, toNativeArgs } from './contract-payload.ts'
+import {
+  authorizeTool,
+  createInvocationAuthority,
+  type InvocationAuthority,
+  type ToolGrant,
+} from './authority.ts'
 import type { ModelAdapter, JsonValue } from './adapters/index.ts'
 
 /** Host identity stamped into every result. */
@@ -38,6 +44,15 @@ export interface HostIdentity {
   readonly activationGeneration: number
   /** Receipt id factory; injectable so tests are deterministic. */
   readonly nextReceiptId: () => string
+  /**
+   * The grant this tool surface runs under (SEC-03).
+   *
+   * Built by the host from operator configuration. A caller's request cannot
+   * reach it, which is what makes the authority trustworthy (BASE-05).
+   */
+  readonly grant: ToolGrant
+  /** How the host classified this caller. */
+  readonly callerKind: InvocationAuthority['callerKind']
 }
 
 /** One contract with the implementation chosen to serve it. */
@@ -155,7 +170,17 @@ export function registerContractTool(
         }
       }
 
-      const native = await adapter.invoke({ args: record, signal: exec.signal })
+      // SEC-03: the grant is consulted before any work happens, so an ungranted
+      // tool is refused before inference rather than after it.
+      authorizeTool(host.grant, contract.toolName)
+      const authority = createInvocationAuthority(host.grant, host.callerKind)
+
+      // The contract's caller-facing arguments are translated into the adapter's
+      // native vocabulary before invocation; the reverse translation runs on the
+      // result. Both are explicit, so a name change on either side is a compile-
+      // or test-time failure rather than a runtime mystery.
+      const nativeArgs = toNativeArgs(contract.contract, record)
+      const native = await adapter.invoke({ args: nativeArgs, signal: exec.signal, authority })
       // The implementation's native result is translated into the contract's
       // payload before validation: the contract is the authority, so a mismatch is
       // resolved here rather than by loosening the schema.

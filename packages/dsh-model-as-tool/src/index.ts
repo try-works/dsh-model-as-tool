@@ -24,6 +24,7 @@ import { resolveCapability, type ResolvedModel } from './capability.ts'
 import { createAdapter } from './adapters/index.ts'
 import { registerModelTool } from './registrar.ts'
 import { registerContractTool, type ContractBinding, type HostIdentity } from './bindings.ts'
+import { createGrant } from './authority.ts'
 import { STANDARD_CONTRACTS, type ToolContract } from '@try-works/tool-mode-contracts'
 import { renderSkillBody } from './skills.ts'
 import { loadPlaybooks } from './playbook.ts'
@@ -134,6 +135,20 @@ export interface Config {
    * silently reinterpreted as the new contract.
    */
   legacyAliases?: boolean
+  /**
+   * Filesystem roots this deployment authorizes (SEC-06).
+   *
+   * Empty by default, which fails closed: a path-bearing tool then refuses every
+   * call rather than admitting an arbitrary path. An operator adds the roots this
+   * machine may read from.
+   */
+  approvedRoots?: string[]
+  /** Grant identity recorded in receipts; defaults to `local-interactive`. */
+  grantId?: string
+  /** Whether receipts may be recorded (SEC-03); default true. */
+  recordReceipts?: boolean
+  /** Hard resource limits overriding the conservative defaults. */
+  limits?: { maxInputBytes?: number; maxAudioSeconds?: number; maxResultBytes?: number }
 }
 
 /** Validate and default the plugin configuration. */
@@ -144,6 +159,14 @@ export const Config: z<Config> = z.object({
   persist: z.boolean().default(true),
   providers: z.dict(z.string()).default({}),
   legacyAliases: z.boolean().default(false),
+  approvedRoots: z.array(z.string()).default([]),
+  grantId: z.string().default('local-interactive'),
+  recordReceipts: z.boolean().default(true),
+  limits: z.object({
+    maxInputBytes: z.number(),
+    maxAudioSeconds: z.number(),
+    maxResultBytes: z.number(),
+  }),
   models: z.array(z.string()).default([]),
   exclude: z.array(z.string()).default([]),
   exposeUnavailable: z.boolean().default(false),
@@ -287,14 +310,27 @@ export function apply(ctx: Context, config: Config = {}): void {
     })
   }
 
-  // The host owns provenance: `extension`/`version` name THIS package, and the
-  // receipt counter lives here, so an implementation cannot forge either.
+  // The host owns provenance and authority: `extension`/`version` name THIS
+  // package, the receipt counter lives here, and the grant is built from operator
+  // configuration, so an implementation can forge neither (BASE-05, DECL-03).
   let receiptCounter = 0
+  const grant = createGrant({
+    grantId: config.grantId ?? 'local-interactive',
+    // Every registered tool is granted to the interactive operator; an external
+    // caller gets a narrower grant of its own rather than reusing this one.
+    allowedTools: [...STANDARD_CONTRACTS.map(contract => contract.toolName), 'model_tools'],
+    approvedRoots: config.approvedRoots ?? [],
+    hostedCode: false,
+    recordingPolicy: config.recordReceipts === false ? 'none' : 'receipts',
+    ...config.limits === undefined ? {} : { limits: config.limits },
+  })
   const host: HostIdentity = {
     extension: '@try-works/dsh-model-as-tool',
     extensionVersion: HOST_VERSION,
     activationGeneration: 1,
     nextReceiptId: () => `rcpt_${(++receiptCounter).toString(36).padStart(6, '0')}`,
+    grant,
+    callerKind: 'interactive',
   }
 
   /** Contracts already registered, so a second implementation joins rather than duplicates. */

@@ -19,18 +19,18 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **1** / 210 (0%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **196**
+- Requirements NOT_RUN: **192**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
 
 | Family | Total | DONE | PARTIAL | NOT_RUN | BLOCKED |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| BASE | 14 | 1 | 3 | 10 | 0 |
+| BASE | 14 | 1 | 4 | 9 | 0 |
 | ARCH | 6 | 0 | 0 | 6 | 0 |
 | RUN | 8 | 0 | 0 | 8 | 0 |
 | MCP | 13 | 0 | 0 | 13 | 0 |
-| SEC | 10 | 0 | 0 | 10 | 0 |
+| SEC | 10 | 0 | 3 | 7 | 0 |
 | DECL | 8 | 0 | 4 | 4 | 0 |
 | TOOL | 6 | 0 | 2 | 4 | 0 |
 | MODEL | 6 | 0 | 1 | 5 | 0 |
@@ -54,7 +54,7 @@ is the honest default rather than an omission.
 | BASE-02 |  | 2. Verified starting point and upgrade requirements | PARTIAL | Tool identity is now independent of model identity: a catalog `contract` binding decides the tool name, the host registers ONE tool per contract, and a two-implementation catalog test proves two models yield one `lang_detect`. Adapter factories are now keyed on the npm PACKAGE rather than the model id, because keying on the id was itself a model-name switch that made a second conforming implementation unservable. Provider override is host config with documented fallback. Remaining: the merge is proven with test fixtures, not with two distinct real models. |
 | BASE-03 |  | 2. Verified starting point and upgrade requirements | PARTIAL | `stt_transcribe` is now the canonical registered name and `transcribe_audio` is an opt-in alias (`legacyAliases`, default false) so it stays out of the default catalog. Tests assert the alias is absent by default, appears only when enabled, and keeps its own argument shape (`audio_path`) rather than being reinterpreted as the canonical contract's (`audio.path`). Remaining: not exercised against a real recording. |
 | BASE-04 |  | 2. Verified starting point and upgrade requirements | PARTIAL | Explicit requiredness comes from the contract schema required array; parameter-order inference is gone from the contract path. Real per-tool output schemas are enforced by Ajv on every result. DSH cannot advertise every JSON-Schema keyword, so the projection reports what it omits and argument validation enforces it against the untouched contract (tested: minLength is reported as runtime-enforced and still rejects a short value). Remaining: the legacy per-model registrar path still infers requiredness from parameter order. |
-| BASE-05 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
+| BASE-05 |  | 2. Verified starting point and upgrade requirements | PARTIAL | The host now constructs an InvocationAuthority from an operator-built grant and passes it to every adapter, so a request cannot supply or widen it. It carries grantId, caller kind, limits, recording policy and a resolvePath bound to the approved roots; a test asserts the object exposes no mutable roots list. SEC-03 tool grants and SEC-10 destination grants are enforced before inference. Remaining: filesystem access is wired into the Voz path tool but not every adapter, and the harness-executor/capability fields of SEC-03 do not exist yet. |
 | BASE-06 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-07 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-08 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
@@ -113,14 +113,14 @@ is the honest default rather than an omission.
 | --- | --- | --- | --- | --- |
 | SEC-01 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
 | SEC-02 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
-| SEC-03 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
+| SEC-03 |  | 6. Caller identity, permissions, and data boundaries | PARTIAL | createGrant models allowedTools, approvedRoots, remoteDestinations, hostedCode, recordingPolicy and limits; authorizeTool/authorizeDestination refuse before any model work. Defaults are conservative (no hosted code, no recording, no roots, so it fails closed). Remaining: per-application independently revocable credentials (SEC-01) and harness-executor profiles are not implemented, and the interactive grant covers the standard tools rather than being created per client. |
 | SEC-04 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
 | SEC-05 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
-| SEC-06 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
+| SEC-06 |  | 6. Caller identity, permissions, and data boundaries | PARTIAL | authorizePath resolves drive letters, separators, Unicode, junctions and symlinks via realpathSync.native, then checks containment on a separator boundary; it refuses relative paths, UNC and Windows device paths, NUL bytes, missing paths and anything outside every root, and returns the CANONICAL path so the caller opens what was authorized rather than re-resolving it (closing the check-then-open race). Tested against real directories and real Windows junctions, including Unicode and space-containing valid paths, a sibling whose name shares a prefix, traversal, and links that stay inside. 1 of 24 cases skipped where the platform forbids file symlinks without elevation; the equivalent junction case covers that escape. |
 | SEC-07 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
 | SEC-08 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
 | SEC-09 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
-| SEC-10 |  | 6. Caller identity, permissions, and data boundaries | NOT_RUN | — |
+| SEC-10 |  | 6. Caller identity, permissions, and data boundaries | PARTIAL | authorizeDestination refuses an unauthorized remote destination, and the grant exposes no silent local-to-remote fallback path. Remaining: the hosted-code and harness-executor edges of the rule are not implemented. |
 
 ## DECL — 8 requirement(s)
 
@@ -367,7 +367,7 @@ is the honest default rather than an omission.
 | AT-10 | Generated loops and branching work; independent calls obey both program and cross-client provider limits. | NOT_RUN | — |
 | AT-11 | An injected invalid output and invalid nested field fail validation through every surface; denied/rewritten canonical results c... | NOT_RUN | — |
 | AT-12 | Missing/invalid token, hostile Origin/Host, ungranted tool, excessive body and rate-limit tests fail before inference. | NOT_RUN | — |
-| AT-13 | Windows traversal, absolute-path escape, junction/symlink escape, device/UNC paths and unauthorized artifact/receipt IDs are re... | NOT_RUN | — |
+| AT-13 | Windows traversal, absolute-path escape, junction/symlink escape, device/UNC paths and unauthorized artifact/receipt IDs are re... | PARTIAL | Windows traversal, absolute-path escape, junction escape, device/UNC paths and unauthorized roots are all refused, with Unicode and space-containing valid paths admitted (authority.test.ts, real filesystem). Remaining: the artifact/receipt identifier half of the test, which needs a receipt store that does not exist yet. |
 | AT-14 | Hosted code cannot read forbidden files/environment, open unapproved network destinations, import prohibited modules, spawn una... | NOT_RUN | — |
 | AT-15 | Infinite loops, overlong inference, oversized logs/results, too many nested calls and cancellation terminate or settle within d... | NOT_RUN | — |
 | AT-16 | Disabling a tool or revoking a client stops new and queued admissions; subsequent discovery updates. A captured composition bin... | NOT_RUN | — |
