@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T18:41:16.222Z",
+  "generatedAt": "2026-10-13T18:58:00.888Z",
   "specification": [
     {
       "id": "TM-DSH-001",
@@ -1072,9 +1072,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/authority.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "Input is measured and admitted against explicit budgets before work begins, and over-budget input is REJECTED with the ACTUAL LIMITS - a caller told only \"too large\" cannot choose a smaller input. No code path truncates: the decision type has no trimmed variant and a test asserts the shape rather than trusting the absence. Every exceeded budget is reported rather than only the first, so a caller fixing one limit is not then refused for another it could have fixed at the same time. An UNMEASURED budget is skipped rather than assumed satisfied, so omitting a measurement cannot pass a check it did not undergo. The HTTP transport already measures request bytes DURING the read rather than after it, since buffering an unbounded body to measure it defeats the limit. Remaining: admission is not yet wired into the tool invocation path, so the budgets are enforced where they are called and not automatically for every request; decoding, tokenization and provider-response bounds are declared as budget kinds but nothing measures them yet; and postprocessing is unbounded."
     },
     {
       "id": "RES-02",
@@ -1108,9 +1108,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/authority.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "The eight-state set is implemented exactly as named: unavailable, needs-preparation, preparing, prepared-cold, loading, ready, busy, failed. READINESS AND RESIDENCY ARE NOW SEPARATE QUESTIONS, which corrects a real defect in this repository: admitsInvocation previously required a deployment to be LOADED before it was callable, so a prepared-but-cold model made its tool uncallable and the tool surface flickered on every warm/cold transition - the exact outcome the requirement forbids. Callability now follows PREPARATION: prepared-cold, loading, busy and ready are all callable, while unavailable, needs-preparation and failed are not. Residency controls ADMISSION instead - immediate, loads-first or queued - which is the half it legitimately governs, and a second call to a loading deployment QUEUES rather than starting a second load of the same deployment. summarize() no longer reports a cold deployment as preparing, because that would tell an operator to wait for something that already works, and it now treats unavailable as faulted alongside failed. descriptionMayVaryWithResidency() exists and returns false, so the prohibition is asserted rather than merely intended. Remaining: nothing yet DRIVES these transitions - there is no preparation or loading lifecycle, so the states are exercised by test rather than produced by a real deployment, and no warm/cold evidence exists because no model has been loaded twice."
     },
     {
       "id": "RES-05",
@@ -1132,9 +1132,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/authority.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "Cancellation is reported as an OUTCOME rather than a boolean claim: either the work stopped and released its resources, or it could not be interrupted safely and will run to completion with its result discarded. A test asserts the second case never reports stopped, because RES-06 forbids claiming cancellation while uncontrolled work continues indefinitely - which is also why the requirement prefers isolating an uninterruptible backend in an owned worker. Existing propagation is real where it exists: the caller abort signal reaches adapters, the invocation context carries it, the stdio bridge translates notifications/cancelled into a per-request abort without cancelling a request sharing the bridge, and closing an HTTP SSE response is specified to cancel that request. Remaining: the signal reaches inference but NOT file reads, HTTP fetches or queues, which do not exist as interruptible operations; nothing isolates an uninterruptible backend in an owned worker because there is no worker runtime; and no cancellation latency has been measured, so the duration for which cancelled work actually continues is unknown."
     },
     {
       "id": "RES-07",
@@ -1168,9 +1168,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/authority.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "All eight budget kinds are declared and independently enforced: source-bytes, decoded-pixels, audio-samples, video-seconds, video-frames, processor-tokens, batch and output-vectors. The product defaults are the ones the requirement states verbatim: 8 MiB and 16 megapixels for an image, 120 seconds, 32 frames and 128 MiB for video. A test asserts each number, because a default that drifts silently is a limit nobody agreed to. Budgets are enforced INDEPENDENTLY, proven by a 200-second video under the byte cap still being refused for its duration. NO SILENT SAMPLING: coverage is returned with every result, naming whether the source was fully processed, how many units were, and the sampling instruction that was applied. Incomplete coverage WITHOUT an instruction is reported as a defect rather than dressed up as policy. Decompression bombs are rejected on the DECLARED expanded size before allocation, because a check that runs after decompression has already lost. Remaining: the decoder-process bound and the actual decoded-pixel measurement are not implemented, since nothing decodes an image or video on this host; the requirement that defaults stay below the SELECTED model constraints is unenforced because no model is selected at admission time; and model context limits that may force lower admission are not consulted."
     },
     {
       "id": "RES-10",

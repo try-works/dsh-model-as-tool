@@ -215,7 +215,7 @@ describe('EXT-26 — activation', () => {
 
 describe('EXT-26 — readiness', () => {
   it('allows activation with merely unprepared assets, as needs-preparation', () => {
-    const assessment = assessReadiness({ 'model-cpu': 'unprepared' })
+    const assessment = assessReadiness({ 'model-cpu': 'needs-preparation' })
     // EXT-26: a valid package with unprepared model assets MAY be active.
     assert.equal(assessment.proceed, true)
     assert.equal(assessment.diagnostics[0]?.code, 'needs-preparation')

@@ -371,7 +371,7 @@ describe('EXT-25 — orthogonal state', () => {
       ...base,
       desiredActivation: 'active',
       observedActivation: 'active',
-      readiness: { 'topic-model-cpu': 'resident' },
+      // A PREPARED deployment, which RES-04 makes callable regardless of residency.\n    readiness: { 'topic-model-cpu': 'prepared-cold' },
       export: 'denied',
     }
     // A local caller may invoke it; that is a separate question from whether an

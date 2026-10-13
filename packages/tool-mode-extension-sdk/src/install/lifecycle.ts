@@ -116,7 +116,7 @@ export function assessReadiness(readiness: Readonly<Record<string, ModelReadines
         subject: deployment,
         message: `the model deployment ${deployment} is in a failed state and will not become ready by waiting`,
       })
-    } else if (value === 'unprepared' || value === 'preparing') {
+    } else if (value === 'needs-preparation' || value === 'preparing') {
       diagnostics.push({
         code: 'needs-preparation',
         subject: deployment,

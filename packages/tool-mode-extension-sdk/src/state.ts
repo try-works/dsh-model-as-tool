@@ -33,12 +33,23 @@ export type ObservedActivation =
   | 'failed'
   | 'quarantined'
 
-/** Per-deployment model readiness (EXT-25, dimension 4; SPEC §11 states). */
+/**
+ * Per-deployment readiness (EXT-25 dimension 4; the RES-04 state set).
+ *
+ * The eight states answer TWO questions, and conflating them is the mistake RES-04
+ * names: readiness determines whether a call is POSSIBLE, while residency determines
+ * how it is ADMITTED. A prepared-but-cold deployment is callable — it simply loads
+ * first — and reporting it as uncallable would withdraw a working tool and make the
+ * tool surface flicker on every warm/cold transition.
+ */
 export type ModelReadiness =
-  | 'unprepared'
+  | 'unavailable'
+  | 'needs-preparation'
   | 'preparing'
+  | 'prepared-cold'
+  | 'loading'
   | 'ready'
-  | 'resident'
+  | 'busy'
   | 'failed'
 
 /** Per-profile tool selection (EXT-25, dimension 5). */
@@ -111,8 +122,13 @@ export function summarize(state: ExtensionState): ExtensionSummary {
   if (state.observedActivation !== 'active') return 'inactive'
 
   const readiness = Object.values(state.readiness)
-  if (readiness.some(value => value === 'failed')) return 'faulted'
-  if (readiness.some(value => value === 'unprepared' || value === 'preparing')) return 'preparing'
+  if (readiness.some(value => value === 'failed' || value === 'unavailable')) return 'faulted'
+  // A COLD deployment is not "preparing": it is usable and will load on first use, so
+  // reporting it as preparing would tell an operator to wait for something that
+  // already works.
+  if (readiness.some(value => value === 'needs-preparation' || value === 'preparing' || value === 'loading')) {
+    return 'preparing'
+  }
 
   if (!state.tools.some(tool => tool.enabled)) return 'no-tools-enabled'
   return 'ready'
@@ -134,8 +150,24 @@ export function admitsInvocation(state: ExtensionState, toolName: string): boole
   if (state.observedActivation !== 'active') return false
   const tool = state.tools.find(candidate => candidate.toolName === toolName)
   if (tool === undefined || !tool.enabled) return false
-  return Object.values(state.readiness).every(value => value === 'ready' || value === 'resident')
+  // PREPARATION determines callability; RESIDENCY does not. An earlier version
+  // required `ready` here, which made a prepared-but-cold deployment uncallable and
+  // so withdrew a tool that works. `prepared-cold`, `loading` and `busy` are all
+  // callable; only a deployment that is unavailable, unprepared or failed is not.
+  return Object.values(state.readiness).every(value => CALLABLE_READINESS.has(value))
 }
+
+/**
+ * The readiness states in which a call is possible (RES-04).
+ *
+ * A cold but prepared deployment is callable: the call simply loads first.
+ */
+const CALLABLE_READINESS: ReadonlySet<ModelReadiness> = new Set<ModelReadiness>([
+  'prepared-cold',
+  'loading',
+  'ready',
+  'busy',
+])
 
 /** Build the state of a newly installed but not yet activated extension. */
 export function installedInactive(extensionId: string): ExtensionState {
