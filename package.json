@@ -12,6 +12,7 @@
     "test": "tsx --test packages/dsh-model-tools/tests/plugin.test.ts packages/dsh-model-tools/tests/transport.test.ts",
     "verify:built": "node scripts/verify-built.mjs",
     "verify": "npm run typecheck && npm run build && npm test && npm run verify:built",
+    "gating": "tsx scripts/gating-report.ts",
     "gen-docs": "node scripts/gen-docs.mjs",
     "demo": "tsx scripts/demo.ts",
     "bridge": "node scripts/desert-ant-bridge.mjs"
