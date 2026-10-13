@@ -1,0 +1,29 @@
+{
+  "$comment": "Implementation status for the Tool Mode specifications. Consumed by scripts/gen-traceability.mjs. Anything absent here is reported as NOT_RUN. Update this file as work lands; never edit TRACEABILITY.md by hand.",
+  "verifiedAt": "2026-10-13",
+  "environment": {
+    "platform": "win32 x64",
+    "node": "v24.11.0",
+    "dsh": "0.2.0-rc.2",
+    "baseline": "2e27e2a3cbe4a43ad2ec41fbbde7a8800dfd230a"
+  },
+  "notes": {
+    "MCP-01": "VERIFIED BLOCKER: the latest published @modelcontextprotocol/sdk (1.32.1) declares LATEST_PROTOCOL_VERSION=2025-11-25 and SUPPORTED_PROTOCOL_VERSIONS=[2025-11-25,2025-06-18,2025-03-26,2024-11-05,2024-10-07]. It does NOT support 2026-07-28. That revision IS published upstream (schema/2026-07-28/ and a 2026-07-28 git tag exist in modelcontextprotocol/modelcontextprotocol), so MCP-01's 'separately reviewed, schema-conformant adaptation' clause is the route that must be taken: the wire layer has to be implemented against the official schema rather than delegated to the SDK.",
+    "DEC-01": "VERIFIED BLOCKER: the npm package `laya-ts` named by DEC-02 does not exist (registry returns 404). No published Node entry point for Laya was found on npm. Milestone D's Laya default cannot be qualified until a real distribution channel is identified; BASE-14 forbids substituting an unrelated model silently.",
+    "DEC-02": "BLOCKED on the same missing `laya-ts` package. DEC-02 additionally requires a maintainer-run ONNX export in controlled CI plus numerical-parity evidence, which cannot be executed here without the source checkpoint and Python toolchain.",
+    "NDL-01": "PARTIAL EVIDENCE: cactus-compute/needle exists on GitHub (13,894 stars; 'automation foundation model for tiny devices') and as a Hugging Face repo. No node-named npm distribution for Needle 3 was found (@cactus-compute/needle and needle-ai both 404; `cactus-needle@0.3.0` exists but is unverified against NDL-01's requirements). The NDL-01 runtime strategy is therefore unqualified.",
+    "MODEL-01": "PARTIAL EVIDENCE: google/embeddinggemma-2 exists on Hugging Face (124,930 downloads, ungated); google/embeddinggemma-300m exists but is gated=manual, which would require the operator to accept terms before download. sentence-transformers/all-MiniLM-L6-v2 and cross-encoder/ms-marco-MiniLM-L6-v2 are both present and ungated, matching BASE-12's preserved 384-dimensional space.",
+    "AT-01": "NOT_RUN: requires a clean compatible DSH installation and a built tarball install. The current package is published and installable (verified for @try-works/dsh-model-as-tool@0.1.1), but the Tool Mode bundle does not exist yet.",
+    "AT-04": "NOT_RUN and currently unreachable: requires a genuine 2026-07-28 reference client. The published SDK cannot speak that revision, so the client side must come from the schema-conformant adaptation described under MCP-01."
+  },
+  "requirements": {
+    "BASE-01": { "status": "DONE", "evidence": "Catalog, adapters, skills, persistence and platform checks preserved; the plugin was extended in place across commits fcb79ea..2e27e2a rather than recreated." },
+    "BASE-02": { "status": "NOT_RUN", "evidence": "Tool identity is still per-model (`transcribe_audio` per Voz). Capability strings exist in the catalog as metadata only and nothing branches on them." },
+    "BASE-03": { "status": "NOT_RUN", "evidence": "`lang_detect` exists, but the canonical name is `transcribe_audio`, not `stt_transcribe`, and no opt-in compatibility alias exists." },
+    "MODEL-01": { "status": "PARTIAL", "evidence": "Availability verified only: google/embeddinggemma-2 exists on Hugging Face ungated (124,930 downloads). No adapter, packaging or modality test exists yet." },
+    "DEC-01": { "status": "BLOCKED", "evidence": "No distribution channel: npm `laya-ts` returns 404 and no published Node entry point for Laya was found. Needs an operator decision (see note)." },
+    "DEC-02": { "status": "BLOCKED", "evidence": "Same missing `laya-ts` entry point, plus DEC-02 requires a maintainer-run ONNX export in CI with numerical-parity evidence, which needs the source checkpoint and a Python toolchain." },
+    "NDL-01": { "status": "BLOCKED", "evidence": "Needle exists upstream (github.com/cactus-compute/needle, HF cactus-compute/needle) but no verified Node/WASM distribution for Needle 3 was found; the runtime strategy is unqualified." }
+  },
+  "acceptance": {}
+}

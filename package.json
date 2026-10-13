@@ -14,6 +14,8 @@
     "verify": "npm run typecheck && npm run build && npm test && npm run verify:built",
     "gating": "tsx scripts/gating-report.ts",
     "gen-docs": "node scripts/gen-docs.mjs",
+    "traceability": "node scripts/gen-traceability.mjs",
+    "verify:traceability": "node scripts/gen-traceability.mjs --check",
     "demo": "tsx scripts/demo.ts",
     "bridge": "node scripts/desert-ant-bridge.mjs"
   },
