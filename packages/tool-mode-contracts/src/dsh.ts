@@ -74,21 +74,57 @@ function projectNode(
   runtimeEnforced: string[],
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {}
+  /**
+   * Requiredness is expressed PER PROPERTY, at every nesting level.
+   *
+   * DSH's value schema DSL does not admit a `required` array anywhere — it rejected
+   * `schema.required` at the root and `items.required` inside an array — so the list is
+   * folded into `required: true` on each named property, which the DSL does understand.
+   * Doing it here rather than at the root is what makes it work at depth: an output
+   * schema's array items have required fields of their own.
+   */
+  const requiredNames = new Set((node.required as string[] | undefined) ?? [])
   for (const [keyword, value] of Object.entries(node)) {
     if (!DSH_SUPPORTED.has(keyword)) {
       runtimeEnforced.push(`${path}.${keyword}`)
       continue
     }
+    // Handled through `properties` above; the DSL has no array form.
+    if (keyword === 'required') continue
     if (keyword === 'properties' && typeof value === 'object' && value !== null) {
       const nested: Record<string, unknown> = {}
       for (const [name, child] of Object.entries(value as Record<string, unknown>)) {
-        nested[name] = typeof child === 'object' && child !== null
+        const projected = typeof child === 'object' && child !== null
           ? projectNode(child as Record<string, unknown>, `${path}.${name}`, runtimeEnforced)
           : child
+        nested[name] = requiredNames.has(name) && typeof projected === 'object' && projected !== null
+          ? { ...(projected as Record<string, unknown>), required: true }
+          : projected
       }
       out[keyword] = nested
     } else if (keyword === 'items' && typeof value === 'object' && value !== null) {
       out[keyword] = projectNode(value as Record<string, unknown>, `${path}[]`, runtimeEnforced)
+    } else if (keyword === 'type' && Array.isArray(value)) {
+      /**
+       * A union `type` array advertises its CONCRETE member, with the union recorded as
+       * runtime-enforced.
+       *
+       * Three attempts got here. `{ type: ['string', 'null'] }` is valid JSON Schema but
+       * the DSL rejected the array with "type must be string/number/... or use oneOf",
+       * and converting it to `oneOf` was rejected too, with "oneOf must be an array of at
+       * least two value schemas" - `{ type: 'null' }` does not count as one. So the
+       * non-null member is advertised, which is the case a client actually handles, and
+       * the nullability is reported in runtimeEnforced rather than dropped silently,
+       * which is what BASE-04 forbids.
+       */
+      const members = value as unknown[]
+      const concrete = members.find(member => member !== 'null')
+      if (concrete === undefined) {
+        runtimeEnforced.push(`${path}.type`)
+      } else {
+        out.type = concrete
+        if (members.length > 1) runtimeEnforced.push(`${path}.type(non-nullable projection)`)
+      }
     } else {
       out[keyword] = value
     }
@@ -190,4 +226,74 @@ export function crossFieldRules(contract: ToolContract): CrossFieldRule[] {
     default:
       return []
   }
+}
+
+/**
+ * Project an arbitrary JSON Schema into the subset DSH can advertise (DECL-02).
+ *
+ * Written for the OUTPUT schema, which needs the same treatment the input schema
+ * already gets. Using the contract's raw output schema would crash registration on the
+ * first keyword the DSL cannot express — the failure that produced `runtimeEnforced` in
+ * the first place — and using an unconstrained `{type: "object", additionalProperties:
+ * true}` instead, which is what this replaced, publishes a tool whose result shape is
+ * declared to be anything at all.
+ * @param schema - the schema to project.
+ * @returns the projected schema plus the keywords left to runtime enforcement.
+ */
+export function projectSchemaToDsh(schema: Readonly<Record<string, unknown>>): DshProjection {
+  const runtimeEnforced: string[] = []
+  const projected = projectNode(schema as Record<string, unknown>, '', runtimeEnforced)
+  /**
+   * `items` is stripped from an OUTPUT projection, and this is a real DSL limit found
+   * the hard way rather than a precaution.
+   *
+   * `items` is in the supported set and works for a top-level input parameter, but the
+   * registry rejected `schema.properties.words.items` with "items is not supported by
+   * the value schema DSL" - so its support does not extend to an array nested inside an
+   * object, which is exactly what an output schema contains. Keeping it would make the
+   * tool fail to register at all.
+   *
+   * The result is still a genuine declaration: property names, types and requiredness
+   * are advertised, and `words` is declared an array. Only the ELEMENT schema is left to
+   * runtime enforcement, which the contract's assertValidOutput performs against the
+   * untouched schema. That is a long way from the
+   * `{type: "object", additionalProperties: true}` this replaced, which declared nothing
+   * about any field.
+   */
+  const parameters = stripItems(projected.properties ?? {}, '', runtimeEnforced)
+  return { parameters: parameters as DshParameters, runtimeEnforced }
+}
+
+/**
+ * Remove `items` at every depth in an output projection, recording each removal
+ * (DECL-02).
+ * @param node - the projected node.
+ * @param path - the path, for the runtime-enforced list.
+ * @param runtimeEnforced - collected keyword paths.
+ * @returns the node without `items`.
+ */
+function stripItems(node: unknown, path: string, runtimeEnforced: string[]): unknown {
+  if (typeof node !== 'object' || node === null) return node
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    if (key === 'items') {
+      runtimeEnforced.push(`${path}.items`)
+      continue
+    }
+    /**
+     * A non-scalar `enum` is dropped, for the same reason `items` is.
+     *
+     * The DSL requires "a non-empty array of scalar values", and the confidence contract
+     * (DECL-04) enumerates OBJECT members to distinguish vendor-reported from calibrated
+     * from unavailable. Membership is still enforced at runtime against the untouched
+     * contract.
+     */
+    const scalar = (member: unknown): boolean => typeof member === 'string' || typeof member === 'number' || typeof member === 'boolean'
+    if (key === 'enum' && Array.isArray(value) && (value.length === 0 || !value.every(scalar))) {
+      runtimeEnforced.push(`${path}.enum`)
+      continue
+    }
+    out[key] = stripItems(value, `${path}.${key}`, runtimeEnforced)
+  }
+  return out
 }

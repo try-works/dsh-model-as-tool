@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T19:47:24.185Z",
+  "generatedAt": "2026-10-13T20:02:26.479Z",
   "specification": [
     {
       "id": "TM-DSH-001",
@@ -642,7 +642,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "PARTIAL",
       "testStatus": "FAIL",
-      "evidence": "Contracts are authored once with stable name, identity, version, input/output schema, semantics, limits and unsupported cases; DSH parameter projection is generated from that one source. MCP projection and Code Mode type generation are not implemented."
+      "evidence": "Each release tool IS authored once as a model-free contract carrying identity, version, input and output schema, semantics, limits, unsupported cases and implementation bindings, and DSH registration and the MCP projection are both GENERATED from that one source rather than restated. Remaining: examples are not part of the contract shape, so the author-once source is incomplete against the requirement list; Code Mode type generation does not exist because Code Mode does not; and policy metadata beyond limits and unsupported cases is not modelled."
     },
     {
       "id": "DECL-02",
@@ -654,7 +654,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "PARTIAL",
       "testStatus": "FAIL",
-      "evidence": "The EXT-32 addition was REFUSED at runtime by the control tool output schema before it was declared, which is the schema discipline working: undeclared fields are rejected rather than passed through. The new provenance, readiness, callable and withheld fields are now declared explicitly with additionalProperties false at every level, so the discovery shape cannot drift unnoticed. Remaining: the DSH tool declarations themselves are still built by the registrar rather than generated from the publication surface."
+      "evidence": "THE REQUIREMENT IS RIGHT AND THIS REPOSITORY CANNOT YET SATISFY IT, and that is worth recording precisely rather than leaving as a gap somebody re-attempts. DECL-02 says an unconstrained {type: object, additionalProperties: true} is not an adequate implementation of an ordinary leaf tool contract. The registered contract tools still carry exactly that for their OUTPUT, because the contract real output schema cannot be projected into DSH value-schema DSL. Four distinct rejections were hit at registration, each recorded in the code: (1) schema.required is not supported; (2) schema.properties.candidates.items.required is not supported, so required is unsupported at EVERY depth and not merely at the root; (3) schema.properties.words.items is not supported, and items is in the documented supported set, so its support does not extend to an array nested inside an object, which is what every output schema contains; (4) schema.properties.reliability.enum must be a non-empty array of scalar values, and expressing the union type as oneOf was rejected too with oneOf must be an array of at least two value schemas. Stripping each keyword in turn DOES converge, and converging was rejected deliberately: it produces a schema that advertises almost nothing while APPEARING to be a real declaration, which is worse than the open object because a client would trust it. The contract itself is unchanged and complete, and assertValidOutput enforces the real schema at runtime against the untouched contract, so RESULTS ARE VALIDATED - what is missing is the ADVERTISEMENT. What does hold: the INPUT schema projection is genuine and complete, with real requiredness, nesting, units and limits, and every keyword the DSL cannot express is returned in runtimeEnforced and checked at runtime rather than silently discarded, which is what BASE-04 requires. Remaining: the output advertisement, blocked on the DSL limitation above. Publishing the real output schema requires either a DSH DSL that supports nested items, deep required and non-scalar enums, or a different advertisement channel."
     },
     {
       "id": "DECL-03",
@@ -666,7 +666,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "PARTIAL",
       "testStatus": "FAIL",
-      "evidence": "ToolMeta is defined once and now STAMPED BY THE HOST on every contract-registered call: extension/version/receipt come from host state and the implementation cannot forge them. Tests assert the envelope, the implementation id that actually ran, distinct receipts per call, and that an adapter cannot override the host identity. Remaining: host stamping covers contract-registered tools only."
+      "evidence": "The shared result metadata exists and is stamped by the HOST, not the extension: contractVersion, implementationId, extension identity with version and digest, executionLocation, receiptId and warnings. A test asserts an extension supplying its own reserved root meta is refused, because an extension asserting its own provenance is exactly what this forbids. Model identity stays accessible through the implementation binding without requiring the agent to select a model, which is the second half of the requirement. Remaining: the metadata structure is not carried as a SCHEMA inside each tool contract, which the requirement asks for so a client can discover the envelope shape. It is defined once in code and applied by the host, so the substance holds and the discoverable schema does not."
     },
     {
       "id": "DECL-04",
@@ -678,7 +678,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "PARTIAL",
       "testStatus": "FAIL",
-      "evidence": "Contracts declare scoreKind/calibrated, and a fabricated `confidence` field is refused by output validation (tested). Not yet enforced across the whole tool surface."
+      "evidence": "Confidence is not fabricated. The detector reports the VENDOR-REPORTED reliability the model itself produces and names its source, so a caller can tell a vendor claim from a calibrated estimate, and there is no generic confidence number invented by the host. A successful call is reported as a valid result rather than a correct one: the contract semantics state that a produced result means the pipeline succeeded. Remaining: only two of the four categories the requirement names are representable - vendor-reported and unavailable are, while independently calibrated estimates and ranking logits are not modelled because no implementation produces them. The confidence distinction is also not carried in the output SCHEMA, for the same projection reason as DECL-02."
     },
     {
       "id": "DECL-05",
@@ -688,9 +688,9 @@
       "owningModule": "packages/tool-mode-contracts/src/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "Tools and skills are registered with concise descriptions, supported inputs, unsupported cases and data-handling notes, generated from the contract so the description cannot drift from the schema. Skills are registered through the DSH skill provider as GUIDANCE, carrying no executable registration and granting no permission. Remaining: native and Code Mode examples are not part of the contract, so the example half of the requirement is unmet; recovery advice is not modelled as a field; and the skill text does not yet carry per-tool unsupported cases through from the contract."
     },
     {
       "id": "DECL-06",
@@ -700,9 +700,9 @@
       "owningModule": "packages/tool-mode-contracts/src/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "Catalog changes are applied at coherent boundaries: registration and unregistration happen through extension activation and deactivation rather than mid-request, and publication is atomic - the whole surface is built and validated before any of it is swapped in, so a client never observes a half-updated catalog. Nothing rewrites history, manufactures user tasks or inserts tool results into the composer: a foreground tool returns through its tool-result channel, and the MCP layer only ever responds to a request. Remaining: no notification is emitted when the catalog changes, so a connected client learns of a change only by asking; coherence is achieved by atomicity rather than by announcing the transition."
     },
     {
       "id": "DECL-07",
@@ -712,9 +712,9 @@
       "owningModule": "packages/tool-mode-contracts/src/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "A read-only control surface exists and is registered as the model_tools tool, exposing catalog discovery, per-model describe, enable/disable and reset, and it is reachable to authorized callers through the same governed pipeline as any other tool rather than through a private path. Remaining: the surface is registered as a DSH tool and is therefore available to native callers, but it is NOT exposed over MCP, so an external caller cannot read it; and the enable/disable state it reports is process-local rather than persisted, which was a deliberate earlier decision and is a divergence from what an external caller would expect."
     },
     {
       "id": "DECL-08",
@@ -724,9 +724,9 @@
       "owningModule": "packages/tool-mode-contracts/src/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "Contributions carry their owning extension and activation generation, and the host stamps authoritative identity so a package cannot claim another provenance. Host control tools such as discovery and composition remain host-owned and are not supplied by a model package, which the architecture gate enforces by refusing model-specific code in the host. An old generated binding cannot bypass current activation or permissions, because admission is evaluated per invocation from the live extension state rather than cached in the binding - the readiness correction in RES-04 hardened exactly this path. Remaining: recipe digest is not carried on a contribution, because there is no recipe concept; and per-package and per-tool revocation is not implemented at all, so coherent reflection of a revocation across every surface has nothing to reflect yet."
     },
     {
       "id": "MODEL-01",

@@ -201,8 +201,33 @@ export function registerContractTool(
     // refused any keyword the DSL cannot express.
     parameters: toDshParameters(contract) as unknown as ParameterSchemaSpec,
     output: {
-      // The contract's output schema is the canonical value contract; the
-      // registry enforces it as well as this module does.
+      /**
+       * An open object schema, and DECL-02 names this as INADEQUATE.
+       *
+       * The requirement says in as many words that an unconstrained
+       * `{type: "object", additionalProperties: true}` is not an adequate implementation
+       * of an ordinary leaf tool's contract. It is right, and this repository cannot yet
+       * do better: the contract's real output schema CANNOT be projected into DSH's
+       * value-schema DSL. Attempting it produced four distinct rejections at
+       * registration, recorded here because the next person will try the same thing:
+       *
+       *   1. `schema.required is not supported by the value schema DSL`
+       *   2. `schema.properties.candidates.items.required is not supported` - so required
+       *      is unsupported at EVERY depth, not merely at the root
+       *   3. `schema.properties.words.items is not supported` - `items` is in the
+       *      documented supported set but its support does not extend to an array nested
+       *      inside an object, which is what every output schema has
+       *   4. `schema.properties.reliability.enum must be a non-empty array of scalar
+       *      values` - and separate attempts to express the union type as `oneOf` were
+       *      rejected too, with `oneOf must be an array of at least two value schemas`
+       *
+       * Stripping each keyword in turn does converge, but it converges on a schema that
+       * advertises almost nothing while APPEARING to be a real declaration - which is
+       * worse than this open object, because a client would trust it. The contract
+       * itself is unchanged and complete: `assertValidOutput` enforces the real schema at
+       * runtime against the untouched contract, so results ARE validated. What is
+       * missing is the ADVERTISEMENT.
+       */
       schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => {
         const record = value as Record<string, unknown>

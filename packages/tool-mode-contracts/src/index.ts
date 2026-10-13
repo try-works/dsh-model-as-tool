@@ -23,6 +23,7 @@ export { withMeta, type ExecutionLocation, type ToolMeta } from './meta.ts'
 export {
   crossFieldRules,
   ProjectionError,
+  projectSchemaToDsh,
   projectToDsh,
   toDshParameters,
   type CrossFieldRule,
