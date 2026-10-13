@@ -304,6 +304,23 @@ export class ExtensionLifecycle {
     }
     this.#published.delete(extensionId)
 
+    /**
+     * A store that says the extension was ACTIVE while this process holds no
+     * handles means somebody else published them — normally a host this CLI is not
+     * attached to, or a previous run that has since exited.
+     *
+     * Reporting a clean stop here would be a lie of exactly the kind EXT-27
+     * forbids: the contributions are still published somewhere, and this process
+     * has no way to withdraw them. Saying so is the only honest answer.
+     */
+    const orphaned = current.observedActivation === 'active' && handles.size === 0
+    if (orphaned) {
+      failures.push(
+        'the contributions were published by another process and cannot be withdrawn from here; '
+        + 'stop the owning host, or deactivate through it',
+      )
+    }
+
     const inactive: ExtensionState = {
       ...current,
       desiredActivation: 'inactive',

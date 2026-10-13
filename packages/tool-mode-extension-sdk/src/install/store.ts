@@ -109,6 +109,18 @@ export function digestInstalledContent(directory: string): string {
   return hash.digest('hex')
 }
 
+/** Whether a process with this pid exists. `process.kill(pid, 0)` is the probe. */
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    // EPERM means the process EXISTS but belongs to another user, which still
+    // counts as alive: treating it as dead would let two writers collide.
+    return (error as NodeJS.ErrnoException).code === 'EPERM'
+  }
+}
+
 /** Write a JSON document atomically, or throw. */
 function writeJsonAtomic(path: string, value: unknown): void {
   mkdirSync(join(path, '..'), { recursive: true })
@@ -177,6 +189,46 @@ export class ExtensionStore {
       )
     }
     return join(this.rootDir, 'profiles', profile, 'state.json')
+  }
+
+  /**
+   * Take exclusive ownership of the store for offline edits (EXT-31).
+   *
+   * EXT-31 requires offline edits to hold exclusive store ownership, because an
+   * offline writer and a running host editing the same store would each be working
+   * from a state the other cannot see. The lock records the owning process so a
+   * stale lock from a crashed run can be reported as stale rather than blocking
+   * forever.
+   * @returns a release function.
+   * @throws ManagementError with `EXTENSION_IN_USE` when another process holds it.
+   */
+  acquireExclusive(): () => void {
+    const path = join(this.rootDir, 'store.lock')
+    mkdirSync(this.rootDir, { recursive: true })
+    const existing = readJsonBounded(path, 64 * 1024)
+    if (existing.value !== undefined) {
+      const holder = existing.value as { pid?: number; since?: string }
+      if (typeof holder.pid === 'number' && holder.pid !== process.pid && isProcessAlive(holder.pid)) {
+        throw new ManagementError(
+          'EXTENSION_IN_USE',
+          'install',
+          `the extension store is owned by process ${holder.pid}${holder.since === undefined ? '' : ` since ${holder.since}`}`,
+          'Stop the running host, or wait for it to release the store, before editing offline.',
+        )
+      }
+      // A lock whose owner is gone is stale: refusing would block forever on a
+      // crashed run, which is worse than proceeding under a fresh lock.
+    }
+    writeJsonAtomic(path, { pid: process.pid, since: new Date().toISOString() })
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      const current = readJsonBounded(path, 64 * 1024).value as { pid?: number } | undefined
+      // Only remove our OWN lock: a lock taken by someone else after ours was
+      // replaced must not be deleted by our release.
+      if (current?.pid === process.pid) rmSync(path, { force: true })
+    }
   }
 
   /**

@@ -120,3 +120,10 @@ export {
   loadExtensionModule,
   resolveExtensionEntry,
 } from './load.ts'
+export {
+  parseArgs,
+  runToolModeCli,
+  type CliDependencies,
+  type CliIo,
+  type CliOptions,
+} from './cli.ts'
