@@ -19,7 +19,7 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **1** / 210 (0%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **182**
+- Requirements NOT_RUN: **178**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
@@ -38,7 +38,7 @@ is the honest default rather than an omission.
 | RES | 10 | 0 | 0 | 10 | 0 |
 | CODE | 12 | 0 | 0 | 12 | 0 |
 | OBS | 5 | 0 | 0 | 5 | 0 |
-| EXT | 36 | 0 | 10 | 26 | 0 |
+| EXT | 36 | 0 | 14 | 22 | 0 |
 | HLM | 14 | 0 | 0 | 14 | 0 |
 | RCP | 12 | 0 | 0 | 12 | 0 |
 | DEC | 8 | 0 | 0 | 6 | 2 |
@@ -215,7 +215,7 @@ is the honest default rather than an omission.
 | EXT-01 | Host/package separation. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-02 | Public contract, not private imports. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-03 | Built-ins follow the identical protocol. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-04 | All packages can be deactivated. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-04 | All packages can be deactivated. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | Every extension is deactivatable through the same path, a built-in being a first-party package rather than an exception. Individual tools toggle independently of activation: disabling one tool leaves the package active and its other tools callable, and toggling an unknown tool is refused rather than ignored. Uninstall is implemented for third-party packages with the EXTENSION_IN_USE gate. Remaining: BUILTIN_PROTECTED is unreachable because nothing is marked built-in yet, and asset purging does not exist. |
 | EXT-05 | One model or executor can supply several tools. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-06 | Required sources. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-07 | Install is not activate. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | stagedInstall returns `activation: "inactive"` as an explicit field so a caller cannot mistake a successful install for a usable tool, and it imports nothing: the test fixture ships an entry that THROWS on import, so reaching the assertions proves installation never executed it. No inference, no warming, no tool or skill publication. Remaining: no inventory and no activation path, so the state an install produces is not yet persisted or readable. |
@@ -237,9 +237,9 @@ is the honest default rather than an omission.
 | EXT-23 | Identity-bound permissions. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-24 | Coherent publication. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-25 | Persist orthogonal state. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | The six dimensions are modelled separately and now PERSIST: a profile state file round-trips installation, desired and observed activation, per-deployment readiness, per-profile tool selection with the selected implementation, and export authorization independently, with profiles kept apart. A corrupt or oversized file, or one malformed entry, invalidates the whole file rather than dropping just the bad part, because a file that is demonstrably untrustworthy must not activate anything. Remaining: activation does not yet write these states, so persistence is exercised by tests rather than by a lifecycle operation. |
-| EXT-26 | Activate. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-27 | Deactivate. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-28 | Uninstall third-party packages. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-26 | Activate. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | Activation verifies the installed bytes and locks BEFORE publishing anything (a package edited after installation is refused as INTEGRITY_MISMATCH with nothing published), persists intended-active before publication so a crash leaves a record rather than a silent no-op, publishes every required contribution through an injected registrar, and commits the catalog generation ONLY once all of them were accepted. A failed registration rolls back narrowly: only the handles this activation published are withdrawn, the generation does not advance, and a healthy extension stays active AND callable - tested with one good and one failing package in the same profile. Readiness is assessed rather than assumed: merely unprepared assets activate with needs-preparation diagnostics as EXT-26 requires, while a FAILED deployment refuses activation because it will not become ready by waiting. Remaining: no managed worker is started and the public entry/API is not validated, because there is no worker runtime; provider handles are not created. |
+| EXT-27 | Deactivate. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | Deactivation persists inactive intent BEFORE withdrawing anything, verified by reading a fresh store from inside the withdrawal callback so the assertion is about the durable file rather than an in-memory view; if the process died mid-deactivation a restart would read "off" rather than resurrect the package. Contributions are withdrawn, and a withdrawal that fails does NOT produce a full-stop claim: the result reports fullyStopped false with the exact cleanup failure and the state becomes quarantined while desired activation stays inactive. A deactivated extension is not admitted even when its individual tool remains enabled, which is the orthogonal-state case a single boolean would collapse. Remaining: active calls are not cancelled, disposal hooks are not called, no grace period is joined, and no owned process is terminated, because there is no worker runtime; queued calls and cached Code Mode bindings do not exist. |
+| EXT-28 | Uninstall third-party packages. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | Uninstalling an active package returns EXTENSION_IN_USE unless deactivation is explicitly requested, and with it the deactivation sequence runs first. Removal clears the installation record but RETAINS the disabled tombstone, so nothing silently resurrects the package. Removing the record does not delete the installed bytes, deliberately: deletion has its own failure modes (EXT-29) and conflating the two would make a failed deletion look like a failed uninstall. Remaining: no preview of affected profiles/tools is produced, private resolved dependencies are not deleted, credential references and executable-content approvals are not revoked, and BUILTIN_PROTECTED is not yet reachable because no built-in is identified as such. |
 | EXT-29 | Windows cleanup and shared ownership. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-30 | Updates and rollback. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-31 | Operator experience. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |

@@ -128,6 +128,22 @@
     "EXT-33": {
       "status": "PARTIAL",
       "evidence": "The store now RECORDS what it installs: an operator-owned extensions.lock.json holds complete resolved source/identity records (identity, version, install path, archive digest, CONTENT digest, source, timestamp), so identity survives restart and a package edited on disk after installation is detected before activation rather than trusted. Version-keyed layout keeps two versions side by side. Corrupted state FAILS CLOSED: a lock or profile file that cannot be trusted yields NO records and a diagnostic, never a fallback to \"everything installed is active\", and a lock that could not be read is refused as an append target rather than silently overwritten. All writes are atomic (temp plus rename) and a failed write throws instead of reporting success. Remaining: per-install dependency locks and transaction records are not implemented, and cleanup-pending tombstones do not exist."
+    },
+    "EXT-26": {
+      "status": "PARTIAL",
+      "evidence": "Activation verifies the installed bytes and locks BEFORE publishing anything (a package edited after installation is refused as INTEGRITY_MISMATCH with nothing published), persists intended-active before publication so a crash leaves a record rather than a silent no-op, publishes every required contribution through an injected registrar, and commits the catalog generation ONLY once all of them were accepted. A failed registration rolls back narrowly: only the handles this activation published are withdrawn, the generation does not advance, and a healthy extension stays active AND callable - tested with one good and one failing package in the same profile. Readiness is assessed rather than assumed: merely unprepared assets activate with needs-preparation diagnostics as EXT-26 requires, while a FAILED deployment refuses activation because it will not become ready by waiting. Remaining: no managed worker is started and the public entry/API is not validated, because there is no worker runtime; provider handles are not created."
+    },
+    "EXT-27": {
+      "status": "PARTIAL",
+      "evidence": "Deactivation persists inactive intent BEFORE withdrawing anything, verified by reading a fresh store from inside the withdrawal callback so the assertion is about the durable file rather than an in-memory view; if the process died mid-deactivation a restart would read \"off\" rather than resurrect the package. Contributions are withdrawn, and a withdrawal that fails does NOT produce a full-stop claim: the result reports fullyStopped false with the exact cleanup failure and the state becomes quarantined while desired activation stays inactive. A deactivated extension is not admitted even when its individual tool remains enabled, which is the orthogonal-state case a single boolean would collapse. Remaining: active calls are not cancelled, disposal hooks are not called, no grace period is joined, and no owned process is terminated, because there is no worker runtime; queued calls and cached Code Mode bindings do not exist."
+    },
+    "EXT-28": {
+      "status": "PARTIAL",
+      "evidence": "Uninstalling an active package returns EXTENSION_IN_USE unless deactivation is explicitly requested, and with it the deactivation sequence runs first. Removal clears the installation record but RETAINS the disabled tombstone, so nothing silently resurrects the package. Removing the record does not delete the installed bytes, deliberately: deletion has its own failure modes (EXT-29) and conflating the two would make a failed deletion look like a failed uninstall. Remaining: no preview of affected profiles/tools is produced, private resolved dependencies are not deleted, credential references and executable-content approvals are not revoked, and BUILTIN_PROTECTED is not yet reachable because no built-in is identified as such."
+    },
+    "EXT-04": {
+      "status": "PARTIAL",
+      "evidence": "Every extension is deactivatable through the same path, a built-in being a first-party package rather than an exception. Individual tools toggle independently of activation: disabling one tool leaves the package active and its other tools callable, and toggling an unknown tool is refused rather than ignored. Uninstall is implemented for third-party packages with the EXTENSION_IN_USE gate. Remaining: BUILTIN_PROTECTED is unreachable because nothing is marked built-in yet, and asset purging does not exist."
     }
   },
   "acceptance": {

@@ -239,6 +239,30 @@ export class ExtensionStore {
   }
 
   /**
+   * Remove an installation record.
+   *
+   * Removing a record does NOT delete the installed bytes: deletion is a separate,
+   * operator-driven step with its own failure modes (EXT-29), and conflating the
+   * two would make a failed deletion look like a failed uninstall.
+   * @param extensionId - the extension to forget.
+   */
+  removeRecord(extensionId: string): void {
+    const lock = this.readLock()
+    if (lock.corrupt) {
+      throw new ManagementError(
+        'EXTENSION_FAULT',
+        'uninstall',
+        `the store lock is unreadable, so a record cannot be removed safely: ${lock.diagnostic ?? 'unknown reason'}`,
+        'Inspect the lock document and repair it deliberately.',
+      )
+    }
+    writeJsonAtomic(this.lockPath, {
+      lockVersion: 1,
+      extensions: lock.value.extensions.filter(record => record.extensionId !== extensionId),
+    } satisfies StoreLock)
+  }
+
+  /**
    * Check whether an installation still matches what was recorded (EXT-33).
    *
    * Run before activation: a package edited on disk after installation is a

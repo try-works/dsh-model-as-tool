@@ -83,3 +83,14 @@ export {
   type StateReadResult,
   type StoreLock,
 } from './install/store.ts'
+
+export {
+  assessReadiness,
+  DEFAULT_STOP_GRACE_MS,
+  ExtensionLifecycle,
+  type ActivationDiagnostic,
+  type ActivationResult,
+  type Contribution,
+  type ContributionRegistrar,
+  type DeactivationResult,
+} from './install/lifecycle.ts'
