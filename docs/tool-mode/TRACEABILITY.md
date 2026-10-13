@@ -19,14 +19,14 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **1** / 210 (0%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **178**
+- Requirements NOT_RUN: **174**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
 
 | Family | Total | DONE | PARTIAL | NOT_RUN | BLOCKED |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| BASE | 14 | 1 | 4 | 9 | 0 |
+| BASE | 14 | 1 | 5 | 8 | 0 |
 | ARCH | 6 | 0 | 0 | 6 | 0 |
 | RUN | 8 | 0 | 0 | 8 | 0 |
 | MCP | 13 | 0 | 0 | 13 | 0 |
@@ -38,7 +38,7 @@ is the honest default rather than an omission.
 | RES | 10 | 0 | 0 | 10 | 0 |
 | CODE | 12 | 0 | 0 | 12 | 0 |
 | OBS | 5 | 0 | 0 | 5 | 0 |
-| EXT | 36 | 0 | 14 | 22 | 0 |
+| EXT | 36 | 0 | 17 | 19 | 0 |
 | HLM | 14 | 0 | 0 | 14 | 0 |
 | RCP | 12 | 0 | 0 | 12 | 0 |
 | DEC | 8 | 0 | 0 | 6 | 2 |
@@ -58,7 +58,7 @@ is the honest default rather than an omission.
 | BASE-06 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-07 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-08 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
-| BASE-09 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
+| BASE-09 |  | 2. Verified starting point and upgrade requirements | PARTIAL | The private built-in adapter path is gone for Tongue: the host no longer contains an adapter for it, the code moved to the independently versioned package @try-works/extension-desert-ant-tongue, and the host reaches it only by importing the package PUBLIC ./tool-mode entry and calling create()/createProvider(). The binding from a catalog model to its package is DATA (a `provider` field, validated at catalog load), not a switch on the model name, so a first-party and a third-party package take the identical route. ADAPTER_FACTORIES in the host is now empty and documented as needing to stay so. Remaining: Voz is still a host-resident adapter held in adapters/voz.ts and reached only from a single call site; it must become @try-works/extension-desert-ant-voz. The remaining deviation is confined to one function so its removal deletes code rather than editing a list that looks legitimate. |
 | BASE-10 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-11 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-12 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
@@ -213,7 +213,7 @@ is the honest default rather than an omission.
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | EXT-01 | Host/package separation. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-02 | Public contract, not private imports. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-02 | Public contract, not private imports. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | The first extracted extension imports ONLY @try-works/tool-mode-extension-sdk (its runtime dependency) and never host internals, which is what makes it buildable by an author who has not installed the host. The SDK runs the extension through the published interfaces and its own tests exercise it the same way a host does. Remaining: nothing enforces the prohibition mechanically, so a future extension could still reach for a host path; a lint or packaging check would be needed to make it a gate rather than a convention. |
 | EXT-03 | Built-ins follow the identical protocol. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-04 | All packages can be deactivated. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | Every extension is deactivatable through the same path, a built-in being a first-party package rather than an exception. Individual tools toggle independently of activation: disabling one tool leaves the package active and its other tools callable, and toggling an unknown tool is refused rather than ignored. Uninstall is implemented for third-party packages with the EXTENSION_IN_USE gate. Remaining: BUILTIN_PROTECTED is unreachable because nothing is marked built-in yet, and asset purging does not exist. |
 | EXT-05 | One model or executor can supply several tools. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
@@ -228,9 +228,9 @@ is the honest default rather than an omission.
 | EXT-14 | Manifest fields. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | extension-manifest-1.1.0.schema.json ships with the SDK and is enforced at runtime via Ajv 2020-12. Beyond the schema it checks exact id/version agreement with the package, unique local ids per contribution kind, duplicate caller-facing tool NAMES reported as TOOL_NAME_CONFLICT, referenced files that must exist, paths that must not escape the package, and unknown REQUIRED features blocking activation as INCOMPATIBLE_PROTOCOL. Unknown top-level fields are rejected while the x- vendor namespace is admitted. Remaining: asset-lock validation (EXT-15) and keyed digests. |
 | EXT-15 | Model asset locks. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-16 | Versioning. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | A 1.0 manifest is normalized to module execution as a VIEW, leaving the input object untouched so the recorded digest still describes the installed bytes; the lift provenance is attached after validation rather than smuggled past the closed schema. Protocol 1.1.0, runtime API major 1, and the five separate identities are documented in code. Remaining: minor-version conformance tests and the contract/recipe/model revision separation are not implemented end to end. |
-| EXT-17 | Publish the SDK and reference host. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | @try-works/tool-mode-extension-sdk exists, builds, loads standalone under plain Node, and imports neither DSH nor the Tool Mode host (asserted by test). It ships the manifest schema, JSON Schema types, lifecycle types, the management error vocabulary and manifest/discovery validation. Remaining: conformance helpers, the reference test host with a fake harness broker, and publication to npm. |
-| EXT-18 | Context contracts. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-19 | Import and lifecycle discipline. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-17 | Publish the SDK and reference host. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | The SDK now defines and exports the complete public runtime API: ToolModeExtensionV1, ExtensionContextV1, ExtensionInstanceV1, ModelProviderV1, ProviderInspectionV1, PreparedAssetMapV1, InvocationContextV1, JsonObject/JsonValue, the DisposeReason vocabulary, defineExtension() which rejects a wrong apiVersion at the declaration site, and the reserved-meta guard. Loading is implemented in load.ts: the entry is resolved from the package own exports map rather than a convention, the shape is validated BEFORE create() runs, and a missing dispose() is refused because a host with no way to release an instance could never fully stop it. Remaining: the declarative interpreter, the conformance helpers, and the reference test host with a fake harness broker are not implemented, and the SDK is not published to npm. |
+| EXT-18 | Context contracts. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | All five named context contracts exist with the required semantics documented: ExtensionContextV1 carries host-issued identity, private storage, a bounded logger and a teardown signal, and deliberately NO DSH ctx, registry mutation, global credentials or unfiltered environment; ProviderInspectionV1 reports readiness/features/missing/runtimeVersion and inspection is implemented to read only approved local state (a test asserts it reports unprepared before a load rather than claiming ready); PreparedAssetMapV1 and InvocationContextV1 carry verified handles and call-scoped grants with no caller-supplied authority. Remaining: the asset map is a type without a host implementation, and the file/network broker operations are typed but have no enforcing host behind them. |
+| EXT-19 | Import and lifecycle discipline. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | Import and create() are lightweight and tested: the extension declares no assets because Tongue bundles its weights, module import performs no work, and a test asserts createProvider returns a handle in well under a second rather than parsing the weight file, with inspect() reporting unprepared until load() is called. Disposal is idempotent and the host disposes providers per model and instances per extension. Remaining: there is no pooling, no concurrency admission, and unload() is only a cache drop because no provider holds a process-level resource yet. |
 | EXT-20 | Managed worker execution. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-21 | Two contribution modes. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-22 | Collision and provider selection. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |

@@ -103,7 +103,7 @@
     },
     "EXT-17": {
       "status": "PARTIAL",
-      "evidence": "@try-works/tool-mode-extension-sdk exists, builds, loads standalone under plain Node, and imports neither DSH nor the Tool Mode host (asserted by test). It ships the manifest schema, JSON Schema types, lifecycle types, the management error vocabulary and manifest/discovery validation. Remaining: conformance helpers, the reference test host with a fake harness broker, and publication to npm."
+      "evidence": "The SDK now defines and exports the complete public runtime API: ToolModeExtensionV1, ExtensionContextV1, ExtensionInstanceV1, ModelProviderV1, ProviderInspectionV1, PreparedAssetMapV1, InvocationContextV1, JsonObject/JsonValue, the DisposeReason vocabulary, defineExtension() which rejects a wrong apiVersion at the declaration site, and the reserved-meta guard. Loading is implemented in load.ts: the entry is resolved from the package own exports map rather than a convention, the shape is validated BEFORE create() runs, and a missing dispose() is refused because a host with no way to release an instance could never fully stop it. Remaining: the declarative interpreter, the conformance helpers, and the reference test host with a fake harness broker are not implemented, and the SDK is not published to npm."
     },
     "EXT-25": {
       "status": "PARTIAL",
@@ -144,6 +144,22 @@
     "EXT-04": {
       "status": "PARTIAL",
       "evidence": "Every extension is deactivatable through the same path, a built-in being a first-party package rather than an exception. Individual tools toggle independently of activation: disabling one tool leaves the package active and its other tools callable, and toggling an unknown tool is refused rather than ignored. Uninstall is implemented for third-party packages with the EXTENSION_IN_USE gate. Remaining: BUILTIN_PROTECTED is unreachable because nothing is marked built-in yet, and asset purging does not exist."
+    },
+    "BASE-09": {
+      "status": "PARTIAL",
+      "evidence": "The private built-in adapter path is gone for Tongue: the host no longer contains an adapter for it, the code moved to the independently versioned package @try-works/extension-desert-ant-tongue, and the host reaches it only by importing the package PUBLIC ./tool-mode entry and calling create()/createProvider(). The binding from a catalog model to its package is DATA (a `provider` field, validated at catalog load), not a switch on the model name, so a first-party and a third-party package take the identical route. ADAPTER_FACTORIES in the host is now empty and documented as needing to stay so. Remaining: Voz is still a host-resident adapter held in adapters/voz.ts and reached only from a single call site; it must become @try-works/extension-desert-ant-voz. The remaining deviation is confined to one function so its removal deletes code rather than editing a list that looks legitimate."
+    },
+    "EXT-02": {
+      "status": "PARTIAL",
+      "evidence": "The first extracted extension imports ONLY @try-works/tool-mode-extension-sdk (its runtime dependency) and never host internals, which is what makes it buildable by an author who has not installed the host. The SDK runs the extension through the published interfaces and its own tests exercise it the same way a host does. Remaining: nothing enforces the prohibition mechanically, so a future extension could still reach for a host path; a lint or packaging check would be needed to make it a gate rather than a convention."
+    },
+    "EXT-18": {
+      "status": "PARTIAL",
+      "evidence": "All five named context contracts exist with the required semantics documented: ExtensionContextV1 carries host-issued identity, private storage, a bounded logger and a teardown signal, and deliberately NO DSH ctx, registry mutation, global credentials or unfiltered environment; ProviderInspectionV1 reports readiness/features/missing/runtimeVersion and inspection is implemented to read only approved local state (a test asserts it reports unprepared before a load rather than claiming ready); PreparedAssetMapV1 and InvocationContextV1 carry verified handles and call-scoped grants with no caller-supplied authority. Remaining: the asset map is a type without a host implementation, and the file/network broker operations are typed but have no enforcing host behind them."
+    },
+    "EXT-19": {
+      "status": "PARTIAL",
+      "evidence": "Import and create() are lightweight and tested: the extension declares no assets because Tongue bundles its weights, module import performs no work, and a test asserts createProvider returns a handle in well under a second rather than parsing the weight file, with inspect() reporting unprepared until load() is called. Disposal is idempotent and the host disposes providers per model and instances per extension. Remaining: there is no pooling, no concurrency admission, and unload() is only a cache drop because no provider holds a process-level resource yet."
     }
   },
   "acceptance": {

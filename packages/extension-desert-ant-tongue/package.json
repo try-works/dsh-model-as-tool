@@ -1,0 +1,35 @@
+{
+  "name": "@try-works/extension-desert-ant-tongue",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "First-party Tool Mode extension implementing tool-mode/lang_detect on the Desert Ant Labs Tongue model",
+  "license": "MIT",
+  "exports": {
+    "./tool-mode": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "tool-mode.extension.json",
+    "README.md"
+  ],
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@try-works/tool-mode-extension-sdk": "^0.1.0"
+  },
+  "optionalDependencies": {
+    "@desert-ant-labs/tongue": "^1.0.0"
+  },
+  "devDependencies": {
+    "@try-works/tool-mode-extension-sdk": "^0.1.0"
+  }
+}

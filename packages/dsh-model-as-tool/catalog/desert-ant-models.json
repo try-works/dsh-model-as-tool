@@ -530,6 +530,10 @@
       "name": "desert-ant-tongue",
       "description": "Detect the language of short text on device with the Desert Ant Tongue model.",
       "whenToUse": "Use before translating, routing to a locale-specific template, or checking that generated copy is in the expected language."
+    },
+    "provider": {
+      "extension": "@try-works/extension-desert-ant-tongue",
+      "modelId": "tongue"
     }
   },
   {

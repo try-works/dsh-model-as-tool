@@ -27,12 +27,40 @@ export interface ExtensionDiscovery {
   readonly packageName: string
   /** The package version from `package.json`. */
   readonly packageVersion: string
+  /** Absolute path of the unpacked package directory. */
+  readonly packageDir: string
   /** Absolute path of the manifest the `toolMode.manifest` field names. */
   readonly manifestPath: string
+  /**
+   * Absolute path of the public `./tool-mode` entry, resolved from the package's
+   * own `exports` map. Undefined for a declarative package, which has no module
+   * entry to import.
+   */
+  readonly entryPath?: string
   /** The validated manifest. */
   readonly manifest: ExtensionManifest
   /** The declared public exports, which discovery requires to be explicit. */
   readonly exports: readonly string[]
+}
+
+/**
+ * Resolve a `./tool-mode` export target to a path.
+ *
+ * An export value is either a string or a conditions object, and both appear in
+ * real packages. The entry is read from the declaration rather than guessed from
+ * a convention, so a package that points its entry elsewhere still loads.
+ * @param value - the export value.
+ * @returns the relative target, or undefined when there is none.
+ */
+function exportTarget(value: unknown): string | undefined {
+  if (typeof value === 'string') return value
+  if (typeof value === 'object' && value !== null) {
+    const conditions = value as Record<string, unknown>
+    // `default` is the condition Node itself falls back to.
+    const target = conditions.default ?? conditions.import ?? conditions.node
+    if (typeof target === 'string') return target
+  }
+  return undefined
 }
 
 /**
@@ -157,10 +185,23 @@ export function discoverExtension(packageDir: string): ExtensionDiscovery {
   }
 
   const raw = readBoundedJson(manifestPath, MAX_MANIFEST_BYTES, 'the extension manifest')
+  const entry = exportTarget((exportsField as Record<string, unknown>)['./tool-mode'])
+  const entryPath = entry === undefined ? undefined : resolve(root, entry)
+  if (entryPath !== undefined && !entryPath.startsWith(root + sep)) {
+    throw new ManagementError(
+      'INVALID_EXTENSION',
+      'discover',
+      'the ./tool-mode export points outside the package directory',
+      'Point the export at a file inside the package.',
+    )
+  }
+
   return {
     packageName,
     packageVersion,
+    packageDir: root,
     manifestPath,
+    ...entryPath === undefined ? {} : { entryPath },
     manifest: validateManifest(raw, { packageName, packageVersion, packageDir: root }),
     exports: Object.keys(exportsField),
   }

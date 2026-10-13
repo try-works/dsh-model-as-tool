@@ -1,0 +1,27 @@
+{
+  "lockVersion": 1,
+  "assetSets": {
+    "tongue-bundled": {
+      "model": {
+        "provider": "desert-ant-labs",
+        "identity": "@desert-ant-labs/tongue",
+        "revision": "the version resolved from the optional dependency"
+      },
+      "engine": { "kind": "pure-javascript", "version": "same as the package" },
+      "tokenizer": { "kind": "bundled", "identity": "tongue-vocabulary" },
+      "platforms": [
+        { "os": "win32", "arch": "x64", "accelerator": "cpu" },
+        { "os": "darwin", "arch": "arm64", "accelerator": "cpu" },
+        { "os": "linux", "arch": "x64", "accelerator": "cpu" }
+      ],
+      "license": {
+        "name": "Desert Ant Labs Source-Available License 1.0",
+        "url": "https://desertant.com/license",
+        "attributionRequired": true,
+        "redistribution": "not-permitted"
+      },
+      "assets": [],
+      "note": "Tongue ships its 2 MB weights inside the npm package, so there is no separately downloaded asset to lock. The asset array is empty by design, not by omission: an empty array here asserts that preparation fetches nothing."
+    }
+  }
+}

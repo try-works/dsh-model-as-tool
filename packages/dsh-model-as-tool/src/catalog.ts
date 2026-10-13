@@ -86,6 +86,40 @@ function parseParam(raw: unknown, scope: string, key: string): ModelParam {
  * @param source - document description for error messages.
  * @returns the contract id, or null when unbound.
  */
+/**
+ * Parse a model's extension provider binding (BASE-09).
+ *
+ * The binding names the package that implements the model. It is validated here
+ * rather than trusted, because it decides which package's code the host will
+ * import: a malformed binding must fail the catalog load rather than surface later
+ * as an import of something unintended.
+ * @param raw - the raw `provider` field.
+ * @param source - the catalog source, for error messages.
+ * @returns the binding field, or an empty object when absent.
+ */
+function parseProvider(raw: unknown, source: string): { provider?: { extension: string; modelId: string } } {
+  if (raw === undefined || raw === null) return {}
+  const value = raw as Record<string, unknown>
+  const extension = value.extension
+  const modelId = value.modelId
+  if (typeof extension !== 'string' || extension.length === 0) {
+    throw new Error(`${source}: provider.extension must be a non-empty package name`)
+  }
+  if (typeof modelId !== 'string' || modelId.length === 0) {
+    throw new Error(`${source}: provider.modelId must be a non-empty string`)
+  }
+  // A relative path is admitted so a first-party package can be exercised from a
+  // checkout; anything else must look like a package specifier.
+  const packageLike = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(extension)
+  const relativeLike = extension.startsWith('./') || extension.startsWith('../')
+  if (!packageLike && !relativeLike) {
+    throw new Error(
+      `${source}: provider.extension ${JSON.stringify(extension)} is neither a package specifier nor a relative path`,
+    )
+  }
+  return { provider: { extension, modelId } }
+}
+
 function parseContract(value: unknown, scope: string, source: string): string | null {
   if (value === null || value === undefined) return null
   if (typeof value !== 'string') {
@@ -180,6 +214,7 @@ export function parseCatalogEntry(raw: unknown, source: string, index: number): 
     summary: requireString(entry, 'summary', source),
     capability: requireString(entry, 'capability', source),
     contract: parseContract(entry.contract, scope, source),
+    ...parseProvider(entry.provider, source),
     input: input as ModelInput,
     output: requireString(entry, 'output', source),
     languages: nullableNumber('languages'),

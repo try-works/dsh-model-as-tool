@@ -94,3 +94,29 @@ export {
   type ContributionRegistrar,
   type DeactivationResult,
 } from './install/lifecycle.ts'
+
+export {
+  assertNoReservedMeta,
+  defineExtension,
+  EXTENSION_API_VERSION,
+  RESERVED_META_FIELD,
+  type DisposeReason,
+  type ExtensionContextV1,
+  type ExtensionInstanceV1,
+  type ExtensionLoggerV1,
+  type ExtensionStorageV1,
+  type InvocationContextV1,
+  type JsonObject,
+  type JsonValue,
+  type ModelProviderV1,
+  type PreparedAssetMapV1,
+  type ProviderInspectionV1,
+  type ToolModeExtensionV1,
+} from './runtime.ts'
+
+export {
+  activateExtension,
+  EXTENSION_ENTRY,
+  loadExtensionModule,
+  resolveExtensionEntry,
+} from './load.ts'

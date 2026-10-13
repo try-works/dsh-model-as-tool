@@ -82,6 +82,15 @@ export interface ModelCatalogEntry {
    * model with no contract keeps a per-model tool under its own name.
    */
   readonly contract: string | null
+  /**
+   * The extension package that implements this model (BASE-09).
+   *
+   * A binding held as DATA, not a switch on the model name. The host loads
+   * whatever package this names through the PUBLIC extension API, so a first-party
+   * package takes the same route as a third-party one and adding a vendor means
+   * publishing a package plus adding this field — with no host change.
+   */
+  readonly provider?: { readonly extension: string; readonly modelId: string }
   readonly input: ModelInput
   readonly output: string
   readonly languages: number | null

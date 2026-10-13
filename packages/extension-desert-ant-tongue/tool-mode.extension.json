@@ -1,0 +1,52 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/extension-desert-ant-tongue",
+  "version": "0.1.0",
+  "displayName": "Desert Ant Tongue language detection",
+  "description": "Language identification over the Desert Ant Labs Tongue model, exposed as the standard tool-mode/lang_detect contract.",
+  "license": "MIT",
+  "activation": {
+    "policy": "operator",
+    "deactivatable": true
+  },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": []
+  },
+  "execution": {
+    "kind": "module",
+    "entry": "./lib/index.js",
+    "isolation": "host-inline"
+  },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": false
+  },
+  "models": [
+    {
+      "id": "tongue",
+      "assetSet": "tongue-bundled",
+      "assetLock": "./models.lock.json",
+      "platforms": [
+        { "os": "win32", "arch": "x64", "accelerator": "cpu" },
+        { "os": "darwin", "arch": "arm64", "accelerator": "cpu" },
+        { "os": "linux", "arch": "x64", "accelerator": "cpu" }
+      ]
+    }
+  ],
+  "tools": [],
+  "implementations": [
+    {
+      "id": "tongue-default",
+      "contractId": "tool-mode/lang_detect",
+      "contractVersion": "1.0.0",
+      "modelId": "tongue",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": []
+}

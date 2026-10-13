@@ -53,6 +53,7 @@ function twoImplementationCatalog(): string {
     summary: `${name} is a test implementation used to prove contract merging.`,
     capability: 'text.language-identification',
     contract: 'text.language_detect',
+    provider: { extension: '@try-works/extension-desert-ant-tongue', modelId: 'tongue' },
     input: 'text',
     output: 'test',
     languages: null,

@@ -93,6 +93,7 @@ for (const [specifier, relative] of Object.entries(PEERS)) {
 const WORKSPACE = {
   '@try-works/tool-mode-contracts': 'packages/tool-mode-contracts',
   '@try-works/tool-mode-extension-sdk': 'packages/tool-mode-extension-sdk',
+  '@try-works/extension-desert-ant-tongue': 'packages/extension-desert-ant-tongue',
 }
 let workspaceLinked = 0
 for (const [specifier, relative] of Object.entries(WORKSPACE)) {

@@ -25,6 +25,7 @@ import { createAdapter } from './adapters/index.ts'
 import { registerModelTool } from './registrar.ts'
 import { registerContractTool, type ContractBinding, type HostIdentity } from './bindings.ts'
 import { createGrant } from './authority.ts'
+import { ProviderBridge } from './provider-bridge.ts'
 import { STANDARD_CONTRACTS, type ToolContract } from '@try-works/tool-mode-contracts'
 import { renderSkillBody } from './skills.ts'
 import { loadPlaybooks } from './playbook.ts'
@@ -287,29 +288,6 @@ export function apply(ctx: Context, config: Config = {}): void {
    * alternatives are kept so discovery can report them without a caller having to
    * choose a model.
    */
-  const contractById = new Map<string, ToolContract>(
-    STANDARD_CONTRACTS.map(contract => [contract.contract, contract]),
-  )
-  const bindings = new Map<string, ContractBinding>()
-  for (const contract of STANDARD_CONTRACTS) {
-    const eligible = resolved.filter(
-      item => item.entry.contract === contract.contract && item.verdict.runnable,
-    )
-    if (eligible.length === 0) continue
-    const override = config.providers?.[contract.contract]
-    const chosen = eligible.find(item => item.entry.id === override) ?? eligible[0]
-    if (chosen === undefined) continue
-    const adapter = createAdapter(chosen.entry, { route: chosen.verdict.route, ...transportOptions })
-    if (adapter === undefined) continue
-    bindings.set(contract.contract, {
-      contract,
-      implementation: chosen.entry,
-      adapter,
-      route: chosen.verdict.route,
-      alternatives: eligible.filter(item => item.entry.id !== chosen.entry.id).map(item => item.entry.id),
-    })
-  }
-
   // The host owns provenance and authority: `extension`/`version` name THIS
   // package, the receipt counter lives here, and the grant is built from operator
   // configuration, so an implementation can forge neither (BASE-05, DECL-03).
@@ -332,6 +310,43 @@ export function apply(ctx: Context, config: Config = {}): void {
     grant,
     callerKind: 'interactive',
   }
+
+  /**
+   * Extension providers, reached only through the public extension API (BASE-09).
+   *
+   * The host holds no adapter for any model: a catalog entry names the package
+   * that implements it, and this bridge loads it. One bridge per activation, so an
+   * extension serving several models is imported once.
+   */
+  const bridge = new ProviderBridge({
+    grant,
+    activationGeneration: host.activationGeneration,
+    log: (message, fields) => ctx.logger?.debug?.(`[model-as-tool] ${message}`, fields),
+  })
+
+  const contractById = new Map<string, ToolContract>(
+    STANDARD_CONTRACTS.map(contract => [contract.contract, contract]),
+  )
+  const bindings = new Map<string, ContractBinding>()
+  for (const contract of STANDARD_CONTRACTS) {
+    const eligible = resolved.filter(
+      item => item.entry.contract === contract.contract && item.verdict.runnable,
+    )
+    if (eligible.length === 0) continue
+    const override = config.providers?.[contract.contract]
+    const chosen = eligible.find(item => item.entry.id === override) ?? eligible[0]
+    if (chosen === undefined) continue
+    const adapter = createAdapter(chosen.entry, { route: chosen.verdict.route, ...transportOptions }, undefined, bridge)
+    if (adapter === undefined) continue
+    bindings.set(contract.contract, {
+      contract,
+      implementation: chosen.entry,
+      adapter,
+      route: chosen.verdict.route,
+      alternatives: eligible.filter(item => item.entry.id !== chosen.entry.id).map(item => item.entry.id),
+    })
+  }
+
 
   /** Contracts already registered, so a second implementation joins rather than duplicates. */
   const registeredContracts = new Map<string, { toolName: string; dispose: () => void }>()
@@ -380,7 +395,7 @@ export function apply(ctx: Context, config: Config = {}): void {
         dispose = registered.dispose
       }
     } else {
-      const adapter = createAdapter(entry, { route: verdict.route, ...transportOptions })
+      const adapter = createAdapter(entry, { route: verdict.route, ...transportOptions }, undefined, bridge)
       if (adapter === undefined) {
         // Runnable but no adapter yet: report rather than register a dead tool.
         ctx.logger.info(
@@ -417,7 +432,7 @@ export function apply(ctx: Context, config: Config = {}): void {
     // transcription tool. It keeps its own name and adapter, never the new
     // contract's schema, so an old caller's arguments are not reinterpreted.
     if (config.legacyAliases === true && entry.contract !== null && entry.tool.name !== toolName) {
-      const aliasAdapter = createAdapter(entry, { route: verdict.route, ...transportOptions })
+      const aliasAdapter = createAdapter(entry, { route: verdict.route, ...transportOptions }, undefined, bridge)
       if (aliasAdapter !== undefined) {
         const alias = registerModelTool(
           ctx as unknown as { tools: { register(definition: unknown): () => void } },

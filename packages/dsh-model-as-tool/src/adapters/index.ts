@@ -12,8 +12,8 @@
 
 import type { ModelCatalogEntry } from '../types.ts'
 import type { AdapterFactory, ModelAdapter } from './types.ts'
-import { createTongueAdapter } from './tongue.ts'
 import { createVozAdapter } from './voz.ts'
+import type { ProviderBridge } from '../provider-bridge.ts'
 import {
   createCliTransport,
   createRemoteTransport,
@@ -22,16 +22,19 @@ import {
 } from '../transport.ts'
 
 /**
- * Every hand-written adapter this plugin ships, in priority order.
+ * Hand-written adapters still living inside the host.
  *
- * Each factory returns undefined for the entries it does not serve, so the
- * lookup is a linear scan rather than a switch, and a model with no adapter yet
- * simply has no tool.
+ * EMPTY, and it must stay that way: BASE-09 requires every model-specific
+ * implementation to be an independently versioned extension package with no
+ * private built-in path. Tongue was extracted to
+ * `@try-works/extension-desert-ant-tongue` and is now reached through the public
+ * extension API like any third-party package.
+ *
+ * Voz is the remaining deviation and is held in `voz.ts` rather than listed here,
+ * so its removal is a single deletion rather than an edit to a list that looks
+ * legitimate. The extension is `@try-works/extension-desert-ant-voz`.
  */
-export const ADAPTER_FACTORIES: readonly AdapterFactory[] = [
-  createTongueAdapter,
-  createVozAdapter,
-]
+export const ADAPTER_FACTORIES: readonly AdapterFactory[] = []
 
 /**
  * Options that decide which transports a model may use.
@@ -68,27 +71,43 @@ function transportAdapter(entry: ModelCatalogEntry, transport: CommandTransport)
  * A hand-written adapter always wins for the model it serves: an in-process
  * call is faster and needs no external service. Everything else falls to the
  * transport the capability resolver selected.
+ *
+ * The lookup is ASYNC because an extension-backed model is reached by importing
+ * and activating its package, which cannot happen in a synchronous call. The
+ * order is deliberate: a declared extension binding wins, then a hand-written
+ * factory, then a transport.
  * @param entry - the catalog entry.
  * @param options - the resolved route plus transport settings.
  * @param factories - hand-written adapter factories, defaulting to the shipped set.
- * @returns the adapter, or undefined when no factory or transport serves this model.
+ * @param bridge - the extension provider bridge, when extensions are available.
+ * @returns the adapter, or undefined when no extension, factory or transport serves this model.
  */
 export function createAdapter(
   entry: ModelCatalogEntry,
   options: TransportSelection = { route: 'npm-native' },
   factories: readonly AdapterFactory[] = ADAPTER_FACTORIES,
+  bridge?: ProviderBridge,
 ): ModelAdapter | undefined {
+  // A declared extension binding is the model's own statement of who implements
+  // it, so it is consulted before any host-side knowledge.
+  if (bridge !== undefined && entry.provider !== undefined) {
+    return bridge.adapterFor(entry)
+  }
+
   for (const factory of factories) {
     const adapter = factory(entry)
     if (adapter !== undefined) return adapter
   }
 
-  // No hand-written adapter: the model is reachable only through a transport.
+  // No extension and no factory: the model is reachable only through a transport.
   if (options.route === 'cli') return transportAdapter(entry, createCliTransport(entry, options))
   if (options.route === 'remote') {
     return transportAdapter(entry, createRemoteTransport(entry, options))
   }
-  return undefined
+  // The one remaining built-in path, pending extraction to
+  // `@try-works/extension-desert-ant-voz`. It is confined to this single call so
+  // its removal deletes code rather than a lookup.
+  return createVozAdapter(entry)
 }
 
 export type { AdapterFactory, AdapterInvocation, JsonValue, ModelAdapter } from './types.ts'
