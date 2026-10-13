@@ -179,7 +179,12 @@ if (process.argv.includes('--json')) {
   }
   console.log('')
   if (failures.length === 0) {
-    console.log(`probe OK — ${totalChecks} checks against the pinned schema, 0 failures.`)
+    // The message states its own SCOPE. It previously read "39 checks against the pinned
+    // schema", which was quoted as though the running server had been probed. This probe
+    // never starts a server — it validates saved message bodies — and a success line that
+    // does not say so invites exactly that misreading.
+    console.log(`probe OK — ${totalChecks} checks against the pinned schema over SAVED FIXTURES, 0 failures.`)
+    console.log('           This is schema conformance of recorded messages, NOT live server conformance.')
   } else {
     console.error(`probe FAILED — ${failures.length} of ${totalChecks} checks failed.`)
   }

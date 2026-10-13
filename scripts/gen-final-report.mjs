@@ -33,15 +33,28 @@ const FAMILIES = {
   DEC: 'Decision-tool decisions',
   NDL: 'Needle integration decisions',
   TDD: 'Verification discipline and evidence',
-  MOD: 'Modular composition',
+  // MOD is the MULTIMODAL EmbeddingGemma family. An earlier version of this report
+  // labelled it "modular composition" and grouped it with Code Mode purely because both
+  // were unstarted, which is a reason to check a label rather than to invent one.
+  MOD: 'Multimodal EmbeddingGemma 2 inference',
   P26: 'MCP revision 2026-07-28, section 20',
 }
 
-/** Families whose unstarted work is dominated by infrastructure that does not exist. */
-const CAUSES = [
-  ['needs a worker, PTC or recipe runtime that does not exist here', ['HLM', 'RCP', 'CODE', 'MOD']],
-  ['needs a model or package that is not published', ['DEC', 'NDL']],
-  ['needs a real model running to be exercised', ['TOOL', 'MODEL', 'RES']],
+/**
+ * Unstarted work that is IMPLEMENTATION, not a missing upstream artifact.
+ *
+ * Corrected after review. An earlier version of this report classified all four of the
+ * following as external blockers. None of them is: DSH publishes PTC sources, EXT-20
+ * assigns worker hosting to THIS project, MODEL-04 permits a managed native Windows
+ * executable, and the Laya TypeScript source and checkpoint are both obtainable even
+ * though the npm name is not. They are work not yet done, and calling them blocked
+ * removed the obligation to do them.
+ */
+const IMPLEMENTATION_GAPS = [
+  ['extension-host worker bridge and lifecycle (EXT-20)', ['EXT']],
+  ['DSH PTC composition and the external run surface (CODE-01..03)', ['CODE']],
+  ['provider-neutral LLM broker and recipe interpreter (HLM, RCP)', ['HLM', 'RCP']],
+  ['multimodal EmbeddingGemma 2 inference (MOD-01..)', ['MOD']],
 ]
 
 const byFamily = new Map()
@@ -98,7 +111,7 @@ add('| --- | --- |')
 add('| Five packages are published and installable | `@try-works/dsh-model-as-tool@0.1.3`, `tool-mode-contracts@0.1.0`, `tool-mode-extension-sdk@0.1.0`, and both extensions at `0.1.0`, each confirmed by a consumer install from the registry |')
 add('| The published host contains no model-specific code | `npm run verify:architecture` fails on a model name, branch or import in host source — and the installed artifact was read to confirm `tongue.js` and `voz.js` are absent from it |')
 add('| Extensions depend only on the published SDK | The same gate: a host-package import, or a path escaping the package, is a violation |')
-add('| The MCP layer conforms to revision `2026-07-28` | 39 checks against a pinned upstream schema, hashed and recorded at a specific commit |')
+add('| The MCP wire layer is schema-conformant for revision `2026-07-28` | 39 checks that validate SAVED REQUEST/RESPONSE FIXTURES against the pinned, hashed upstream schema. **This is not live server conformance**: the probe reads frozen files from disk and never starts the server, which its own documentation states. Live conformance against the running server is not yet demonstrated. |')
 add('| The verification harness refuses to over-claim | A gate asserts the inventory never reports a pass for a partial requirement, never derives a pass from an absence of failure, and reports a blocked item as blocked |')
 add('| There is one dispatch authority | A gate fails the build when a dispatch layer calls a tool definition\'s `execute` rather than the registry pipeline |')
 add('| Shipped packages declare their licences | Both extensions declare all five layers with no gaps, resolved through the same discovery path a host uses |')
@@ -122,6 +135,30 @@ for (const item of blocked) {
   if (sentence) add(`  - ${sentence}`)
 }
 add('')
+add('## What actually runs on this host')
+add('')
+add('An earlier version of this report said no real model runs here. **That was wrong**, and '
+  + '`scripts/verify-built.mjs` disproves it on every `npm run verify`:')
+add('')
+add('```')
+add('$ npm run verify:built')
+add('tools:      lang_detect, stt_transcribe, model_tools')
+add('inference:  "kann ich das haben" -> de')
+add('catalog:    18 models, 2 runnable, 2 installed')
+add('skills:     desert-ant-tongue, desert-ant-voz')
+add('OK — the built artifact loads through package main and works under plain Node.')
+add('```')
+add('')
+add('That is a genuine inference through the BUILT artifact, resolved through the package '
+  + '`main` under plain Node with no TypeScript loader, and it must return `de` for German or '
+  + 'the check throws. Tongue is pure JavaScript with its weights bundled, so no runtime, '
+  + 'download or accelerator is required. Voz runs through `onnxruntime-node` on CPU.')
+add('')
+add('The accurate statement is therefore much narrower than the one it replaced: **two of the '
+  + 'eighteen catalogued models run on this host, and the other sixteen do not** — most because '
+  + 'their LiteRT/TFLite runtime has no win32-x64 native build, `title` because it is Apple-only, '
+  + 'and six because they are closed beta with no shipping SDK.')
+add('')
 add('## Where every family stands')
 add('')
 add('| Family | What it covers | Done | Partial | Blocked | Not run |')
@@ -136,16 +173,31 @@ if (at) {
   add(`| \`AT\` | The 90 acceptance tests from the verification checklist | ${at.DONE} | ${at.PARTIAL} | ${at.BLOCKED} | ${at.NOT_RUN} |`)
 }
 add('')
-add('### The dominant cause is absent infrastructure, not absent effort')
+add('### Unstarted work that is IMPLEMENTATION, not a missing artifact')
 add('')
-for (const [cause, families] of CAUSES) {
+add('An earlier version of this report classified these as external blockers. That was wrong, '
+  + 'and the correction matters because a blocker removes the obligation to do the work.')
+add('')
+for (const [gap, families] of IMPLEMENTATION_GAPS) {
   const count = families.reduce((sum, family) => sum + (byFamily.get(family)?.NOT_RUN ?? 0), 0)
-  add(`- **${count} unstarted requirements ${cause}** — ${families.map(f => `\`${f}\``).join(', ')}`)
+  add(`- **${gap}** — ${count} unstarted requirements in ${families.map(f => `\`${f}\``).join(', ')}`)
 }
 add('')
-add('A worker runtime, a PTC runtime, a published decision package and a Node-distributed extraction '
-  + 'model do not exist on this machine. Requirements that depend on them can be specified and '
-  + 'recorded; they cannot be demonstrated, and they are not recorded as demonstrated.')
+add('Each of these is repository work with a known route: DSH publishes its PTC runtime sources, '
+  + '`EXT-20` assigns managed executable worker hosting to this project, `MODEL-04` permits a '
+  + 'managed native Windows executable, and the Laya TypeScript source and trained checkpoint are '
+  + 'obtainable even though the npm name is not.')
+add('')
+add('### Genuinely external, and narrowly stated')
+add('')
+add('- **npm `laya-ts` returns 404.** This makes the npm ROUTE unavailable. It does **not** '
+  + 'establish that the TypeScript implementation or the checkpoint is unavailable, and the '
+  + 'maintainer-side source build described in `DEC-02` has not been attempted.')
+add('- **A model-quality gate that has not been met.** The Laya multilingual checkpoint ships '
+  + 'uncalibrated, so packaging it does not make it a reliable default. That is a qualification '
+  + 'result, not a blocker, and it is reported rather than worked around.')
+add('- **Target-platform qualification.** Windows clean-install and multi-client interoperability '
+  + 'have not been run on an authorized machine.')
 add('')
 add('## What this report does not claim')
 add('')

@@ -18,7 +18,7 @@ Each claim below is verified by an artifact or an automated check, not by assert
 | Five packages are published and installable | `@try-works/dsh-model-as-tool@0.1.3`, `tool-mode-contracts@0.1.0`, `tool-mode-extension-sdk@0.1.0`, and both extensions at `0.1.0`, each confirmed by a consumer install from the registry |
 | The published host contains no model-specific code | `npm run verify:architecture` fails on a model name, branch or import in host source — and the installed artifact was read to confirm `tongue.js` and `voz.js` are absent from it |
 | Extensions depend only on the published SDK | The same gate: a host-package import, or a path escaping the package, is a violation |
-| The MCP layer conforms to revision `2026-07-28` | 39 checks against a pinned upstream schema, hashed and recorded at a specific commit |
+| The MCP wire layer is schema-conformant for revision `2026-07-28` | 39 checks that validate SAVED REQUEST/RESPONSE FIXTURES against the pinned, hashed upstream schema. **This is not live server conformance**: the probe reads frozen files from disk and never starts the server, which its own documentation states. Live conformance against the running server is not yet demonstrated. |
 | The verification harness refuses to over-claim | A gate asserts the inventory never reports a pass for a partial requirement, never derives a pass from an absence of failure, and reports a blocked item as blocked |
 | There is one dispatch authority | A gate fails the build when a dispatch layer calls a tool definition's `execute` rather than the registry pipeline |
 | Shipped packages declare their licences | Both extensions declare all five layers with no gaps, resolved through the same discovery path a host uses |
@@ -47,6 +47,23 @@ These are not implementation gaps. There is no artifact to integrate, and no fur
 - **NDL-01** — Windows/Node runtime.
   - Needle exists upstream (github.com/cactus-compute/needle, HF cactus-compute/needle) but no verified Node/WASM distribution for Needle 3 was found; the runtime strategy is unqualified.
 
+## What actually runs on this host
+
+An earlier version of this report said no real model runs here. **That was wrong**, and `scripts/verify-built.mjs` disproves it on every `npm run verify`:
+
+```
+$ npm run verify:built
+tools:      lang_detect, stt_transcribe, model_tools
+inference:  "kann ich das haben" -> de
+catalog:    18 models, 2 runnable, 2 installed
+skills:     desert-ant-tongue, desert-ant-voz
+OK — the built artifact loads through package main and works under plain Node.
+```
+
+That is a genuine inference through the BUILT artifact, resolved through the package `main` under plain Node with no TypeScript loader, and it must return `de` for German or the check throws. Tongue is pure JavaScript with its weights bundled, so no runtime, download or accelerator is required. Voz runs through `onnxruntime-node` on CPU.
+
+The accurate statement is therefore much narrower than the one it replaced: **two of the eighteen catalogued models run on this host, and the other sixteen do not** — most because their LiteRT/TFLite runtime has no win32-x64 native build, `title` because it is Apple-only, and six because they are closed beta with no shipping SDK.
+
 ## Where every family stands
 
 | Family | What it covers | Done | Partial | Blocked | Not run |
@@ -60,7 +77,7 @@ These are not implementation gaps. There is no artifact to integrate, and no fur
 | `HLM` | Host language model integration | 0 | 0 | 0 | 14 |
 | `LIC` | Licensing, attribution and permission records | 0 | 4 | 0 | 0 |
 | `MCP` | Model Context Protocol wire conformance | 0 | 11 | 0 | 2 |
-| `MOD` | Modular composition | 0 | 0 | 0 | 20 |
+| `MOD` | Multimodal EmbeddingGemma 2 inference | 0 | 0 | 0 | 20 |
 | `MODEL` | Model identity, qualification and capability | 0 | 4 | 2 | 0 |
 | `NDL` | Needle integration decisions | 0 | 0 | 1 | 7 |
 | `OBS` | Observability and diagnostics | 0 | 0 | 0 | 5 |
@@ -73,13 +90,22 @@ These are not implementation gaps. There is no artifact to integrate, and no fur
 | `TOOL` | Per-tool behavioural contracts | 0 | 4 | 1 | 1 |
 | `AT` | The 90 acceptance tests from the verification checklist | 0 | 2 | 0 | 88 |
 
-### The dominant cause is absent infrastructure, not absent effort
+### Unstarted work that is IMPLEMENTATION, not a missing artifact
 
-- **58 unstarted requirements needs a worker, PTC or recipe runtime that does not exist here** — `HLM`, `RCP`, `CODE`, `MOD`
-- **13 unstarted requirements needs a model or package that is not published** — `DEC`, `NDL`
-- **1 unstarted requirements needs a real model running to be exercised** — `TOOL`, `MODEL`, `RES`
+An earlier version of this report classified these as external blockers. That was wrong, and the correction matters because a blocker removes the obligation to do the work.
 
-A worker runtime, a PTC runtime, a published decision package and a Node-distributed extraction model do not exist on this machine. Requirements that depend on them can be specified and recorded; they cannot be demonstrated, and they are not recorded as demonstrated.
+- **extension-host worker bridge and lifecycle (EXT-20)** — 15 unstarted requirements in `EXT`
+- **DSH PTC composition and the external run surface (CODE-01..03)** — 12 unstarted requirements in `CODE`
+- **provider-neutral LLM broker and recipe interpreter (HLM, RCP)** — 26 unstarted requirements in `HLM`, `RCP`
+- **multimodal EmbeddingGemma 2 inference (MOD-01..)** — 20 unstarted requirements in `MOD`
+
+Each of these is repository work with a known route: DSH publishes its PTC runtime sources, `EXT-20` assigns managed executable worker hosting to this project, `MODEL-04` permits a managed native Windows executable, and the Laya TypeScript source and trained checkpoint are obtainable even though the npm name is not.
+
+### Genuinely external, and narrowly stated
+
+- **npm `laya-ts` returns 404.** This makes the npm ROUTE unavailable. It does **not** establish that the TypeScript implementation or the checkpoint is unavailable, and the maintainer-side source build described in `DEC-02` has not been attempted.
+- **A model-quality gate that has not been met.** The Laya multilingual checkpoint ships uncalibrated, so packaging it does not make it a reliable default. That is a qualification result, not a blocker, and it is reported rather than worked around.
+- **Target-platform qualification.** Windows clean-install and multi-client interoperability have not been run on an authorized machine.
 
 ## What this report does not claim
 

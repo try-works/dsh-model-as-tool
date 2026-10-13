@@ -76,31 +76,54 @@ Other checks:
 | --- | --- |
 | `npm test` | 721 tests across five packages |
 | `npm run verify:architecture` | The host holds no model-specific code |
-| `npm run verify:mcp` | 39 checks against MCP revision `2026-07-28`, pinned and hashed at a specific upstream commit |
+| `npm run verify:built` | **A real inference through the built artifact** — `lang_detect` on German text must return `de` |
+| `npm run verify:mcp` | 39 checks validating SAVED FIXTURES against the pinned `2026-07-28` schema — not live server conformance |
 | `npm run verify:verification` | The evidence never reports a pass for a partial requirement |
 | `npm run traceability` | Regenerates the requirement-by-requirement traceability table |
 
-## What is blocked, and why
+## What runs on this host
 
-These are not implementation gaps. There is no artifact to integrate, and no further work
-in this repository changes that:
+Two of the eighteen catalogued models run here, and the other sixteen do not:
 
-- **Decision tools** (`DEC-01`, `DEC-02`, `MODEL-02`, `TOOL-02`) — npm `laya-ts` returns
-  404, so the model's trained decision heads have no published Node entry point.
-- **Structured extraction** (`NDL-01`, `MODEL-03`) — Needle 3 exists, but no verified Node
-  or WASM distribution was found.
+- **Tongue** — pure JavaScript, weights bundled (2 MB), no runtime or accelerator needed.
+- **Voz** — `onnxruntime-node` on CPU.
 
-The remaining unstarted work is dominated by three absent pieces of infrastructure: a
-worker runtime, a PTC runtime, and a real model running on this host. Requirements that
-depend on them can be specified and recorded; they cannot be demonstrated.
+The other sixteen are unavailable for concrete reasons: most LiteRT/TFLite models have no
+`win32-x64` native build, `title` is Apple-only (Core ML / MLX, no JS SDK), and six are
+closed beta with no shipping SDK.
+
+## What is unfinished, and what is actually blocked
+
+Most of what is unstarted is **implementation with a known route**, not a missing artifact:
+the extension-host worker bridge (`EXT-20`), DSH PTC composition (`CODE-01..03`), the
+provider-neutral LLM broker and recipe interpreter (`HLM`, `RCP`), and multimodal
+EmbeddingGemma 2 inference (`MOD-01..`). DSH publishes its PTC runtime sources, `MODEL-04`
+permits a managed native Windows executable, and the Laya TypeScript source and checkpoint
+are obtainable even though the npm name is not.
+
+**Genuinely external, stated narrowly:**
+
+- **npm `laya-ts` returns 404** — the npm *route* is unavailable. This does not establish
+  that the TypeScript implementation or the checkpoint is unavailable, and the
+  maintainer-side source build `DEC-02` describes has not been attempted.
+- **The Laya multilingual checkpoint ships uncalibrated** — packaging it does not make it a
+  reliable default. That is a qualification result to report, not a blocker to work around.
+- **Target-platform qualification** — Windows clean-install and multi-client
+  interoperability have not been run on an authorized machine.
 
 ## MCP compatibility
 
-This implements MCP revision **`2026-07-28`**. The published `@modelcontextprotocol/sdk`
-does *not* support that revision — it caps at `2025-11-25` — so the wire layer is a
-schema-conformant adaptation checked against the pinned upstream schema rather than an
-SDK wrapper. The pinned schema, its commit and its SHA-256 hashes are recorded in
+This targets MCP revision **`2026-07-28`**. The published `@modelcontextprotocol/sdk` does
+*not* support that revision — it caps at `2025-11-25` — so the wire layer is a
+schema-conformant adaptation checked against the pinned upstream schema rather than an SDK
+wrapper. The pinned schema, its commit and its SHA-256 hashes are recorded in
 `docs/tool-mode/specs/`.
+
+**Scope of that check, stated precisely:** the 39 probe checks validate **saved
+request/response fixtures** against the pinned schema. The probe reads frozen files from
+disk and never starts the server — its own documentation says so. It is a useful
+schema-fixture test and it is **not** live server conformance. Live conformance against a
+running server is not yet demonstrated.
 
 ## Licensing
 
