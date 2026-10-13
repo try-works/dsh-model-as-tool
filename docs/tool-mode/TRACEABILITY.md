@@ -19,7 +19,7 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **3** / 227 (1%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **152**
+- Requirements NOT_RUN: **148**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
@@ -34,7 +34,7 @@ is the honest default rather than an omission.
 | DECL | 8 | 0 | 4 | 4 | 0 |
 | TOOL | 6 | 0 | 2 | 4 | 0 |
 | MODEL | 6 | 0 | 1 | 5 | 0 |
-| LIC | 4 | 0 | 0 | 4 | 0 |
+| LIC | 4 | 0 | 4 | 0 | 0 |
 | RES | 10 | 0 | 10 | 0 | 0 |
 | CODE | 12 | 0 | 0 | 12 | 0 |
 | OBS | 5 | 0 | 0 | 5 | 0 |
@@ -162,10 +162,10 @@ is the honest default rather than an omission.
 
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| LIC-01 |  | 9. Model licensing and availability | NOT_RUN | — |
-| LIC-02 |  | 9. Model licensing and availability | NOT_RUN | — |
-| LIC-03 |  | 9. Model licensing and availability | NOT_RUN | — |
-| LIC-04 |  | 9. Model licensing and availability | NOT_RUN | — |
+| LIC-01 |  | 9. Model licensing and availability | PARTIAL | Licences are tracked INDEPENDENTLY per layer - code, engine, weights, conversion artifacts and SDK - and a missing layer is reported as a GAP rather than defaulting, because an adapter MIT licence says nothing about the weights it loads. Attribution notices are collected from every layer that requires one into a single record and removed from the layer that declared them, so a notice cannot be dropped by being filed where nobody reads it. missingNotices reports which required notices are absent from a shipped notice file. PACKAGING A MODEL IS NOT A REDISTRIBUTION GRANT, asserted directly: mayPackageWeights returns true only for an explicit permitted redistribution, and an UNCLEAR redistribution is treated as NOT permitted, because treating an unexamined licence as permitted is how a package ships bytes it had no right to. Remaining: the extension manifest does NOT declare per-layer licences, so no real package produces a resolved record and the layers are exercised by test alone; nothing persists a record into an installation record; and no notice file is generated or shipped. |
+| LIC-02 |  | 9. Model licensing and availability | PARTIAL | The vendor licence is encoded from the researched terms rather than restated from memory, and the facts a deployer must act on are asserted individually so a later edit that quietly loosens one fails: it is SOURCE-AVAILABLE and NOT open source, redistribution is NOT permitted for the weights and the SDK, attribution is required with the notice text "Powered by Desert Ant Labs", and the obligations are stated rather than implied. The encoded obligations include the ones that constrain this plugin directly: a commercial licence above the per-platform per-model active-device threshold, no redistributing the model or SDK or a hosted service as a standalone product, no using outputs or logs to train a competing on-device model, no weight extraction, and no tampering with the usage telemetry. Remaining: the licence is not attached to any catalog model, so nothing verifies that a selected model carries the Desert Ant terms; the per-platform per-model threshold is recorded as an obligation but NOT counted or enforced, because nothing tracks active devices; and no vendor clarification has been obtained for the export-boundary question, which LIC-03 requires a human to record. |
+| LIC-03 |  | 9. Model licensing and availability | PARTIAL | A permission basis is a HUMAN RECORD carrying the scope it covers, one of four basis kinds, the responsible person and the time, plus what it excludes - and there is deliberately NO config-boolean member in the type, because a type that cannot express one is a stronger guarantee than a comment saying not to use one. A runtime guard asserts a boolean, a string and an empty object are all rejected, and that an unattributed record is refused. EXPORT IS SCOPED TO THE PROVIDER: an unresolved external-export permission blocks that provider ONLY, and the refusal message says so in as many words, because one unresolved question must not disable the whole plugin. Native use and external export are separate scopes, so a native-use permission alone does not authorise export - which is the point of tracking scopes independently. Remaining: no permission record is actually recorded for any provider, so nothing is exportable today; there is no CLI or management surface to record one; and no vendor clarification or qualified review has been obtained, which is the human step the requirement asks for and which this implementation cannot perform for itself. |
+| LIC-04 |  | 9. Model licensing and availability | PARTIAL | A strict no-network deployment admits only an implementation whose DECLARED behaviour allows it, and an implementation requiring usage telemetry is INELIGIBLE. THE TELEMETRY IS NOT SUPPRESSED TO MAKE IT ELIGIBLE. There is no parameter for suppression, and a test asserts the verdict carries none, because quietly disabling required telemetry would breach the licence and misdescribe the product at the same time. The refusal carries a QUALIFIED ALTERNATIVE rather than being bare: choose an implementation whose licence requires no telemetry, or run a profile that permits it. describeNetwork DERIVES the description from the declared behaviour, so telemetry-bearing software cannot be described as network-free by a deployer choosing different words, and naming what the telemetry carries is what makes the description accurate rather than merely cautious. Remaining: no implementation declares its network behaviour, so the verdict is exercised by test alone; there is no profile concept to select a no-network deployment with; and the Desert Ant telemetry is not wired into any declaration, so the one case that most needs this check is not yet connected to it. |
 
 ## RES — 10 requirement(s)
 

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-13T19:22:34.298Z",
+  "generatedAt": "2026-10-13T19:28:36.442Z",
   "git": {
-    "commit": "3b703ae5c5733fc36662b8c7b2bacb946c28aa40",
+    "commit": "50413e2cbb7848e30ce8d137962bc13b0b9d95b9",
     "branch": "main",
     "dirty": true
   },
@@ -57,9 +57,9 @@
   ],
   "counts": {
     "PASS": 3,
-    "FAIL": 69,
+    "FAIL": 73,
     "BLOCKED": 3,
-    "NOT_RUN": 242,
+    "NOT_RUN": 238,
     "NOT_APPLICABLE": 0
   },
   "requirements": [
@@ -923,9 +923,9 @@
       "owningModule": "packages/dsh-model-as-tool/catalog/desert-ant-models.json",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "Licences are tracked INDEPENDENTLY per layer - code, engine, weights, conversion artifacts and SDK - and a missing layer is reported as a GAP rather than defaulting, because an adapter MIT licence says nothing about the weights it loads. Attribution notices are collected from every layer that requires one into a single record and removed from the layer that declared them, so a notice cannot be dropped by being filed where nobody reads it. missingNotices reports which required notices are absent from a shipped notice file. PACKAGING A MODEL IS NOT A REDISTRIBUTION GRANT, asserted directly: mayPackageWeights returns true only for an explicit permitted redistribution, and an UNCLEAR redistribution is treated as NOT permitted, because treating an unexamined licence as permitted is how a package ships bytes it had no right to. Remaining: the extension manifest does NOT declare per-layer licences, so no real package produces a resolved record and the layers are exercised by test alone; nothing persists a record into an installation record; and no notice file is generated or shipped."
     },
     {
       "id": "LIC-02",
@@ -935,9 +935,9 @@
       "owningModule": "packages/dsh-model-as-tool/catalog/desert-ant-models.json",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "The vendor licence is encoded from the researched terms rather than restated from memory, and the facts a deployer must act on are asserted individually so a later edit that quietly loosens one fails: it is SOURCE-AVAILABLE and NOT open source, redistribution is NOT permitted for the weights and the SDK, attribution is required with the notice text \"Powered by Desert Ant Labs\", and the obligations are stated rather than implied. The encoded obligations include the ones that constrain this plugin directly: a commercial licence above the per-platform per-model active-device threshold, no redistributing the model or SDK or a hosted service as a standalone product, no using outputs or logs to train a competing on-device model, no weight extraction, and no tampering with the usage telemetry. Remaining: the licence is not attached to any catalog model, so nothing verifies that a selected model carries the Desert Ant terms; the per-platform per-model threshold is recorded as an obligation but NOT counted or enforced, because nothing tracks active devices; and no vendor clarification has been obtained for the export-boundary question, which LIC-03 requires a human to record."
     },
     {
       "id": "LIC-03",
@@ -947,9 +947,9 @@
       "owningModule": "packages/dsh-model-as-tool/catalog/desert-ant-models.json",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "A permission basis is a HUMAN RECORD carrying the scope it covers, one of four basis kinds, the responsible person and the time, plus what it excludes - and there is deliberately NO config-boolean member in the type, because a type that cannot express one is a stronger guarantee than a comment saying not to use one. A runtime guard asserts a boolean, a string and an empty object are all rejected, and that an unattributed record is refused. EXPORT IS SCOPED TO THE PROVIDER: an unresolved external-export permission blocks that provider ONLY, and the refusal message says so in as many words, because one unresolved question must not disable the whole plugin. Native use and external export are separate scopes, so a native-use permission alone does not authorise export - which is the point of tracking scopes independently. Remaining: no permission record is actually recorded for any provider, so nothing is exportable today; there is no CLI or management surface to record one; and no vendor clarification or qualified review has been obtained, which is the human step the requirement asks for and which this implementation cannot perform for itself."
     },
     {
       "id": "LIC-04",
@@ -959,9 +959,9 @@
       "owningModule": "packages/dsh-model-as-tool/catalog/desert-ant-models.json",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "A strict no-network deployment admits only an implementation whose DECLARED behaviour allows it, and an implementation requiring usage telemetry is INELIGIBLE. THE TELEMETRY IS NOT SUPPRESSED TO MAKE IT ELIGIBLE. There is no parameter for suppression, and a test asserts the verdict carries none, because quietly disabling required telemetry would breach the licence and misdescribe the product at the same time. The refusal carries a QUALIFIED ALTERNATIVE rather than being bare: choose an implementation whose licence requires no telemetry, or run a profile that permits it. describeNetwork DERIVES the description from the declared behaviour, so telemetry-bearing software cannot be described as network-free by a deployer choosing different words, and naming what the telemetry carries is what makes the description accurate rather than merely cautious. Remaining: no implementation declares its network behaviour, so the verdict is exercised by test alone; there is no profile concept to select a no-network deployment with; and the Desert Ant telemetry is not wired into any declaration, so the one case that most needs this check is not yet connected to it."
     },
     {
       "id": "CODE-01",
@@ -3956,10 +3956,10 @@
     "TOOL-04 is NOT_RUN",
     "TOOL-05 is NOT_RUN",
     "TOOL-06 is NOT_RUN",
-    "LIC-01 is NOT_RUN",
-    "LIC-02 is NOT_RUN",
-    "LIC-03 is NOT_RUN",
-    "LIC-04 is NOT_RUN",
+    "LIC-01 is FAIL",
+    "LIC-02 is FAIL",
+    "LIC-03 is FAIL",
+    "LIC-04 is FAIL",
     "CODE-01 is NOT_RUN",
     "CODE-02 is NOT_RUN",
     "CODE-03 is NOT_RUN",
@@ -4244,10 +4244,6 @@
     "TOOL-04",
     "TOOL-05",
     "TOOL-06",
-    "LIC-01",
-    "LIC-02",
-    "LIC-03",
-    "LIC-04",
     "CODE-01",
     "CODE-02",
     "CODE-03",

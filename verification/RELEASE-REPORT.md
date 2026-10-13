@@ -1,6 +1,6 @@
 # Tool Mode release report
 
-Generated 2026-10-13T19:22:34.298Z from commit `3b703ae5c5733fc36662b8c7b2bacb946c28aa40` (working tree DIRTY, so this describes a state that exists in no commit).
+Generated 2026-10-13T19:28:36.442Z from commit `50413e2cbb7848e30ce8d137962bc13b0b9d95b9` (working tree DIRTY, so this describes a state that exists in no commit).
 
 ## How to reproduce
 
@@ -23,9 +23,9 @@ requirements needing either are recorded as BLOCKED or NOT_RUN rather than PASS.
 | Status | Count |
 |---|---|
 | PASS | 3 |
-| FAIL | 69 |
+| FAIL | 73 |
 | BLOCKED | 3 |
-| NOT_RUN | 242 |
+| NOT_RUN | 238 |
 | NOT_APPLICABLE | 0 |
 
 Total: 317 requirements, of which 3 PASS.
@@ -51,7 +51,7 @@ Total: 317 requirements, of which 3 PASS.
 ## Known limitations and unresolved gates
 
 314 requirement(s) are not PASS.
-239 requirement(s) have no status written for them, and are reported as NOT_RUN.
+235 requirement(s) have no status written for them, and are reported as NOT_RUN.
 No status key names something that is not a requirement.
 
 The first 40 unresolved requirements:
