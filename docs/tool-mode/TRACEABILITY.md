@@ -19,20 +19,20 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **1** / 210 (0%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **205**
+- Requirements NOT_RUN: **197**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
 
 | Family | Total | DONE | PARTIAL | NOT_RUN | BLOCKED |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| BASE | 14 | 1 | 0 | 13 | 0 |
+| BASE | 14 | 1 | 2 | 11 | 0 |
 | ARCH | 6 | 0 | 0 | 6 | 0 |
 | RUN | 8 | 0 | 0 | 8 | 0 |
 | MCP | 13 | 0 | 0 | 13 | 0 |
 | SEC | 10 | 0 | 0 | 10 | 0 |
-| DECL | 8 | 0 | 0 | 8 | 0 |
-| TOOL | 6 | 0 | 0 | 6 | 0 |
+| DECL | 8 | 0 | 4 | 4 | 0 |
+| TOOL | 6 | 0 | 2 | 4 | 0 |
 | MODEL | 6 | 0 | 1 | 5 | 0 |
 | LIC | 4 | 0 | 0 | 4 | 0 |
 | RES | 10 | 0 | 0 | 10 | 0 |
@@ -51,9 +51,9 @@ is the honest default rather than an omission.
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | BASE-01 |  | 2. Verified starting point and upgrade requirements | DONE | Catalog, adapters, skills, persistence and platform checks preserved; the plugin was extended in place across commits fcb79ea..2e27e2a rather than recreated. |
-| BASE-02 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | Tool identity is still per-model (`transcribe_audio` per Voz). Capability strings exist in the catalog as metadata only and nothing branches on them. |
-| BASE-03 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | `lang_detect` exists, but the canonical name is `transcribe_audio`, not `stt_transcribe`, and no opt-in compatibility alias exists. |
-| BASE-04 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
+| BASE-02 |  | 2. Verified starting point and upgrade requirements | PARTIAL | The contract layer now names tools independently of models: `@try-works/tool-mode-contracts` defines `stt_transcribe`/`lang_detect` with no model id anywhere in them (asserted by test). The HOST still registers one tool per model, so the binding is not yet consumed. |
+| BASE-03 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | `lang_detect` preserved and `stt_transcribe` now exists as a contract name, but the host still registers `transcribe_audio`, and no opt-in deprecated alias or hidden-from-default-catalog behaviour exists yet. |
+| BASE-04 |  | 2. Verified starting point and upgrade requirements | PARTIAL | Explicit requiredness from the schema's `required` array, real per-tool output schemas, tested cross-field rules and refusal to silently drop unrepresentable constraints (ProjectionError) are implemented and tested in tool-mode-contracts. The existing host registrar still infers requiredness from parameter order. |
 | BASE-05 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-06 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-07 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
@@ -126,10 +126,10 @@ is the honest default rather than an omission.
 
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| DECL-01 |  | 7. Declarations, output contracts, discovery, and skills | NOT_RUN | — |
-| DECL-02 |  | 7. Declarations, output contracts, discovery, and skills | NOT_RUN | — |
-| DECL-03 |  | 7. Declarations, output contracts, discovery, and skills | NOT_RUN | — |
-| DECL-04 |  | 7. Declarations, output contracts, discovery, and skills | NOT_RUN | — |
+| DECL-01 |  | 7. Declarations, output contracts, discovery, and skills | PARTIAL | Contracts are authored once with stable name, identity, version, input/output schema, semantics, limits and unsupported cases; DSH parameter projection is generated from that one source. MCP projection and Code Mode type generation are not implemented. |
+| DECL-02 |  | 7. Declarations, output contracts, discovery, and skills | PARTIAL | The two standard contracts publish real requiredness, nesting, nullability and units, and validation REFUSES an open-object output or a missing envelope (tested). Covers 2 of the release tool set; the remaining contracts do not exist. |
+| DECL-03 |  | 7. Declarations, output contracts, discovery, and skills | PARTIAL | ToolMeta is defined once with contract/contractVersion/implementationId/extension/extensionVersion/activationGeneration/executionLocation/receiptId/warnings and every result is schema-validated against it. Host-side stamping of authoritative provenance is not implemented. |
+| DECL-04 |  | 7. Declarations, output contracts, discovery, and skills | PARTIAL | Contracts declare scoreKind/calibrated, and a fabricated `confidence` field is refused by output validation (tested). Not yet enforced across the whole tool surface. |
 | DECL-05 |  | 7. Declarations, output contracts, discovery, and skills | NOT_RUN | — |
 | DECL-06 |  | 7. Declarations, output contracts, discovery, and skills | NOT_RUN | — |
 | DECL-07 |  | 7. Declarations, output contracts, discovery, and skills | NOT_RUN | — |
@@ -139,9 +139,9 @@ is the honest default rather than an omission.
 
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| TOOL-01 | Transcription. | 8. Release tool set and model recommendations | NOT_RUN | — |
+| TOOL-01 | Transcription. | 8. Release tool set and model recommendations | PARTIAL | The stt.transcribe contract declares transcription-not-translation, seconds from start-of-audio, empty-is-valid, partial coverage via coverage.complete, error-on-unsupported-timestamp, and the admitted 16 kHz mono PCM16 WAV limits. No implementation is bound and no real audio has been transcribed through it. |
 | TOOL-02 | Decisions. | 8. Release tool set and model recommendations | NOT_RUN | — |
-| TOOL-03 | Language. | 8. Release tool set and model recommendations | NOT_RUN | — |
+| TOOL-03 | Language. | 8. Release tool set and model recommendations | PARTIAL | The text.language_detect contract preserves ambiguity (candidates + tooCloseToCall), declares scoreKind, and states that it is written-text-only and not evidence about spoken audio. Not yet bound to an implementation through the contract. |
 | TOOL-04 | Legacy text embeddings. | 8. Release tool set and model recommendations | NOT_RUN | — |
 | TOOL-05 | Cross-encoder reranking. | 8. Release tool set and model recommendations | NOT_RUN | — |
 | TOOL-06 | Titles. | 8. Release tool set and model recommendations | NOT_RUN | — |

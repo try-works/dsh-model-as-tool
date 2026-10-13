@@ -17,13 +17,62 @@
     "AT-04": "NOT_RUN and currently unreachable: requires a genuine 2026-07-28 reference client. The published SDK cannot speak that revision, so the client side must come from the schema-conformant adaptation described under MCP-01."
   },
   "requirements": {
-    "BASE-01": { "status": "DONE", "evidence": "Catalog, adapters, skills, persistence and platform checks preserved; the plugin was extended in place across commits fcb79ea..2e27e2a rather than recreated." },
-    "BASE-02": { "status": "NOT_RUN", "evidence": "Tool identity is still per-model (`transcribe_audio` per Voz). Capability strings exist in the catalog as metadata only and nothing branches on them." },
-    "BASE-03": { "status": "NOT_RUN", "evidence": "`lang_detect` exists, but the canonical name is `transcribe_audio`, not `stt_transcribe`, and no opt-in compatibility alias exists." },
-    "MODEL-01": { "status": "PARTIAL", "evidence": "Availability verified only: google/embeddinggemma-2 exists on Hugging Face ungated (124,930 downloads). No adapter, packaging or modality test exists yet." },
-    "DEC-01": { "status": "BLOCKED", "evidence": "No distribution channel: npm `laya-ts` returns 404 and no published Node entry point for Laya was found. Needs an operator decision (see note)." },
-    "DEC-02": { "status": "BLOCKED", "evidence": "Same missing `laya-ts` entry point, plus DEC-02 requires a maintainer-run ONNX export in CI with numerical-parity evidence, which needs the source checkpoint and a Python toolchain." },
-    "NDL-01": { "status": "BLOCKED", "evidence": "Needle exists upstream (github.com/cactus-compute/needle, HF cactus-compute/needle) but no verified Node/WASM distribution for Needle 3 was found; the runtime strategy is unqualified." }
+    "BASE-01": {
+      "status": "DONE",
+      "evidence": "Catalog, adapters, skills, persistence and platform checks preserved; the plugin was extended in place across commits fcb79ea..2e27e2a rather than recreated."
+    },
+    "BASE-02": {
+      "status": "PARTIAL",
+      "evidence": "The contract layer now names tools independently of models: `@try-works/tool-mode-contracts` defines `stt_transcribe`/`lang_detect` with no model id anywhere in them (asserted by test). The HOST still registers one tool per model, so the binding is not yet consumed."
+    },
+    "BASE-03": {
+      "status": "NOT_RUN",
+      "evidence": "`lang_detect` preserved and `stt_transcribe` now exists as a contract name, but the host still registers `transcribe_audio`, and no opt-in deprecated alias or hidden-from-default-catalog behaviour exists yet."
+    },
+    "BASE-04": {
+      "status": "PARTIAL",
+      "evidence": "Explicit requiredness from the schema's `required` array, real per-tool output schemas, tested cross-field rules and refusal to silently drop unrepresentable constraints (ProjectionError) are implemented and tested in tool-mode-contracts. The existing host registrar still infers requiredness from parameter order."
+    },
+    "MODEL-01": {
+      "status": "PARTIAL",
+      "evidence": "Availability verified only: google/embeddinggemma-2 exists on Hugging Face ungated (124,930 downloads). No adapter, packaging or modality test exists yet."
+    },
+    "DECL-01": {
+      "status": "PARTIAL",
+      "evidence": "Contracts are authored once with stable name, identity, version, input/output schema, semantics, limits and unsupported cases; DSH parameter projection is generated from that one source. MCP projection and Code Mode type generation are not implemented."
+    },
+    "DECL-02": {
+      "status": "PARTIAL",
+      "evidence": "The two standard contracts publish real requiredness, nesting, nullability and units, and validation REFUSES an open-object output or a missing envelope (tested). Covers 2 of the release tool set; the remaining contracts do not exist."
+    },
+    "DECL-03": {
+      "status": "PARTIAL",
+      "evidence": "ToolMeta is defined once with contract/contractVersion/implementationId/extension/extensionVersion/activationGeneration/executionLocation/receiptId/warnings and every result is schema-validated against it. Host-side stamping of authoritative provenance is not implemented."
+    },
+    "DECL-04": {
+      "status": "PARTIAL",
+      "evidence": "Contracts declare scoreKind/calibrated, and a fabricated `confidence` field is refused by output validation (tested). Not yet enforced across the whole tool surface."
+    },
+    "TOOL-01": {
+      "status": "PARTIAL",
+      "evidence": "The stt.transcribe contract declares transcription-not-translation, seconds from start-of-audio, empty-is-valid, partial coverage via coverage.complete, error-on-unsupported-timestamp, and the admitted 16 kHz mono PCM16 WAV limits. No implementation is bound and no real audio has been transcribed through it."
+    },
+    "TOOL-03": {
+      "status": "PARTIAL",
+      "evidence": "The text.language_detect contract preserves ambiguity (candidates + tooCloseToCall), declares scoreKind, and states that it is written-text-only and not evidence about spoken audio. Not yet bound to an implementation through the contract."
+    },
+    "DEC-01": {
+      "status": "BLOCKED",
+      "evidence": "No distribution channel: npm `laya-ts` returns 404 and no published Node entry point for Laya was found. Needs an operator decision (see note)."
+    },
+    "DEC-02": {
+      "status": "BLOCKED",
+      "evidence": "Same missing `laya-ts` entry point, plus DEC-02 requires a maintainer-run ONNX export in CI with numerical-parity evidence, which needs the source checkpoint and a Python toolchain."
+    },
+    "NDL-01": {
+      "status": "BLOCKED",
+      "evidence": "Needle exists upstream (github.com/cactus-compute/needle, HF cactus-compute/needle) but no verified Node/WASM distribution for Needle 3 was found; the runtime strategy is unqualified."
+    }
   },
   "acceptance": {}
 }
