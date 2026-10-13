@@ -30,6 +30,7 @@ import {
   type HeaderInput,
   type WireRequest,
 } from './protocol.ts'
+import type { SubscriptionRegistry } from './subscriptions.ts'
 
 /** One tool as the MCP surface describes it. */
 export interface McpToolDefinition {
@@ -82,6 +83,14 @@ export interface DispatchResult {
   readonly response?: Record<string, unknown>
   /** The HTTP status the transport should use. */
   readonly httpStatus: number
+  /**
+   * Notifications the transport must deliver after the response (P26-09).
+   *
+   * Carried on the result rather than written into the body, because a notification
+   * is a separate message: embedding one inside a result would produce a frame that
+   * is not a valid result and not a valid notification.
+   */
+  readonly followUp?: readonly Record<string, unknown>[]
 }
 
 /**
@@ -122,6 +131,16 @@ export async function dispatch(
     readonly signal?: AbortSignal
     /** Whether the transport checks headers at all; stdio has none to check. */
     readonly checkHeaders?: boolean
+    /**
+     * The catalog subscription registry (P26-09).
+     *
+     * Optional so a host that offers no subscriptions does not have to construct one;
+     * subscriptions/listen then reports the method as unsupported rather than
+     * accepting a subscription it cannot serve.
+     */
+    readonly subscriptions?: SubscriptionRegistry
+    /** The authenticated client, which a subscription is bound to. */
+    readonly clientId?: string
   } = {},
 ): Promise<DispatchResult> {
   const id = request.id ?? null
@@ -171,6 +190,27 @@ export async function dispatch(
           },
           httpStatus: 200,
         }
+      case 'subscriptions/listen': {
+        // P26-09. The acknowledgement is returned WITH the result rather than after
+        // it, so the client cannot observe an event before being told what the server
+        // agreed to send.
+        //
+        // A host with no registry reports the method as unsupported rather than
+        // accepting a subscription it cannot serve: an acknowledged subscription that
+        // never fires is indistinguishable from a broken server.
+        if (options.subscriptions === undefined) {
+          throw new WireError(
+            ERROR_CODES.methodNotFound,
+            'this server does not offer catalog subscriptions',
+          )
+        }
+        const subscription = options.subscriptions.listen(request, options.clientId ?? 'unknown')
+        return {
+          response: { jsonrpc: '2.0', id, result: successResult(subscription.result, host.serverInfo) },
+          httpStatus: 200,
+          followUp: [subscription.acknowledgement],
+        }
+      }
       case 'tools/call':
         return await callTool(request, id, host, options.signal ?? new AbortController().signal)
       default:

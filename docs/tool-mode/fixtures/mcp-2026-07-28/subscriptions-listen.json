@@ -1,0 +1,38 @@
+{
+  "name": "subscriptions-listen",
+  "describes": "subscriptions/listen requesting one supported and one unsupported filter",
+  "expectation": "the result carries the REQUIRED subscriptionId metadata, and the acknowledgement reports only the supported subset",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "sub-1",
+    "method": "subscriptions/listen",
+    "params": {
+      "notifications": {
+        "toolsListChanged": true,
+        "promptsListChanged": true
+      },
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "sub-1",
+    "result": {
+      "resultType": "complete",
+      "_meta": {
+        "io.modelcontextprotocol/subscriptionId": "sub_mv702gs9_1",
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "@try-works/dsh-model-as-tool",
+          "version": "0.1.0"
+        }
+      }
+    }
+  }
+}

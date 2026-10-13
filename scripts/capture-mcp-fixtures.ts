@@ -23,6 +23,7 @@ import {
   type WireRequest,
 } from '../packages/dsh-model-as-tool/src/mcp/protocol.ts'
 import { createHttpHandler, type HttpTransportConfig } from '../packages/dsh-model-as-tool/src/mcp/http.ts'
+import { SubscriptionRegistry } from '../packages/dsh-model-as-tool/src/mcp/subscriptions.ts'
 
 const OUT = 'docs/tool-mode/fixtures/mcp-2026-07-28'
 
@@ -291,6 +292,35 @@ fixtures.push({
   expectation: 'three independent responses, each echoing its own id',
   request: ['par-1', 'par-2', 'par-3'],
   response: concurrency.map(entry => entry.response),
+})
+
+// --- Subscriptions ---------------------------------------------------------
+/**
+ * These exist because their ABSENCE let a real bug through: successResult
+ * overwrote `_meta`, dropping the subscriptionId that SubscriptionsListenResult
+ * REQUIRES. The hand-written test caught it; the fixture corpus could not, because
+ * it had no subscription case to validate.
+ */
+const subscriptionRegistry = new SubscriptionRegistry()
+const listenOutcome = await dispatch(
+  body('subscriptions/listen', { notifications: { toolsListChanged: true, promptsListChanged: true } }, 'sub-1'),
+  host,
+  { subscriptions: subscriptionRegistry, clientId: 'fixture-client' },
+)
+fixtures.push({
+  name: 'subscriptions-listen',
+  describes: 'subscriptions/listen requesting one supported and one unsupported filter',
+  expectation: 'the result carries the REQUIRED subscriptionId metadata, and the acknowledgement reports only the supported subset',
+  request: body('subscriptions/listen', { notifications: { toolsListChanged: true, promptsListChanged: true } }, 'sub-1'),
+  response: listenOutcome.response,
+})
+
+fixtures.push({
+  name: 'subscriptions-acknowledged',
+  describes: 'the acknowledgement emitted after a subscriptions/listen',
+  expectation: 'the acknowledged filter is the SUPPORTED subset, not the requested one, and carries the subscription id',
+  request: body('subscriptions/listen', { notifications: { toolsListChanged: true, promptsListChanged: true } }, 'sub-1'),
+  response: listenOutcome.followUp?.[0] ?? null,
 })
 
 // --- Write the corpus ------------------------------------------------------

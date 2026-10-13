@@ -53,6 +53,8 @@ const RESPONSE_DEFINITION = {
   cancellation: null,
   'unsupported-method': 'JSONRPCErrorResponse',
   'concurrent-discovery': 'ListToolsResultResponse',
+  'subscriptions-listen': 'SubscriptionsListenResultResponse',
+  'subscriptions-acknowledged': 'SubscriptionsAcknowledgedNotification',
 }
 
 /** Request definitions, checked as well as responses. */
@@ -66,6 +68,7 @@ const REQUEST_DEFINITION = {
   // No definition: the pinned schema has no resources/list request, which is the
   // point of the fixture. Claiming ListToolsRequest here was the probe's own bug.
   'unsupported-method': null,
+  'subscriptions-listen': 'SubscriptionsListenRequest',
 }
 
 const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'))
@@ -136,11 +139,23 @@ for (const file of fixtureFiles.sort()) {
   if (fixture.response !== null && typeof fixture.response === 'object' && !Array.isArray(fixture.response)) {
     const hasResult = 'result' in fixture.response
     const hasError = 'error' in fixture.response
-    checks.push({
-      check: 'a message carries a result or an error, never both',
-      ok: hasResult !== hasError,
-      detail: hasResult && hasError ? 'both present' : (hasResult || hasError ? '' : 'neither present'),
-    })
+    // A NOTIFICATION carries a method and neither result nor error. Applying the
+    // response rule to one was this probe's own bug, found by adding the
+    // subscription fixtures that first exercised a notification.
+    const isNotification = 'method' in fixture.response && !('id' in fixture.response)
+    if (isNotification) {
+      checks.push({
+        check: 'a notification carries a method and no result or error',
+        ok: !hasResult && !hasError,
+        detail: hasResult || hasError ? 'a notification carried a result or error member' : '',
+      })
+    } else {
+      checks.push({
+        check: 'a response carries a result or an error, never both',
+        ok: hasResult !== hasError,
+        detail: hasResult && hasError ? 'both present' : (hasResult || hasError ? '' : 'neither present'),
+      })
+    }
   }
 
   results.push({ name: fixture.name, checks })

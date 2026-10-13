@@ -211,7 +211,11 @@ export interface FeatureDeclaration {
 export const ADVERTISED_FEATURES: readonly FeatureDeclaration[] = [
   { feature: 'tools', implemented: true },
   { feature: 'server/discover', implemented: true },
-  { feature: 'subscriptions/listen', implemented: false },
+  // Now implemented, for TOOL-catalog changes only. P26-12 forbids advertising a
+  // feature that is not implemented, and permits advertising one that is: the
+  // acknowledgement reports the supported subset, so the narrower reality is stated
+  // on the wire rather than implied here.
+  { feature: 'subscriptions/listen', implemented: true },
   { feature: 'tasks', implemented: false },
   { feature: 'sampling', implemented: false },
   { feature: 'elicitation', implemented: false },
@@ -274,10 +278,21 @@ export function successResult(
   result: Record<string, unknown>,
   serverInfo: { readonly name: string; readonly version: string },
 ): Record<string, unknown> {
+  // The metadata is MERGED rather than replaced. A method-specific result may carry
+  // its own `_meta` members that the revision requires —
+  // `SubscriptionsListenResult` must contain
+  // `io.modelcontextprotocol/subscriptionId` — and overwriting the object dropped
+  // it, sending a result with a required field missing. A subscription test caught
+  // this; the pinned schema would have caught it too, and did not only because the
+  // fixture corpus has no subscription case yet.
+  const existing = typeof result._meta === 'object' && result._meta !== null
+    ? result._meta as Record<string, unknown>
+    : {}
   return {
     ...result,
     resultType: 'complete',
     _meta: {
+      ...existing,
       [META_KEYS.serverInfo]: { name: serverInfo.name, version: serverInfo.version },
     },
   }

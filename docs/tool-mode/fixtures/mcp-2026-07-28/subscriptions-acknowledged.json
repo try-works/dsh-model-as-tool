@@ -1,0 +1,36 @@
+{
+  "name": "subscriptions-acknowledged",
+  "describes": "the acknowledgement emitted after a subscriptions/listen",
+  "expectation": "the acknowledged filter is the SUPPORTED subset, not the requested one, and carries the subscription id",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "sub-1",
+    "method": "subscriptions/listen",
+    "params": {
+      "notifications": {
+        "toolsListChanged": true,
+        "promptsListChanged": true
+      },
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "method": "notifications/subscriptions/acknowledged",
+    "params": {
+      "notifications": {
+        "toolsListChanged": true
+      },
+      "_meta": {
+        "io.modelcontextprotocol/subscriptionId": "sub_mv702gs9_1"
+      }
+    }
+  }
+}
