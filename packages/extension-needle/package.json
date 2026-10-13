@@ -1,0 +1,41 @@
+{
+  "name": "@try-works/extension-needle",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "First-party Tool Mode extension implementing tools_plan and structured_extract on the Cactus Needle 3 native engine (windows-x86_64/needle.exe)",
+  "license": "MIT",
+  "exports": {
+    "./tool-mode": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./process-bridge": {
+      "types": "./lib/process-bridge.d.ts",
+      "default": "./lib/process-bridge.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "schema",
+    "tool-mode.extension.json",
+    "models.lock.json",
+    "PINNING.md",
+    "README.md"
+  ],
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@try-works/tool-mode-extension-sdk": "^0.1.0"
+  },
+  "devDependencies": {
+    "@try-works/tool-mode-extension-sdk": "^0.1.0",
+    "ajv": "^8.20.0"
+  }
+}

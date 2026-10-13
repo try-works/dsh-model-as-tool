@@ -24,6 +24,8 @@ import { resolveCapability, type ResolvedModel } from './capability.ts'
 import { createAdapter } from './adapters/index.ts'
 import { registerModelTool } from './registrar.ts'
 import { registerContractTool, type ContractBinding, type HostIdentity } from './bindings.ts'
+import { createContributionRegistrar } from './extension-registrar.ts'
+import { ExtensionStore, ExtensionLifecycle } from '@try-works/tool-mode-extension-sdk'
 import { createGrant } from './authority.ts'
 import { ProviderBridge } from './provider-bridge.ts'
 import { buildSurface } from './publication.ts'
@@ -120,6 +122,15 @@ export interface Config {
    * `<DSH_HOME>/model-as-tool/state.json`.
    */
   stateFile?: string
+  /**
+   * Directory of the operator-owned EXTENSION store.
+   *
+   * When set, the host mounts the extension lifecycle and restores the extensions the
+   * operator approved as active. Left unset, no extension is mounted and behaviour is
+   * exactly as before - which is why this is a directory rather than a boolean: an
+   * absent directory is a deployment that has no extensions, not one that forbade them.
+   */
+  extensionStore?: string
   /**
    * Whether `enable`/`disable` persist across restarts. Default true; false
    * restores the earlier session-scoped behaviour.
@@ -987,6 +998,105 @@ export function apply(ctx: Context, config: Config = {}): void {
     }
     installed.clear()
   }, 'model-tools teardown')
+
+  /**
+   * Mount the EXTENSION LIFECYCLE, which is what lets an extension's tools reach the
+   * registry at all.
+   *
+   * This was MISSING: the SDK could install, activate and publish contributions and was
+   * fully tested doing so, but the host never mounted the lifecycle — so an extension
+   * could report `observedActivation: 'active'` with its tool listed and a caller still
+   * could not invoke it. The registrar is the other half of that bridge.
+   *
+   * Opt-in through `extensionStore`, so a deployment with no extensions behaves exactly
+   * as before. RUN-05 governs what happens here: startup RESTORES extensions the operator
+   * already approved and reads their declarations. It performs NO model preparation and
+   * NO package resolution, so nothing downloads because a plugin loaded.
+   */
+  let extensionLifecycle: ExtensionLifecycle | undefined
+  const extensionStoreDir = config.extensionStore ?? ''
+  if (extensionStoreDir.length > 0) {
+    const store = new ExtensionStore(extensionStoreDir)
+    const registrar = createContributionRegistrar({
+      activated: new Set(
+        store.readProfileState('default').value
+          .filter(entry => entry.desiredActivation === 'active')
+          .map(entry => entry.extensionId),
+      ),
+      registry: {
+        registerTool: tool => {
+          // The tool is registered through the SAME DSH registry a native tool uses, so an
+          // extension contribution is subject to the same pipeline rather than a parallel
+          // one (ARCH-05).
+          const dispose = ctx.tools.register(defineTool({
+            name: tool.name,
+            description: `Provided by ${tool.ownerExtension}.`,
+            parameters: {},
+            output: {
+              schema: { type: 'object', additionalProperties: true },
+              render: (_args, value) => [{ type: 'text', text: JSON.stringify(value, null, 2) }],
+            },
+            async execute() {
+              /**
+               * A contribution that reached the registry without an implementation behind
+               * it must REFUSE rather than return an empty success: an extension declares
+               * its tools in a manifest, and a declaration is not an implementation.
+               */
+              throw new Error(
+                `${tool.name} is declared by ${tool.ownerExtension} but no implementation is bound in this build`,
+              )
+            },
+          }))
+          return dispose
+        },
+      },
+      onRefused: (contribution, error) => {
+        ctx.logger.warn(`model-tools: refused ${contribution.name} from ${contribution.extensionId}: ${error.message}`)
+      },
+    })
+    extensionLifecycle = new ExtensionLifecycle({ store, profile: 'default', registrar })
+
+    /**
+     * RESTORE what the operator already approved.
+     *
+     * RUN-05 permits exactly this much at startup: an approved activation may be restored
+     * and its declarations read. It performs NO model preparation and NO package
+     * resolution, so nothing downloads because the plugin loaded.
+     *
+     * A failure is LOGGED rather than thrown: one broken extension must not remove every
+     * working tool (RUN-06).
+     */
+    const installedRecords = store.listInstalled().value
+    const toRestore = store.readProfileState('default').value
+      .filter(entry => entry.desiredActivation === 'active')
+      .map(entry => ({
+        extensionId: entry.extensionId,
+        version: installedRecords.find(candidate => candidate.extensionId === entry.extensionId)?.version,
+      }))
+      .filter((entry): entry is { extensionId: string; version: string } => entry.version !== undefined)
+
+    /**
+     * `apply` is SYNCHRONOUS, so restoration runs as a settled chain rather than blocking
+     * plugin load. That is also the right behaviour: a host must not stall on each
+     * extension's activation, and RUN-06 says one broken extension must not prevent the
+     * rest from working — so every failure is logged and the chain continues.
+     */
+    const lifecycleForRestore = extensionLifecycle
+    void (async () => {
+      for (const entry of toRestore) {
+        try {
+          await lifecycleForRestore.activate(entry.extensionId, entry.version)
+        } catch (error) {
+          ctx.logger.warn(
+            `model-tools: could not restore ${entry.extensionId}: `
+            + `${error instanceof Error ? error.message : String(error)}`,
+          )
+        }
+      }
+    })()
+    ctx.effect(() => () => { extensionLifecycle = undefined }, 'model-tools extension teardown')
+    ctx.logger.info(`model-tools: extension store mounted at ${config.extensionStore}`)
+  }
 
   const runnable = resolved.filter(item => item.verdict.runnable).length
   ctx.logger.info(
