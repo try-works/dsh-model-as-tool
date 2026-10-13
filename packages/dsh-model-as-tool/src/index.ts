@@ -353,6 +353,55 @@ export function apply(ctx: Context, config: Config = {}): void {
   const registeredContracts = new Map<string, { toolName: string; dispose: () => void }>()
 
   /**
+   * The publication decision for one catalog entry (EXT-24, EXT-32).
+   *
+   * ONE function decides what may be published, used by the installer and by the
+   * discovery surface. Two call sites computing this separately is how a tool ends
+   * up registered while discovery reports it withheld, or the reverse.
+   */
+  const surfaceFor = (entry: ModelCatalogEntry) => {
+    const binding = entry.contract === null ? undefined : bindings.get(entry.contract)
+    if (binding === undefined) return undefined
+    return buildSurface({
+      generation: host.activationGeneration,
+      tools: [{
+        name: binding.contract.toolName,
+        contractId: binding.contract.contract,
+        selectedModelId: binding.implementation.id,
+        implementations: [
+          {
+            extensionId: binding.implementation.provider?.extension
+              ?? binding.implementation.npmPackage
+              ?? 'unknown',
+            modelId: binding.implementation.id,
+            // There is no preparation lifecycle yet, so a model the capability
+            // resolver proved runnable is treated as ready. When preparation exists
+            // this reads the deployment's real readiness instead, and the surface
+            // already withholds the tool when it is not ready.
+            readiness: 'ready' as const,
+            runnable: true,
+          },
+          ...binding.alternatives.map(alternativeId => {
+            // The alternative's own extension, looked up rather than assumed: an
+            // alternative served by a different package is exactly the case a
+            // second implementation exists for (EXT-22).
+            const alternative = resolved.find(item => item.entry.id === alternativeId)
+            return {
+              extensionId: alternative?.entry.provider?.extension
+                ?? alternative?.entry.npmPackage
+                ?? 'unknown',
+              modelId: alternativeId,
+              readiness: 'ready' as const,
+              runnable: true,
+            }
+          }),
+        ],
+      }],
+      skills: [],
+    })
+  }
+
+  /**
    * Register one model's tool and skill.
    *
    * A model bound to a standard contract contributes to that CONTRACT's single
@@ -388,37 +437,15 @@ export function apply(ctx: Context, config: Config = {}): void {
        * only when the surface actually published it. Registering first and
        * reconciling afterwards is the state EXT-24 forbids: a caller would observe
        * an available tool whose binding was not yet in place.
+       *
+       * One helper serves the installer and the discovery surface, because two call
+       * sites computing this separately is how a tool gets registered while
+       * discovery reports it withheld, or the reverse.
        */
-      const surface = buildSurface({
-        generation: host.activationGeneration,
-        tools: [{
-          name: binding.contract.toolName,
-          contractId: binding.contract.contract,
-          selectedModelId: binding.implementation.id,
-          implementations: [
-            {
-              extensionId: binding.implementation.provider?.extension ?? binding.implementation.npmPackage ?? 'unknown',
-              modelId: binding.implementation.id,
-              // There is no preparation lifecycle yet, so a model the capability
-              // resolver proved runnable is treated as ready. When preparation
-              // exists this reads the deployment's real readiness instead, and the
-              // surface already withholds the tool when it is not ready.
-              readiness: 'ready',
-              runnable: true,
-            },
-            ...binding.alternatives.map(alternativeId => ({
-              extensionId: alternativeId,
-              modelId: alternativeId,
-              readiness: 'ready' as const,
-              runnable: true,
-            })),
-          ],
-        }],
-        skills: [],
-      })
-      const decision = surface.tools[0]
+      const surface = surfaceFor(entry)
+      const decision = surface?.tools[0]
       if (decision === undefined) {
-        const reason = surface.withheld[0]
+        const reason = surface?.withheld[0]
         ctx.logger.info(
           `model-tools: ${entry.name} is active but its tool is withheld (${reason?.code ?? 'unknown'}): `
           + `${reason?.message ?? 'no reason reported'}`,
@@ -618,6 +645,50 @@ export function apply(ctx: Context, config: Config = {}): void {
                   },
                   license: { type: 'string', required: true },
                   docs: { type: 'string', required: true },
+                  /**
+                   * Public extension/implementation provenance (EXT-32).
+                   *
+                   * Declared rather than left open: a discovery surface that could
+                   * return anything would let the shape drift unnoticed, and the
+                   * output schema refusing undeclared fields is what caught this
+                   * addition in the first place.
+                   */
+                  provenance: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      contract: {
+                        required: true,
+                        oneOf: [{ type: 'string' }, { type: 'null' }],
+                      },
+                      extension: {
+                        required: true,
+                        oneOf: [{ type: 'string' }, { type: 'null' }],
+                      },
+                      modelId: {
+                        required: true,
+                        oneOf: [{ type: 'string' }, { type: 'null' }],
+                      },
+                      publishedTool: {
+                        required: true,
+                        oneOf: [{ type: 'string' }, { type: 'null' }],
+                      },
+                      alternatives: { type: 'array', required: true, items: { type: 'string' } },
+                    },
+                  },
+                  /** The deployment's readiness, so an absent tool is explicable. */
+                  readiness: { type: 'string', required: true },
+                  /** Whether the tool is genuinely callable right now. */
+                  callable: { type: 'boolean', required: true },
+                  /** Why the tool is absent, when it is. */
+                  withheld: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      code: { type: 'string', required: true },
+                      message: { type: 'string', required: true },
+                    },
+                  },
                 },
               },
             },
@@ -661,6 +732,42 @@ export function apply(ctx: Context, config: Config = {}): void {
           persisted.enabled.includes(id) ? 'enabled' : persisted.disabled.includes(id) ? 'disabled' : 'none'
 
         /**
+         * The provenance and readiness a discovery surface must expose (EXT-32).
+         *
+         * ALWAYS returns the full shape, including for a model with no contract
+         * binding: the fields are declared required in the output schema, so a
+         * partial object would be refused — and a caller reading `readiness` should
+         * get an answer for every model rather than having to handle its absence.
+         */
+        const provenanceOf = (entry: ModelCatalogEntry) => {
+          const surface = surfaceFor(entry)
+          const published = surface?.tools[0]
+          const notice = surface?.readiness.find(item => item.modelId === entry.id)
+          const withheld = surface === undefined
+            ? undefined
+            : surface.withheld.find(item => item.subject === published?.name) ?? surface.withheld[0]
+          return {
+            provenance: {
+              contract: entry.contract,
+              // Which PACKAGE implements this model, and which model inside it. Read
+              // from the catalog binding, so it is reported even for a model that is
+              // not the selected provider and therefore has no published tool.
+              extension: entry.provider?.extension ?? null,
+              modelId: entry.provider?.modelId ?? null,
+              publishedTool: published?.name ?? null,
+              // Copied into a mutable array: the surface's own list is readonly, and
+              // a discovery result is a plain JSON value.
+              alternatives: [...(published?.alternatives ?? [])],
+            },
+            readiness: notice?.readiness ?? 'unknown',
+            callable: notice?.callable ?? false,
+            ...withheld === undefined ? {} : {
+              withheld: { code: withheld.code, message: withheld.message },
+            },
+          }
+        }
+
+        /**
          * The current snapshot, with per-model installed and remembered state.
          *
          * `tool` reports the name actually REGISTERED, not the catalog's per-model
@@ -672,6 +779,7 @@ export function apply(ctx: Context, config: Config = {}): void {
           return {
             ...(describeModels([item])[0] as ModelDescriptor),
             ...record === undefined ? {} : { tool: record.toolName },
+            ...provenanceOf(item.entry),
             installed: record !== undefined,
             choice: choiceOf(item.entry.id),
           }
