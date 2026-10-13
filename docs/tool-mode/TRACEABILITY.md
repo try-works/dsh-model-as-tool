@@ -17,7 +17,7 @@ is the honest default rather than an omission.
 
 - Normative requirements: **210**
 - Acceptance tests: **90**
-- Requirements DONE: **1** / 210 (0%)
+- Requirements DONE: **2** / 210 (1%)
 - Requirements BLOCKED: **3**
 - Requirements NOT_RUN: **174**
 - Acceptance tests DONE: **0** / 90 (0%)
@@ -26,7 +26,7 @@ is the honest default rather than an omission.
 
 | Family | Total | DONE | PARTIAL | NOT_RUN | BLOCKED |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| BASE | 14 | 1 | 5 | 8 | 0 |
+| BASE | 14 | 2 | 4 | 8 | 0 |
 | ARCH | 6 | 0 | 0 | 6 | 0 |
 | RUN | 8 | 0 | 0 | 8 | 0 |
 | MCP | 13 | 0 | 0 | 13 | 0 |
@@ -58,7 +58,7 @@ is the honest default rather than an omission.
 | BASE-06 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-07 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-08 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
-| BASE-09 |  | 2. Verified starting point and upgrade requirements | PARTIAL | The host holds NO adapter for any model. Both runnable models were extracted into independently versioned packages — @try-works/extension-desert-ant-tongue and @try-works/extension-desert-ant-voz — and are reached only by importing each package PUBLIC ./tool-mode entry and calling create()/createProvider(). ADAPTER_FACTORIES is empty and documented as needing to stay so. The binding from a catalog model to its package is DATA (a `provider` field, validated at catalog load), not a switch on the model name. VERIFIED BY INSPECTION: the host source contains no vendor package name and no comparison against a hard-coded model id in any logic path — the only remaining `entry.id ===` compares against an operator-configured provider override, which is configuration rather than a built-in. A model-specific PRESENTATION branch was also removed: renderResult was keyed on the model id and is now keyed on the CONTRACT, since a per-model rendering recipe is model-specific postprocessing living in the host (EXT-01) and would also render two implementations of one contract differently. Remaining: nothing enforces the separation mechanically, so a future change could reintroduce a built-in; a packaging or lint gate would make it a check rather than a property. |
+| BASE-09 |  | 2. Verified starting point and upgrade requirements | DONE | The host holds no model-specific code, and the property is now ENFORCED rather than inspected. `npm run verify:architecture` fails the build on three shapes of a private built-in path: a vendor SDK import, a branch on a literal model id, and a non-empty ADAPTER_FACTORIES. The rules match SHAPE rather than a list of known model names, because a rule enumerating today's models would pass the day a new one is added, which is exactly when it must fail. PROVEN TO FIRE: the gate was run against the real code this repository shipped before the extraction (the `entry.id === 'tongue'` branch in registrar.ts, the two-entry ADAPTER_FACTORIES list, the vendor import) and rejects all three, and re-introducing the registrar branch into the working tree fails the gate with the offending file and line. It distinguishes configuration from a built-in: comparing against an operator-configured provider override is accepted, the same shape written with a literal is rejected, and comments documenting a prohibition do not satisfy it. Both extraction requirements are satisfied: model implementations live in independently versioned packages reached only through the public extension API, and both packages are built and linked. |
 | BASE-10 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-11 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-12 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
@@ -213,7 +213,7 @@ is the honest default rather than an omission.
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | EXT-01 | Host/package separation. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-02 | Public contract, not private imports. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | The first extracted extension imports ONLY @try-works/tool-mode-extension-sdk (its runtime dependency) and never host internals, which is what makes it buildable by an author who has not installed the host. The SDK runs the extension through the published interfaces and its own tests exercise it the same way a host does. Remaining: nothing enforces the prohibition mechanically, so a future extension could still reach for a host path; a lint or packaging check would be needed to make it a gate rather than a convention. |
+| EXT-02 | Public contract, not private imports. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | The prohibition is now mechanically checked rather than conventional: the architecture gate rejects an extension that imports the host package by path, imports DSH, or climbs out of its own package with a relative import, and it runs over both shipped extensions as part of `npm run verify`. Both extensions import only @try-works/tool-mode-extension-sdk, with the vendor model packages reached through a dynamic import at load time rather than a static dependency. Remaining: the check covers the packages in this repository and would not see a third-party extension published elsewhere; enforcing it for those needs a packaging-time check on the consumer side. |
 | EXT-03 | Built-ins follow the identical protocol. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-04 | All packages can be deactivated. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | Every extension is deactivatable through the same path, a built-in being a first-party package rather than an exception. Individual tools toggle independently of activation: disabling one tool leaves the package active and its other tools callable, and toggling an unknown tool is refused rather than ignored. Uninstall is implemented for third-party packages with the EXTENSION_IN_USE gate. Remaining: BUILTIN_PROTECTED is unreachable because nothing is marked built-in yet, and asset purging does not exist. |
 | EXT-05 | One model or executor can supply several tools. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
