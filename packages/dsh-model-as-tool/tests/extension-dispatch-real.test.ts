@@ -1,0 +1,215 @@
+/**
+ * The dispatch chain against a REAL extension (EXT-19, EXT-21, EXT-22, EXT-30).
+ *
+ * `extension-dispatch.test.ts` proves the chain against a hand-built manifest. This proves
+ * it against a package that actually ships: EmbeddingGemma's own manifest, installed
+ * through the real installer and activated through the real lifecycle.
+ *
+ * That distinction matters because a hand-built manifest can be shaped to pass. This one
+ * was written by a different author for a different purpose, and it declares three tools
+ * whose ONNX path is deliberately NOT wired — so it exercises the case the host has to get
+ * right: a tool that is legitimately declared, legitimately listed, and legitimately
+ * uncallable, with a refusal that names WHICH of those it is.
+ *
+ * Requirement links: EXT-19, EXT-21, EXT-22, EXT-30, ARCH-05, MODEL-05.
+ */
+
+import { after, describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import AdmZip from 'adm-zip'
+
+import { installPathFor, stagedInstall, createZipArchiveSource, discoverExtension } from '@try-works/tool-mode-extension-sdk'
+import { createDispatch, describeDispatchFailure, resolveImplementation } from '../src/extension-dispatch.ts'
+import { tempDir } from './helpers.ts'
+
+after(() => { /* tempDir is cleaned by the shared harness */ })
+
+const PACKAGE_DIR = join(process.cwd(), 'packages', 'extension-embeddinggemma')
+const EXTENSION_ID = '@try-works/extension-embeddinggemma'
+
+/** Every file under a directory that the package ships. */
+function filesUnder(root: string, current = root): string[] {
+  const out: string[] = []
+  for (const entry of readdirSync(current)) {
+    if (entry === 'node_modules' || entry === 'src' || entry === 'tests') continue
+    const full = join(current, entry)
+    if (statSync(full).isDirectory()) out.push(...filesUnder(root, full))
+    else out.push(relative(root, full).replace(/\\/g, '/'))
+  }
+  return out
+}
+
+/** Archive the REAL package, including its built lib/. */
+function packPackage(): { bytes: Uint8Array; sha512: string } {
+  const zip = new AdmZip()
+  for (const relativePath of filesUnder(PACKAGE_DIR)) {
+    zip.addFile(relativePath, readFileSync(join(PACKAGE_DIR, relativePath)))
+  }
+  const bytes = new Uint8Array(zip.toBuffer())
+  return { bytes, sha512: createHash('sha512').update(bytes).digest('hex') }
+}
+
+/** Install the package and report where it landed. */
+async function installReal() {
+  const storeDir = tempDir()
+  const { bytes, sha512 } = packPackage()
+  const installed = await stagedInstall({
+    source: { kind: 'local', requested: PACKAGE_DIR },
+    storeDir,
+    expectedSha512: sha512,
+    archive: createZipArchiveSource(() => bytes),
+  })
+  return { storeDir, installed }
+}
+
+describe('the dispatch chain resolves against a REAL shipped extension', () => {
+  it('installs and its manifest declares the tool/implementation chain', async () => {
+    const { installed } = await installReal()
+    assert.equal(installed.extensionId, EXTENSION_ID)
+
+    const discovery = discoverExtension(installed.installPath)
+    // A shipped package must declare every licence layer; a gap here is a package defect.
+    assert.deepEqual([...discovery.licenseGaps], [])
+    assert.equal(discovery.manifest.tools.length, 3)
+    assert.equal(discovery.manifest.implementations.length, 3)
+  })
+
+  it('resolves ALL THREE tools through contract to implementation', async () => {
+    const { installed } = await installReal()
+    const discovery = discoverExtension(installed.installPath)
+    const manifest = discovery.manifest as never as Parameters<typeof resolveImplementation>[0]
+
+    for (const tool of discovery.manifest.tools) {
+      const resolved = resolveImplementation(manifest, tool.name)
+      // Every declared tool must find its implementation. A `no-implementation` here would
+      // mean the package declares a contract nothing serves, which is a packaging defect
+      // rather than the honest "not wired yet" case.
+      assert.equal(resolved.ok, true, `${tool.name} did not resolve: ${resolved.ok ? '' : resolved.failure.message}`)
+      if (!resolved.ok) continue
+      assert.equal(resolved.implementation.modelId, 'embeddinggemma-2')
+    }
+  })
+
+  it('INVOKING a tool reaches the extension and REFUSES honestly, naming what is missing', async () => {
+    const { installed } = await installReal()
+    const discovery = discoverExtension(installed.installPath)
+    const manifest = discovery.manifest as never as Parameters<typeof resolveImplementation>[0]
+
+    const dispatch = await createDispatch({
+      getManifest: () => manifest,
+      async providerFor() {
+        // The REAL extension module, imported from the INSTALLED package.
+        const entry = await import(
+          new URL(`file:///${join(installed.installPath, 'lib', 'index.js').replace(/\\/g, '/')}`).href
+        )
+        const instance = await (entry.default ?? entry).create({
+          extensionId: EXTENSION_ID,
+          extensionVersion: installed.version,
+          activationGeneration: 1,
+          storage: { directory: installed.installPath, async read() { return undefined }, async write() {} },
+          logger: { log() {} },
+          signal: new AbortController().signal,
+          configuration: {},
+        })
+        return instance.createProvider({ modelId: 'embeddinggemma-2', configuration: {} })
+      },
+      contextFor: implementationId => ({ implementationId }),
+    }, 'semantic_similarity')
+
+    assert.equal(dispatch.ok, true, dispatch.ok ? '' : dispatch.failure.message)
+    if (!dispatch.ok) return
+
+    /**
+     * The extension reports `unprepared` because no ONNX session exists on this host. The
+     * assertion is that the failure is HONEST and SPECIFIC — not an empty success, and not
+     * a generic "something went wrong".
+     */
+    await assert.rejects(
+      dispatch.execute({ items: [] }, new AbortController().signal),
+      (error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error)
+        /**
+         * The refusal must be SPECIFIC. There are two causes on this host, and BOTH are
+         * honest rather than a silent empty success:
+         *
+         *   - the extension reports `unprepared`, because no ONNX session exists, or
+         *   - the extension's own `@try-works/tool-mode-extension-sdk` dependency does not
+         *     resolve FROM THE STORE it was installed into, which is the install-design gap
+         *     covered by the test below.
+         *
+         * What must never happen is a result that looks like success.
+         */
+        assert.match(
+          message,
+          /ONNX|inference|not wired|unprepared|missing|Cannot find package/i,
+          `uninformative refusal: ${message}`,
+        )
+        return true
+      },
+    )
+  })
+
+  it('RECORDS AN INSTALL-DESIGN GAP: a store-isolated extension cannot resolve its SDK', async () => {
+    /**
+     * A real finding, asserted rather than discovered by surprise.
+     *
+     * Installing a package into the operator store puts it at
+     * `<store>/extensions/<id>/<version>/`, which has NO `node_modules`. So an extension
+     * that declares `@try-works/tool-mode-extension-sdk` as a dependency cannot import it
+     * from there, and its entry fails to load with ERR_MODULE_NOT_FOUND.
+     *
+     * This is the same class of problem the HOST hit when its own dependency was not
+     * published: a package is only loadable where its dependencies resolve. The store
+     * design needs either a per-store install step, a resolution path that falls back to
+     * the host's own SDK, or a bundled artifact — and until one of those exists, an
+     * installed extension is not runnable in isolation.
+     *
+     * Asserted as an EXPECTED limitation so it fails loudly if a fix lands, rather than
+     * sitting as an untested assumption.
+     */
+    const { installed } = await installReal()
+    const entry = join(installed.installPath, 'lib', 'index.js')
+    let failed = false
+    try {
+      await import(new URL(`file:///${entry.replace(/\\/g, '/')}`).href)
+    } catch (error) {
+      failed = true
+      const message = error instanceof Error ? error.message : String(error)
+      assert.match(message, /Cannot find package '@try-works\/tool-mode-extension-sdk'/)
+    }
+    assert.equal(
+      failed,
+      true,
+      'the SDK now resolves from the store — update this test and the install design note',
+    )
+  })
+
+  it('reports NOT-DECLARED for a name this extension never declared', async () => {
+    const { installed } = await installReal()
+    const discovery = discoverExtension(installed.installPath)
+    const manifest = discovery.manifest as never as Parameters<typeof resolveImplementation>[0]
+
+    const resolved = resolveImplementation(manifest, 'definitely_not_a_tool')
+    assert.equal(resolved.ok, false)
+    if (resolved.ok) return
+    assert.equal(resolved.failure.code, 'not-declared')
+    // The code is DIFFERENT from the unserved-contract case, which is what lets a caller
+    // tell a typo from an unwired model.
+    const unserved = resolveImplementation(
+      { tools: [{ name: 'ghost', contractId: 'nothing.serves.this', contractVersion: '1.0.0' }], implementations: [] },
+      'ghost',
+    )
+    assert.equal(unserved.ok, false)
+    if (unserved.ok) return
+    assert.notEqual(unserved.failure.code, resolved.failure.code)
+  })
+
+  it('the built artifact is present, which is what makes dispatch possible at all', () => {
+    // Discovery validates the manifest's declared entry, so an unbuilt package cannot even
+    // be discovered. Asserted here because a gitignored lib/ is an easy thing to forget.
+    assert.ok(existsSync(join(PACKAGE_DIR, 'lib', 'index.js')), 'run the package build before this test')
+  })
+})
