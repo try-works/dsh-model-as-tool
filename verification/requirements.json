@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T20:25:38.191Z",
+  "generatedAt": "2026-10-13T20:29:25.105Z",
   "specification": [
     {
       "id": "TM-DSH-001",
@@ -810,7 +810,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "PARTIAL",
       "testStatus": "FAIL",
-      "evidence": "The stt.transcribe contract declares transcription-not-translation, seconds from start-of-audio, empty-is-valid, partial coverage via coverage.complete, error-on-unsupported-timestamp, and the admitted 16 kHz mono PCM16 WAV limits. No implementation is bound and no real audio has been transcribed through it."
+      "evidence": "PARTIAL COVERAGE IS REPORTED AND AN INCOMPLETE CLIP IS NOT PRESENTED AS FULLY TRANSCRIBED: a transcript whose coverage is incomplete is rendered with an explicit warning naming the seconds covered, which is the half of the requirement that matters most for correctness. An empty transcript is a valid empty transcript rather than an error, reported as \"no speech recognized\", which is the opposite of the title rule and deliberately so - silence is a real result, whereas a refusal is not. Remaining: the format is not INSPECTED. The requirement says to check sample count and format rather than the file extension alone, and the implementation validates the path and its authorization but not the header, so a 44.1 kHz stereo file would not be refused as unsupported; there is no bounded tested decoder for additional encodings, so they are simply unsupported; unsupported requested timestamps are not modelled as errors at all; and the model lower contextual and admission limits are not consulted against the source-file defaults."
     },
     {
       "id": "TOOL-02",
@@ -820,9 +820,9 @@
       "owningModule": "packages/tool-mode-contracts/src/contracts/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "BLOCKED",
+      "testStatus": "BLOCKED",
+      "evidence": "BLOCKED ON THE SAME MISSING PACKAGE AS MODEL-02: npm `laya-ts` returns 404, so Laya typed prediction API is unobtainable and the requirement to use it rather than constrained chat generation cannot be met. The alternative the requirement explicitly rules out - an embedding-based label scorer standing in for the probabilistic decision contract - is therefore correctly NOT implemented, since implementing it would be the defect rather than the fix. Remaining: the whole contract. No decision tool is registered, so there is no choice-set validation, no abstention policy and no Jev mapping to get wrong."
     },
     {
       "id": "TOOL-03",
@@ -834,7 +834,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "PARTIAL",
       "testStatus": "FAIL",
-      "evidence": "The text.language_detect contract preserves ambiguity (candidates + tooCloseToCall), declares scoreKind, and states that it is written-text-only and not evidence about spoken audio. Not yet bound to an implementation through the contract."
+      "evidence": "THE REQUIREMENT NAMES A MISTAKE THAT IS EASY TO MAKE - a text language detector exists, audio exists, and the two look combinable. The rule is now enforced: a result that examined TEXT is not evidence about the language spoken in AUDIO, asserted per medium rather than per result, because the result itself is sound and only its use as audio evidence is not. The description a text result carries says so in as many words - that it is the language of the supplied text and not evidence of the language spoken in audio - so the disclosure travels with the result rather than relying on a caller to remember. The existing lang_detect contract already preserves ambiguity and empty-input handling by returning ranked candidates rather than a single forced answer, and reports a vendor-supplied score rather than a calibrated probability. Remaining: the rule is not attached to the registered lang_detect tool, so its description does not yet carry the disclosure an agent would read; and no audio language path exists to make the distinction concrete."
     },
     {
       "id": "TOOL-04",
@@ -844,9 +844,9 @@
       "owningModule": "packages/tool-mode-contracts/src/contracts/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "The one rule that can be enforced without an embedding implementation IS enforced: an embedding space may stand in for another only when the dimensions match, and changing models requires an explicit re-index. That covers the requirement to PIN an existing persistent index to its precise embedding space. Remaining: there is no MiniLM implementation, so pooling, normalization, input order, vector dimension and model identity are not preserved because there is nothing that produces them; no vector is validated for finiteness; and no persistent index exists to pin. The richer section-17 contracts the requirement says new multimodal work should use are exactly what MODEL-01 models and cannot yet run."
     },
     {
       "id": "TOOL-05",
@@ -858,7 +858,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "NOT_RUN",
       "testStatus": "NOT_RUN",
-      "evidence": null
+      "evidence": "No cross-encoder reranking tool exists in any form: no pair scoring, no deterministic tie handling, no score-kind reporting, and no top_k validation. The MODEL-05 capability machinery would describe such a tool correctly but nothing implements it."
     },
     {
       "id": "TOOL-06",
@@ -868,9 +868,9 @@
       "owningModule": "packages/tool-mode-contracts/src/contracts/",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "THE RULE THE REQUIREMENT STATES MOST SHARPLY IS ENFORCED FIRST: a refusal or an incomplete generation becomes an ERROR and never a valid empty title. This is the failure most worth preventing because it is easy to ship and hard to notice - `{ title: \"\" }` has the correct SHAPE, so a caller writing it into a document produces a blank heading rather than an exception, and nothing in the pipeline looks wrong. A test asserts a refusal outcome carries no title field at all, and the refusal is checked BEFORE the empty-title path so it cannot fall through to it by carrying an empty title alongside. NO INVENTED FACTS IS CHECKED, NOT MERELY REQUESTED. A number in a proposed title or description that does not appear in the source is a claim the source does not support - \"10 Ways to Configure the Deployment Pipeline\" over a source that never says ten is exactly the embellishment a summariser invents. The check is a provenance comparison and it rejects with the offending number named. NO CHANGED SOURCE MEANING is enforced as a real overlap requirement: a title sharing no content word with its source is not a title FOR that source but a different claim wearing the shape of one, and it is rejected. The rule abstains when the source has no content words, so a degenerate source does not cause everything to be rejected. Maximum title and description lengths are stated IN THE CONTRACT rather than chosen per call, over-length output is REJECTED rather than truncated, and repair attempts are COUNTED - with an exhausted budget reported as exhausted rather than as a failure to propose, so a caller can tell the two apart. Whether the tool may call another tool is asserted false, and the response shape carries no tool-call field for one to be dispatched from. Remaining: THE TITLE TOOL IS NOT REGISTERED. The rules exist and are tested, but no harness-text recipe package provides them and no contract is registered, so nothing an agent can call implements this. The requirement to use an INDEPENDENTLY PACKAGED recipe is therefore unmet, and the provenance checks are heuristics applied to a model response rather than a guarantee about what the model generated."
     },
     {
       "id": "LIC-01",
