@@ -1,0 +1,161 @@
+---
+license: other
+license_name: desert-ant-labs-source-available-1.0
+license_link: https://license.desertant.com/1.0
+language:
+- multilingual
+tags:
+- text
+- clip-selection
+- text-ranking
+- on-device
+- core-ml
+- litert
+- tflite
+- multilingual
+pipeline_tag: text-ranking
+---
+
+<!-- card-header:start (generated from manifest.json, edit below this block) -->
+# Clips
+
+Create short videos and highlight clips.
+
+Short clips and highlights from talking video and audio: podcasts, interviews, meetings. On-device.
+
+- **SDKs, install and examples:** https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/docs/models/clips.md
+
+<!-- card-header:end -->
+
+<!-- card-install:start (generated from manifest.json, edit below this block) -->
+| | |
+| --- | --- |
+| **Platforms** | iOS, macOS, tvOS, visionOS, Linux, Windows |
+| **Weights** | [v0.1.0](https://huggingface.co/desert-ant-labs/clips) |
+
+## Install
+
+**Swift** ([requirements](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/README.md#swift))
+
+```swift
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core.git", from: "3.6.0")
+```
+
+Then add the `Clips` product to your target.
+<!-- card-install:end -->
+
+
+## What the model does
+
+Point Clips at a transcript and get the moments worth cutting, ranked best first and never
+overlapping. Nothing is uploaded, so clipping a back catalogue costs the same as
+clipping one video.
+
+284MB as a single int8 Core ML package on Apple platforms, or two 283MB LiteRT files
+elsewhere. 100 languages.
+
+Clips carry no title. Pairing them with words is a separate model,
+[`desert-ant-labs/title`](https://huggingface.co/desert-ant-labs/title).
+
+## Maximum video length
+
+There's no context window. Clips never reads a transcript whole: sentences run through the
+selector in batches of 16 and each candidate clip is scored on its own, so length is bounded by
+time rather than by a token limit. The longest we've run is an 835 sentence podcast.
+
+| transcript | iPhone 17 Pro | iPhone 15 Pro |
+|---|---:|---:|
+| 404 sentences, 25 minutes of video, 12 clips | **9.19s** | **10.22s** |
+| 57 sentences | 2.23s | |
+| per candidate, encoder only | 2.78ms | 3.13ms |
+
+Measured on device at batch 16, pinned to `.cpuAndNeuralEngine`.
+
+## Files
+
+| File | Format | Size | Contents |
+|---|---|---:|---|
+| `clips.mlmodelc/` | Compiled Core ML, int8 per-channel | 284MB | Multifunction package. Function `select`: `ids`, `mask`, `disc` to `saliency`, `start_p`, `end_p`. Function `score`: `ids`, `mask` to `score` |
+| `clips-selector.tflite` | LiteRT, int8 weight-only | 283MB | The selector, for Android, Linux and Windows |
+| `clips-scorer.tflite` | LiteRT, int8 weight-only | 283MB | The scorer, for Android, Linux and Windows |
+| `clip_tokenizer.bin` | Unigram tokenizer | 4MB | Tokenizer pieces and scores, in the compact binary the runtimes read |
+| `clips_meta.json` | JSON | tiny | Graph widths, input roles and feature order a runtime needs |
+
+On Apple platforms both graphs live in one Core ML package with the shared weights stored once.
+LiteRT has no equivalent packaging, so the other platforms ship two files.
+
+The selector graph is 128 tokens wide, the scorer 256, both at a fixed batch of 16 sentences. A
+sentence longer than 64 tokens is truncated before it reaches the selector.
+
+### Core ML functions
+
+Set `MLModelConfiguration.functionName` to `select` or `score`. A path names the package, not the
+graph, and Core ML loads the default function silently, so without it both halves of your pipeline
+run the selector.
+
+### Input roles on LiteRT
+
+The LiteRT graphs take **int64** `ids` and `mask`, and name their inputs positionally, `args_0`
+upward, so `clips_meta.json` carries the mapping. Feed `ids` and `mask` swapped and the graph returns finite, plausibly scaled numbers
+and a pipeline that quietly builds the wrong pool.
+
+## Thresholds
+
+`Clip.score` runs 1 to 5 and is not calibrated between videos. Threshold on `percentile` instead.
+An absolute cut at 0.65 returns nothing on 21% of videos, and at 0.75 on half of them. Per-video
+95th percentiles range from 0.33 to 0.95.
+
+| percentile cut | clips per video | share of the video covered | use |
+|---|---:|---:|---|
+| 0.8 | 5.0 | 17% | highlights |
+| 0.3 | 32.1 | 74% | auto edit |
+
+## Limits
+
+- **Clip edges are the weak spot.** A clip can open on a pronoun whose referent was in the
+  sentence before it, fuse two topics into one, cut before the payoff lands, or swallow a sponsor
+  read.
+- **Short videos return few clips.** A two minute transcript comes back with fewer clips than a
+  server-side editor would cut, and a transcript under three sentences returns none.
+- **The clip limit is a cap, not a quota.** Asking for 10 doesn't mean receiving 10.
+- **Selection is sensitive to small score changes.** Candidate spans around one moment score very
+  close together, so a different runtime, compute unit or quantization returns a different but
+  comparable set.
+- **Non-Latin scripts are under-tested.** Our evaluation corpus is overwhelmingly Latin script.
+- **Duration is a soft prior.** A clip can come back shorter or longer than a typical Short.
+- **The LiteRT files don't load through the Desert Ant SDK.** The graphs take int64 ids where the
+  SDK builds int32. Drive them from a LiteRT runtime directly.
+- **Android needs headroom.** The shipped int8 weight-only build peaks at 2136MB resident,
+  measured on 6,395 real candidate spans. That fits a high-end phone and not a mid-range one,
+  which is why there is no Android SDK yet rather than any limit in the artifact.
+
+## Requirements
+
+iOS 18, macOS 15, tvOS 18, visionOS 2, watchOS 11. Android, Linux and Windows through LiteRT,
+driven directly rather than through the SDK.
+
+<!-- card-footer:start (generated from manifest.json, edit above this block) -->
+## License
+
+[Desert Ant Labs Source-Available License](https://license.desertant.com/1.0). Free for most
+apps, and a commercial license is required at scale. Full terms are at the link.
+Licensing: <licensing@desertant.com>.
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+## Citation
+
+```bibtex
+@software{clips_2026,
+  title  = {Clips: Short clips and highlights from talking video and audio: podcasts, interviews, meetings. On-device},
+  author = {Desert Ant Labs},
+  year   = {2026},
+  url    = {https://huggingface.co/desert-ant-labs/clips},
+}
+```
+
+---
+
+© 2026 Desert Ant Labs · <https://desertant.com>
+<!-- card-footer:end -->
+

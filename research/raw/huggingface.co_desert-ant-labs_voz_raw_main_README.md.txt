@@ -1,0 +1,238 @@
+---
+license: other
+license_name: desert-ant-labs-source-available-1.0
+license_link: https://license.desertant.com/1.0
+language:
+- bg
+- cs
+- da
+- de
+- el
+- en
+- es
+- et
+- fi
+- fr
+- hr
+- hu
+- it
+- lt
+- lv
+- mt
+- nl
+- pl
+- pt
+- ro
+- ru
+- sk
+- sl
+- sv
+- uk
+tags:
+- speech
+- speech-recognition
+- transcription
+- word-timestamps
+- on-device
+- core-ml
+- apple-neural-engine
+- multilingual
+pipeline_tag: automatic-speech-recognition
+---
+
+<!-- card-header:start (generated from manifest.json, edit below this block) -->
+# Voz
+
+Transcribe 10 minutes in 2 seconds.
+
+On-device speech recognition: transcripts with word-level timestamps, 25 languages.
+
+- **SDKs, install and examples:** https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/docs/models/voz.md
+
+<!-- card-header:end -->
+
+Voz transcribes speech on the device, in 25 languages, with word-level
+timestamps. You can run Voz on iPhone, iPad, Mac, Windows, in the browser and in
+Node, so your audio never leaves the device. An iPhone 17 Pro transcribes 10
+minutes of audio in 1.8s.
+
+## Try it
+
+Voz is part of our SDK, **[Desert-Ant-Labs/desert-ant-core](https://github.com/Desert-Ant-Labs/desert-ant-core)**.
+
+- **Apple platforms and Windows:** the Swift SDK, through Swift Package Manager.
+- **Browser and Node:** the JavaScript SDK, `npm i @desert-ant-labs/voz`, plus
+  `onnxruntime-web` in the browser or `onnxruntime-node` in Node.
+
+The SDK downloads the model on first use and caches the files, so your app
+stays small.
+
+```swift
+let voz = try await Voz()
+let result = try await voz.transcribe(url)
+result.text                       // "We made the bet to build for iOS..."
+result.words.first?.start         // 0.32
+result.words.first?.end           // 0.58
+```
+
+## Files
+
+| Files | Used on |
+|---|---|
+| `encoder.mlmodelc`, `mel.mlmodelc`, `decoder.mlmodelc` | Apple platforms, through Core ML |
+| `web/encoder.onnx`, `web/decoder.onnx`, `web/decoder.webgpu.onnx` | Browser, Node and Windows, through ONNX Runtime |
+| `meta.json`, `vocab.json`, `embedding.f16` | Both; `web/` has its own copies |
+
+We ship the Core ML models compiled. If you turn them back into an
+`.mlpackage`, Core ML recompiles them on every launch and a load takes 28s
+instead of 0.13s.
+
+## How it works
+
+Voz is NVIDIA's Parakeet TDT 0.6B v3, converted and compressed to run on phones,
+laptops and in the browser. Voz cuts a recording into 15s windows at pauses,
+transcribes up to 16 windows at once, and joins them where neighboring windows
+agree on the words. Because Voz works through a recording window by window, a
+five-hour file needs no more memory than a five-minute one. On Apple devices
+every step runs on the Neural Engine.
+
+You can pass audio at any sample rate, mono or stereo. The SDK handles the conversion.
+
+## Speed
+
+Time to transcribe 10 minutes of audio with Swift SDK 3.5.0, the fastest of
+three runs after the model loaded:
+
+| Device | Time | Realtime factor |
+|---|---:|---:|
+| M3 Ultra | 0.8s | **762x** |
+| iPhone 18 Pro | 1.2s | **492x** |
+| M4 Max | 1.3s | **453x** |
+| iPhone 17 Pro | 1.8s | **334x** |
+| iPhone 15 Pro | 2.1s | **283x** |
+| M1 Mac mini | 2.4s | **251x** |
+
+Short clips run at 50-62x, because Voz always processes a full 15s window.
+
+The first load after install takes 20s while Core ML prepares the model for the
+Neural Engine. After that, a load takes 0.2s on an M3 Ultra.
+
+## Accuracy
+
+| | |
+|---|---|
+| Word error rate | **7.40%** across six Open ASR Leaderboard datasets. Whisper large-v3-turbo scores 7.00%. |
+| On long audio | **2.83%** on 30 minutes of an audiobook. Whisper large-v3-turbo scores 2.72%. |
+| Word timestamps | Starts are off by 83ms and ends by 95ms on average, compared with a forced aligner. |
+| Size | **467MB**. Whisper large-v3-turbo is 1.6GB. |
+
+### English
+
+We scored Voz on the [Open ASR Leaderboard](https://huggingface.co/spaces/hf-audio/open_asr_leaderboard)
+datasets with the leaderboard's own text normalizer. Whisper's numbers come from
+the leaderboard.
+
+| Dataset | Voz | Whisper large-v3-turbo |
+|---|---:|---:|
+| LibriSpeech test-clean | 2.19% | 2.13% |
+| LibriSpeech test-other | 3.86% | 3.70% |
+| GigaSpeech | 9.70% | 8.47% |
+| SPGISpeech | 3.86% | 2.79% |
+| Earnings-22 | 12.97% | 11.07% |
+| AMI | 11.84% | **13.87%** |
+| **Average** | **7.40%** | **7.00%** |
+
+Voz comes close to Whisper large-v3-turbo at less than a third of the size. Voz
+does better on meetings and worse on read and prepared speech.
+
+Clean audiobook recordings score 2-4%. Meetings, earnings calls and podcasts
+score 10-13%, and most real recordings sound more like those. On a podcast, plan
+to check one word in ten.
+
+We left out VoxPopuli and TEDLIUM. The leaderboard's scripts point at a smaller
+VoxPopuli set than the one behind its published scores, and the TEDLIUM config
+has no data.
+
+### Word timestamps
+
+We compared Voz's word times with [torchaudio's MMS_FA forced aligner](https://pytorch.org/audio/stable/generated/torchaudio.pipelines.MMS_FA.html).
+
+| | Words | Start error | End error | Ends within 80ms | Ends within 200ms |
+|---|---:|---:|---:|---:|---:|
+| English, LibriSpeech | 6295 | 83ms | 95ms | 60% | 90% |
+| German, FLEURS | 939 | 80ms | 92ms | 62% | 92% |
+
+Word ends are harder to get right. The model reports how long each token lasts,
+and that tends to run into the pause after a word, so the SDK trims the end back
+using the audio. The aligner isn't exact either, and Voz works in 80ms frames, so
+no timestamp is more precise than 80ms.
+
+### Accuracy by language
+
+We tested each language on 10 minutes of audio, made by joining
+[FLEURS](https://huggingface.co/datasets/google/fleurs) test clips into one long
+file. A single FLEURS clip is shorter than one 15s window, so a single clip
+wouldn't test how Voz joins windows, which every real recording needs.
+
+| | WER | | WER | | WER |
+|---|---:|---|---:|---|---:|
+| it | 3.31% | cs | 14.27% | hu | 21.26% |
+| pt | 6.08% | sk | 15.42% | et | 21.37% |
+| uk | 6.40% | hr | 16.92% | sv | 21.67% |
+| ru | 6.57% | fi | 18.17% | mt | 22.01% |
+| en | 7.36% | ro | 20.95% | da | 24.32% |
+| de | 8.12% | | | lt | 26.89% |
+| es | 9.01% | | | lv | 30.57% |
+| nl | 9.84% | | | sl | 33.85% |
+| pl | 9.99% | | | el | 39.46% |
+| bg | 12.39% | | | | |
+| fr | 12.78% | | | | |
+
+Italian, Portuguese, Ukrainian, Russian, English, German, Spanish, Dutch and
+Polish stay under 10% and work well as they are. Above 20%, fixing a transcript
+can take longer than typing one from scratch. Those languages are weak in Parakeet itself, not
+in our conversion. The clips are read speech in clean recordings, so use the
+table to compare languages, not to predict your own error rate. Speed stays
+within 12% across languages.
+
+## Languages
+
+Bulgarian, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French, German, Greek,
+Hungarian, Italian, Latvian, Lithuanian, Maltese, Polish, Portuguese, Romanian, Russian,
+Slovak, Slovenian, Spanish, Swedish, and Ukrainian.
+
+## Built on
+
+- [Parakeet TDT 0.6B v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) by NVIDIA
+  (CC BY 4.0). We converted and compressed Parakeet for Voz and left the weights otherwise
+  unchanged.
+- [FLEURS](https://huggingface.co/datasets/google/fleurs) (CC BY 4.0), the audio behind
+  the per-language table. We don't redistribute FLEURS.
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+<!-- card-footer:start (generated from manifest.json, edit above this block) -->
+## License
+
+[Desert Ant Labs Source-Available License](https://license.desertant.com/1.0). Free for most
+apps, and a commercial license is required at scale. Full terms are at the link.
+Licensing: <licensing@desertant.com>.
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+## Citation
+
+```bibtex
+@software{voz_2026,
+  title  = {Voz: On-device speech recognition: transcripts with word-level timestamps, 25 languages},
+  author = {Desert Ant Labs},
+  year   = {2026},
+  url    = {https://huggingface.co/desert-ant-labs/voz},
+}
+```
+
+---
+
+© 2026 Desert Ant Labs · <https://desertant.com>
+<!-- card-footer:end -->
+

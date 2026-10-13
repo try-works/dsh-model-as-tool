@@ -1,0 +1,318 @@
+Desert Ant Labs 
+
+ Redact
+
+ PII redaction Available 
+
+ On-device redaction that strips personal data as you type, in 27 languages, so it never reaches your servers or logs.
+
+ Get started 
+ Docs 
+ Model card 
+
+ Demo
+
+ Filter PII on the device.
+
+ A support transcript is full of names, addresses and card numbers you are not allowed to keep. Redact masks them in the browser or on the phone, before the text is ever sent, so your systems store [GIVEN_NAME_1] where the customer's name was.
+
+ Redact also puts the values back. Mask a prompt before sending it to an external model, then restore the real names and numbers in the answer. Keep the placeholder map and the result is pseudonymized; delete the map and the masked copy is anonymized.
+
+ Microsoft Presidio, AWS Comprehend and Google Cloud DLP cover the same ground, and all of them want the text on their servers. Redact catches 88.8% of personal data across 27 languages from 23M parameters, so the same masking runs in a browser tab, on a phone, or in a Node backend.
+
+ Cards, IBANs, national IDs and VAT numbers are checked against their real checksums, Luhn and ISO-13616 and per-country, so a random 16-digit string is never masked as a card number.
+
+ Catches 88.8% of personal data.
+
+ Catches 88.8% of the personal data in a text and almost never touches anything else, from a model small enough to run in a browser tab. The one system with higher recall, GLiNER-PII, is 2.3GB.
+
+ 88.8
+ Personal data caught
+ leak-safe recall, same harness for every system
+
+ 99.6
+ Precision
+ share of what it masks that really is personal data
+
+ 11.6MB
+ On-device
+ Apple; 24.5MB on Android and the web
+
+ 27
+ Languages
+ every official EU language, plus Norwegian and Icelandic
+
+ Every system scored by the same harness on the same rows, each at its own operating point, so the comparison measures the models and not the plumbing. Recall is the share of personal data fully masked, macro-averaged over WikiANN, MultiNERD and a format-valid structured set. Precision is the share of masked spans that were really personal data. Redact's size is the Apple build; the Android and web build is 24.5MB.
+
+ System Recall Precision Size Params 
+ Redact 88.8 99.6 11.6MB 23M 
+ GLiNER-PII 91.1 90.4 2.3GB 570M 
+ Rampart 61.4 97.2 14.7MB 18.5M 
+ OpenAI privacy filter 60.2 93.5 3GB 1.5B 
+
+ AWS Comprehend is the other option teams weigh, and it sits outside this table because its PII API only accepts English: every other language code is refused. On the same English rows it scores higher overall (91.6 against 86.5 on the English composite), ahead on names and behind on structured data (91.9 against 95.0), at the same precision. Comprehend runs in the cloud, bills per call, and covers one of these 27 languages. Everything above is internal evaluation on external WikiANN and MultiNERD plus a format-valid structured-PII set; the full language list and the per-label breakdown are on the model card.
+
+ Use cases
+
+ Support and chat on mobile.
+
+ Scrub a web form before it submits
+ Mask what someone typed in the browser, so the personal data never reaches your backend and your backend never has to be in scope for it. The same code runs client-side that runs on the phone.
+
+ Safe LLM round-trips
+ Mask a prompt before it leaves for an external model, then restore the real values in the answer. Numbered placeholders like [GIVEN_NAME_1] and [EMAIL_1] keep the round-trip lossless, so the user still reads a normal reply.
+
+ Scrub at ingest, without a DLP bill
+ Run Redact in Node over transcripts, logs and uploads as they arrive. No per-call charge and no data leaving your infrastructure, unlike a cloud DLP service that bills for every document.
+
+ Redact in 27 languages
+ A single model covers 27 languages across Latin, Greek and Cyrillic scripts: every official EU language, plus Norwegian and Icelandic. A form filled in Athens and one filled in Helsinki go through the same code path.
+
+ Inspiration
+
+ Ideas to build with Redact. Copy a prompt into your coding agent and go.
+
+ Redact 
+
+ Write an MCP tool that strips personal data before it reaches any other tool.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Redact 
+
+ Scrub personal data out of any text before it hits an LLM.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Redact 
+
+ Redact PII from logs on the device before they're stored.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Redact 
+
+ Run PII redaction in a Lambda so data never leaves your infrastructure.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Redact 
+
+ Scrub a support form before it submits.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Voz Redact 
+
+ Transcribe interviews and auto-redact names before you share them.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Tongue Redact 
+
+ Detect the language, then redact PII in that language.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Redact 
+
+ De-identify a dataset before fine-tuning or sharing it.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ See all 18 ideas 
+
+ What the model does
+
+ 20 detection categories. Names, street addresses, cities, ZIP codes, emails, phone numbers, credit cards, bank accounts and IBANs, routing numbers, IP addresses, URLs, passports, driving licenses, tax IDs, SSNs, and government IDs.
+
+ Deterministic validation layer: Luhn card checks, ISO-13616 IBANs, checksummed national IDs for all 24 EU countries, all 27 EU VAT formats, IMEI, and per-country driving licenses.
+
+ Reversible redaction with unique numbered placeholders for LLM round-trips.
+
+ Filter by category and inspect every detection with its exact character span.
+
+ Company names are detected as their own category and left in place by default, because a company is not a person. Ask for them and they get masked with everything else.
+
+ Getting started
+
+ Add pii redaction to your iOS or macOS, Android or web app in a few lines of code. Redact docs .
+
+ iOS, macOS 
+
+ Install 
+
+ // Swift Package Manager 
+ . package ( url : "https://github.com/Desert-Ant-Labs/desert-ant-core" , from : "3.5.0" ) 
+ // target dependency 
+ . product ( name : "Redact" , package : "desert-ant-core" ) 
+
+ Example - Swift 
+
+ import Redact 
+
+ let redact = Redact () 
+ let r = try await redact. redaction ( of : text) 
+ // r.redactedText: "Email [GIVEN_NAME_1] at [EMAIL_1]" 
+
+ Build with a prompt 
+
+ Add Redact from Desert Ant Labs to this Swift project (iOS, macOS).
+
+What it does: On-device PII Redaction for iOS, Android, and Web.
+
+SDK:
+
+Swift (iOS, macOS)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// Swift Package Manager
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core", from: "3.5.0")
+// target dependency
+.product(name: "Redact", package: "desert-ant-core")
+
+Reference:
+- Model page: https://desertant.com/models/redact/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.
+
+ SDK on GitHub 
+
+ Android 
+
+ Install 
+
+ // build.gradle.kts (Maven Central) 
+ implementation ( "ai.desertant:redact:3.5.0" ) 
+
+ Example - Kotlin 
+
+ import ai.desertant.redact.Redact 
+
+ Redact (context). use { redact -> 
+ val r = redact. redaction (text) 
+ // r.redactedText: "Email [GIVEN_NAME_1] at [EMAIL_1]" 
+ } 
+
+ Build with a prompt 
+
+ Add Redact from Desert Ant Labs to this Kotlin project (Android).
+
+What it does: On-device PII Redaction for iOS, Android, and Web.
+
+SDK:
+
+Kotlin (Android)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// build.gradle.kts (Maven Central)
+implementation("ai.desertant:redact:3.5.0")
+
+Reference:
+- Model page: https://desertant.com/models/redact/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.
+
+ SDK on GitHub 
+
+ Web, Node.js 
+
+ Install 
+
+ npm i @desert-ant-labs/redact @litertjs/core 
+
+ Example - TypeScript 
+
+ import { Redact } from "@desert-ant-labs/redact" ; 
+
+ const redact = await Redact . load (); 
+ const r = await redact . redaction ( text ); 
+ // r.redactedText: "Email [GIVEN_NAME_1] at [EMAIL_1]" 
+
+ Build with a prompt 
+
+ Add Redact from Desert Ant Labs to this JavaScript / TypeScript project (Web, Node.js).
+
+What it does: On-device PII Redaction for iOS, Android, and Web.
+
+SDK:
+
+JavaScript / TypeScript (Web, Node.js)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+npm i @desert-ant-labs/redact @litertjs/core
+
+Reference:
+- Model page: https://desertant.com/models/redact/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.
+
+ SDK on GitHub 
+
+ Specs
+
+ Languages
+ 27 languages: every official EU language, plus Norwegian and Icelandic (full list on the model card)
+
+ On-device size
+ 11.6MB Core ML (Apple, 4-bit); 24.5MB LiteRT (Android, web, int8)
+
+ Model
+ Token classifier with a deterministic layer for structured IDs, 23M params
+
+ Privacy
+ Runs fully on device. Text is never sent anywhere.
+
+ Redact catches about 90% of the personal data in a text, so roughly one item in ten gets through. Treat Redact as the layer that removes the bulk before data leaves the device, not a guarantee that a document is clean.
+
+ The structured fields are the reliable part, because cards, IBANs, VAT numbers, and national IDs have to pass a real checksum. Redact misses most often on free-form names and addresses in unusual formats, and in the other direction it occasionally masks an ordinary word, most often in all-caps text.
+
+ FAQ
+
+ What is Redact?
+
+ On-device redaction that strips personal data as you type, in 27 languages, so it never reaches your servers or logs.
+
+ Does Redact run on device?
+
+ Yes. Redact runs on the device, with no server call, so the data stays with the user.
+
+ Which platforms does Redact support?
+
+ Redact ships as a native on-device SDK for Swift, Kotlin, JavaScript / TypeScript.
+
+ How much does Redact cost?
+
+ Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses.
+
+ How accurate or fast is Redact?
+
+ Catches 88.8% of the personal data in a text and almost never touches anything else, from a model small enough to run in a browser tab. The one system with higher recall, GLiNER-PII, is 2.3GB.
+
+ Resources
+
+ Redact docs 
+
+ Model weights on Hugging Face 
+
+ Swift models 
+
+ Kotlin models 
+
+ JS models

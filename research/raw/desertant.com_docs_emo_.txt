@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emo SDK docs | Desert Ant Labs</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="Install and use Emo on device: emoji suggestions in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="keywords" content="Emo, SDK, documentation, on-device">
+<link rel="canonical" href="https://desertant.com/docs/emo/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Emo: Docs">
+<meta property="og:description" content="Install and use Emo on device: emoji suggestions in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta property="og:url" content="https://desertant.com/docs/emo/">
+<meta property="og:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Desert Ant Labs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Emo: Docs">
+<meta name="twitter:description" content="Install and use Emo on device: emoji suggestions in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="twitter:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+
+</head>
+<body>
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/" class="is-on">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <div class="docs-layout">
+        <nav class="side-nav rise d2" aria-label="Documentation">
+            <p class="side-nav-title"><a href="/docs/">Docs</a><span class="sep" aria-hidden="true">/</span><span aria-current="page">Emo</span></p>
+            <div class="side-nav-items">
+              <a class="side-nav-item side-nav-item--faun" href="/docs/align/">Align</a>
+              <a class="side-nav-item side-nav-item--teal" href="/docs/clear/">Clear</a>
+              <a class="side-nav-item side-nav-item--dusty-pink" href="/docs/clips/">Clips</a>
+              <a class="side-nav-item side-nav-item--light-peach" href="/docs/ear/">Ear</a>
+              <a class="side-nav-item side-nav-item--terracotta" href="/docs/emo/" aria-current="page">Emo</a>
+              <a class="side-nav-item side-nav-item--stone" href="/docs/gist/">Gist</a>
+              <a class="side-nav-item side-nav-item--warm-grey" href="/docs/moderator/">Moderator</a>
+              <a class="side-nav-item side-nav-item--forest" href="/docs/redact/">Redact</a>
+              <a class="side-nav-item side-nav-item--sand" href="/docs/shapes/">Shapes</a>
+              <a class="side-nav-item side-nav-item--cool-grey" href="/docs/title/">Title</a>
+              <a class="side-nav-item side-nav-item--ink" href="/docs/tongue/">Tongue</a>
+              <a class="side-nav-item side-nav-item--sage" href="/docs/uhm/">Uhm</a>
+              <a class="side-nav-item side-nav-item--dark-teal" href="/docs/voz/">Voz</a>
+            </div>
+          </nav>
+        <div class="docs-body">
+          <header class="docs-head-group rise d2">
+            <h1 class="headline">Emo</h1>
+            <p class="docs-index-note docs-index-note--lg">Multilingual on-device emoji suggestion.</p>
+            <a class="btn btn--outline" href="/models/emo/">Emo model page</a>
+          </header>
+          <div class="prose docs-md rise d3"><dl class="specs">
+<div><dt><strong>Platforms</strong></dt><dd>iOS, macOS, tvOS, visionOS, Android, Linux, Windows, Browser, Node</dd></div>
+<div><dt><strong>Languages</strong></dt><dd>22</dd></div>
+<div><dt><strong>Weights</strong></dt><dd><a href="https://huggingface.co/desert-ant-labs/emo">v0.7.0</a></dd></div>
+<div><dt><strong>Demo</strong></dt><dd><a href="https://desertant.com/models/emo/">https://desertant.com/models/emo/</a></dd></div>
+</dl>
+<h2 id="install">Install</h2>
+<div class="tabs"><input type="radio" name="emo-tabs-1" id="emo-tabs-1-0" checked><input type="radio" name="emo-tabs-1" id="emo-tabs-1-1"><input type="radio" name="emo-tabs-1" id="emo-tabs-1-2"><header><label for="emo-tabs-1-0">Swift</label><label for="emo-tabs-1-1">Kotlin</label><label for="emo-tabs-1-2">JavaScript</label></header>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#swift">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">url</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"https://github.com/Desert-Ant-Labs/desert-ant-core.git"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">from</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div><p>Then add the <code>Emo</code> product to your target.</p>
+</div>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#android">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Kotlin</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">implementation</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"ai.desertant:emo:3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div>
+</div>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#javascript-and-typescript">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Terminal</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">npm</span><span style="color:#A31515;--shiki-dark:#CE9178"> i</span><span style="color:#A31515;--shiki-dark:#CE9178"> @desert-ant-labs/emo</span><span style="color:#A31515;--shiki-dark:#CE9178"> @litertjs/core</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">   # browser</span></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">npm</span><span style="color:#A31515;--shiki-dark:#CE9178"> i</span><span style="color:#A31515;--shiki-dark:#CE9178"> @desert-ant-labs/emo</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">                  # Node, prebuilt native core</span></span></code></pre>
+          </div>
+</div>
+</div>
+<h2 id="usage">Usage</h2>
+<p>Create one instance and reuse it. Construction is cheap and non-blocking; the
+model loads on first use, or earlier if you call <code>download</code>.</p>
+<div class="tabs"><input type="radio" name="emo-tabs-2" id="emo-tabs-2-0" checked><input type="radio" name="emo-tabs-2" id="emo-tabs-2-1"><input type="radio" name="emo-tabs-2" id="emo-tabs-2-2"><header><label for="emo-tabs-2-0">Swift</label><label for="emo-tabs-2-1">Kotlin</label><label for="emo-tabs-2-2">JavaScript</label></header>
+<div>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#1d6377;--shiki-dark:#4EC9B0"> Emo</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> emo = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">()</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> suggestions = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> emo.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">suggestions</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">for</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"Pay my bills"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// [EmoSuggestion(emoji: "💰", confidence: ...), ...]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> toned = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> emo.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">suggestions</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">for</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"go for a run"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">limit</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">1</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">skinTone</span><span style="color:#000000;--shiki-dark:#D4D4D4">: .</span><span style="color:#001080;--shiki-dark:#9CDCFE">medium</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// 🏃🏽</span></span></code></pre>
+          </div>
+</div>
+<div>
+<p><code>suggestions</code> and <code>download</code> are suspending functions. A model owns native
+resources, so close it when you are done, or let <code>use { }</code> do it.</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Kotlin</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ai.desertant.emo.Emo</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ai.desertant.emo.EmojiSkinTone</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">(context).</span><span style="color:#795E26;--shiki-dark:#DCDCAA">use</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { emo </span><span style="color:#0000FF;--shiki-dark:#569CD6">-></span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">    val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> suggestions = emo.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">suggestions</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"Pay my bills"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)               </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// List&#x3C;EmoSuggestion></span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">    val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> toned = emo.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">suggestions</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"go for a run"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, limit = </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">1</span><span style="color:#000000;--shiki-dark:#D4D4D4">, skinTone = EmojiSkinTone.MEDIUM)</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">}</span></span></code></pre>
+          </div>
+</div>
+<div>
+<p>The default import is the browser build. For inference in plain Node, import the
+<code>/native</code> subpath, which ships prebuilt for linux-x64, linux-arm64 and darwin-arm64.</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">TypeScript</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#001080;--shiki-dark:#9CDCFE">Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4"> } </span><span style="color:#AF00DB;--shiki-dark:#C586C0">from</span><span style="color:#A31515;--shiki-dark:#CE9178"> "@desert-ant-labs/emo"</span><span style="color:#000000;--shiki-dark:#D4D4D4">;           </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// browser</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// import { Emo } from "@desert-ant-labs/emo/native"; // server-side Node</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> emo</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">load</span><span style="color:#000000;--shiki-dark:#D4D4D4">();                                </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// downloads and caches on first use</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> suggestions</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">suggestions</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"Pay my bills"</span><span style="color:#000000;--shiki-dark:#D4D4D4">);   </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// [{ emoji, confidence }, ...]</span></span>
+<span class="line"><span style="color:#001080;--shiki-dark:#9CDCFE">emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">dispose</span><span style="color:#000000;--shiki-dark:#D4D4D4">();</span></span></code></pre>
+          </div><h3 id="loading-the-model">Loading the model</h3>
+<p>The weights are fetched from the Hub on first use and cached. To fetch them
+earlier, for example during onboarding, or to ship them yourself, see
+<a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#model-downloads-and-caching">model downloads and caching</a>.</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> emo = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">()</span></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">if</span><span style="color:#000000;--shiki-dark:#D4D4D4"> !emo.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">isDownloaded</span><span style="color:#000000;--shiki-dark:#D4D4D4">() {</span></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">    try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> emo.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">download</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { fraction </span><span style="color:#AF00DB;--shiki-dark:#C586C0">in</span><span style="color:#795E26;--shiki-dark:#DCDCAA"> print</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"</span><span style="color:#0000FF;--shiki-dark:#569CD6">\(</span><span style="color:#1d6377;--shiki-dark:#4EC9B0">Int</span><span style="color:#000000FF;--shiki-dark:#D4D4D4">(fraction </span><span style="color:#000000;--shiki-dark:#D4D4D4">*</span><span style="color:#0a6b48;--shiki-dark:#B5CEA8"> 100</span><span style="color:#000000FF;--shiki-dark:#D4D4D4">)</span><span style="color:#0000FF;--shiki-dark:#569CD6">)</span><span style="color:#A31515;--shiki-dark:#CE9178">%"</span><span style="color:#000000;--shiki-dark:#D4D4D4">) }</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> offline = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">directory</span><span style="color:#000000;--shiki-dark:#D4D4D4">: myModelDirectory)   </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// adopted as-is, nothing downloaded</span></span></code></pre>
+          </div>
+</div>
+</div>
+<h2 id="files">Files</h2>
+<table><thead><tr><th>File</th><th>Format</th><th>Size</th><th>Contents</th></tr></thead><tbody><tr><td><code>emo.<wbr>tflite</code></td><td>LiteRT / TFLite (int8)</td><td>~10.2 MB</td><td>Runs on Android, Linux, Node, and the web (bundled by default in the Kotlin SDK; downloaded on demand by the JavaScript SDK)</td></tr>
+<tr><td><code>emo.<wbr>mlmodelc</code></td><td>Compiled Core ML</td><td>~4.6 MB</td><td>Ready to load on Apple platforms (used by the Swift SDK)</td></tr>
+<tr><td><code>emo_<wbr>tokenizer.<wbr>bin</code></td><td>Unigram tokenizer</td><td>~0.75 MB</td><td>Tokenizer the runtime needs</td></tr>
+<tr><td><code>emo_<wbr>meta.<wbr>json</code></td><td>JSON</td><td>tiny</td><td>Emoji labels and runtime config</td></tr></tbody></table>
+<p>Older revisions (tags <code>v0.6.0</code> and earlier) carry <code>Emo.mlmodelc</code> and <code>emo.safetensors</code> for SDK versions that predate the unified cross-platform migration.</p>
+<h2 id="inputs-and-outputs">Inputs and outputs</h2>
+<ul>
+<li><strong>Input:</strong> a plain text string. Best on short, intent-oriented text.</li>
+<li><strong>Output:</strong> a probability distribution over the ~800-emoji vocabulary; take the
+top-1 (or top-k). Optimized for <strong>top-1 relevance</strong>.</li>
+</ul>
+<h2 id="languages">Languages</h2>
+<p>English, Spanish, Portuguese, French, German, Italian, Dutch, Russian, Polish,
+Turkish, Arabic, Chinese (Simplified &amp; Traditional), Japanese, Korean, Hindi,
+Indonesian, Thai, Vietnamese, Ukrainian, Swedish, Danish, Czech.</p>
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li>Tuned for short, intent-oriented text; long-form text produces noisier suggestions.</li>
+<li>Emoji semantics are imprecise; near-ties at the top of the ranking are expected.</li>
+<li>Per-language quality varies; lower-resource languages in the set are somewhat weaker.</li>
+</ul>
+</div>
+          
+          
+        </div>
+      </div>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

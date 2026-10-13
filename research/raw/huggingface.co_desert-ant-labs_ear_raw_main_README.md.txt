@@ -1,0 +1,279 @@
+---
+license: other
+license_name: desert-ant-labs-source-available-1.0
+license_link: https://license.desertant.com/1.0
+language:
+- af
+- am
+- ar
+- as
+- ast
+- az
+- be
+- bg
+- bn
+- bs
+- ca
+- ceb
+- ckb
+- cs
+- cy
+- da
+- de
+- el
+- en
+- es
+- et
+- eu
+- fa
+- ff
+- fi
+- fil
+- fr
+- ga
+- gl
+- gu
+- ha
+- he
+- hi
+- hr
+- hu
+- hy
+- id
+- ig
+- is
+- it
+- ja
+- jv
+- ka
+- kam
+- kea
+- kk
+- km
+- kn
+- ko
+- ky
+- lb
+- lg
+- ln
+- lo
+- lt
+- luo
+- lv
+- mi
+- mk
+- ml
+- mn
+- mr
+- ms
+- mt
+- my
+- ne
+- nl
+- no
+- nso
+- ny
+- oc
+- om
+- or
+- pa
+- pl
+- ps
+- pt
+- ro
+- ru
+- sd
+- sk
+- sl
+- sn
+- so
+- sr
+- sv
+- sw
+- ta
+- te
+- tg
+- th
+- tr
+- uk
+- umb
+- ur
+- uz
+- vi
+- wo
+- xh
+- yo
+- zh
+- zu
+tags:
+- language-identification
+- language-detection
+- langid
+- spoken-language-identification
+- audio-classification
+- speech
+- on-device
+- edge-ai
+- mobile
+- offline
+- core-ml
+- apple-neural-engine
+- litert
+- multilingual
+pipeline_tag: audio-classification
+---
+
+<!-- card-header:start (generated from manifest.json, edit below this block) -->
+# Ear
+
+Detect spoken language from 30 seconds audio.
+
+On-device spoken language identification across 102 languages.
+
+- **SDKs, install and examples:** https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/docs/models/ear.md
+
+<!-- card-header:end -->
+
+<!-- card-install:start (generated from manifest.json, edit below this block) -->
+| | |
+| --- | --- |
+| **Platforms** | iOS, macOS, tvOS, visionOS, Android, Linux, Windows, Browser, Node |
+| **Languages** | 102 |
+| **Weights** | [v0.2.0](https://huggingface.co/desert-ant-labs/ear) |
+
+## Install
+
+**Swift** ([requirements](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/README.md#swift))
+
+```swift
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core.git", from: "3.6.0")
+```
+
+Then add the `Ear` product to your target.
+
+**Kotlin** ([requirements](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/README.md#android))
+
+```kotlin
+implementation("ai.desertant:ear:3.6.0")
+```
+
+**JavaScript** ([requirements](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/README.md#javascript-and-typescript))
+
+```bash
+npm i @desert-ant-labs/ear @litertjs/core   # browser
+npm i @desert-ant-labs/ear                  # Node, prebuilt native core
+```
+<!-- card-install:end -->
+
+## Try it
+
+Ear is on the site, with the SDK examples and the use cases:
+https://desertant.com/models/ear/
+
+## Files
+
+| File | What it is | Size |
+| --- | --- | ---: |
+| `ear.mlmodelc/` | Core ML, compiled, for the Apple Neural Engine (iOS, macOS, tvOS, visionOS) | 13MB |
+| `ear.tflite` | LiteRT, for Android, Linux, Windows, the browser, and Node | 22MB |
+| `ear_meta.json` | The audio front end and the windowing the SDKs follow | |
+| `languages.json` | The 99 language codes, in output order | |
+| `mel_filters.f32` | The 80 mel filters for the front end | |
+
+The SDKs fetch the file for their platform on first use and cache it, or load it from
+a directory you ship with the app.
+
+## Inputs and outputs
+
+Give Ear a file, or already-decoded samples at any rate; the SDK resamples to 16kHz
+mono. It listens to three 30-second windows rather than the whole recording, which
+takes about 250ms, and returns:
+
+- `language`: the code of the top candidate ("pt")
+- `confidence`: the probability of that candidate, averaged over the windows
+- `candidates`: every language with its probability, ranked
+- `isReliable`: false when the top two candidates are too close to separate, and
+  false for Norwegian, Swedish, and Danish, which the model confuses with each
+  other confidently rather than uncertainly
+
+Branch on `isReliable`. The threshold behind it was set by sweeping it against 162
+recordings: of the answers above it, 98.5% route to the right recognizer, on files in
+a language the primary recognizer supports 100% do, and 86% of files clear it. The
+flag is decided once, in the model, so every SDK reads the same answer.
+
+## What it hears
+
+A recording handed to a transcriber is not speech end to end, so Ear does not listen
+to it end to end either. It ranks candidate windows by how much their loudness varies
+at syllable rate: speech rises and falls three to six times a second and has gaps
+between words, music sustains, silence does not vary at all. The three most
+speech-like windows are the ones it reads.
+
+That choice matters more than it sounds. Picking windows by position finds the
+language 4% of the time on a five-minute recording with speech in a tenth of it.
+Picking the loudest windows finds it half the time on a file with a music intro,
+because an intro is mixed hotter than the voice after it.
+
+## Accuracy
+
+Measured end to end through the SDK, on real uploads:
+
+| | exact | confident | of those, right |
+| --- | ---: | ---: | ---: |
+| Ordinary recordings | 12/12 | 12/12 | **12/12** |
+| The same, rebuilt as podcasts | 9/10 | 8/10 | **8/8** |
+
+No confident answer was wrong in either set. The podcast miss is a German episode
+read as English under its jingle, and it was reported unsure.
+
+## Limits
+
+- Speech mixed under louder music is read correctly about 60% of the time. No
+  choice of windows changes that; the model cannot read it.
+- Norwegian, Swedish, and Danish are not distinguished reliably. `isReliable` is
+  false for all three rather than reporting one confidently.
+- Recordings shorter than 30 seconds get a single window, so there is nothing to
+  average and the answer is less certain than its number suggests.
+- A multilingual recording is reported as whichever language the chosen windows
+  contain, not as a mixture.
+- Ear names the language; it does not transcribe. A language outside the 99 is
+  reported as the nearest one it knows.
+
+## Languages
+
+99, listed in `languages.json` in output order. Nordic languages carry the caveat
+above.
+
+## Built on
+
+The weights derive from [`openai/whisper-tiny`](https://huggingface.co/openai/whisper-tiny)
+(MIT): the parameters this task does not use are removed, the subgraph that predicts a
+language is kept, and the result is compressed for on-device execution. The front end
+(80 log-mel bins, 400-point FFT, 160-sample hop, 30-second windows) runs on the host
+because it cannot run in float16; the SDKs implement it from `ear_meta.json`.
+
+<!-- card-footer:start (generated from manifest.json, edit above this block) -->
+## License
+
+[Desert Ant Labs Source-Available License](https://license.desertant.com/1.0). Free for most
+apps, and a commercial license is required at scale. Full terms are at the link.
+Licensing: <licensing@desertant.com>.
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+## Citation
+
+```bibtex
+@software{ear_2026,
+  title  = {Ear: On-device spoken language identification across 102 languages},
+  author = {Desert Ant Labs},
+  year   = {2026},
+  url    = {https://huggingface.co/desert-ant-labs/ear},
+}
+```
+
+---
+
+© 2026 Desert Ant Labs · <https://desertant.com>
+<!-- card-footer:end -->
+

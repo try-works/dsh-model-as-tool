@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Align: On-device Word Timestamps for Any Transcript</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="Word timestamps on device, for any transcriber. Cut, caption, and highlight on the word, five times more accurately, from 0.7MB.">
+<meta name="keywords" content="word timestamps, forced alignment, SpeechAnalyzer, SpeechTranscriber, word-level timing, caption timing, karaoke captions, Core ML, Swift, on-device, speech recognition timestamps, Apple Speech framework">
+<link rel="canonical" href="https://desertant.com/models/align/">
+<link rel="alternate" hreflang="en" href="https://desertant.com/models/align/">
+<link rel="alternate" hreflang="de" href="https://desertant.com/de/models/align/">
+<link rel="alternate" hreflang="fr" href="https://desertant.com/fr/models/align/">
+<link rel="alternate" hreflang="es" href="https://desertant.com/es/models/align/">
+<link rel="alternate" hreflang="it" href="https://desertant.com/it/models/align/">
+<link rel="alternate" hreflang="nl" href="https://desertant.com/nl/models/align/">
+<link rel="alternate" hreflang="pt-BR" href="https://desertant.com/pt-br/models/align/">
+<link rel="alternate" hreflang="pt-PT" href="https://desertant.com/pt-pt/models/align/">
+<link rel="alternate" hreflang="zh-Hans" href="https://desertant.com/zh/models/align/">
+<link rel="alternate" hreflang="ja" href="https://desertant.com/ja/models/align/">
+<link rel="alternate" hreflang="ko" href="https://desertant.com/ko/models/align/">
+<link rel="alternate" hreflang="sv" href="https://desertant.com/sv/models/align/">
+<link rel="alternate" hreflang="x-default" href="https://desertant.com/models/align/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Align: On-device Word Timestamps for Any Transcript">
+<meta property="og:description" content="Word timestamps on device, for any transcriber. Cut, caption, and highlight on the word, five times more accurately, from 0.7MB.">
+<meta property="og:url" content="https://desertant.com/models/align/">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="es_ES">
+<meta property="og:locale:alternate" content="it_IT">
+<meta property="og:locale:alternate" content="nl_NL">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:locale:alternate" content="pt_PT">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:locale:alternate" content="ko_KR">
+<meta property="og:locale:alternate" content="sv_SE">
+<meta property="og:image" content="https://desertant.com/og/align.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Align: Accurate word timestamps for any transcript.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Align: On-device Word Timestamps for Any Transcript">
+<meta name="twitter:description" content="Word timestamps on device, for any transcriber. Cut, caption, and highlight on the word, five times more accurately, from 0.7MB.">
+<meta name="twitter:image" content="https://desertant.com/og/align.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Align","applicationCategory":"DeveloperApplication","operatingSystem":"iOS, macOS, Web, Node.js","description":"Word timestamps on device, for any transcriber. Cut, caption, and highlight on the word, five times more accurately, from 0.7MB.","url":"https://desertant.com/models/align/","image":"https://desertant.com/og/align.jpg","softwareVersion":"3.5.0","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","description":"Each model is free up to 100k monthly active devices. Inference is unlimited."},"featureList":["Corrects the word-level timings Apple's `SpeechTranscriber` and `SpeechAnalyzer` return, without replacing them: same words, same result surface, tighter `audioTimeRange` values.","Mean timing error from 124.2ms to 43.9ms, macro-averaged across all nine languages so no single language carries the figure. On English it goes further: 106.4ms to 20.2ms.","On a 500-clip sample of LibriSpeech test-clean, 95% of words land within 50ms of the reference, up from 37%. The worst tenth improves most: from 230.7ms to 33.0ms, about one frame of 30fps video.","A structural fallback keeps Apple's original timestamp whenever a correction would be invalid, hits the search window's edge, or lacks streaming context.","Nine languages: English, Spanish, French, Italian, Portuguese, German, Japanese, Korean, and Chinese. Other locales pass through unchanged.","About 0.7MB of compiled Core ML in two stages, run on the CPU and Neural Engine; a typical result is refined in a few milliseconds."],"sameAs":["https://github.com/Desert-Ant-Labs/desert-ant-core","https://huggingface.co/desert-ant-labs/align"],"publisher":{"@type":"Organization","name":"Desert Ant Labs","url":"https://desertant.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desertant.com/"},{"@type":"ListItem","position":2,"name":"Audio","item":"https://desertant.com/audio/"},{"@type":"ListItem","position":3,"name":"Align","item":"https://desertant.com/models/align/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Align?","acceptedAnswer":{"@type":"Answer","text":"Word timestamps on device, for any transcriber. Cut, caption, and highlight on the word, five times more accurately, from 0.7MB."}},{"@type":"Question","name":"Does Align run on device?","acceptedAnswer":{"@type":"Answer","text":"Yes. Align runs on the device, with no server call, so the data stays with the user."}},{"@type":"Question","name":"Which platforms does Align support?","acceptedAnswer":{"@type":"Answer","text":"Align ships as a native on-device SDK for Swift, JavaScript / TypeScript."}},{"@type":"Question","name":"How much does Align cost?","acceptedAnswer":{"@type":"Answer","text":"Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses."}},{"@type":"Question","name":"How accurate or fast is Align?","acceptedAnswer":{"@type":"Answer","text":"Apple's word timings on LibriSpeech test-clean are off by 106.4ms on average; Align brings that to 20.2ms, and 95% of words land within 50ms, from a 0.7MB model."}}]}</script>
+</head>
+<body class="theme-faun">
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/" aria-current="page"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <article class="article theme-faun">
+        <section class="hero-model rise d1">
+          <div class="hero-model-content">
+            <div class="model-title" data-fx-host>
+              <h1 class="hero-model-title" data-effect="ticks">Align</h1>
+            </div>
+            <div class="tag-row"><span class="tag">Word timestamps</span><span class="tag">Available</span></div>
+            <p class="lede">Word timestamps on device, for any transcriber. Cut, caption, and highlight on the word, five times more accurately, from 0.7MB.</p>
+        <div class="btn-row">
+          <a class="btn" href="#getting-started"><svg class="btn-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"/><path d="M12 5l7 7-7 7"/></svg><span>Get started</span></a>
+          <a class="btn btn--outline" href="/docs/align/"><svg class="btn-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h5"/></svg><span>Docs</span></a>
+          <a class="btn btn--outline" href="https://huggingface.co/desert-ant-labs/align"><img class="btn-hf" src="/assets/hf-logo-gray.svg" width="24" height="22" alt="" aria-hidden="true"><span>Model card</span></a>
+        </div>
+          </div>
+          <div class="hero-model-photo"><img src="/assets/photos/align-card-816.webp" srcset="/assets/photos/align-card-816.webp 816w, /assets/photos/align-card.webp 1632w" sizes="(max-width: 860px) 100vw, 50vw" alt="" fetchpriority="high"></div>
+        </section>
+        <nav class="breadcrumb rise d2" aria-label="Breadcrumb">
+          <a href="/">Home</a><span class="sep" aria-hidden="true">/</span>
+          <a href="/#models">Models</a><span class="sep" aria-hidden="true">/</span>
+          <span aria-current="page">Align</span>
+        </nav>
+
+
+      <section class="section section--narrow rise d3" id="overview">
+        <h2 class="section-title">Accurate word timestamps for any transcript.</h2>
+        <div class="prose">
+          <p>Apple says "world" runs from 2.61 to 3.04 seconds. Align says 2.57 to 2.98. Cut there and the cut is clean, the caption lights up on the word, and the highlight starts where the speaker did.</p>
+          <p>You keep Apple's transcriber. Align reads the same audio SpeechAnalyzer already gets and returns the same words with tighter start and end times, in a few milliseconds, from a 0.7MB download. On clean audio that takes Apple's average miss from 113ms to 45ms.</p>
+          <p>A word Align can't improve keeps Apple's timing, so a correction can only help or leave the word alone. Nine languages, and a locale outside them passes through with Apple's timings untouched.</p>
+        </div>
+      </section>
+      <section class="section section--perf rise d4" id="performance" aria-label="Performance">
+        <h2 class="section-title">Five times more accurate.</h2>
+        <p class="section-lede">Apple's word timings on LibriSpeech test-clean are off by 106.4ms on average; Align brings that to 20.2ms, and 95% of words land within 50ms, from a 0.7MB model.</p>
+        <div class="perf-hero no-photo">
+          <div class="stat-row">
+            <div class="stat"><div class="stat-value">20.2ms</div><div class="stat-label">Mean error, LibriSpeech test-clean</div><div class="stat-detail">Apple raw: 106.4ms</div></div>
+            <div class="stat"><div class="stat-value">5x</div><div class="stat-label">More accurate</div><div class="stat-detail">106.4ms to 20.2ms</div></div>
+            <div class="stat"><div class="stat-value">45.0ms</div><div class="stat-label">Against hand-corrected boundaries</div><div class="stat-detail">WhisperX: 53.5ms</div></div>
+            <div class="stat"><div class="stat-value">0.7MB</div><div class="stat-label">On device</div><div class="stat-detail">compiled Core ML, two stages</div></div>
+          </div>
+        </div>
+        <div class="panel board">
+          <p class="board-caption">Mean absolute distance from the reference word boundary, on a 500-clip sample of each official LibriSpeech split, with no speaker shared between training and evaluation</p>
+          <div class="table-wrap" tabindex="0"><table class="table"><thead><tr><th>Split</th><th class="num">Apple raw</th><th class="num">Align</th><th class="num">Within 50ms</th></tr></thead><tbody><tr><th scope="row">test-clean</th><td class="num">106.4ms</td><td class="num">20.2ms</td><td class="num">95%</td></tr><tr><th scope="row">test-other</th><td class="num">111.6ms</td><td class="num">24.8ms</td><td class="num">92%</td></tr></tbody></table></div>
+        </div>
+        <p class="perf-note">Evaluated on the v1.0.0 weights. The references are machine forced-alignment estimates from Qwen3-ForcedAligner averaged with a second aligner, not human annotations, so the figures show a large and consistent reduction of the timing error rather than sample-accurate ground truth. The one exception is the comparison against WhisperX, which is scored on 258 word boundaries a person corrected by hand against the waveform.</p>
+      </section>
+      <section class="section section--uc rise d4" id="use-cases">
+        <h2 class="section-title">Use cases</h2>
+        <div class="uc-figure-grid">
+          <figure class="uc-figure">
+            <img src="/assets/photos/align-card-816.webp" alt="" loading="lazy" width="1088" height="1360">
+            <h3>Accurate word timestamps for any transcript.</h3>
+          </figure>
+          <div class="uc-figure-col">
+            <div class="use-case"><h3>Word-by-word captions that keep up</h3><p>Light up each word as it is said in a captions view, a karaoke-style lyric screen, or a language-learning app, from Apple's transcript. The timings land on the word instead of a tenth of a second off it.</p></div>
+            <div class="use-case"><h3>Cut a clip on a word</h3><p>Trim a recording to a quote in a podcast editor or a video app and have the cut start where the word starts. No frame of the previous word, no clipped consonant, and no manual nudge on the timeline.</p></div>
+            <div class="use-case"><h3>Highlight the spoken word in a transcript</h3><p>Scroll a transcript in step with playback in a meeting recorder or a lecture app, with the highlight moving on the word rather than drifting ahead of the audio.</p></div>
+            <div class="use-case"><h3>Search that lands on the moment</h3><p>Jump to the second a word was said in an archive of recordings, on the device. The timings are tight enough that the playhead starts on the word and not in the middle of the previous one.</p></div>
+          </div>
+        </div>
+      </section>
+      <section class="section rise d5" id="inspiration">
+        <h2 class="section-title">Inspiration</h2>
+        <p class="section-lede">Ideas to build with Align. Copy a prompt into your coding agent and go.</p>
+        <div class="pinboard">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Run Apple's SpeechTranscriber with Desert Ant's Align attached as a timestamp refiner, then highlight each word using its refined time range. Align tightens Apple's word timings on-device; iOS 26 / macOS 26.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Highlight each word as it's spoken, timed to the audio.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Attach Desert Ant's Align as a refiner to Apple's SpeechAnalyzer / SpeechTranscriber so its word-level timings tighten and captions and cuts land exactly on the word. iOS 26 / macOS 26, on-device.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Tighten a system transcriber's word timings so captions land on the word.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Transcribe with Apple's SpeechTranscriber and Desert Ant's Align refiner for word-exact timings, then let the user select words to trim the video to that span. Deleting a sentence deletes the footage. iOS 26 / macOS 26.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Build a text-based video editor where selecting words trims the clip.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Add animated word-by-word captions to short vertical videos, timed with Desert Ant's Align attached to Apple's SpeechTranscriber so each word pops exactly when it's said. On-device, iOS 26 / macOS 26.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Add bouncing word-by-word captions to vertical videos.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="In an Apple media app, transcribe with SpeechTranscriber and Desert Ant's Align refiner so a search result seeks the audio or video to the precise word, not the sentence. iOS 26 / macOS 26.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Make transcript search jump the audio to the exact word.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+        </div>
+      </section>
+      <section class="section rise d5">
+        <h2 class="section-title">What the model does</h2>
+        <ul class="features">
+          <li>Corrects the word-level timings Apple's <code>SpeechTranscriber</code> and <code>SpeechAnalyzer</code> return, without replacing them: same words, same result surface, tighter <code>audioTimeRange</code> values.</li>
+          <li>Mean timing error from 124.2ms to 43.9ms, macro-averaged across all nine languages so no single language carries the figure. On English it goes further: 106.4ms to 20.2ms.</li>
+          <li>On a 500-clip sample of LibriSpeech test-clean, 95% of words land within 50ms of the reference, up from 37%. The worst tenth improves most: from 230.7ms to 33.0ms, about one frame of 30fps video.</li>
+          <li>A structural fallback keeps Apple's original timestamp whenever a correction would be invalid, hits the search window's edge, or lacks streaming context.</li>
+          <li>Nine languages: English, Spanish, French, Italian, Portuguese, German, Japanese, Korean, and Chinese. Other locales pass through unchanged.</li>
+          <li>About 0.7MB of compiled Core ML in two stages, run on the CPU and Neural Engine; a typical result is refined in a few milliseconds.</li>
+        </ul>
+      </section>
+
+      <section class="section rise d6" id="getting-started">
+        <h2 class="section-title">Getting started</h2>
+        <p class="section-lede">Add word timestamps to your iOS or macOS or web app in a few lines of code. <a href="/docs/align/">Align docs</a>.</p>
+        <div class="platforms">
+          <div class="platform">
+            <div class="platform-head"><span class="platform-name">iOS, macOS</span></div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Install</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// Swift Package Manager</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">url</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"https://github.com/Desert-Ant-Labs/desert-ant-core.git"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">from</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// target dependency</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">product</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">name</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"Align"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"desert-ant-core"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Example - Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#1d6377;--shiki-dark:#4EC9B0"> Align</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> align = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Align</span><span style="color:#000000;--shiki-dark:#D4D4D4">()</span></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">guard</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> align.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">isSupported</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">languageCode</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"en"</span><span style="color:#000000;--shiki-dark:#D4D4D4">) </span><span style="color:#AF00DB;--shiki-dark:#C586C0">else</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#AF00DB;--shiki-dark:#C586C0">return</span><span style="color:#000000;--shiki-dark:#D4D4D4"> words }</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> fixed = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> align.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">refine</span><span style="color:#000000;--shiki-dark:#D4D4D4">(words, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">audio</span><span style="color:#000000;--shiki-dark:#D4D4D4">: samples, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">sampleRate</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">16_000</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">languageCode</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"en"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Build with a prompt</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre tabindex="0" class="assistant-prompt">Add Align from Desert Ant Labs to this Swift project (iOS, macOS).
+
+What it does: On-device Word Timestamps for Any Transcript.
+
+SDK:
+
+Swift (iOS, macOS)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// Swift Package Manager
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core.git", from: "3.5.0")
+// target dependency
+.product(name: "Align", package: "desert-ant-core")
+
+Reference:
+- Model page: https://desertant.com/models/align/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.</pre>
+          </div>
+            <div class="platform-links"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core#readme">SDK on GitHub</a></div>
+          </div>
+          <div class="platform">
+            <div class="platform-head"><span class="platform-name">Android</span><span class="platform-tag is-soon">Coming soon</span></div>
+          </div>
+          <div class="platform">
+            <div class="platform-head"><span class="platform-name">Web, Node.js</span></div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Install</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">npm</span><span style="color:#A31515;--shiki-dark:#CE9178"> i</span><span style="color:#A31515;--shiki-dark:#CE9178"> @desert-ant-labs/align</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Example - TypeScript</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#001080;--shiki-dark:#9CDCFE">Align</span><span style="color:#000000;--shiki-dark:#D4D4D4"> } </span><span style="color:#AF00DB;--shiki-dark:#C586C0">from</span><span style="color:#A31515;--shiki-dark:#CE9178"> "@desert-ant-labs/align/native"</span><span style="color:#000000;--shiki-dark:#D4D4D4">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> align</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> Align</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">load</span><span style="color:#000000;--shiki-dark:#D4D4D4">();</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> fixed</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> align</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">refine</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#001080;--shiki-dark:#9CDCFE">samples</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">16000</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#001080;--shiki-dark:#9CDCFE">words</span><span style="color:#000000;--shiki-dark:#D4D4D4">, { </span><span style="color:#001080;--shiki-dark:#9CDCFE">language:</span><span style="color:#A31515;--shiki-dark:#CE9178"> "en"</span><span style="color:#000000;--shiki-dark:#D4D4D4"> });</span></span>
+<span class="line"><span style="color:#001080;--shiki-dark:#9CDCFE">align</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">dispose</span><span style="color:#000000;--shiki-dark:#D4D4D4">();</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Build with a prompt</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre tabindex="0" class="assistant-prompt">Add Align from Desert Ant Labs to this JavaScript / TypeScript project (Web, Node.js).
+
+What it does: On-device Word Timestamps for Any Transcript.
+
+SDK:
+
+JavaScript / TypeScript (Web, Node.js)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+npm i @desert-ant-labs/align
+
+Reference:
+- Model page: https://desertant.com/models/align/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.</pre>
+          </div>
+            <div class="platform-links"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core#readme">SDK on GitHub</a></div>
+          </div>
+        </div>
+      </section>
+      <section class="section rise d5">
+        <h2 class="section-title">Specs</h2>
+        <dl class="specs">
+          <div><dt>Accuracy</dt><dd>20.2ms mean error on LibriSpeech test-clean against Apple's 106.4ms, and 43.9ms across all nine languages against Apple's 124.2ms</dd></div>
+          <div><dt>On-device size</dt><dd>About 0.7MB compiled Core ML (two 0.3MB stages plus the filter bank and calibrator)</dd></div>
+          <div><dt>Languages</dt><dd>English, Spanish, French, Italian, Portuguese, German, Japanese, Korean, Chinese</dd></div>
+          <div><dt>Model</dt><dd>Two-stage coarse-to-fine cascade over a log-mel spectrogram, with a gradient-boosted calibrator</dd></div>
+          <div><dt>Platforms</dt><dd>iOS 26, macOS 26, tvOS 26, visionOS 26 on Core ML, plus Linux, Windows, and Node on LiteRT</dd></div>
+        </dl>
+      </section>
+      <div class="caveats rise d6">
+        <p class="model-caveat">Align corrects a transcriber's timings; it doesn't transcribe. The StreamingRefiner that attaches to Apple's SpeechAnalyzer needs iOS 26, macOS 26, tvOS 26, or visionOS 26.</p>
+        <p class="model-caveat">The offline Align.refine corrects any transcript's words on its own, and runs on Linux, Windows, and Node through LiteRT.</p>
+        <p class="model-caveat">Align can't promise to improve every word. The fallback that keeps the original timing catches corrections that look unsafe, not every wrong one.</p>
+        <p class="model-caveat">Spoken numbers are the weakest case: on a small sample, refinement moved digit boundaries further from the reference than leaving them alone.</p>
+      </div>
+      <section class="section rise d6" id="faq">
+        <h2 class="section-title">FAQ</h2>
+        <div class="faq">
+          <div class="faq-item">
+            <h3 class="faq-q">What is Align?</h3>
+            <p class="faq-a">Word timestamps on device, for any transcriber. Cut, caption, and highlight on the word, five times more accurately, from 0.7MB.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">Does Align run on device?</h3>
+            <p class="faq-a">Yes. Align runs on the device, with no server call, so the data stays with the user.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">Which platforms does Align support?</h3>
+            <p class="faq-a">Align ships as a native on-device SDK for Swift, JavaScript / TypeScript.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">How much does Align cost?</h3>
+            <p class="faq-a">Each model is free up to 100k monthly active devices. Inference is unlimited. <a href="#" role="button" data-mail="Commercial license inquiry">Contact us</a> for custom licenses.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">How accurate or fast is Align?</h3>
+            <p class="faq-a">Apple's word timings on LibriSpeech test-clean are off by 106.4ms on average; Align brings that to 20.2ms, and 95% of words land within 50ms, from a 0.7MB model.</p>
+          </div>
+        </div>
+      </section>
+      <section class="section rise d6">
+        <h2 class="section-title">Resources</h2>
+        <ul class="resource-list">
+          <li><a href="/docs/align/">Align docs</a></li>
+          <li><a href="https://huggingface.co/desert-ant-labs/align">Model weights on Hugging Face</a></li>
+          <li><a href="/swift/">Swift models</a></li>
+          <li><a href="/js/">JS models</a></li>
+        </ul>
+      </section>
+      </article>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/models/align/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/models/align/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/models/align/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/models/align/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/models/align/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/models/align/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/models/align/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/models/align/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/models/align/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/models/align/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/models/align/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/models/align/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

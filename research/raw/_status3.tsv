@@ -1,0 +1,8 @@
+200 | https://huggingface.co/api/models?author=desert-ant-labs&full=true&limit=100 | huggingface.co_api_models_author_desert-ant-labs_full_true_limit_100 | 21978
+401 | https://huggingface.co/desert-ant-labs/eye | FAILED | Response status code does not indicate success: 401 (Unauthorized).
+401 | https://huggingface.co/desert-ant-labs/face | FAILED | Response status code does not indicate success: 401 (Unauthorized).
+200 | https://github.com/Desert-Ant-Labs/desert-ant-swift | github.com_Desert-Ant-Labs_desert-ant-swift | 262207
+200 | https://license.desertant.com/attribution | license.desertant.com_attribution | 6523
+200 | https://license.desertant.com/1.0.txt | license.desertant.com_1.0.txt | 16728
+404 | https://pypi.org/pypi/desertant/json | FAILED | Response status code does not indicate success: 404 (Not Found).
+404 | https://pypi.org/pypi/desert-ant/json | FAILED | Response status code does not indicate success: 404 (Not Found).

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jobs | Desert Ant Labs</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="Open roles at Desert Ant Labs in ML research, engineering, go-to-market, and operations, in Amsterdam or remote.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://desertant.com/jobs/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Jobs at Desert Ant Labs">
+<meta property="og:description" content="Open roles at Desert Ant Labs in ML research, engineering, go-to-market, and operations, in Amsterdam or remote.">
+<meta property="og:url" content="https://desertant.com/jobs/">
+<meta property="og:image" content="https://desertant.com/og/jobs/index.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Jobs at Desert Ant Labs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Jobs at Desert Ant Labs">
+<meta name="twitter:description" content="Open roles at Desert Ant Labs in ML research, engineering, go-to-market, and operations, in Amsterdam or remote.">
+<meta name="twitter:image" content="https://desertant.com/og/jobs/index.jpg">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+
+</head>
+<body>
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/" class="is-on">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <div class="jobs-index">
+        <header class="jobs-head rise d1">
+          <h1 class="blog-title">Build <span class="fx-host" data-effect="marker" data-fx-color="teal">on-device</span> intelligence for every product</h1>
+          <p class="jobs-lede">We're building efficient frontier intelligence, bottom up. We make the fastest model for each task, built to run on the billions of phones, laptops, and browsers people already own. Join us.</p>
+        </header>
+        <section class="job-group rise d3">
+          <h2 class="job-group-label">ML research <span class="job-group-count">1</span></h2>
+          <ul class="job-rows">
+            <li><a class="job-row" href="/jobs/ml-researcher/" data-job-link>
+              <span class="job-row-main">
+                <span class="job-row-title">ML Researcher</span>
+                <span class="job-row-glance">Train speech, vision, video, and text models that run on a phone, and make them smaller and faster.</span>
+              </span>
+              <span class="job-row-meta"><span>Amsterdam</span><span>Remote</span><span>UTC-5 to UTC+1</span><span>Full time</span></span>
+              <svg class="job-row-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h11m0 0-4.5-4.5M15 10l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a></li>
+          </ul>
+        </section>
+        <section class="job-group rise d4">
+          <h2 class="job-group-label">Engineering <span class="job-group-count">4</span></h2>
+          <ul class="job-rows">
+            <li><a class="job-row" href="/jobs/device-lab-and-benchmark-engineer/" data-job-link>
+              <span class="job-row-main">
+                <span class="job-row-title">Device Lab and Benchmark Engineer</span>
+                <span class="job-row-glance">Build the device lab and the benchmark system behind every number we publish.</span>
+              </span>
+              <span class="job-row-meta"><span>Amsterdam</span><span>Full time</span></span>
+              <svg class="job-row-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h11m0 0-4.5-4.5M15 10l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a></li>
+            <li><a class="job-row" href="/jobs/mobile-engineer-android/" data-job-link>
+              <span class="job-row-main">
+                <span class="job-row-title">Mobile Engineer: Android</span>
+                <span class="job-row-glance">Bring every model to Android, and make each one fast on budget phones and flagships.</span>
+              </span>
+              <span class="job-row-meta"><span>Amsterdam</span><span>Remote</span><span>UTC-5 to UTC+1</span><span>Full time</span></span>
+              <svg class="job-row-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h11m0 0-4.5-4.5M15 10l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a></li>
+            <li><a class="job-row" href="/jobs/runtime-and-performance-engineer/" data-job-link>
+              <span class="job-row-main">
+                <span class="job-row-title">Runtime and Performance Engineer</span>
+                <span class="job-row-glance">You have deep experience on Apple platforms (Swift, Metal), Android (Kotlin, the NDK), or Windows (C++, DirectX).</span>
+              </span>
+              <span class="job-row-meta"><span>Amsterdam</span><span>Remote</span><span>UTC-5 to UTC+1</span><span>Full time</span></span>
+              <svg class="job-row-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h11m0 0-4.5-4.5M15 10l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a></li>
+            <li><a class="job-row" href="/jobs/backend-and-infrastructure-engineer/" data-job-link>
+              <span class="job-row-main">
+                <span class="job-row-title">Backend and Infrastructure Engineer</span>
+                <span class="job-row-glance">Write and run the services behind our models and SDKs: model downloads, usage counts, CI, and our own servers.</span>
+              </span>
+              <span class="job-row-meta"><span>Amsterdam</span><span>Remote</span><span>UTC-5 to UTC+1</span><span>Full time</span></span>
+              <svg class="job-row-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h11m0 0-4.5-4.5M15 10l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a></li>
+          </ul>
+        </section>
+        <section class="job-group rise d5">
+          <h2 class="job-group-label">Go-to-market <span class="job-group-count">2</span></h2>
+          <ul class="job-rows">
+            <li><a class="job-row" href="/jobs/developer-relations-engineer/" data-job-link>
+              <span class="job-row-main">
+                <span class="job-row-title">Developer Relations Engineer</span>
+                <span class="job-row-glance">Go deep on every model and SDK, build examples for different verticals, and help customers ship.</span>
+              </span>
+              <span class="job-row-meta"><span>Amsterdam</span><span>Remote in Europe</span><span>Full time</span></span>
+              <svg class="job-row-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h11m0 0-4.5-4.5M15 10l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a></li>
+            <li><a class="job-row" href="/jobs/partnerships-manager-europe/" data-job-link>
+              <span class="job-row-main">
+                <span class="job-row-title">Partnerships Manager, Europe</span>
+                <span class="job-row-glance">Sign the platforms, tools, and apps that put our models in their products.</span>
+              </span>
+              <span class="job-row-meta"><span>Amsterdam</span><span>Remote in Europe</span><span>Full time</span></span>
+              <svg class="job-row-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h11m0 0-4.5-4.5M15 10l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a></li>
+          </ul>
+        </section>
+        <section class="job-group rise d6">
+          <h2 class="job-group-label">Operations <span class="job-group-count">1</span></h2>
+          <ul class="job-rows">
+            <li><a class="job-row" href="/jobs/executive-assistant/" data-job-link>
+              <span class="job-row-main">
+                <span class="job-row-title">Executive Assistant</span>
+                <span class="job-row-glance">Work with our leadership team on calendars, travel, events, hiring, and ops, and organize our team's weekly and monthly cadence.</span>
+              </span>
+              <span class="job-row-meta"><span>Amsterdam</span><span>Part time</span></span>
+              <svg class="job-row-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h11m0 0-4.5-4.5M15 10l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a></li>
+          </ul>
+        </section>
+        <section class="jobs-open rise d6">
+          <div>
+            <h2 class="jobs-open-title">Don't see your role?</h2>
+            <p>Leave your details, and we'll reach out when a role opens that fits you.</p>
+          </div>
+          <a class="btn" href="/jobs/open-application/" data-job-link>Leave your details</a>
+        </section>
+      </div>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspiration: build with on-device AI | Desert Ant Labs</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="Build ideas for Desert Ant's on-device models: transcription, clipping, redaction, moderation, and more. Copy a prompt and ship it.">
+<meta name="keywords" content="on-device AI ideas, build with on-device models, vibe coding, Desert Ant Labs">
+<link rel="canonical" href="https://desertant.com/inspiration/">
+<link rel="alternate" hreflang="en" href="https://desertant.com/inspiration/">
+<link rel="alternate" hreflang="de" href="https://desertant.com/de/inspiration/">
+<link rel="alternate" hreflang="fr" href="https://desertant.com/fr/inspiration/">
+<link rel="alternate" hreflang="es" href="https://desertant.com/es/inspiration/">
+<link rel="alternate" hreflang="it" href="https://desertant.com/it/inspiration/">
+<link rel="alternate" hreflang="nl" href="https://desertant.com/nl/inspiration/">
+<link rel="alternate" hreflang="pt-BR" href="https://desertant.com/pt-br/inspiration/">
+<link rel="alternate" hreflang="pt-PT" href="https://desertant.com/pt-pt/inspiration/">
+<link rel="alternate" hreflang="zh-Hans" href="https://desertant.com/zh/inspiration/">
+<link rel="alternate" hreflang="ja" href="https://desertant.com/ja/inspiration/">
+<link rel="alternate" hreflang="ko" href="https://desertant.com/ko/inspiration/">
+<link rel="alternate" hreflang="sv" href="https://desertant.com/sv/inspiration/">
+<link rel="alternate" hreflang="x-default" href="https://desertant.com/inspiration/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Inspiration">
+<meta property="og:description" content="Build ideas for Desert Ant's on-device models: transcription, clipping, redaction, moderation, and more. Copy a prompt and ship it.">
+<meta property="og:url" content="https://desertant.com/inspiration/">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="es_ES">
+<meta property="og:locale:alternate" content="it_IT">
+<meta property="og:locale:alternate" content="nl_NL">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:locale:alternate" content="pt_PT">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:locale:alternate" content="ko_KR">
+<meta property="og:locale:alternate" content="sv_SE">
+<meta property="og:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Desert Ant Labs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Inspiration">
+<meta name="twitter:description" content="Build ideas for Desert Ant's on-device models: transcription, clipping, redaction, moderation, and more. Copy a prompt and ship it.">
+<meta name="twitter:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+
+</head>
+<body>
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/" class="is-on">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <div class="article">
+        <header class="ideas-head rise d2">
+          <h1 class="ideas-title"><span class="fx-host" data-effect="underline">Things to build</span> with on-device models</h1>
+          <div class="ideas-filters">
+            <span class="ideas-filter">
+              <select class="tag" data-filter="model" aria-label="Filter the ideas by model">
+                <option value="">All models</option>
+                <option value="redact">Redact</option>
+                <option value="emo">Emo</option>
+                <option value="gist">Gist</option>
+                <option value="shapes">Shapes</option>
+                <option value="clear">Clear</option>
+                <option value="uhm">Uhm</option>
+                <option value="tongue">Tongue</option>
+                <option value="align">Align</option>
+                <option value="clips">Clips</option>
+                <option value="ear">Ear</option>
+                <option value="title">Title</option>
+                <option value="voz">Voz</option>
+              </select>
+            </span>
+            <span class="ideas-filter">
+              <select class="tag" data-filter="mode" aria-label="Filter the ideas by audio, vision or text">
+                <option value="">All inputs</option>
+                <option value="audio">Audio</option>
+                <option value="text">Text</option>
+                <option value="vision">Vision</option>
+              </select>
+            </span>
+          </div>
+        </header>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Get started</h2>
+            <p class="section-lede">Not sure where to start? Point a coding agent at your app and let it find the models.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="" data-modes="">
+            <button type="button" class="prompt-card-copy" data-prompt="Look at my current codebase and list the features that make cloud AI calls (transcription, moderation, tagging, extraction, enhancement). For each, tell me which Desert Ant on-device model would replace it, what it would save in cost and latency, and roughly how to swap it in.
+
+For SDK setup, point your coding agent at https://desertant.com/llms.txt (machine-readable) or browse https://desertant.com/docs/. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"></div>
+            <p class="pin-text">Review your app and find features you could move on the device.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="" data-modes="">
+            <button type="button" class="prompt-card-copy" data-prompt="Suggest one on-device feature I could add to my app using a Desert Ant model that would work offline, cost nothing per user, and keep data on the device. Pick the model, describe the feature, and sketch the integration.
+
+For SDK setup, point your coding agent at https://desertant.com/llms.txt (machine-readable) or browse https://desertant.com/docs/. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"></div>
+            <p class="pin-text">Add a private, offline AI feature to an app that has none.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Workflows</h2>
+            <p class="section-lede">Chain models into a complete pipeline.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="voz clips title" data-modes="audio text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a podcast tool that runs Desert Ant's Voz to transcribe an episode, Clips to pick the best moments as shorts, and Title to name and describe each clip, all on-device with no per-minute or per-token bill.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Clips (Swift). Install and API: https://desertant.com/docs/clips/. Title (Swift). Install and API: https://desertant.com/docs/title/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span><span class="pin-model" style="--dot: var(--color-theme-cool-grey-fill)"><i></i>Title</span></div>
+            <p class="pin-text">Build a full podcast studio: transcribe, clip, and title on the device.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="clear voz clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a creator pipeline: Desert Ant's Clear cleans the recording, Voz transcribes it, and Clips pulls the shorts, all on the device so a full episode never touches a server.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Clips (Swift). Install and API: https://desertant.com/docs/clips/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">Record, clean, transcribe, and clip: a whole creator pipeline, offline.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="clear voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a voice-notes app. Run Desert Ant's Clear on the recording for studio-clean audio, then Voz to transcribe it with word timestamps, entirely on-device so a note taken in a noisy room still reads well and never leaves the phone.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Build a voice-notes app that cleans the audio and transcribes it offline.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="ear voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Before transcribing, run Desert Ant's Ear on the first ~30 seconds to identify the spoken language on-device, then run Voz. Handle low confidence by asking the user instead of guessing.
+
+Build it with the Desert Ant SDK. Ear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/ear/. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-light-peach-fill)"><i></i>Ear</span><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Detect the language of a voice note, then transcribe with the right model.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="voz redact" data-modes="audio text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an interview tool: Desert Ant's Voz transcribes on the Mac, then Redact removes the bulk of names and PII. Flag the transcript for a human check before sharing, since free-form names are Redact's least reliable field.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Transcribe interviews and auto-redact names before you share them.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="tongue redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Run Desert Ant's Tongue to detect a message's language, then Redact to strip PII with the right language coverage, both on-device.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Detect the language, then redact PII in that language.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="clear voz uhm" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a transcript pipeline: Desert Ant's Clear cleans the audio, Voz transcribes it, and Uhm removes the fillers, so a messy recording becomes a clean transcript, on-device.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Uhm (Swift). Install and API: https://desertant.com/docs/uhm/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-sage-fill)"><i></i>Uhm</span></div>
+            <p class="pin-text">A clean, filler-free transcript from a raw, noisy recording.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2.5deg" data-models="gist emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="As a user drafts a post, run Desert Ant's Gist to tag its topic and Emo to suggest a fitting emoji, both on-device.
+
+Build it with the Desert Ant SDK. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Tag a post and suggest an emoji for it.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="voz clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Transcribe a webinar with Desert Ant's Voz and use Clips to pull the strongest moments as teaser clips for social, on-device.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Clips (Swift). Install and API: https://desertant.com/docs/clips/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">Turn a webinar into teaser clips for social.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="voz clips title" data-modes="audio text">
+            <button type="button" class="prompt-card-copy" data-prompt="Chain Desert Ant's Voz (transcribe with word timestamps), Clips (select the moments), and Title (name each clip) into a clipping engine that runs entirely on-device on iPhone or Mac, with word-accurate captions from Voz and no per-minute cost.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Clips (Swift). Install and API: https://desertant.com/docs/clips/. Title (Swift). Install and API: https://desertant.com/docs/title/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span><span class="pin-model" style="--dot: var(--color-theme-cool-grey-fill)"><i></i>Title</span></div>
+            <p class="pin-text">Build a fully local clipping engine: transcribe, clip, title, caption.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="tongue gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Write an OpenClaw skill that runs Desert Ant's Tongue to detect a text's language and Gist to tag its topics, on-device, so an agent can route content without a server call.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">Build an OpenClaw skill that tags and language-routes text.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="voz clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Mac CLI that transcribes a video with Desert Ant's Voz and exports ranked highlight clips with Clips, controllable by a percentile threshold.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Clips (Swift). Install and API: https://desertant.com/docs/clips/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">A CLI that clips the highlights out of a video.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="voz clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Mac app where you drop in a video, Desert Ant's Voz transcribes it and Clips ranks the best moments, and you export shorts. Fully on-device, no upload, no per-minute cost.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Clips (Swift). Install and API: https://desertant.com/docs/clips/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">Build a Mac clipping app: drop a video, get ranked shorts.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="redact gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Raycast extension that runs Desert Ant's Redact and Gist in Node on the clipboard, so a keystroke redacts PII or tags the text's topic, locally.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">A Raycast command that redacts or tags the clipboard.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="tongue gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Slack or Discord bot that runs Desert Ant's Tongue and Gist in Node to detect each message's language and topic and route it, with no third-party classification service.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">A chat bot that tags and language-routes messages, in Node.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2.5deg" data-models="tongue gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Write a SKILL.md agent skill that runs Desert Ant's Tongue to detect a text's language and Gist to tag its topics, on-device, so the agent can route or filter content without a server call.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">Build an agent skill that tags and language-routes text for an agent.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="voz clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="On the Mac your OpenClaw runs on, build a small Swift CLI that transcribes with Desert Ant's Voz and ranks the best moments with Clips, then an OpenClaw skill that calls it to return shorts. Entirely on-device.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Clips (Swift). Install and API: https://desertant.com/docs/clips/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">Build an OpenClaw skill that pulls the best clips out of a video.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="voz clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="On a Mac, build a small Swift CLI that transcribes with Desert Ant's Voz and ranks moments with Clips, then a Claude Code SKILL.md skill that shells out to it to return ranked shorts. On-device.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Clips (Swift). Install and API: https://desertant.com/docs/clips/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">Build a Claude Code skill that clips highlights from a video.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="voz clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="On the Mac Goose (Block) runs on, build a small Swift CLI wrapping Desert Ant's Voz and Clips, and a Goose extension that calls it to transcribe and clip media on-device, with nothing sent to the cloud.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Clips (Swift). Install and API: https://desertant.com/docs/clips/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">A Goose extension that transcribes and clips media, locally.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="voz redact" data-modes="audio text">
+            <button type="button" class="prompt-card-copy" data-prompt="On a Mac, add tools to Open Interpreter: a small Swift CLI that links Desert Ant's Voz for transcription, and Redact (JS/WASM, or a Swift CLI) for stripping PII, so the local agent handles audio and sensitive text on-device.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Give Open Interpreter on-device transcription and PII redaction.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Transcription and captions</h2>
+            <p class="section-lede">Turn captured or live audio into subtitles and searchable captions.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a podcast player. When an episode downloads, run Desert Ant's Voz on-device to transcribe it with word timestamps, index the text, and let the user search across a whole feed and tap a result to jump to that moment. No cloud transcription, no per-minute bill.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Build a podcast player that transcribes every episode and makes it searchable, on the device.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a meeting recorder. When recording stops, Desert Ant's Voz transcribes the file in seconds on iPhone or Mac, so the timestamped transcript is ready right away and nothing is uploaded.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Build a meeting recorder that hands you a timestamped transcript before you leave the room.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a voice-notes app where each memo is transcribed on-device with Desert Ant's Voz into editable, searchable text. Works on a plane, and the audio never leaves the phone.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Turn voice memos into searchable, editable text notes, offline.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a small Mac tool that takes a video file, transcribes the audio with Desert Ant's Voz (Apple silicon), and writes a correctly timed .srt file. No upload, no API key.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Generate SRT subtitles for any video file on the Mac.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Transcribe the video's audio on-device with Desert Ant's Voz (a fast batch pass on iPhone or Mac), then render a synced caption track. Works offline and for private content that can't go to a cloud service.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Add captions to a video player that run on the device.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an interview-recording app that transcribes on-device with Desert Ant's Voz, so a source's audio and words stay on the reporter's phone. Add speaker-friendly formatting and export.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Build an interview app for journalists where sources never leave the phone.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Run Apple's SpeechTranscriber with Desert Ant's Align attached as a timestamp refiner, then highlight each word using its refined time range. Align tightens Apple's word timings on-device; iOS 26 / macOS 26.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Highlight each word as it's spoken, timed to the audio.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2.5deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Attach Desert Ant's Align as a refiner to Apple's SpeechAnalyzer / SpeechTranscriber so its word-level timings tighten and captions and cuts land exactly on the word. iOS 26 / macOS 26, on-device.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Tighten a system transcriber's word timings so captions land on the word.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Transcribe with Apple's SpeechTranscriber and Desert Ant's Align refiner for word-exact timings, then let the user select words to trim the video to that span. Deleting a sentence deletes the footage. iOS 26 / macOS 26.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Build a text-based video editor where selecting words trims the clip.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Add animated word-by-word captions to short vertical videos, timed with Desert Ant's Align attached to Apple's SpeechTranscriber so each word pops exactly when it's said. On-device, iOS 26 / macOS 26.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Add bouncing word-by-word captions to vertical videos.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="align" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="In an Apple media app, transcribe with SpeechTranscriber and Desert Ant's Align refiner so a search result seeks the audio or video to the precise word, not the sentence. iOS 26 / macOS 26.
+
+Build it with the Desert Ant SDK. Align (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/align/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/align. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-faun-fill)"><i></i>Align</span></div>
+            <p class="pin-text">Make transcript search jump the audio to the exact word.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Transcribe with Desert Ant's Voz, which returns a start and end time for every word, and build a synced caption track or export SRT straight from result.words. On iPhone or Mac, on-device.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Word-perfect captions from any recording.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an App Intent that exposes Desert Ant's Voz as an Apple Shortcuts action, so 'transcribe this memo' runs on-device and returns text with timestamps.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Add a Shortcuts action that transcribes a voice memo on the device.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Mac command-line tool that runs Desert Ant's Voz over every audio or video file in a folder, writing a transcript and a timed .srt for each. On-device, scriptable, no API key.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">A CLI that transcribes a folder of recordings to text and SRT.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Final Cut Pro companion that transcribes a clip with Desert Ant's Voz on the Mac and imports word-timed captions, ready to style. On-device, no cloud captioning.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">A Final Cut helper that generates word-accurate captions.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2.5deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="OpenClaw usually runs on a Mac (a Mac mini is common). Build a small Swift CLI that links Desert Ant's Voz and prints the transcript with word timestamps, then write an OpenClaw skill that shells out to it. Local, no cloud STT, no per-minute bill.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Build an OpenClaw skill that transcribes any audio or video you point it at.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="voz" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="On a Mac, build a small Swift CLI that links Desert Ant's Voz, then write a SKILL.md skill (Claude Code and Codex) that shells out to it to transcribe a file with word timestamps. No cloud STT.
+
+Build it with the Desert Ant SDK. Voz (Swift, JavaScript / TypeScript). Install and API: https://desertant.com/docs/voz/. Install: SwiftPM desert-ant-core; npm i @desert-ant-labs/voz onnxruntime-web. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dark-teal-fill)"><i></i>Voz</span></div>
+            <p class="pin-text">Build a Claude and Codex skill that transcribes audio, locally.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Audio cleanup and editing</h2>
+            <p class="section-lede">Remove background noise and filler words from an audio or video recording.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="clear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Add a 'clean audio' action that runs Desert Ant's Clear on-device to remove background noise and room reverb from a recording, with presets for podcast, video, and voiceover loudness. Nothing uploaded.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:clear:3.5.0; npm i @desert-ant-labs/clear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span></div>
+            <p class="pin-text">Add a one-tap 'clean audio' button that removes noise and room echo.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="clear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a podcast export step that runs Desert Ant's Clear to enhance and master the episode to Apple Podcasts / Spotify / YouTube loudness locally, so it's ready to publish without a cloud mastering service.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:clear:3.5.0; npm i @desert-ant-labs/clear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span></div>
+            <p class="pin-text">Master a podcast episode to platform loudness, on the device.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="clear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a 'rescue this recording' feature: run Desert Ant's Clear on-device to make a take recorded in a kitchen or hotel room sound close-miked, warm, and free of background noise.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:clear:3.5.0; npm i @desert-ant-labs/clear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span></div>
+            <p class="pin-text">Rescue a recording made in a noisy, untreated room.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="clear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="In a video app, add a step that runs Desert Ant's Clear over the audio track of a phone video to remove wind, hiss, and echo before sharing. On-device, no per-minute cost.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:clear:3.5.0; npm i @desert-ant-labs/clear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span></div>
+            <p class="pin-text">Clean the audio on a phone video in one pass.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="uhm" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Add a one-tap action that runs Desert Ant's Uhm on-device to find every filler word (um, uh, hmm) to within 20ms and cut them from the timeline, with an undo.
+
+Build it with the Desert Ant SDK. Uhm (Swift). Install and API: https://desertant.com/docs/uhm/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sage-fill)"><i></i>Uhm</span></div>
+            <p class="pin-text">Add a 'remove ums' button to a podcast or video editor.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="uhm" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a speaking-practice app that records the user and uses Desert Ant's Uhm to mark and count filler words, showing progress over sessions. Runs on the phone, private.
+
+Build it with the Desert Ant SDK. Uhm (Swift). Install and API: https://desertant.com/docs/uhm/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sage-fill)"><i></i>Uhm</span></div>
+            <p class="pin-text">Build a speaking coach that counts and marks your filler words.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="uhm" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Add a filler timeline to an audio editor: run Desert Ant's Uhm on-device and mark every um and uh on the waveform so an editor can jump between and trim them.
+
+Build it with the Desert Ant SDK. Uhm (Swift). Install and API: https://desertant.com/docs/uhm/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sage-fill)"><i></i>Uhm</span></div>
+            <p class="pin-text">Show a filler-word timeline for any recording.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2.5deg" data-models="uhm" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an auto-trim that runs Desert Ant's Uhm on-device to find and cut fillers from a talking-head video before export.
+
+Build it with the Desert Ant SDK. Uhm (Swift). Install and API: https://desertant.com/docs/uhm/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sage-fill)"><i></i>Uhm</span></div>
+            <p class="pin-text">Trim every filler from a talking-head take automatically.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="clear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an App Intent for Apple Shortcuts that runs Desert Ant's Clear over an audio file to remove noise and room echo and master it to a chosen loudness, on-device.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:clear:3.5.0; npm i @desert-ant-labs/clear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span></div>
+            <p class="pin-text">A Shortcut that cleans up any audio file's sound.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="clear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a CLI that runs Desert Ant's Clear over a folder of episodes to enhance, master, and re-encode each to podcast loudness, on-device, so a whole archive processes in one pass.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:clear:3.5.0; npm i @desert-ant-labs/clear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span></div>
+            <p class="pin-text">A CLI that batch-enhances a podcast back catalog.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="clear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Mac app that runs Desert Ant's Clear on a dragged-in recording to remove noise and room tone and master it to a chosen loudness, with a before/after preview. On-device.
+
+Build it with the Desert Ant SDK. Clear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/clear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:clear:3.5.0; npm i @desert-ant-labs/clear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-teal-fill)"><i></i>Clear</span></div>
+            <p class="pin-text">Build a Mac audio-cleanup app: drag in a recording, get studio sound.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Clipping and repurposing</h2>
+            <p class="section-lede">Find the best moments in a long recording, then turn them into shorts and highlight reels.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a feature that takes a recording's transcript and uses Desert Ant's Clips to rank the best non-overlapping moments, then exports them as vertical shorts. On-device, so a back catalog costs the same as one video.
+
+Build it with the Desert Ant SDK. Clips (Swift). Install and API: https://desertant.com/docs/clips/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">Turn any recording into a ranked set of shorts.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a 'make highlights' button that runs Desert Ant's Clips over a talk or stream transcript to pick the strongest moments and assemble a highlight reel, ranked best first.
+
+Build it with the Desert Ant SDK. Clips (Swift). Install and API: https://desertant.com/docs/clips/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">Generate a highlight reel from a long stream or talk.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an auto-edit that uses Desert Ant's Clips to select the clips worth keeping from a long, rambling recording and lays them on a timeline for review. Control how tight the cut is with the percentile threshold.
+
+Build it with the Desert Ant SDK. Clips (Swift). Install and API: https://desertant.com/docs/clips/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">Produce a rough auto-edit from a rambling take.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="clips" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a batch job that runs Desert Ant's Clips over an archive of recorded talks or streams on a Mac, exporting ranked clips for each. Nothing uploaded, no per-video bill.
+
+Build it with the Desert Ant SDK. Clips (Swift). Install and API: https://desertant.com/docs/clips/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-dusty-pink-fill)"><i></i>Clips</span></div>
+            <p class="pin-text">Clip a whole back catalog of videos overnight on a Mac.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Redaction and privacy</h2>
+            <p class="section-lede">Remove or hide private information from any data before it leaves the device.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Write an MCP tool (or a Claude Code skill) that runs Desert Ant's Redact on-device to remove names, emails, phone numbers, and other PII from text before it's passed to any tool, API, or LLM. Return the redacted text plus the spans it hid.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Write an MCP tool that strips personal data before it reaches any other tool.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Add a redaction step that runs Desert Ant's Redact on-device on any prompt or document before it's sent to a cloud LLM, so personal data never leaves the device. Keep a map to restore values in the response if needed.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Scrub personal data out of any text before it hits an LLM.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Add a logging step that runs Desert Ant's Redact to strip the bulk of PII from log lines on-device before they're written. Structured fields (cards, IBANs, emails) are reliable; treat it as de-identification before storage, not a guarantee.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Redact PII from logs on the device before they're stored.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Deploy Desert Ant's Redact in a serverless function (Lambda or similar) that redacts PII from incoming text at ingest, so personal data is removed inside your own infrastructure with no third-party call.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Run PII redaction in a Lambda so data never leaves your infrastructure.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="In a web support form, run Desert Ant's Redact in the browser (WebAssembly) as the user types, so obvious PII is flagged or removed before the form is submitted.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Scrub a support form before it submits.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Batch-run Desert Ant's Redact over a text dataset to strip names, emails, and other PII before you fine-tune a model or hand the data to a partner. On your own infrastructure, nothing leaves it.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">De-identify a dataset before fine-tuning or sharing it.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Write an OpenClaw skill that runs Desert Ant's Redact on-device to strip names, emails, and other PII from text before it's passed to any tool, API, or LLM, and returns the redacted text plus the spans it hid.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Build an OpenClaw skill that redacts PII before any tool sees it.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2.5deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an Apple Shortcuts action that runs Desert Ant's Redact on the clipboard text on-device and replaces it with the redacted version, so you can scrub before pasting.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">A Shortcut that redacts PII from the clipboard.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Node CLI that runs Desert Ant's Redact over text files in a directory and writes redacted copies, so you can de-identify a batch from the terminal or CI.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">A CLI that redacts PII from every file in a directory.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a VS Code extension that runs Desert Ant's Redact in Node to flag and redact PII in the open file before commit, so nothing personal lands in the repo.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">A VS Code extension that strips PII and secrets from a file.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Write a SKILL.md agent skill (works in Claude Code, Codex, and Cursor) that runs Desert Ant's Redact on-device to strip names, emails, keys, and other PII from any text before the agent passes it to a tool, API, or model. Return the redacted text and the spans it hid.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Build an agent skill that redacts PII before your coding agent sends anything out.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Write a Codex SKILL.md skill (~/.agents/skills) that runs Desert Ant's Redact over staged changes on-device and flags or removes PII and secrets before the commit lands.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Build a Codex skill that scrubs PII and secrets before a commit.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Add a tool to OpenHands that runs Desert Ant's Redact on-device to remove PII from any data the agent reads or writes, so personal data never enters the agent's context or its outputs.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">An OpenHands tool that de-identifies data before the agent touches it.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Write an OpenClaw skill that runs Desert Ant's Redact on-device to strip PII from a message before OpenClaw sends it through Slack, WhatsApp, or Telegram.
+
+Build it with the Desert Ant SDK. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. Install: SwiftPM desert-ant-core; Maven ai.desertant:redact:3.5.0; npm i @desert-ant-labs/redact @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">An OpenClaw skill that redacts a message before it hits Slack or WhatsApp.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Language detection and routing</h2>
+            <p class="section-lede">Organize or route audio, video and text by language.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="ear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="In a voicemail or call app, run Desert Ant's Ear on the first ~30 seconds of audio to identify the spoken language on-device, then route the message. For a very short voicemail, accumulate audio first, and treat a low-reliability answer as unknown and ask.
+
+Build it with the Desert Ant SDK. Ear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/ear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:ear:3.5.0; npm i @desert-ant-labs/ear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-light-peach-fill)"><i></i>Ear</span></div>
+            <p class="pin-text">Detect a caller's language and route the voicemail.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="ear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a batch tool that runs Desert Ant's Ear over a folder of recordings to tag each by spoken language, so a mixed archive sorts itself. On-device.
+
+Build it with the Desert Ant SDK. Ear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/ear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:ear:3.5.0; npm i @desert-ant-labs/ear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-light-peach-fill)"><i></i>Ear</span></div>
+            <p class="pin-text">Sort an archive of recordings by spoken language.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="tongue" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Tongue to identify the language of an incoming message from a few words, on-device, and route it to the right support queue, model, or translation path.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Install: SwiftPM desert-ant-core; Maven ai.desertant:tongue:3.5.0; npm i @desert-ant-labs/tongue. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span></div>
+            <p class="pin-text">Route incoming messages to the right language agent.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="tongue" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="In a text field, run Desert Ant's Tongue on the first words to detect the language and switch keyboard, spellcheck, and autocorrect to match, in microseconds, on-device.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Install: SwiftPM desert-ant-core; Maven ai.desertant:tongue:3.5.0; npm i @desert-ant-labs/tongue. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span></div>
+            <p class="pin-text">Auto-switch the keyboard and spellcheck to the language being typed.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="tongue" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Tongue to label each user post with its language on-device, so search, ranking, and moderation can branch by language without a server call.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Install: SwiftPM desert-ant-core; Maven ai.desertant:tongue:3.5.0; npm i @desert-ant-labs/tongue. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span></div>
+            <p class="pin-text">Tag user posts by language for search and moderation.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="ear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Ear on-device to identify the dominant spoken language of a recording (from its most speech-like 30-second windows) and route it to the right transcriber or team.
+
+Build it with the Desert Ant SDK. Ear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/ear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:ear:3.5.0; npm i @desert-ant-labs/ear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-light-peach-fill)"><i></i>Ear</span></div>
+            <p class="pin-text">Pick the dominant language of a recording to route it.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="ear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Run Desert Ant's Ear on the first ~30 seconds of a voicemail or dictation on-device to identify the language, then pick the right transcriber. Ear needs about 30 seconds, so accumulate audio before deciding on very short clips.
+
+Build it with the Desert Ant SDK. Ear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/ear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:ear:3.5.0; npm i @desert-ant-labs/ear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-light-peach-fill)"><i></i>Ear</span></div>
+            <p class="pin-text">Detect the language of a voicemail or dictation before transcribing.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2.5deg" data-models="ear" data-modes="audio">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Ear to detect the spoken language on-device and skip or reroute recordings in languages your transcriber does not support.
+
+Build it with the Desert Ant SDK. Ear (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/ear/. Install: SwiftPM desert-ant-core; Maven ai.desertant:ear:3.5.0; npm i @desert-ant-labs/ear @litertjs/core   # browser. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-light-peach-fill)"><i></i>Ear</span></div>
+            <p class="pin-text">Gate transcription so it only runs on languages you support.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="tongue" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Run Desert Ant's Tongue on a search query on-device to route it to the right language index or analyzer, in microseconds.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Install: SwiftPM desert-ant-core; Maven ai.desertant:tongue:3.5.0; npm i @desert-ant-labs/tongue. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span></div>
+            <p class="pin-text">Detect the language of a search query and pick the right index.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Organizing, tagging and naming</h2>
+            <p class="section-lede">Tag files, notes or posts with topics and titles.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Gist on-device to tag each article or post with its topics, then power a topic feed, filters, or a 'more like this' rail without a classification server.
+
+Build it with the Desert Ant SDK. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. Install: SwiftPM desert-ant-core; Maven ai.desertant:gist:3.5.0; npm i @desert-ant-labs/gist @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">Auto-tag articles and posts with their topics for a feed.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a router that reads a post with Desert Ant's Gist and sends it to the right channel or inbox by topic, entirely on-device.
+
+Build it with the Desert Ant SDK. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. Install: SwiftPM desert-ant-core; Maven ai.desertant:gist:3.5.0; npm i @desert-ant-labs/gist @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">Route content to channels by topic, no server call.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a read-it-later app that tags saved articles with Desert Ant's Gist on-device and groups them by topic, so the library organizes itself offline.
+
+Build it with the Desert Ant SDK. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. Install: SwiftPM desert-ant-core; Maven ai.desertant:gist:3.5.0; npm i @desert-ant-labs/gist @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">Organize a reading list by topic, locally.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Add Desert Ant's Gist as an on-device feature extractor so your ranker gets Gist's topic tags (from a fixed 36-topic set) per item without shipping content to a server.
+
+Build it with the Desert Ant SDK. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. Install: SwiftPM desert-ant-core; Maven ai.desertant:gist:3.5.0; npm i @desert-ant-labs/gist @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">Give a recommender a topic-per-item signal that runs on the phone.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="title" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Title on-device to suggest a short title and a one-line description for a clip, note, or file from its text, so nothing is called 'Untitled'.
+
+Build it with the Desert Ant SDK. Title (Swift). Install and API: https://desertant.com/docs/title/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-cool-grey-fill)"><i></i>Title</span></div>
+            <p class="pin-text">Auto-name and describe every clip and file.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="title" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="In a notes app, run Desert Ant's Title on-device when a note is saved to propose a factual title and a short description, editable by the user.
+
+Build it with the Desert Ant SDK. Title (Swift). Install and API: https://desertant.com/docs/title/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-cool-grey-fill)"><i></i>Title</span></div>
+            <p class="pin-text">Title a note the moment it's saved.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="title" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a batch step that runs Desert Ant's Title on a Mac (Apple silicon) over transcripts in a media library to generate a title and description for each recording.
+
+Build it with the Desert Ant SDK. Title (Swift). Install and API: https://desertant.com/docs/title/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-cool-grey-fill)"><i></i>Title</span></div>
+            <p class="pin-text">Write library descriptions for a media archive.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2.5deg" data-models="title" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Run Desert Ant's Title on a Mac (Apple silicon) over a page's content to draft a factual title and a one-to-two sentence meta description.
+
+Build it with the Desert Ant SDK. Title (Swift). Install and API: https://desertant.com/docs/title/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-cool-grey-fill)"><i></i>Title</span></div>
+            <p class="pin-text">Draft an SEO title and meta description from a page's text.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Gist on-device to tag an incoming support ticket with its topic and route it to the right queue, no classification server.
+
+Build it with the Desert Ant SDK. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. Install: SwiftPM desert-ant-core; Maven ai.desertant:gist:3.5.0; npm i @desert-ant-labs/gist @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">Auto-file support tickets into the right queue by topic.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="title" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Share-sheet App Intent that runs Desert Ant's Title on-device to suggest a title and a one-line description for shared text or a transcript.
+
+Build it with the Desert Ant SDK. Title (Swift). Install and API: https://desertant.com/docs/title/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-cool-grey-fill)"><i></i>Title</span></div>
+            <p class="pin-text">A Shortcut that titles and describes whatever you share to it.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an Obsidian plugin that runs Desert Ant's Gist in Node to tag each note with its topics and build a topic index, entirely local.
+
+Build it with the Desert Ant SDK. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. Install: SwiftPM desert-ant-core; Maven ai.desertant:gist:3.5.0; npm i @desert-ant-labs/gist @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">An Obsidian plugin that tags notes with their topics, on the device.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="title" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="On a Mac (Apple silicon), build a small Swift CLI that links Desert Ant's Title (MLX), then write a SKILL.md skill that calls it to give a clip, note, or transcript a short title and one-line description.
+
+Build it with the Desert Ant SDK. Title (Swift). Install and API: https://desertant.com/docs/title/. Install: SwiftPM desert-ant-core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-cool-grey-fill)"><i></i>Title</span></div>
+            <p class="pin-text">Build an agent skill that titles and describes any file the agent makes.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Emoji suggestions</h2>
+            <p class="section-lede">Suggest emoji from a word, a sentence or a whole message.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Add a suggestion strip that calls Desert Ant's Emo on-device as the user types and offers the emoji that fit the sentence, in their language, with no network call.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Add an emoji suggestion strip above the keyboard.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="In a chat app, use Desert Ant's Emo on-device to suggest a fitting reaction emoji for the message a user is looking at, faster than they could scroll a picker.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Suggest a reaction emoji for any message.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Emo on-device to add a fitting emoji to a task or event title as it's created, in the user's language.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Auto-add an emoji to a task or calendar title.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an emoji picker that runs Desert Ant's Emo on-device so typing a phrase surfaces the emoji that fit the meaning, faster than scrolling.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Build an emoji search that understands a sentence, not just keywords.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="In a chat or status field, run Desert Ant's Emo on-device to suggest a status emoji from the text the user is writing.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Suggest a status emoji from what someone is typing.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <section class="section ideas-section rise d3">
+          <header class="ideas-section-head">
+            <h2 class="section-title">Drawing and gestures</h2>
+            <p class="section-lede">Turn rough strokes into clean shapes.</p>
+          </header>
+          <div class="pinboard pinboard--row">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="shapes" data-modes="vision">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a drawing canvas where a freehand stroke is passed to Desert Ant's Shapes on-device and snapped to a clean rectangle, ellipse, triangle, star, or line in under 10ms. Keep the ink as an undo. Works offline.
+
+Build it with the Desert Ant SDK. Shapes (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/shapes/. Install: SwiftPM desert-ant-core; Maven ai.desertant:shapes:3.5.0; npm i @desert-ant-labs/shapes @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sand-fill)"><i></i>Shapes</span></div>
+            <p class="pin-text">Build a whiteboard that snaps rough sketches into clean shapes.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="shapes" data-modes="vision">
+            <button type="button" class="prompt-card-copy" data-prompt="In a diagramming tool, run Desert Ant's Shapes on each stroke to convert rough sketches into clean geometry as the user draws.
+
+Build it with the Desert Ant SDK. Shapes (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/shapes/. Install: SwiftPM desert-ant-core; Maven ai.desertant:shapes:3.5.0; npm i @desert-ant-labs/shapes @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sand-fill)"><i></i>Shapes</span></div>
+            <p class="pin-text">Clean up a freehand diagram into crisp shapes.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="shapes" data-modes="vision">
+            <button type="button" class="prompt-card-copy" data-prompt="Add Desert Ant's Shapes to a browser drawing app (WebAssembly), so a hand-drawn stroke snaps to a clean shape with nothing to download and no server.
+
+Build it with the Desert Ant SDK. Shapes (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/shapes/. Install: SwiftPM desert-ant-core; Maven ai.desertant:shapes:3.5.0; npm i @desert-ant-labs/shapes @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sand-fill)"><i></i>Shapes</span></div>
+            <p class="pin-text">Add shape recognition to a web canvas with no download.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="shapes" data-modes="vision">
+            <button type="button" class="prompt-card-copy" data-prompt="In a diagram or flowchart tool, run Desert Ant's Shapes on each stroke so hand-drawn boxes and connector lines snap to clean geometry live. (Add your own arrowheads on a recognized line.)
+
+Build it with the Desert Ant SDK. Shapes (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/shapes/. Install: SwiftPM desert-ant-core; Maven ai.desertant:shapes:3.5.0; npm i @desert-ant-labs/shapes @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sand-fill)"><i></i>Shapes</span></div>
+            <p class="pin-text">Snap flowchart boxes and connector lines as you sketch them.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="shapes" data-modes="vision">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Shapes on-device so a child's rough drawing of a circle or triangle snaps to a clean shape, teaching by doing. Works offline.
+
+Build it with the Desert Ant SDK. Shapes (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/shapes/. Install: SwiftPM desert-ant-core; Maven ai.desertant:shapes:3.5.0; npm i @desert-ant-labs/shapes @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sand-fill)"><i></i>Shapes</span></div>
+            <p class="pin-text">Add smart-shape drawing to a kids' learning app.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="shapes" data-modes="vision">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Shapes to turn a drawn gesture (a circle, a triangle) into an app action, recognized on-device in under 10ms.
+
+Build it with the Desert Ant SDK. Shapes (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/shapes/. Install: SwiftPM desert-ant-core; Maven ai.desertant:shapes:3.5.0; npm i @desert-ant-labs/shapes @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-sand-fill)"><i></i>Shapes</span></div>
+            <p class="pin-text">Recognize gesture shapes to trigger app actions.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          </div>
+        </section>
+        <p class="ideas-empty" hidden>Nothing for that pair yet. Try another model, or all three inputs.</p>
+      </div>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/inspiration/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/inspiration/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/inspiration/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/inspiration/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/inspiration/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/inspiration/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/inspiration/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/inspiration/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/inspiration/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/inspiration/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/inspiration/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/inspiration/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

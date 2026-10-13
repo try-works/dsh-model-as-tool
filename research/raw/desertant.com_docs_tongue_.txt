@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tongue SDK docs | Desert Ant Labs</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="Install and use Tongue on device: language identification in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="keywords" content="Tongue, SDK, documentation, on-device">
+<link rel="canonical" href="https://desertant.com/docs/tongue/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Tongue: Docs">
+<meta property="og:description" content="Install and use Tongue on device: language identification in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta property="og:url" content="https://desertant.com/docs/tongue/">
+<meta property="og:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Desert Ant Labs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tongue: Docs">
+<meta name="twitter:description" content="Install and use Tongue on device: language identification in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="twitter:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+
+</head>
+<body>
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/" class="is-on">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <div class="docs-layout">
+        <nav class="side-nav rise d2" aria-label="Documentation">
+            <p class="side-nav-title"><a href="/docs/">Docs</a><span class="sep" aria-hidden="true">/</span><span aria-current="page">Tongue</span></p>
+            <div class="side-nav-items">
+              <a class="side-nav-item side-nav-item--faun" href="/docs/align/">Align</a>
+              <a class="side-nav-item side-nav-item--teal" href="/docs/clear/">Clear</a>
+              <a class="side-nav-item side-nav-item--dusty-pink" href="/docs/clips/">Clips</a>
+              <a class="side-nav-item side-nav-item--light-peach" href="/docs/ear/">Ear</a>
+              <a class="side-nav-item side-nav-item--terracotta" href="/docs/emo/">Emo</a>
+              <a class="side-nav-item side-nav-item--stone" href="/docs/gist/">Gist</a>
+              <a class="side-nav-item side-nav-item--warm-grey" href="/docs/moderator/">Moderator</a>
+              <a class="side-nav-item side-nav-item--forest" href="/docs/redact/">Redact</a>
+              <a class="side-nav-item side-nav-item--sand" href="/docs/shapes/">Shapes</a>
+              <a class="side-nav-item side-nav-item--cool-grey" href="/docs/title/">Title</a>
+              <a class="side-nav-item side-nav-item--ink" href="/docs/tongue/" aria-current="page">Tongue</a>
+              <a class="side-nav-item side-nav-item--sage" href="/docs/uhm/">Uhm</a>
+              <a class="side-nav-item side-nav-item--dark-teal" href="/docs/voz/">Voz</a>
+            </div>
+          </nav>
+        <div class="docs-body">
+          <header class="docs-head-group rise d2">
+            <h1 class="headline">Tongue</h1>
+            <p class="docs-index-note docs-index-note--lg">On-device language identification for short text across 84 languages.</p>
+            <a class="btn btn--outline" href="/models/tongue/">Tongue model page</a>
+          </header>
+          <div class="prose docs-md rise d3"><dl class="specs">
+<div><dt><strong>Platforms</strong></dt><dd>iOS, macOS, tvOS, visionOS, Android, Linux, Windows, Browser, Node</dd></div>
+<div><dt><strong>Languages</strong></dt><dd>84</dd></div>
+<div><dt><strong>Weights</strong></dt><dd>Bundled with the SDK (<a href="https://huggingface.co/desert-ant-labs/tongue">v1.0.0</a>)</dd></div>
+<div><dt><strong>Demo</strong></dt><dd><a href="https://desertant.com/models/tongue/">https://desertant.com/models/tongue/</a></dd></div>
+</dl>
+<h2 id="install">Install</h2>
+<div class="tabs"><input type="radio" name="tongue-tabs-1" id="tongue-tabs-1-0" checked><input type="radio" name="tongue-tabs-1" id="tongue-tabs-1-1"><input type="radio" name="tongue-tabs-1" id="tongue-tabs-1-2"><header><label for="tongue-tabs-1-0">Swift</label><label for="tongue-tabs-1-1">Kotlin</label><label for="tongue-tabs-1-2">JavaScript</label></header>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#swift">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">url</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"https://github.com/Desert-Ant-Labs/desert-ant-core.git"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">from</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div><p>Then add the <code>Tongue</code> product to your target.</p>
+</div>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#android">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Kotlin</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">implementation</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"ai.desertant:tongue:3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div>
+</div>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#javascript-and-typescript">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Terminal</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">npm</span><span style="color:#A31515;--shiki-dark:#CE9178"> i</span><span style="color:#A31515;--shiki-dark:#CE9178"> @desert-ant-labs/tongue</span></span></code></pre>
+          </div>
+</div>
+</div>
+<h2 id="usage">Usage</h2>
+<p>Nothing to download and nothing async: the 2 MB model ships inside the package,
+and a detection is pure arithmetic.</p>
+<div class="tabs"><input type="radio" name="tongue-tabs-2" id="tongue-tabs-2-0" checked><input type="radio" name="tongue-tabs-2" id="tongue-tabs-2-1"><input type="radio" name="tongue-tabs-2" id="tongue-tabs-2-2"><header><label for="tongue-tabs-2-0">Swift</label><label for="tongue-tabs-2-1">Kotlin</label><label for="tongue-tabs-2-2">JavaScript</label></header>
+<div>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#1d6377;--shiki-dark:#4EC9B0"> Tongue</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> tongue = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#795E26;--shiki-dark:#DCDCAA"> Tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4">()                      </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// loads the bundled 2 MB model</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> detection = tongue.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">detect</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"kann ich das haben"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">detection.</span><span style="color:#001080;--shiki-dark:#9CDCFE">language</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">          // "de"</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">detection.</span><span style="color:#001080;--shiki-dark:#9CDCFE">reliability</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">       // .confident</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">detection.</span><span style="color:#001080;--shiki-dark:#9CDCFE">candidates</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">        // [Prediction(language: "de", probability: 0.999…), …]</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">detection.</span><span style="color:#001080;--shiki-dark:#9CDCFE">isTooCloseToCall</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">  // false</span></span></code></pre>
+          </div>
+</div>
+<div>
+<p>Tongue is a plain jar rather than an AAR, a pure Kotlin port with no native
+libraries, so it also runs on a bare JVM (17+).</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Kotlin</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ai.desertant.tongue.Tongue</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// Android: pass the Context. On a bare JVM pass null: Tongue.bundled(null).</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> tongue = Tongue.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">bundled</span><span style="color:#000000;--shiki-dark:#D4D4D4">(context)</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> detection = tongue.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">detect</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"kann ich das haben"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">detection.language                               </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// "de"</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">detection.isTooCloseToCall                       </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// false</span></span></code></pre>
+          </div>
+</div>
+<div>
+<p>One import everywhere: no wasm, no LiteRT.js, no native core.</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">TypeScript</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#001080;--shiki-dark:#9CDCFE">Tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4"> } </span><span style="color:#AF00DB;--shiki-dark:#C586C0">from</span><span style="color:#A31515;--shiki-dark:#CE9178"> "@desert-ant-labs/tongue"</span><span style="color:#000000;--shiki-dark:#D4D4D4">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> Tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">load</span><span style="color:#000000;--shiki-dark:#D4D4D4">();                    </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// Node: reads the bundled model</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> detection</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#001080;--shiki-dark:#9CDCFE">tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">detect</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"kann ich das haben"</span><span style="color:#000000;--shiki-dark:#D4D4D4">);</span></span>
+<span class="line"><span style="color:#001080;--shiki-dark:#9CDCFE">detection</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#001080;--shiki-dark:#9CDCFE">language</span><span style="color:#000000;--shiki-dark:#D4D4D4">;                                    </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// "de"</span></span>
+<span class="line"><span style="color:#001080;--shiki-dark:#9CDCFE">detection</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#001080;--shiki-dark:#9CDCFE">isTooCloseToCall</span><span style="color:#000000;--shiki-dark:#D4D4D4">;                            </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// false</span></span></code></pre>
+          </div><p>In a browser, serve tongue&#39;s two model files yourself (a bundler does not serve
+files out of <code>node_modules</code>) and pass <code>from</code>; both files are exported subpaths,
+so a copy script can <code>require.resolve</code> them under pnpm and Yarn PnP too:</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">TypeScript</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> Tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">load</span><span style="color:#000000;--shiki-dark:#D4D4D4">({ </span><span style="color:#001080;--shiki-dark:#9CDCFE">from:</span><span style="color:#A31515;--shiki-dark:#CE9178"> "/models/tongue"</span><span style="color:#000000;--shiki-dark:#D4D4D4"> });</span></span></code></pre>
+          </div>
+</div>
+</div>
+<h2 id="files">Files</h2>
+<table><thead><tr><th>File</th><th>Format</th><th>Size</th><th>Contents</th></tr></thead><tbody><tr><td><code>tongue_<wbr>int8.<wbr>bin</code></td><td>Raw int8 + fp32</td><td>2.01 MiB</td><td>The shipped artifact. Byte-identical to what the live demo runs.</td></tr>
+<tr><td><code>tongue_<wbr>int4.<wbr>bin</code></td><td>Raw int4 + fp32</td><td>1.01 MiB</td><td>Half-size alternative for tight bundles. Costs roughly 0.4pp on short text, see Sizes.</td></tr>
+<tr><td><code>tongue.<wbr>onnx</code></td><td>ONNX (fp32, opset 17)</td><td>8.4 MB</td><td>Portable graph for onnxruntime / onnxruntime-web.</td></tr>
+<tr><td><code>tongue_<wbr>meta.<wbr>json</code></td><td>JSON</td><td>tiny</td><td>Runtime tables: label order, hashing constants, script routing.</td></tr>
+<tr><td><code>labels.<wbr>json</code></td><td>JSON</td><td>tiny</td><td>The 59 model labels plus the script-decided languages, with English and native names.</td></tr></tbody></table>
+<p>There is no tokenizer file, so nothing has to be shipped or version-matched
+alongside the weights.</p>
+<h2 id="inputs-and-outputs">Inputs and outputs</h2>
+<p><strong>Input:</strong> a short UTF-8 string, up to 512 characters.
+<strong>Output:</strong> ranked ISO 639-1/639-3 codes with probabilities, plus a reliability
+signal (<code>confident</code> / <code>likely</code> / <code>tentative</code>). Script-decided inputs return a
+single confident answer.</p>
+<p>The ONNX graph carries <strong>only the head</strong>: <code>values</code> (int64 hashed bucket ids) and
+<code>offsets</code> (int64 per-sample starts) in, <code>logits</code> out. Normalization, hashing and
+script routing run in the host before the graph; <code>tongue_meta.json</code> documents them.</p>
+<h2 id="coverage">Coverage</h2>
+<p>59 languages are learned by the lexical model and a further 25 are decided by
+script alone, across 31 scripts (Latin, Cyrillic, Arabic, Greek and the CJK and
+Indic families among them) for <strong>84 languages</strong> in total. One of the 84,
+Mongolian, is detected only in the traditional Mongolian script; see failure
+mode 3.</p>
+<h2 id="sizes">Sizes</h2>
+<p>Two quantisations of the same weights ship side by side. Pick on bundle budget,
+not on principle.</p>
+<table><thead><tr><th></th><th><code>tongue_int8.bin</code></th><th><code>tongue_int4.bin</code></th></tr></thead><tbody><tr><td>Size</td><td>2.01 MiB</td><td><strong>1.01 MiB</strong></td></tr>
+<tr><td>FLORES 2-word</td><td>0.869</td><td>0.866</td></tr>
+<tr><td>FLORES 5-word</td><td>0.974</td><td>0.973</td></tr>
+<tr><td>Held-out single words</td><td>0.759</td><td>0.752</td></tr>
+<tr><td>Held-out sentences</td><td>0.971</td><td>0.970</td></tr></tbody></table>
+<p>The int4 loss lands almost entirely on one- and two-word input; full sentences
+are unaffected within measurement noise. Since short text is what this model is
+for, int8 stays the default and int4 is the option when a megabyte matters more
+than the last half point.</p>
+<h2 id="failure-modes-read-before-deploying">Failure modes (read before deploying)</h2>
+<p>Publishing these is part of the product.</p>
+<p><strong>1. One or two words is often genuinely undecidable, and no model size fixes
+it.</strong> A single common word frequently belongs to several languages at once
+(<code>&quot;sale&quot;</code> is English, French and Italian; <code>&quot;la casa&quot;</code> is equally Italian and
+Spanish). tongue reports a tie or a tentative answer in these cases. It does not
+catch every one: a phrase mixing languages, like <code>&quot;un garage sale&quot;</code>, can still
+draw a confident-looking single answer.
+Mitigation: treat low-reliability output as &quot;unknown&quot;, not as an answer, and ask
+for more text where the product allows it.</p>
+<p><strong>2. Malay and Indonesian are not reliably separable.</strong> They share vocabulary
+and orthography to the point where short samples carry no distinguishing
+signal. This is a structural limit, not a tuning gap, and it is not cheaply
+closable at this size, and every detector we measured struggles with it.
+Mitigation: if you need the distinction, treat <code>ms</code>/<code>id</code> as one bucket or
+disambiguate from user locale.</p>
+<p><strong>3. Mongolian is detected only in the traditional Mongolian script.</strong>
+Mongolian written in Cyrillic, the dominant modern orthography, is not
+distinguished from the other Cyrillic languages and will usually come back as
+Russian. The language count includes Mongolian because the traditional script
+works; Cyrillic Mongolian does not. Mitigation: do not rely on tongue for
+Cyrillic Mongolian.</p>
+<p><strong>4. Brand names, numbers and code are not language.</strong> <code>&quot;Samsung Galaxy&quot;</code>,
+<code>&quot;v1.2.3&quot;</code> and <code>&quot;2024 annual report&quot;</code> have no correct answer; the model will
+still return its best guess for anything with letters in it. Mitigation: filter
+non-prose input before detection.</p>
+<p><strong>5. Single-word scores are vocabulary recognition, not generalization.</strong> The
+frequent words of a language appear in everyone&#39;s training data, so any
+detector&#39;s single-word accuracy partly measures memorized vocabulary. Read the
+word-pair and sentence numbers as the generalization signal.</p>
+<h2 id="measured-quality">Measured quality</h2>
+<p>Every number below is measured on the shipped int8 weights, on three
+public benchmarks, with other detectors run on the identical rows and language
+subsets. Higher is better.</p>
+<h3 id="flores-200">FLORES-200</h3>
+<p>Sentences from FLORES-200 truncated to their first 2, 3 and 5 words. Accuracy
+over the 20 languages the three detectors share.</p>
+<table><thead><tr><th>Detector</th><th>Size</th><th>2 words</th><th>3 words</th><th>5 words</th></tr></thead><tbody><tr><td><strong>tongue</strong></td><td><strong>2 MB</strong></td><td><strong>0.869</strong></td><td><strong>0.933</strong></td><td><strong>0.974</strong></td></tr>
+<tr><td>lingua</td><td>293 MB</td><td>0.800</td><td>0.887</td><td>0.956</td></tr>
+<tr><td>eld</td><td>~1 MB</td><td>0.780</td><td>0.856</td><td>0.912</td></tr></tbody></table>
+<h3 id="the-lingua-test-set-the-benchmark-that-library-publishes">The lingua test set, the benchmark that library publishes</h3>
+<p>1,000 single words, word pairs and sentences per language, drawn from the
+same collection lingua trains on. Accuracy over the languages we share.</p>
+<table><thead><tr><th>Detector</th><th>Size</th><th>Single words</th><th>Word pairs</th><th>Sentences</th></tr></thead><tbody><tr><td><strong>tongue</strong></td><td><strong>2 MB</strong></td><td><strong>0.746</strong></td><td><strong>0.909</strong></td><td><strong>0.988</strong></td></tr>
+<tr><td>lingua</td><td>293 MB</td><td>0.752</td><td>0.915</td><td>0.985</td></tr></tbody></table>
+<h3 id="eld-an-independent-benchmark">eld, an independent benchmark</h3>
+<p>Accuracy over the languages tongue supports (53,035 single-word rows,
+53,613 word pairs, 53,141 sentences, 9,066 tweets).
+Apple is the built-in system detector; HeLI-OTS is a 51 MB JVM model. lingua 2.2.0 installs as a
+single 293 MB compiled extension with its language models embedded.</p>
+<table><thead><tr><th>Detector</th><th>Size</th><th>Tweets</th><th>Single words</th><th>Word pairs</th><th>Sentences</th></tr></thead><tbody><tr><td><strong>tongue</strong></td><td><strong>2 MB</strong></td><td><strong>0.992</strong></td><td><strong>0.759</strong></td><td><strong>0.887</strong></td><td><strong>0.971</strong></td></tr>
+<tr><td>lingua</td><td>293 MB</td><td>0.984</td><td>0.756</td><td>0.894</td><td>0.950</td></tr>
+<tr><td>HeLI-OTS</td><td>51 MB</td><td>0.986</td><td>0.683</td><td>0.843</td><td>0.967</td></tr>
+<tr><td>Apple</td><td>system</td><td>0.997</td><td>0.641</td><td>0.719</td><td>0.748</td></tr></tbody></table>
+<h2 id="latency">Latency</h2>
+<p>Measured per single detection in JavaScript on an Apple-silicon laptop: 0.013 ms for one word, 0.028 ms for a short sentence, 0.10 ms at 193 characters (p99 0.24 ms). On-device budgets on phone-class hardware will be higher; the design target is under 1 ms.</p>
+</div>
+          
+          
+        </div>
+      </div>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

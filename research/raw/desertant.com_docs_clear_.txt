@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clear SDK docs | Desert Ant Labs</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="Install and use Clear on device: speech enhancement in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="keywords" content="Clear, SDK, documentation, on-device">
+<link rel="canonical" href="https://desertant.com/docs/clear/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Clear: Docs">
+<meta property="og:description" content="Install and use Clear on device: speech enhancement in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta property="og:url" content="https://desertant.com/docs/clear/">
+<meta property="og:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Desert Ant Labs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Clear: Docs">
+<meta name="twitter:description" content="Install and use Clear on device: speech enhancement in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="twitter:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+
+</head>
+<body>
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/" class="is-on">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <div class="docs-layout">
+        <nav class="side-nav rise d2" aria-label="Documentation">
+            <p class="side-nav-title"><a href="/docs/">Docs</a><span class="sep" aria-hidden="true">/</span><span aria-current="page">Clear</span></p>
+            <div class="side-nav-items">
+              <a class="side-nav-item side-nav-item--faun" href="/docs/align/">Align</a>
+              <a class="side-nav-item side-nav-item--teal" href="/docs/clear/" aria-current="page">Clear</a>
+              <a class="side-nav-item side-nav-item--dusty-pink" href="/docs/clips/">Clips</a>
+              <a class="side-nav-item side-nav-item--light-peach" href="/docs/ear/">Ear</a>
+              <a class="side-nav-item side-nav-item--terracotta" href="/docs/emo/">Emo</a>
+              <a class="side-nav-item side-nav-item--stone" href="/docs/gist/">Gist</a>
+              <a class="side-nav-item side-nav-item--warm-grey" href="/docs/moderator/">Moderator</a>
+              <a class="side-nav-item side-nav-item--forest" href="/docs/redact/">Redact</a>
+              <a class="side-nav-item side-nav-item--sand" href="/docs/shapes/">Shapes</a>
+              <a class="side-nav-item side-nav-item--cool-grey" href="/docs/title/">Title</a>
+              <a class="side-nav-item side-nav-item--ink" href="/docs/tongue/">Tongue</a>
+              <a class="side-nav-item side-nav-item--sage" href="/docs/uhm/">Uhm</a>
+              <a class="side-nav-item side-nav-item--dark-teal" href="/docs/voz/">Voz</a>
+            </div>
+          </nav>
+        <div class="docs-body">
+          <header class="docs-head-group rise d2">
+            <h1 class="headline">Clear</h1>
+            <p class="docs-index-note docs-index-note--lg">On-device speech enhancement: denoise, dereverb, and loudness-normalize.</p>
+            <a class="btn btn--outline" href="/models/clear/">Clear model page</a>
+          </header>
+          <div class="prose docs-md rise d3"><dl class="specs">
+<div><dt><strong>Platforms</strong></dt><dd>iOS, macOS, tvOS, visionOS, Android, Linux, Windows, Browser, Node</dd></div>
+<div><dt><strong>Weights</strong></dt><dd><a href="https://huggingface.co/desert-ant-labs/clear">v0.3.0</a></dd></div>
+<div><dt><strong>Demo</strong></dt><dd><a href="https://desertant.com/models/clear/">https://desertant.com/models/clear/</a></dd></div>
+</dl>
+<h2 id="install">Install</h2>
+<div class="tabs"><input type="radio" name="clear-tabs-1" id="clear-tabs-1-0" checked><input type="radio" name="clear-tabs-1" id="clear-tabs-1-1"><input type="radio" name="clear-tabs-1" id="clear-tabs-1-2"><header><label for="clear-tabs-1-0">Swift</label><label for="clear-tabs-1-1">Kotlin</label><label for="clear-tabs-1-2">JavaScript</label></header>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#swift">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">url</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"https://github.com/Desert-Ant-Labs/desert-ant-core.git"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">from</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div><p>Then add the <code>Clear</code> product to your target.</p>
+</div>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#android">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Kotlin</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">implementation</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"ai.desertant:clear:3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div>
+</div>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#javascript-and-typescript">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Terminal</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">npm</span><span style="color:#A31515;--shiki-dark:#CE9178"> i</span><span style="color:#A31515;--shiki-dark:#CE9178"> @desert-ant-labs/clear</span><span style="color:#A31515;--shiki-dark:#CE9178"> @litertjs/core</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">   # browser</span></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">npm</span><span style="color:#A31515;--shiki-dark:#CE9178"> i</span><span style="color:#A31515;--shiki-dark:#CE9178"> @desert-ant-labs/clear</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">                  # Node, prebuilt native core</span></span></code></pre>
+          </div>
+</div>
+</div>
+<h2 id="usage">Usage</h2>
+<div class="tabs"><input type="radio" name="clear-tabs-2" id="clear-tabs-2-0" checked><input type="radio" name="clear-tabs-2" id="clear-tabs-2-1"><input type="radio" name="clear-tabs-2" id="clear-tabs-2-2"><header><label for="clear-tabs-2-0">Swift</label><label for="clear-tabs-2-1">Kotlin</label><label for="clear-tabs-2-2">JavaScript</label></header>
+<div>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#1d6377;--shiki-dark:#4EC9B0"> Clear</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> clear = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Clear</span><span style="color:#000000;--shiki-dark:#D4D4D4">()</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> result = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> clear.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">enhance</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">path</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"in.wav"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">to</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"out.wav"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">print</span><span style="color:#000000;--shiki-dark:#D4D4D4">(result.</span><span style="color:#001080;--shiki-dark:#9CDCFE">realtimeFactor</span><span style="color:#000000;--shiki-dark:#D4D4D4">, result.</span><span style="color:#001080;--shiki-dark:#9CDCFE">measuredLUFS</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ?? </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">0</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div><p>Without a filesystem, enhance in memory and get WAV bytes back:</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> (result, wav) = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> clear.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">enhance</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">bytes</span><span style="color:#000000;--shiki-dark:#D4D4D4">: recording)</span></span></code></pre>
+          </div><p>The output is mono by default, whatever goes in. The model is mono, so keeping
+a stereo pair costs an inference pass per channel, about 1.8x a mono run, so
+it is opt-in:</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> stereo = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> clear.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">enhance</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">channels</span><span style="color:#000000;--shiki-dark:#D4D4D4">: [left, right], </span><span style="color:#795E26;--shiki-dark:#DCDCAA">sampleRate</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">48_000</span><span style="color:#000000;--shiki-dark:#D4D4D4">,</span></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">                                     options</span><span style="color:#000000;--shiki-dark:#D4D4D4">: .</span><span style="color:#0000FF;--shiki-dark:#569CD6">init</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">channelMode</span><span style="color:#000000;--shiki-dark:#D4D4D4">: .</span><span style="color:#001080;--shiki-dark:#9CDCFE">preserve</span><span style="color:#000000;--shiki-dark:#D4D4D4">))</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">stereo.</span><span style="color:#001080;--shiki-dark:#9CDCFE">channels</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#001080;--shiki-dark:#9CDCFE">count</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">                       // 2</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">stereo.</span><span style="color:#001080;--shiki-dark:#9CDCFE">measuredTruePeakDBFS</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">                 // what the master actually peaks at</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">stereo.</span><span style="color:#001080;--shiki-dark:#9CDCFE">phaseTimings</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#001080;--shiki-dark:#9CDCFE">modelPredictSec</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">         // where the time went</span></span></code></pre>
+          </div><p>Mastering is joint, one gain and one limiter envelope across the channels, so
+it never moves the stereo image. <code>Mastering.balanceChannelsLUFS</code> is the
+exception, for a pair whose sides were recorded at different levels.</p>
+</div>
+<div>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Kotlin</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ai.desertant.clear.Clear</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ai.desertant.clear.LoudnessPreset</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ai.desertant.clear.Mastering</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ai.desertant.clear.Options</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">Clear</span><span style="color:#000000;--shiki-dark:#D4D4D4">(context).</span><span style="color:#795E26;--shiki-dark:#DCDCAA">use</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { clear </span><span style="color:#0000FF;--shiki-dark:#569CD6">-></span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">    val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> result = clear.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">enhance</span><span style="color:#000000;--shiki-dark:#D4D4D4">(samples, </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">48_000.0</span><span style="color:#000000;--shiki-dark:#D4D4D4">)            </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// 48 kHz out</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">    result.measuredTruePeakDbfs                              </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// what the master actually peaks at</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">    val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> forSpotify = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Options</span><span style="color:#000000;--shiki-dark:#D4D4D4">(mastering = Mastering.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">of</span><span style="color:#000000;--shiki-dark:#D4D4D4">(LoudnessPreset.SPOTIFY))</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">    val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> louder = clear.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">enhance</span><span style="color:#000000;--shiki-dark:#D4D4D4">(samples, </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">48_000.0</span><span style="color:#000000;--shiki-dark:#D4D4D4">, forSpotify)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">    // Mono out by default; ask to keep the pair, at an inference pass each.</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">    val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> stereo = clear.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">enhance</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">listOf</span><span style="color:#000000;--shiki-dark:#D4D4D4">(left, right), </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">48_000.0</span><span style="color:#000000;--shiki-dark:#D4D4D4">,</span></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">                               Options</span><span style="color:#000000;--shiki-dark:#D4D4D4">(channelMode = ChannelMode.PRESERVE))</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">    stereo.channelCount                                      </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// 2</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">}</span></span></code></pre>
+          </div>
+</div>
+<div>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">TypeScript</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#001080;--shiki-dark:#9CDCFE">Clear</span><span style="color:#000000;--shiki-dark:#D4D4D4"> } </span><span style="color:#AF00DB;--shiki-dark:#C586C0">from</span><span style="color:#A31515;--shiki-dark:#CE9178"> "@desert-ant-labs/clear"</span><span style="color:#000000;--shiki-dark:#D4D4D4">;       </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// browser</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// import { Clear } from "@desert-ant-labs/clear/native"; // server-side Node</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> clear</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> Clear</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">load</span><span style="color:#000000;--shiki-dark:#D4D4D4">();</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> result</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> clear</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">enhance</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#001080;--shiki-dark:#9CDCFE">samples</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">48_000</span><span style="color:#000000;--shiki-dark:#D4D4D4">);   </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// Float32Array in, 48 kHz out</span></span>
+<span class="line"><span style="color:#001080;--shiki-dark:#9CDCFE">result</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#001080;--shiki-dark:#9CDCFE">measuredTruePeakDBFS</span><span style="color:#000000;--shiki-dark:#D4D4D4">;                           </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// what the master actually peaks at</span></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> clear</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">enhance</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#001080;--shiki-dark:#9CDCFE">samples</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">48_000</span><span style="color:#000000;--shiki-dark:#D4D4D4">, { </span><span style="color:#001080;--shiki-dark:#9CDCFE">targetLUFS:</span><span style="color:#A31515;--shiki-dark:#CE9178"> "spotify"</span><span style="color:#000000;--shiki-dark:#D4D4D4"> });</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// One entry per channel, and ask to keep them: mono is the default.</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> stereo</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> clear</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">enhance</span><span style="color:#000000;--shiki-dark:#D4D4D4">([</span><span style="color:#001080;--shiki-dark:#9CDCFE">left</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#001080;--shiki-dark:#9CDCFE">right</span><span style="color:#000000;--shiki-dark:#D4D4D4">], </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">48_000</span><span style="color:#000000;--shiki-dark:#D4D4D4">, { </span><span style="color:#001080;--shiki-dark:#9CDCFE">channelMode:</span><span style="color:#A31515;--shiki-dark:#CE9178"> "preserve"</span><span style="color:#000000;--shiki-dark:#D4D4D4"> });</span></span>
+<span class="line"><span style="color:#001080;--shiki-dark:#9CDCFE">stereo</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#001080;--shiki-dark:#9CDCFE">channelCount</span><span style="color:#000000;--shiki-dark:#D4D4D4">;                                   </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// 2</span></span>
+<span class="line"><span style="color:#001080;--shiki-dark:#9CDCFE">clear</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">dispose</span><span style="color:#000000;--shiki-dark:#D4D4D4">();</span></span></code></pre>
+          </div><h3 id="loading-the-model">Loading the model</h3>
+<p>The weights are fetched from the Hub on first use and cached. See
+<a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#model-downloads-and-caching">model downloads and caching</a>.</p>
+</div>
+</div>
+<h2 id="sound">Sound</h2>
+<p>Delivers a <strong>rich, present, close-miked podcast sound</strong>.</p>
+<ul>
+<li><strong>Denoised.</strong>
+HVAC, keyboard clicks, mouse rustle, mic bumps, room hum, laptop
+fans, coffee shop background, all pulled down without chewing
+consonants.</li>
+<li><strong>Dereverbed.</strong>
+Untreated bedrooms, offices and hotel rooms come out sounding closer
+to a treated studio. The model does not add reverberation of its own.</li>
+<li><strong>Warm and present.</strong>
+Low-mids brought forward so voice sits comfortably in a mix rather
+than sounding thin or distant.</li>
+<li><strong>Sibilance-safe.</strong>
+No harsh peaks introduced when cleaning up S / T / F consonants.</li>
+<li><strong>No pumping or musical-noise artefacts.</strong>
+Breaths, plosives and vocal texture stay intact.</li>
+</ul>
+<h2 id="variants">Variants</h2>
+<p>Two variants ship. They take the same input, produce the same output format
+and cost the same to run, so switching between them is a one-line change in
+the SDK. Pick by the sound you want, not by platform: both ship for every
+runtime.</p>
+<h3 id="clear-studio">clear-studio</h3>
+<p>The default. Quiet, studio-like character; silences sit close to true
+zero.</p>
+<p>Best for solo podcasts, tutorials, voiceover, video demos, screen
+recordings, and anything that wants a clean broadcast feel.</p>
+<table><thead><tr><th>File</th><th>Purpose</th><th>Size</th></tr></thead><tbody><tr><td><code>clear-studio.<wbr>mlmodelc</code></td><td>Core ML for the Apple Neural Engine (iOS 16 model format)</td><td>9.0 MB</td></tr>
+<tr><td><code>clear-studio.<wbr>mlmodelc.<wbr>zip</code></td><td>Same compiled model, zipped</td><td>8.6 MB</td></tr>
+<tr><td><code>clear-studio.<wbr>onnx</code></td><td>Cross-platform ONNX</td><td>24 MB</td></tr></tbody></table>
+<h3 id="clear-natural">clear-natural</h3>
+<p>Preserves room tone, breath, and lip texture.</p>
+<p>For treated podcast studios, intentional voiceover, interviews where
+the room is part of the take, and remote guest recordings where
+absolute silence would sound wrong.</p>
+<table><thead><tr><th>File</th><th>Purpose</th><th>Size</th></tr></thead><tbody><tr><td><code>clear-natural.<wbr>mlmodelc</code></td><td>Core ML for the Apple Neural Engine (iOS 16 model format)</td><td>9.0 MB</td></tr>
+<tr><td><code>clear-natural.<wbr>mlmodelc.<wbr>zip</code></td><td>Same compiled model, zipped</td><td>8.6 MB</td></tr>
+<tr><td><code>clear-natural.<wbr>onnx</code></td><td>Cross-platform ONNX</td><td>24 MB</td></tr></tbody></table>
+<h2 id="performance">Performance</h2>
+<p>The Core ML variants are optimized for the Apple Neural Engine.
+<code>MLComputePlan</code> confirms that all 492 model operations run on ANE.</p>
+<p><code>clear-studio</code>, whole SDK pipeline on a 60-second clip, best of three:</p>
+<table><thead><tr><th>Device</th><th>Realtime factor</th></tr></thead><tbody><tr><td>iPhone 16 Pro</td><td><strong>302x</strong></td></tr>
+<tr><td>MacBook Pro (M5)</td><td><strong>345x</strong></td></tr></tbody></table>
+<p>On iPhone 16 Pro, first-ever model loading takes approximately 3.4 seconds
+while Core ML compiles the ANE program. Cached launches load in approximately
+62 ms; applications should warm the model in the background.</p>
+<h2 id="deployment-target">Deployment target</h2>
+<ul>
+<li><strong>Core ML model</strong>: iOS/iPadOS 16.0+ model format; ANE placement depends on hardware and OS.</li>
+<li><strong>Swift SDK</strong>: iOS 18+, macOS 15+, tvOS 18+, visionOS 2+.</li>
+<li><strong>Android</strong>: API 24+ (arm64-v8a, x86_64), via LiteRT.</li>
+<li><strong>Other platforms</strong>: the <code>.tflite</code> runs wherever LiteRT does: Linux, Windows, and the browser through LiteRT.js. The ONNX files are kept for runtimes the SDK does not cover.</li>
+</ul>
+<h2 id="what-it-39-s-good-for">What it&#39;s good for</h2>
+<ul>
+<li><strong>Meeting recorders.</strong> Zoom, Teams, Meet, Detail exports, single or multi-speaker.</li>
+<li><strong>Bluetooth microphones.</strong> AirPods, Sony, headset mics.</li>
+<li><strong>Mobile devices.</strong> iPhone and Android built-in microphone recordings, voice notes, field recordings.</li>
+<li><strong>Laptop built-in microphones.</strong> MacBook and PC built-in mics.</li>
+<li><strong>Untreated rooms.</strong> Bedrooms, hotel rooms, kitchens, coffee shops.</li>
+</ul>
+<p>Whenever the pitch is <em>messy recording in, clean audio out</em>.</p>
+<h2 id="what-it-is-not">What it is not</h2>
+<ul>
+<li>Not a general-purpose audio denoiser.
+Speech is the target; music, effects, and non-vocal signals get pulled down as noise.</li>
+<li>Not a source separator.
+Overlapping speakers stay overlapping.</li>
+<li>Not a voice changer, cloner, or transcription model.</li>
+</ul>
+</div>
+          
+          
+        </div>
+      </div>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

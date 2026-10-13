@@ -1,0 +1,178 @@
+Desert Ant Labs 
+
+ Models 
+ Align Word timestamps Clear Speech enhancement Clips Clip selection Ear Spoken language detection Emo Emoji suggestions Gist Content topic tagging Moderator Content moderation Redact PII redaction Shapes Shape recognition Title Titles and descriptions Tongue Language identification Uhm Filler-word detection Voz Speech recognition 
+ All models 
+
+ Docs 
+
+ Blog 
+
+ Inspiration 
+ About 
+
+ Jobs 
+ Contact 
+
+ Docs / Emo 
+
+ Align 
+ Clear 
+ Clips 
+ Ear 
+ Emo 
+ Gist 
+ Moderator 
+ Redact 
+ Shapes 
+ Title 
+ Tongue 
+ Uhm 
+ Voz 
+
+ Emo
+
+ Multilingual on-device emoji suggestion.
+
+ Emo model page 
+
+ Platforms 
+ iOS, macOS, tvOS, visionOS, Android, Linux, Windows, Browser, Node
+
+ Languages 
+ 22
+
+ Weights 
+ v0.7.0 
+
+ Demo 
+ https://desertant.com/models/emo/ 
+
+ Install
+
+ Swift Kotlin JavaScript 
+
+ requirements 
+
+ Swift 
+
+ . package ( url : "https://github.com/Desert-Ant-Labs/desert-ant-core.git" , from : "3.5.0" ) 
+
+ Then add the Emo product to your target.
+
+ requirements 
+
+ Kotlin 
+
+ implementation ( "ai.desertant:emo:3.5.0" ) 
+
+ requirements 
+
+ Terminal 
+
+ npm i @desert-ant-labs/emo @litertjs/core # browser 
+ npm i @desert-ant-labs/emo # Node, prebuilt native core 
+
+ Usage
+
+ Create one instance and reuse it. Construction is cheap and non-blocking; the
+model loads on first use, or earlier if you call download .
+
+ Swift Kotlin JavaScript 
+
+ Swift 
+
+ import Emo 
+
+ let emo = Emo () 
+ let suggestions = try await emo. suggestions ( for : "Pay my bills" ) 
+ // [EmoSuggestion(emoji: "💰", confidence: ...), ...] 
+
+ let toned = try await emo. suggestions ( for : "go for a run" , limit : 1 , skinTone : . medium ) 
+ // 🏃🏽 
+
+ suggestions and download are suspending functions. A model owns native
+resources, so close it when you are done, or let use { } do it.
+
+ Kotlin 
+
+ import ai.desertant.emo.Emo 
+ import ai.desertant.emo.EmojiSkinTone 
+
+ Emo (context). use { emo -> 
+ val suggestions = emo. suggestions ( "Pay my bills" ) // List<EmoSuggestion> 
+ val toned = emo. suggestions ( "go for a run" , limit = 1 , skinTone = EmojiSkinTone.MEDIUM) 
+ } 
+
+ The default import is the browser build. For inference in plain Node, import the
+ /native subpath, which ships prebuilt for linux-x64, linux-arm64 and darwin-arm64.
+
+ TypeScript 
+
+ import { Emo } from "@desert-ant-labs/emo" ; // browser 
+ // import { Emo } from "@desert-ant-labs/emo/native"; // server-side Node 
+
+ const emo = await Emo . load (); // downloads and caches on first use 
+ const suggestions = await emo . suggestions ( "Pay my bills" ); // [{ emoji, confidence }, ...] 
+ emo . dispose (); 
+
+ Loading the model
+
+ The weights are fetched from the Hub on first use and cached. To fetch them
+earlier, for example during onboarding, or to ship them yourself, see
+ model downloads and caching .
+
+ Swift 
+
+ let emo = Emo () 
+ if !emo. isDownloaded () { 
+ try await emo. download { fraction in print ( " \( Int (fraction * 100 ) ) %" ) } 
+ } 
+
+ let offline = Emo ( directory : myModelDirectory) // adopted as-is, nothing downloaded 
+
+ Files
+
+ File Format Size Contents 
+ emo. tflite 
+ LiteRT / TFLite (int8)
+ ~10.2 MB
+ Runs on Android, Linux, Node, and the web (bundled by default in the Kotlin SDK; downloaded on demand by the JavaScript SDK)
+
+ emo. mlmodelc 
+ Compiled Core ML
+ ~4.6 MB
+ Ready to load on Apple platforms (used by the Swift SDK)
+
+ emo_ tokenizer. bin 
+ Unigram tokenizer
+ ~0.75 MB
+ Tokenizer the runtime needs
+
+ emo_ meta. json 
+ JSON
+ tiny
+ Emoji labels and runtime config
+
+ Older revisions (tags v0.6.0 and earlier) carry Emo.mlmodelc and emo.safetensors for SDK versions that predate the unified cross-platform migration.
+
+ Inputs and outputs
+
+ Input: a plain text string. Best on short, intent-oriented text.
+
+ Output: a probability distribution over the ~800-emoji vocabulary; take the
+top-1 (or top-k). Optimized for top-1 relevance .
+
+ Languages
+
+ English, Spanish, Portuguese, French, German, Italian, Dutch, Russian, Polish,
+Turkish, Arabic, Chinese (Simplified & Traditional), Japanese, Korean, Hindi,
+Indonesian, Thai, Vietnamese, Ukrainian, Swedish, Danish, Czech.
+
+ Limitations
+
+ Tuned for short, intent-oriented text; long-form text produces noisier suggestions.
+
+ Emoji semantics are imprecise; near-ties at the top of the ranking are expected.
+
+ Per-language quality varies; lower-resource languages in the set are somewhat weaker.

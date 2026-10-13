@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attribution · Desert Ant Labs</title>
+<link rel="icon" href="/brand/assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/assets/icons/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/brand/assets/icons/apple-touch-icon.png">
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<div class="stage">
+  <header class="site-head">
+    <a class="brandmark" href="https://desertant.com" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+  </header>
+  <nav class="site-nav" aria-label="License">
+    <a href="/1.0">License</a>
+    <a href="/attribution">Attribution</a>
+  </nav>
+  <main class="col">
+    <article class="document">
+<h1 id="attribution">Attribution</h1>
+<p>Our models and SDKs are free to use in your product for most apps, up to 100,000
+monthly active devices per platform. In return, we ask that you credit Desert Ant Labs
+somewhere your users can find it. We've kept it easy and flexible.</p>
+<p>The formal wording is <a href="/1.0">Section 9 of the license</a>.</p>
+<h2 id="what-a-good-credit-looks-like">What a good credit looks like</h2>
+<p>A short line that names Desert Ant Labs and links to <a href="https://desertant.com">https://desertant.com</a>:</p>
+<ul>
+<li><strong>Powered by <a href="https://desertant.com">Desert Ant Labs</a> 🐜</strong></li>
+<li><strong>On-device AI by <a href="https://desertant.com">Desert Ant Labs</a></strong></li>
+<li><strong>Emo by <a href="https://desertant.com">Desert Ant Labs</a></strong>: naming the specific model is great too</li>
+<li>The ant (🐜) may sit next to the name (<strong>Powered by Desert Ant Labs 🐜</strong>), but it does
+  not replace the name.</li>
+</ul>
+<p>Where the medium can't carry a link (offline use, an embedded surface, an exported
+image), the text on its own is fine.</p>
+<h3 id="what-doesnt-count">What doesn't count</h3>
+<ul>
+<li>"Desert Ant Labs" alone, with no context, in a place users won't find.</li>
+<li>A credit hidden where a user could never reasonably reach it.</li>
+</ul>
+<h2 id="where-to-put-it">Where to put it</h2>
+<p><strong>One placement</strong> in a reasonably discoverable location is enough. You don't have to
+show it on every screen or during use. Any of these works:</p>
+<ul>
+<li>an About, Settings, Credits, Licenses, or Acknowledgements screen</li>
+<li>your App Store / Google Play listing</li>
+<li>an about, legal, or licenses page on your website</li>
+</ul>
+<p>For a product with no user-visible surface (a background service, say), crediting us
+in your documentation or repository is enough.</p>
+<h2 id="logo-option">Logo option</h2>
+<p>Instead of, or alongside, the text credit you may use the Desert Ant Labs logo. The
+full lockup is preferred; the ant mark on its own is for tight spaces (a favicon, an
+app-icon corner).</p>
+<p><strong>Logo</strong> (mark and name):</p>
+<div class="marks">
+  <figure class="light">
+    <div class="swatch"><img src="/brand/assets/logo/lockup.svg" alt="Desert Ant Labs logo"></div>
+    <figcaption>Light backgrounds · <a href="/brand/assets/logo/lockup.svg">SVG</a> · <a href="/brand/assets/logo/lockup-cream-2x.png">PNG</a></figcaption>
+  </figure>
+  <figure class="dark">
+    <div class="swatch"><img src="/brand/assets/logo/lockup-cream.svg" alt="Desert Ant Labs logo, cream"></div>
+    <figcaption>Dark backgrounds · <a href="/brand/assets/logo/lockup-cream.svg">SVG</a> · <a href="/brand/assets/logo/lockup-forest-2x.png">PNG</a></figcaption>
+  </figure>
+</div>
+
+<p><strong>Ant mark</strong> (compact):</p>
+<div class="marks">
+  <figure class="light">
+    <div class="swatch"><img src="/brand/assets/logo/mark.svg" alt="Desert Ant Labs ant mark"></div>
+    <figcaption>Light backgrounds · <a href="/brand/assets/logo/mark.svg">SVG</a> · <a href="/brand/assets/logo/mark-1024.png">PNG</a></figcaption>
+  </figure>
+  <figure class="dark">
+    <div class="swatch"><img src="/brand/assets/logo/mark-cream.svg" alt="Desert Ant Labs ant mark, cream"></div>
+    <figcaption>Dark backgrounds · <a href="/brand/assets/logo/mark-cream.svg">SVG</a> · <a href="/brand/assets/logo/mark-cream-1024.png">PNG</a></figcaption>
+  </figure>
+</div>
+
+<p>Guidelines: give the logo clear space on all sides, at least one cell of the mark;
+don't recolor, rotate, distort, or add effects; and pair the mark with the "Desert Ant
+Labs" name where the mark alone wouldn't identify us. When in doubt, use the text
+credit.</p>
+<h2 id="commercial-and-custom-licenses">Commercial and custom licenses</h2>
+<p>A commercial or custom license may vary or waive this requirement. If you have a
+signed agreement with Desert Ant Labs, its terms control.</p>
+<p>Questions: <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#108;&#105;&#99;&#101;&#110;&#115;&#105;&#110;&#103;&#64;&#100;&#101;&#115;&#101;&#114;&#116;&#97;&#110;&#116;&#46;&#99;&#111;&#109;">&#108;&#105;&#99;&#101;&#110;&#115;&#105;&#110;&#103;&#64;&#100;&#101;&#115;&#101;&#114;&#116;&#97;&#110;&#116;&#46;&#99;&#111;&#109;</a></p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-bar">
+      <span>© 2026 Desert Ant Labs B.V. · KvK 42136051</span>
+      <div class="footer-links">
+        <a href="/1.0">License v1.0</a>
+        <a href="/1.0.txt">Plain text</a>
+        <a href="/attribution">Attribution</a>
+        <a href="/llms.txt">llms.txt</a>
+        <a href="/cdn-cgi/l/email-protection#ea8683898f849983848daa8e8f998f989e8b849ec4898587"><span class="__cf_email__" data-cfemail="c2aeaba1a7acb1abaca582a6a7b1a7b0b6a3acb6eca1adaf">[email&#160;protected]</span></a>
+      </div>
+    </div>
+  </footer>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>
+

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toxic: On-device Multilingual Hate Speech Detection</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="On-device moderation that flags hateful, abusive and threatening text in 23 European languages, before the message is sent.">
+<meta name="keywords" content="on-device hate speech detection, multilingual hate speech classifier, toxicity classification, content moderation, hate speech detection English, hate speech detection German, hate speech detection French, hate speech detection Spanish, hate speech detection Dutch, hate speech detection Polish, abusive language detection, threat detection, hate speech triage, on-device moderation, Detoxify alternative, protected group targeting, Multilingual HateCheck, Core ML, LiteRT, ONNX, XLM-R, live chat moderation, stream chat moderation, comment moderation, message triage, privacy-first moderation">
+<link rel="canonical" href="https://desertant.com/models/toxic/">
+<link rel="alternate" hreflang="en" href="https://desertant.com/models/toxic/">
+<link rel="alternate" hreflang="de" href="https://desertant.com/de/models/toxic/">
+<link rel="alternate" hreflang="fr" href="https://desertant.com/fr/models/toxic/">
+<link rel="alternate" hreflang="es" href="https://desertant.com/es/models/toxic/">
+<link rel="alternate" hreflang="it" href="https://desertant.com/it/models/toxic/">
+<link rel="alternate" hreflang="nl" href="https://desertant.com/nl/models/toxic/">
+<link rel="alternate" hreflang="pt-BR" href="https://desertant.com/pt-br/models/toxic/">
+<link rel="alternate" hreflang="pt-PT" href="https://desertant.com/pt-pt/models/toxic/">
+<link rel="alternate" hreflang="zh-Hans" href="https://desertant.com/zh/models/toxic/">
+<link rel="alternate" hreflang="ja" href="https://desertant.com/ja/models/toxic/">
+<link rel="alternate" hreflang="ko" href="https://desertant.com/ko/models/toxic/">
+<link rel="alternate" hreflang="sv" href="https://desertant.com/sv/models/toxic/">
+<link rel="alternate" hreflang="x-default" href="https://desertant.com/models/toxic/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Toxic: On-device Multilingual Hate Speech Detection">
+<meta property="og:description" content="On-device moderation that flags hateful, abusive and threatening text in 23 European languages, before the message is sent.">
+<meta property="og:url" content="https://desertant.com/models/toxic/">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="es_ES">
+<meta property="og:locale:alternate" content="it_IT">
+<meta property="og:locale:alternate" content="nl_NL">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:locale:alternate" content="pt_PT">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:locale:alternate" content="ko_KR">
+<meta property="og:locale:alternate" content="sv_SE">
+<meta property="og:image" content="https://desertant.com/og/toxic.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Toxic: Catch hate speech before it posts.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Toxic: On-device Multilingual Hate Speech Detection">
+<meta name="twitter:description" content="On-device moderation that flags hateful, abusive and threatening text in 23 European languages, before the message is sent.">
+<meta name="twitter:image" content="https://desertant.com/og/toxic.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Toxic","applicationCategory":"DeveloperApplication","operatingSystem":"","description":"On-device moderation that flags hateful, abusive and threatening text in 23 European languages, before the message is sent.","url":"https://desertant.com/models/toxic/","image":"https://desertant.com/og/toxic.jpg","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","description":"Each model is free up to 100k monthly active devices. Inference is unlimited."},"featureList":["Three scores per text: hateful, abusive, threat.","Ten target signals under the hate score: race, color, religion, descent, national or ethnic origin, sexual orientation, gender, disability, age, other.","23 languages from one model file, with a recommended setting per language in the model metadata.","Runs fully on device. No text leaves the device to be scored."],"sameAs":["https://github.com/Desert-Ant-Labs/desert-ant-core","https://huggingface.co/desert-ant-labs/toxic"],"publisher":{"@type":"Organization","name":"Desert Ant Labs","url":"https://desertant.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desertant.com/"},{"@type":"ListItem","position":2,"name":"Text","item":"https://desertant.com/text/"},{"@type":"ListItem","position":3,"name":"Toxic","item":"https://desertant.com/models/toxic/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Toxic?","acceptedAnswer":{"@type":"Answer","text":"On-device moderation that flags hateful, abusive and threatening text in 23 European languages, before the message is sent."}},{"@type":"Question","name":"Does Toxic run on device?","acceptedAnswer":{"@type":"Answer","text":"Yes. Toxic runs on the device, with no server call, so the data stays with the user."}},{"@type":"Question","name":"Is Toxic available yet?","acceptedAnswer":{"@type":"Answer","text":"Toxic is in closed beta. Request early access on this page."}},{"@type":"Question","name":"How much does Toxic cost?","acceptedAnswer":{"@type":"Answer","text":"Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses."}},{"@type":"Question","name":"How accurate or fast is Toxic?","acceptedAnswer":{"@type":"Answer","text":"0.847 macro F1 on real Multilingual HateCheck across the seven EU languages it covers, from an 80MB model that runs on device. The closest guard model through the same harness is Mistral's Shieldstral-1.0-3B at 0.786, and it wants a 16GB GPU; the ones sized for a phone score 0.65."}}]}</script>
+</head>
+<body class="theme-clay-red">
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <article class="article theme-clay-red">
+        <section class="hero-model rise d1">
+          <div class="hero-model-content">
+            <div class="model-title" data-fx-host>
+              <h1 class="hero-model-title" data-effect="marker">Toxic</h1>
+            </div>
+            <div class="tag-row"><span class="tag">Hate speech triage</span><span class="tag">Closed beta</span></div>
+            <p class="lede">On-device moderation that flags hateful, abusive and threatening text in 23 European languages, before the message is sent.</p>
+        <div class="btn-row">
+          <a class="btn" href="/contact/?topic=early-access&amp;model=Toxic">Contact us for early access</a>
+          <a class="btn btn--outline" href="https://huggingface.co/desert-ant-labs/toxic"><img class="btn-hf" src="/assets/hf-logo-gray.svg" width="24" height="22" alt="" aria-hidden="true"><span>Model card</span></a>
+        </div>
+          </div>
+          <div class="hero-model-photo"><img src="/assets/photos/toxic-card-816.webp" srcset="/assets/photos/toxic-card-816.webp 816w, /assets/photos/toxic-card.webp 1632w" sizes="(max-width: 860px) 100vw, 50vw" alt="" fetchpriority="high"></div>
+        </section>
+        <nav class="breadcrumb rise d2" aria-label="Breadcrumb">
+          <a href="/">Home</a><span class="sep" aria-hidden="true">/</span>
+          <a href="/#models">Models</a><span class="sep" aria-hidden="true">/</span>
+          <span aria-current="page">Toxic</span>
+        </nav>
+
+      <div class="panel panel--pad beta-note rise d3"><strong>Toxic is in closed beta.</strong> The model card and weights are public. Early access on request.</div>
+      <section class="section section--narrow rise d3" id="overview">
+        <h2 class="section-title">Catch hate speech before it posts.</h2>
+        <div class="prose">
+          <p>Toxic scores three things separately, so a product can treat them differently. Hate speech means public incitement to violence or hatred against a protected group. Abuse means insults, ranked by how severe they are. A threat means violence against a person or group.</p>
+          <p>On Multilingual HateCheck, a public suite of hand-written examples, Toxic gets 85 out of 100 across the seven EU languages. Mistral's Shieldstral gets 79 and wants a 16GB GPU; the guard models sized for a phone get 65.</p>
+        </div>
+      </section>
+      <section class="section section--perf rise d4" id="performance" aria-label="Performance">
+        <h2 class="section-title">0.847 on real hate speech, from 80MB.</h2>
+        <p class="section-lede">0.847 macro F1 on real Multilingual HateCheck across the seven EU languages it covers, from an 80MB model that runs on device. The closest guard model through the same harness is Mistral's Shieldstral-1.0-3B at 0.786, and it wants a 16GB GPU; the ones sized for a phone score 0.65.</p>
+        <div class="perf-hero no-photo">
+          <div class="stat-row">
+            <div class="stat"><div class="stat-value">0.847</div><div class="stat-label">Macro F1</div><div class="stat-detail">7 EU languages, shipped weights</div></div>
+            <div class="stat"><div class="stat-value">0.786</div><div class="stat-label">Best baseline</div><div class="stat-detail">Shieldstral-1.0-3B, same rows</div></div>
+            <div class="stat"><div class="stat-value">80MB</div><div class="stat-label">On-device</div><div class="stat-detail">Core ML; 159.6M params</div></div>
+            <div class="stat"><div class="stat-value">26-30%</div><div class="stat-label">False flags</div><div class="stat-detail">clean text, 7 EU languages, default setting</div></div>
+          </div>
+        </div>
+        <p class="perf-note">Measured on the weights that ship, not extrapolated from a training checkpoint; three runs of the same recipe average 0.834. The threshold is 0.40 for the hate score and 0.50 for the other two. Out of domain, on corpora with no shared lineage: 0.724 on textdetox across 5 languages and 0.658 on offenseval2020 across 3. The seven EU languages are scored on real Multilingual HateCheck; the other 15 are scored on synthetic sets, because HateCheck has no real set for them, and those figures are development estimates rather than comparable scores. Latency has not been measured yet.</p>
+      </section>
+      <section class="section section--uc rise d4" id="use-cases">
+        <h2 class="section-title">Use cases</h2>
+        <div class="uc-figure-grid">
+          <figure class="uc-figure">
+            <img src="/assets/photos/toxic-card-816.webp" alt="" loading="lazy" width="1088" height="1360">
+            <h3>Catch hate speech before it posts.</h3>
+          </figure>
+          <div class="uc-figure-col">
+            <div class="use-case"><h3>Warn before the message is sent</h3><p>Score outgoing messages on the device before they are sent, so hateful, abusive or threatening content can trigger an inline warning or a review path without ever reaching your servers.</p></div>
+            <div class="use-case"><h3>Comment triage without infrastructure</h3><p>Run every incoming comment through Toxic locally in the client and send only the likely hate speech to a moderator queue. The rest never needs a human, and no comment costs a cloud call.</p></div>
+            <div class="use-case"><h3>Moderate in 23 European languages</h3><p>One model file covers 23 languages, from English, Spanish, and Polish through Bulgarian, Estonian, and Irish. No per-language model, and no separate language-detection step.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section rise d5">
+        <h2 class="section-title">What the model does</h2>
+        <ul class="features">
+          <li>Three scores per text: hateful, abusive, threat.</li>
+          <li>Ten target signals under the hate score: race, color, religion, descent, national or ethnic origin, sexual orientation, gender, disability, age, other.</li>
+          <li>23 languages from one model file, with a recommended setting per language in the model metadata.</li>
+          <li>Runs fully on device. No text leaves the device to be scored.</li>
+        </ul>
+      </section>
+
+
+      <section class="section rise d5">
+        <h2 class="section-title">Specs</h2>
+        <dl class="specs">
+          <div><dt>Languages</dt><dd>23, from English, German, and French through Greek, Lithuanian, and Irish</dd></div>
+          <div><dt>On-device size</dt><dd>80MB Core ML (4-bit); 91MB LiteRT (int4); 100MB ONNX (browser)</dd></div>
+          <div><dt>Model</dt><dd>XLM-R-base, 12 layers, 159.6M params</dd></div>
+          <div><dt>Accuracy</dt><dd>0.847 macro F1 on the 7 EU languages in Multilingual HateCheck, shipped weights; 23 languages supported</dd></div>
+          <div><dt>Platforms</dt><dd>iOS and macOS (Core ML), Android (LiteRT), browser (ONNX); weights on Hugging Face, not in the SDK yet</dd></div>
+        </dl>
+      </section>
+      <div class="caveats rise d6">
+        <p class="model-caveat">Toxic is a triage aid, not a verdict. Send flags to a human reviewer or a heavier local tier instead of auto-removing.</p>
+        <p class="model-caveat">Toxic reacts to hateful words even when someone is quoting or condemning them, so counter-speech and news reporting can trip the flag. At the default setting it flags 26 to 30% of the non-hateful text in the seven EU languages it was measured on, and 12% in English.</p>
+        <p class="model-caveat">Toxic separates hate speech from ordinary text well, and hate speech from plain rudeness much less well, so an angry customer can read as hateful.</p>
+      </div>
+      <section class="section rise d6" id="faq">
+        <h2 class="section-title">FAQ</h2>
+        <div class="faq">
+          <div class="faq-item">
+            <h3 class="faq-q">What is Toxic?</h3>
+            <p class="faq-a">On-device moderation that flags hateful, abusive and threatening text in 23 European languages, before the message is sent.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">Does Toxic run on device?</h3>
+            <p class="faq-a">Yes. Toxic runs on the device, with no server call, so the data stays with the user.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">Is Toxic available yet?</h3>
+            <p class="faq-a">Toxic is in closed beta. Request early access on this page.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">How much does Toxic cost?</h3>
+            <p class="faq-a">Each model is free up to 100k monthly active devices. Inference is unlimited. <a href="#" role="button" data-mail="Commercial license inquiry">Contact us</a> for custom licenses.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">How accurate or fast is Toxic?</h3>
+            <p class="faq-a">0.847 macro F1 on real Multilingual HateCheck across the seven EU languages it covers, from an 80MB model that runs on device. The closest guard model through the same harness is Mistral's Shieldstral-1.0-3B at 0.786, and it wants a 16GB GPU; the ones sized for a phone score 0.65.</p>
+          </div>
+        </div>
+      </section>
+      <section class="section section--narrow rise d6">
+        <h2 class="section-title">Early access</h2>
+        <p class="section-lede">Tell us what you are building and we will get you set up.</p>
+        <div class="btn-row"><a class="btn" href="/contact/?topic=early-access&amp;model=Toxic">Contact us for early access</a><a class="btn btn--outline" href="https://huggingface.co/desert-ant-labs/toxic">Model card on Hugging Face</a></div>
+      </section>
+      </article>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/models/toxic/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/models/toxic/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/models/toxic/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/models/toxic/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/models/toxic/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/models/toxic/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/models/toxic/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/models/toxic/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/models/toxic/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/models/toxic/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/models/toxic/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/models/toxic/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

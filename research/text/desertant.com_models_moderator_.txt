@@ -1,0 +1,204 @@
+Desert Ant Labs 
+
+ Moderator
+
+ Content moderation Available 
+
+ On-device NSFW detection that flags nudity before upload, trained only on licensed and synthetic data, safe to ship commercially.
+
+ Get started 
+ Docs 
+ Model card 
+
+ Flag nudity before upload or display.
+
+ Questionable uploads never reach your servers, your CDN or a moderator's queue. Five separate detections (exposed nipples, genitals, buttocks, nudity and sexual activity) feed the score, and your policy decides which of them count.
+
+ Every image Moderator trained on is licensed or synthetic, so it goes into a commercial product with no copyright exposure. The whole model is 9.7MB on Apple and 9.2MB elsewhere, so the check runs on the phone before the upload starts.
+
+ Catches 87.8% of NSFW images.
+
+ Catches 87.8% of NSFW images and passes 93.7% of safe ones at a 6.3% false-block rate, about half NudeNet's, from a 9.7MB on-device model.
+
+ 87.8%
+ Recall
+ NSFW caught
+
+ 93.7%
+ Specificity
+ SFW passed
+
+ 9.7MB
+ On-device
+ int8 Core ML
+
+ 74%
+ Per video frame
+ 1 crop, 97% specificity; sampling frames recovers recall
+
+ Internal evaluation on a proprietary held-out set, not a published benchmark. The headline numbers are the 8-crop pass, which is the one to run on a single image; for video, one crop per frame is cheaper and more precise per frame, and sampling across frames recovers the recall.
+
+ Use cases
+
+ Flag nudity before upload or display.
+
+ Pre-upload filtering
+ Screen a user's image on the phone before it uploads. Nothing questionable reaches your servers, and no one on your team has to look at the image to find out.
+
+ A policy you control
+ The .standard policy counts all five detections. .allowTopless leaves exposed nipples out of the score, for platforms whose rules permit them.
+
+ Warn at the picker, not after the post
+ Score an image the moment a user picks it, and warn them on the spot. An hour-later takedown costs you a support thread.
+
+ What the model does
+
+ Trained only on permissively licensed and synthetic images, with nothing scraped.
+
+ Scores any image or video frame for nudity on the device, before upload.
+
+ Five detection heads: exposed nipples, genitals, buttocks, nudity, and sexual activity.
+
+ A policy decides what counts toward the NSFW score, from .standard (all five) to .allowTopless (excludes exposed nipples).
+
+ Getting started
+
+ Add content moderation to your iOS or macOS, Android or web app in a few lines of code. Moderator docs .
+
+ iOS, macOS 
+
+ Install 
+
+ // Swift Package Manager 
+ . package ( url : "https://github.com/Desert-Ant-Labs/desert-ant-core" , from : "3.5.0" ) 
+ // target dependency 
+ . product ( name : "Moderator" , package : "desert-ant-core" ) 
+
+ Build with a prompt 
+
+ Add Moderator from Desert Ant Labs to this Swift project (iOS, macOS).
+
+What it does: On-device NSFW and Nudity Detection for Images and Video.
+
+SDK:
+
+Swift (iOS, macOS)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// Swift Package Manager
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core", from: "3.5.0")
+// target dependency
+.product(name: "Moderator", package: "desert-ant-core")
+
+Reference:
+- Model page: https://desertant.com/models/moderator/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.
+
+ SDK on GitHub 
+
+ Android 
+
+ Install 
+
+ // build.gradle.kts (Maven Central) 
+ implementation ( "ai.desertant:moderator:3.5.0" ) 
+
+ Build with a prompt 
+
+ Add Moderator from Desert Ant Labs to this Kotlin project (Android).
+
+What it does: On-device NSFW and Nudity Detection for Images and Video.
+
+SDK:
+
+Kotlin (Android)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// build.gradle.kts (Maven Central)
+implementation("ai.desertant:moderator:3.5.0")
+
+Reference:
+- Model page: https://desertant.com/models/moderator/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.
+
+ SDK on GitHub 
+
+ Web, Node.js 
+
+ Install 
+
+ npm i @desert-ant-labs/moderator @litertjs/core 
+
+ Build with a prompt 
+
+ Add Moderator from Desert Ant Labs to this JavaScript / TypeScript project (Web, Node.js).
+
+What it does: On-device NSFW and Nudity Detection for Images and Video.
+
+SDK:
+
+JavaScript / TypeScript (Web, Node.js)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+npm i @desert-ant-labs/moderator @litertjs/core
+
+Reference:
+- Model page: https://desertant.com/models/moderator/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.
+
+ SDK on GitHub 
+
+ Specs
+
+ Accuracy
+ Recall 87.8%, specificity 93.7% at threshold 0.50
+
+ Model
+ On-device image classifier
+
+ On-device size
+ 9.7MB on Apple (Core ML), 9.2MB elsewhere (LiteRT)
+
+ Platforms
+ iOS, macOS, tvOS, visionOS, Android, Linux, Windows, browser, and Node
+
+ Moderator is a moderation aid, not a legal determination. Send every flag to a human reviewer before anything is blocked.
+
+ Moderator covers adult content only. Minors are out of scope by design and excluded from the training set.
+
+ FAQ
+
+ What is Moderator?
+
+ On-device NSFW detection that flags nudity before upload, trained only on licensed and synthetic data, safe to ship commercially.
+
+ Does Moderator run on device?
+
+ Yes. Moderator runs on the device, with no server call, so the data stays with the user.
+
+ Which platforms does Moderator support?
+
+ Moderator ships as a native on-device SDK for Swift, Kotlin, JavaScript / TypeScript.
+
+ How much does Moderator cost?
+
+ Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses.
+
+ How accurate or fast is Moderator?
+
+ Catches 87.8% of NSFW images and passes 93.7% of safe ones at a 6.3% false-block rate, about half NudeNet's, from a 9.7MB on-device model.
+
+ Resources
+
+ Moderator docs 
+
+ Model weights on Hugging Face 
+
+ Swift models 
+
+ Kotlin models 
+
+ JS models

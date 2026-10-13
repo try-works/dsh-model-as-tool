@@ -1,0 +1,223 @@
+Desert Ant Labs 
+
+ Title
+
+ Titles and descriptions Available 
+
+ On-device titles and descriptions: a short factual title and a one or two sentence description for any passage, on Apple silicon.
+
+ Get started 
+ Docs 
+ Model card 
+
+ Suggest a title and description for any text.
+
+ A clip about shooting a podcast on two phones gets the title "Filming a two-person podcast on iPhone", three to eight words, with a one-line description under it. Nobody typed either one.
+
+ The register is deliberately plain: no emoji, no hashtags, no clickbait, and the description says what this passage is, not what its subject is. Fine-tuned on transcript clips, and it holds up on a news paragraph, a product description, or an email.
+
+ Title runs on Apple silicon only, through MLX. Load it once and reuse it; pair it with Clips and every clip leaves with a name.
+
+ Use cases
+
+ Suggest a title and description for any text.
+
+ Name every clip
+ Clips finds the moments in a recording; Title names them. A creator app posts each short with a title of three to eight words and a one-line description, written on the phone, with nothing sent anywhere.
+
+ Title a note as it's saved
+ A notes app or a voice memo app names the entry from its own text the moment it is saved. The list reads like a list instead of a column of first lines and timestamps.
+
+ Describe a recording for the library
+ A podcast or lecture app writes the episode title and the two-sentence description from the transcript on a Mac, ready to edit. The field is never blank until someone gets to it.
+
+ Inspiration
+
+ Ideas to build with Title. Copy a prompt into your coding agent and go.
+
+ Title 
+
+ Auto-name and describe every clip and file.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Title 
+
+ Title a note the moment it's saved.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Title 
+
+ Write library descriptions for a media archive.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Voz Clips Title 
+
+ Build a full podcast studio: transcribe, clip, and title on the device.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Title 
+
+ Draft an SEO title and meta description from a page's text.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Voz Clips Title 
+
+ Build a fully local clipping engine: transcribe, clip, title, caption.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Title 
+
+ A Shortcut that titles and describes whatever you share to it.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Title 
+
+ Build an agent skill that titles and describes any file the agent makes.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ What the model does
+
+ A title of three to eight words with no final punctuation, and a description of one or two sentences, from one call.
+
+ Plain register on purpose: no emoji, no hashtags, no clickbait. The description identifies this passage rather than its topic.
+
+ Fine-tuned on transcript clips; works on general prose (news paragraphs, product descriptions, emails).
+
+ Names a Clip from Clips directly; one card per clip, in the same order.
+
+ Nothing is downloaded. Ship the model files in a folder with the app and pass that folder to Titles; the other models fetch their weights on first use, this one doesn't.
+
+ MLX rather than Core ML: short generation measured 5.7-8.3x faster on the GPU than on the Neural Engine. A 350M-parameter model quantized to 6-bit, behind the MLX package trait, loaded once and reused.
+
+ Example app
+
+ Clipper
+
+ Built with Voz, Clips, Title
+
+ Generate short clips from a video podcast or a long recording, fully on device. A macOS app and a command-line tool over the same core.
+
+ Voz transcribes with a time on every word, Clips ranks the best spans, and Title writes a title and description for each.
+
+ macOS 26 or later, Apple Silicon
+
+ Install with Homebrew 
+
+ brew tap desert-ant-labs/tap 
+ brew install --cask clipper 
+
+ View source Or download for macOS 
+
+ Getting started
+
+ Add titles and descriptions to your iOS or macOS app in a few lines of code. Title docs .
+
+ iOS, macOS 
+
+ Install 
+
+ // Swift Package Manager 
+ . package ( url : "https://github.com/Desert-Ant-Labs/desert-ant-core.git" , from : "3.5.0" , 
+ traits : [ "MLX" ]) 
+ // target dependency 
+ . product ( name : "Title" , package : "desert-ant-core" ) 
+
+ Example - Swift 
+
+ import Title 
+
+ let titles = try await Titles ( directory : modelFolder) 
+ let card = try await titles. describe (text) 
+ card. title // "Filming a two-person podcast on iPhone" 
+ card. description // one or two sentences 
+
+ Build with a prompt 
+
+ Add Title from Desert Ant Labs to this Swift project (iOS, macOS).
+
+What it does: On-device Titles and Descriptions for Any Text.
+
+SDK:
+
+Swift (iOS, macOS)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// Swift Package Manager
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core.git", from: "3.5.0",
+ traits: ["MLX"])
+// target dependency
+.product(name: "Title", package: "desert-ant-core")
+
+Reference:
+- Model page: https://desertant.com/models/title/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.
+
+ SDK on GitHub 
+
+ Specs
+
+ Output
+ A 3 to 8 word title and a 1 to 2 sentence description
+
+ Model
+ Fine-tuned from granite-4.0-350m, 6-bit quantized, MLX
+
+ Platforms
+ iOS, macOS, tvOS, visionOS on Apple silicon (MLX); no Android, Linux, or Windows build
+
+ Title is in internal testing and its card carries no quality figures. No independent review has been completed, and the model sometimes opens a description with a stock phrase its own instruction forbids.
+
+ Read the output before it reaches a user. Apple silicon only, through MLX.
+
+ Use the SDK's own prompt: the model was trained on one instruction, and a reworded one gets worse output.
+
+ FAQ
+
+ What is Title?
+
+ On-device titles and descriptions: a short factual title and a one or two sentence description for any passage, on Apple silicon.
+
+ Does Title run on device?
+
+ Yes. Title runs on the device, with no server call, so the data stays with the user.
+
+ Which platforms does Title support?
+
+ Title ships as a native on-device SDK for Swift.
+
+ How much does Title cost?
+
+ Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses.
+
+ Resources
+
+ Title docs 
+
+ Model weights on Hugging Face 
+
+ Swift models

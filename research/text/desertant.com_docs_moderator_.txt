@@ -1,0 +1,161 @@
+Desert Ant Labs 
+
+ Models 
+ Align Word timestamps Clear Speech enhancement Clips Clip selection Ear Spoken language detection Emo Emoji suggestions Gist Content topic tagging Moderator Content moderation Redact PII redaction Shapes Shape recognition Title Titles and descriptions Tongue Language identification Uhm Filler-word detection Voz Speech recognition 
+ All models 
+
+ Docs 
+
+ Blog 
+
+ Inspiration 
+ About 
+
+ Jobs 
+ Contact 
+
+ Docs / Moderator 
+
+ Align 
+ Clear 
+ Clips 
+ Ear 
+ Emo 
+ Gist 
+ Moderator 
+ Redact 
+ Shapes 
+ Title 
+ Tongue 
+ Uhm 
+ Voz 
+
+ Moderator
+
+ On-device NSFW image detection, trained only on licensed and synthetic data.
+
+ Moderator model page 
+
+ Platforms 
+ iOS, macOS, tvOS, visionOS, Android, Linux, Windows, Browser, Node
+
+ Weights 
+ v1.0.0 
+
+ Demo 
+ https://desertant.com/models/moderator/ 
+
+ Install
+
+ Swift Kotlin JavaScript 
+
+ requirements 
+
+ Swift 
+
+ . package ( url : "https://github.com/Desert-Ant-Labs/desert-ant-core.git" , from : "3.5.0" ) 
+
+ Then add the Moderator product to your target.
+
+ requirements 
+
+ Kotlin 
+
+ implementation ( "ai.desertant:moderator:3.5.0" ) 
+
+ requirements 
+
+ Terminal 
+
+ npm i @desert-ant-labs/moderator @litertjs/core # browser 
+ npm i @desert-ant-labs/moderator # Node, prebuilt native core 
+
+ Usage
+
+ Swift Kotlin JavaScript 
+
+ Swift 
+
+ import Moderator 
+
+ let moderator = Moderator () 
+ let result = try await moderator. analyze ( contentsOf : photoURL) // or UIImage, NSImage, CGImage, Data 
+ if result.isNSFW { blur () } 
+ print (result. score ) // 0...1 
+ print (result. regions ) // nipples, genitals, buttocks, nude, sexAct 
+
+ Files and Data are decoded upright per their EXIF orientation, and a
+ UIImage keeps its orientation and full pixel resolution. Cancelling the calling
+task stops the analysis and throws CancellationError .
+
+ On Linux and Windows, pass decoded pixels:
+
+ Swift 
+
+ let pixels = try ImagePixels ( width : w, height : h, rgba : bytes) 
+ let result = try await moderator. analyze (pixels) 
+
+ Kotlin 
+
+ import ai.desertant.moderator.Moderator 
+ import ai.desertant.moderator.Options 
+
+ Moderator (context). use { moderator -> 
+ val result = moderator. analyze (bitmap) // or analyze(bytes, width, height) 
+ if (result.isNSFW) blur () 
+ } 
+
+ TypeScript 
+
+ import { Moderator } from "@desert-ant-labs/moderator" ; // browser 
+ // import { Moderator } from "@desert-ant-labs/moderator/native"; // server-side Node 
+
+ const moderator = await Moderator . load (); 
+ const { score , isNSFW , regions } = await moderator . analyze ( image ); 
+ moderator . dispose (); 
+
+ In the browser image is anything createImageBitmap accepts (an <img> , a
+canvas, a Blob , an ImageBitmap ) or an ImageData . In Node pass decoded
+pixels, { data, width, height } with RGB or RGBA bytes, for example from
+ sharp(file).raw().toBuffer({ resolveWithObject: true }) .
+
+ Options
+
+ Every SDK takes the same three options:
+
+ Option Default 
+ threshold 
+ 0. 5 
+ Score at or above which isNSFW is true. A product dial: raise it to trade recall for precision.
+
+ policy 
+ standard
+ allowTopless ignores a bare chest on its own; exposed genitals or buttocks, full nudity, and sexual activity still flag.
+
+ quality 
+ accurate
+ Crops scored per image, max taken. fast is one center crop (video frames), balanced four multiscale tiles, accurate those tiles and their mirrors, the setting the model is evaluated with.
+
+ The score is the max of the region heads the policy counts. Regions are decision
+scores, not calibrated probabilities.
+
+ Loading the model
+
+ The weights are fetched from the Hub on first use and cached. See
+ model downloads and caching .
+
+ Files
+
+ File Format Size Contents 
+ moderator. mlmodelc 
+ Compiled Core ML (int8)
+ 9.7MB
+ Ready to load on Apple platforms (used by the Swift SDK)
+
+ moderator. tflite 
+ LiteRT / TFLite (int8)
+ 9.2MB
+ Runs on Android, Linux, Windows, Node, and the web (downloaded on demand by the Kotlin and JavaScript SDKs)
+
+ The SDKs prepare images exactly as the model was evaluated, so a score here is
+the score the model was measured on.

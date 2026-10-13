@@ -1,0 +1,263 @@
+Desert Ant Labs 
+
+ Clips
+
+ Clip selection Available 
+
+ Clip selection that turns a long recording into ranked shorts and highlights from a transcript. On-device on iPhone or Mac.
+
+ Get started 
+ Docs 
+ Model card 
+
+ Create short videos and highlight clips.
+
+ From a 25-minute recording, Clips ranks 12 clips in 9s on an iPhone 17 Pro. Create a ranked selection of clips to share instantly.
+
+ Clips analyzes a transcript to find the best moments and stories, and returns a ranked list of clips. Use the ranked selection to create highlight reels or a summary video. Build your own clipping engine or auto-edit, with no inference cost.
+
+ Nothing is uploaded, so clipping a back catalog costs the same as clipping one video. There's no length limit or maximum context size. Use Clips on short videos or audio files to get a summary in seconds, or churn through hour-long recordings without limitations. 
+
+ 25 minutes of video, clipped in 9s.
+
+ Clips ranks a 25-minute transcript into 12 clips in 9.19s on an iPhone 17 Pro, on the device.
+
+ 9.2s
+ 25-minute video
+ iPhone 17 Pro, 12 clips
+
+ 2.8ms
+ Per candidate
+ encoder only, iPhone 17 Pro
+
+ 12
+ Clips
+ from a 25-minute video
+
+ Measured on device, pinned to CPU and Neural Engine
+
+ Transcript iPhone 17 Pro iPhone 15 Pro 
+ 25-minute video, 12 clips 9.19s 10.22s 
+ Per candidate, encoder only 2.78ms 3.13ms 
+
+ Internal measurements on the shipped Core ML build. Clip edges are the known weak spot, and selection near a moment is sensitive to small score changes, so a different runtime or quantization returns a different but comparable set.
+
+ Use cases
+
+ Create short videos and highlight clips.
+
+ Shorts from a podcast episode
+ Post the five best moments of an hour-long episode as shorts, ranked, before the export finishes, in just a few seconds directly on-device.
+
+ Auto edit a long take
+ Turn a rambling 25-minute take into a tight cut in a video editor. Get a highlight reel with the most important insights from a video, ready to review or publish.
+
+ Clip the back catalog
+ Run a library of recorded talks or streams through Clips on a Mac overnight. Nothing is uploaded and nothing is billed per video, so a thousand videos cost the same as one.
+
+ Highlights in a hundred languages
+ A creator app that ships in Spanish, Portuguese, and German gets the same clip selection in all three: one model covers a hundred languages, from the transcript, on the device.
+
+ Inspiration
+
+ Ideas to build with Clips. Copy a prompt into your coding agent and go.
+
+ Clips 
+
+ Turn any recording into a ranked set of shorts.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Clips 
+
+ Generate a highlight reel from a long stream or talk.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Clips 
+
+ Produce a rough auto-edit from a rambling take.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Clips 
+
+ Clip a whole back catalog of videos overnight on a Mac.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Voz Clips Title 
+
+ Build a full podcast studio: transcribe, clip, and title on the device.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Clear Voz Clips 
+
+ Record, clean, transcribe, and clip: a whole creator pipeline, offline.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Voz Clips 
+
+ Turn a webinar into teaser clips for social.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ Voz Clips Title 
+
+ Build a fully local clipping engine: transcribe, clip, title, caption.
+
+ Copy prompt 
+
+ Copied to clipboard 
+
+ See all 13 ideas 
+
+ What the model does
+
+ Ranks a transcript's best non-overlapping moments: each clip gets scored and ranked. Build strong selections or unique editing features to pick the best sentences in video or audio recordings.
+
+ Control the selection. Threshold on percentile , not the raw score: a 0.8 cut averages 5 clips covering 17% of the video (highlights), a 0.3 cut averages 32 clips covering 74% (auto edit).
+
+ No context window: sentences run through the selector in batches and each candidate is scored on its own, so there's no context limit to work around. Create clips from long video or audio transcripts without any issues.
+
+ Faster, better, cheaper. A 404-sentence, 25-minute transcript returns 12 clips in 9.19s on an iPhone 17 Pro and 10.22s on an iPhone 15 Pro; 2.78ms per candidate on the encoder alone.
+
+ Multi-language support. 100 languages in a single 284MB int8 Core ML package on Apple.
+
+ Pair Clips with our Title model to generate titles and descriptions and build a fully local clipping engine, that runs fully local.
+
+ Example app
+
+ Clipper
+
+ Built with Voz, Clips, Title
+
+ Generate short clips from a video podcast or a long recording, fully on device. A macOS app and a command-line tool over the same core.
+
+ Voz transcribes with a time on every word, Clips ranks the best spans, and Title writes a title and description for each.
+
+ macOS 26 or later, Apple Silicon
+
+ Install with Homebrew 
+
+ brew tap desert-ant-labs/tap 
+ brew install --cask clipper 
+
+ View source Or download for macOS 
+
+ Getting started
+
+ Add clip selection to your iOS or macOS app in a few lines of code. Clips docs .
+
+ iOS, macOS 
+
+ Install 
+
+ // Swift Package Manager 
+ . package ( url : "https://github.com/Desert-Ant-Labs/desert-ant-core.git" , from : "3.5.0" ) 
+ // target dependency 
+ . product ( name : "Clips" , package : "desert-ant-core" ) 
+
+ Example - Swift 
+
+ import Clips 
+
+ let clips = Clips () 
+ let moments = try await clips. clips ( in : sentences) // [Clip], best first 
+ for clip in moments { 
+ print (clip. text , clip. start , clip. end , clip. percentile ) 
+ } 
+
+ Build with a prompt 
+
+ Add Clips from Desert Ant Labs to this Swift project (iOS, macOS).
+
+What it does: Shorts and Highlights from any recording, on-device.
+
+SDK:
+
+Swift (iOS, macOS)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// Swift Package Manager
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core.git", from: "3.5.0")
+// target dependency
+.product(name: "Clips", package: "desert-ant-core")
+
+Reference:
+- Model page: https://desertant.com/models/clips/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.
+
+ SDK on GitHub 
+
+ Android Coming soon 
+
+ Web, Node.js Coming soon 
+
+ Specs
+
+ Speed
+ A 25-minute transcript in 9.19s on an iPhone 17 Pro, 10.22s on an iPhone 15 Pro
+
+ On-device size
+ 284MB int8 Core ML (Apple); two 283MB LiteRT files for Android, Linux, and Windows
+
+ Languages
+ 100
+
+ Model
+ Four heads: saliency, start, end, and clip score
+
+ Platforms
+ iOS 18, macOS 15, tvOS 18, visionOS 2 (Core ML). Android, Linux, and Windows LiteRT files are published but not supported in our SDK yet.
+
+ Clip edges are the weak spot. A clip can open on a pronoun whose referent was in the sentence before, fuse two topics, cut before the payoff, or swallow a sponsor read.
+
+ Short videos return few clips, a transcript under three sentences returns none, and the clip limit is a cap, not a quota. Non-Latin scripts are under-tested, and the Linux and Windows files are not supported in our SDK yet.
+
+ FAQ
+
+ What is Clips?
+
+ Clip selection that turns a long recording into ranked shorts and highlights from a transcript. On-device on iPhone or Mac.
+
+ Does Clips run on device?
+
+ Yes. Clips runs on the device, with no server call, so the data stays with the user.
+
+ Which platforms does Clips support?
+
+ Clips ships as a native on-device SDK for Swift.
+
+ How much does Clips cost?
+
+ Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses.
+
+ How accurate or fast is Clips?
+
+ Clips ranks a 25-minute transcript into 12 clips in 9.19s on an iPhone 17 Pro, on the device.
+
+ Resources
+
+ Clips docs 
+
+ Model weights on Hugging Face 
+
+ Swift models

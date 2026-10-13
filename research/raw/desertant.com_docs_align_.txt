@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Align SDK docs | Desert Ant Labs</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="Install and use Align on device: word timestamps in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="keywords" content="Align, SDK, documentation, on-device">
+<link rel="canonical" href="https://desertant.com/docs/align/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Align: Docs">
+<meta property="og:description" content="Install and use Align on device: word timestamps in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta property="og:url" content="https://desertant.com/docs/align/">
+<meta property="og:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Desert Ant Labs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Align: Docs">
+<meta name="twitter:description" content="Install and use Align on device: word timestamps in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="twitter:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+
+</head>
+<body>
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/" class="is-on">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <div class="docs-layout">
+        <nav class="side-nav rise d2" aria-label="Documentation">
+            <p class="side-nav-title"><a href="/docs/">Docs</a><span class="sep" aria-hidden="true">/</span><span aria-current="page">Align</span></p>
+            <div class="side-nav-items">
+              <a class="side-nav-item side-nav-item--faun" href="/docs/align/" aria-current="page">Align</a>
+              <a class="side-nav-item side-nav-item--teal" href="/docs/clear/">Clear</a>
+              <a class="side-nav-item side-nav-item--dusty-pink" href="/docs/clips/">Clips</a>
+              <a class="side-nav-item side-nav-item--light-peach" href="/docs/ear/">Ear</a>
+              <a class="side-nav-item side-nav-item--terracotta" href="/docs/emo/">Emo</a>
+              <a class="side-nav-item side-nav-item--stone" href="/docs/gist/">Gist</a>
+              <a class="side-nav-item side-nav-item--warm-grey" href="/docs/moderator/">Moderator</a>
+              <a class="side-nav-item side-nav-item--forest" href="/docs/redact/">Redact</a>
+              <a class="side-nav-item side-nav-item--sand" href="/docs/shapes/">Shapes</a>
+              <a class="side-nav-item side-nav-item--cool-grey" href="/docs/title/">Title</a>
+              <a class="side-nav-item side-nav-item--ink" href="/docs/tongue/">Tongue</a>
+              <a class="side-nav-item side-nav-item--sage" href="/docs/uhm/">Uhm</a>
+              <a class="side-nav-item side-nav-item--dark-teal" href="/docs/voz/">Voz</a>
+            </div>
+          </nav>
+        <div class="docs-body">
+          <header class="docs-head-group rise d2">
+            <h1 class="headline">Align</h1>
+            <p class="docs-index-note docs-index-note--lg">Word-timestamp refinement for any transcript, on device.</p>
+            <a class="btn btn--outline" href="/models/align/">Align model page</a>
+          </header>
+          <div class="prose docs-md rise d3"><dl class="specs">
+<div><dt><strong>Platforms</strong></dt><dd>iOS, macOS, tvOS, visionOS, Linux, Windows, Node</dd></div>
+<div><dt><strong>Languages</strong></dt><dd>9</dd></div>
+<div><dt><strong>Weights</strong></dt><dd><a href="https://huggingface.co/desert-ant-labs/align">v1.1.0</a></dd></div>
+</dl>
+<h2 id="install">Install</h2>
+<div class="tabs"><input type="radio" name="align-tabs-1" id="align-tabs-1-0" checked><input type="radio" name="align-tabs-1" id="align-tabs-1-1"><header><label for="align-tabs-1-0">Swift</label><label for="align-tabs-1-1">JavaScript</label></header>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#swift">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">url</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"https://github.com/Desert-Ant-Labs/desert-ant-core.git"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">from</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div><p>Then add the <code>Align</code> product to your target.</p>
+</div>
+<div>
+<p class="tab-note"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#javascript-and-typescript">requirements</a></p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Terminal</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">npm</span><span style="color:#A31515;--shiki-dark:#CE9178"> i</span><span style="color:#A31515;--shiki-dark:#CE9178"> @desert-ant-labs/align</span></span></code></pre>
+          </div>
+</div>
+</div>
+<h2 id="changes-in-this-release">Changes in this release</h2>
+<ul>
+<li><code>refine</code> is <code>async</code> and takes <code>languageCode</code>; it works on any transcript&#39;s words, not only
+<code>SpeechAnalyzer</code> output.</li>
+<li>The handle is <code>Align</code>. <code>SpeechTimestampRefiner</code> remains as a deprecated alias for the name
+only: <code>Align</code> has no <code>locale:</code> initializer, and both <code>refine</code> and <code>isSupported</code> changed
+shape, so a 3.x call site does not compile through it.</li>
+<li>Streaming callers move to <code>StreamingRefiner</code>, which wraps an <code>Align</code> and keeps the
+<code>SpeechAnalyzer</code> integration. <code>SpeechTimestampRefiner(locale:)</code> no longer compiles.</li>
+<li>The Apple runtime&#39;s log-mel frontend is corrected: it scaled power by 4 before the log.
+On-device results change at this release.</li>
+<li>A LiteRT export adds Linux, Windows and Node.</li>
+<li>The npm package is Node-only, and its default entry refuses in the browser with an
+actionable error. The refiner is a cascade of two graphs, and the WebAssembly host compiles
+one model per module, so there is no browser build.</li>
+<li>Three further changes break source on 3.x callers, separately from the two above:
+<code>isSupported</code> is now <code>async throws -&gt; Bool</code> and takes a language code rather than being a
+property; <code>reset()</code> is no longer on the offline handle; and <code>AlignResourceError</code> is removed.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<p>Align corrects the word timestamps of any transcript against its audio; on Apple it also
+attaches to <code>SpeechAnalyzer</code> (iOS 26 and later) through <code>StreamingRefiner</code>.</p>
+<div class="tabs"><input type="radio" name="align-tabs-2" id="align-tabs-2-0" checked><input type="radio" name="align-tabs-2" id="align-tabs-2-1"><header><label for="align-tabs-2-0">Swift</label><label for="align-tabs-2-1">JavaScript</label></header>
+<div>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#1d6377;--shiki-dark:#4EC9B0"> Align</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> align = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Align</span><span style="color:#000000;--shiki-dark:#D4D4D4">()</span></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">guard</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> align.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">isSupported</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">languageCode</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"en"</span><span style="color:#000000;--shiki-dark:#D4D4D4">) </span><span style="color:#AF00DB;--shiki-dark:#C586C0">else</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#AF00DB;--shiki-dark:#C586C0">return</span><span style="color:#000000;--shiki-dark:#D4D4D4"> words }</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> fixed = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> align.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">refine</span><span style="color:#000000;--shiki-dark:#D4D4D4">(words, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">audio</span><span style="color:#000000;--shiki-dark:#D4D4D4">: samples, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">sampleRate</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">16_000</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">languageCode</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"en"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div><h3 id="speechanalyzer-apple">SpeechAnalyzer (Apple)</h3>
+<p>Attach the refiner to the standard Speech pipeline. It records the audio going in and
+corrects the timestamps coming out:</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#1d6377;--shiki-dark:#4EC9B0"> Align</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> refiner = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">StreamingRefiner</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">locale</span><span style="color:#000000;--shiki-dark:#D4D4D4">: locale)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> analyzer.</span><span style="color:#001080;--shiki-dark:#9CDCFE">start</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">inputSequence</span><span style="color:#000000;--shiki-dark:#D4D4D4">: inputs.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">recordingAudio</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">for</span><span style="color:#000000;--shiki-dark:#D4D4D4">: refiner))</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">for</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> result </span><span style="color:#AF00DB;--shiki-dark:#C586C0">in</span><span style="color:#000000;--shiki-dark:#D4D4D4"> transcriber.results.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">refiningTimestamps</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">with</span><span style="color:#000000;--shiki-dark:#D4D4D4">: refiner) {</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">    result.</span><span style="color:#001080;--shiki-dark:#9CDCFE">text</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">     // corrected word-level audioTimeRange attributes</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">    result.</span><span style="color:#001080;--shiki-dark:#9CDCFE">words</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">    // [WordTiming]: text, start, end, refined</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">}</span></span></code></pre>
+          </div><p>Volatile results pass through unchanged; finalized results are refined. In a
+callback-based audio pipeline, <code>analyzerInput</code> does both halves at once:</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> input = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> refiner.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">analyzerInput</span><span style="color:#000000;--shiki-dark:#D4D4D4">(buffer)   </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// buffers the audio, returns Apple's input</span></span></code></pre>
+          </div><p>For file input, hand it the <code>AVAudioFile</code> the analyzer is reading. A separate file handle
+is used, so the file stays positioned for the analyzer:</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> refiner = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#795E26;--shiki-dark:#DCDCAA"> StreamingRefiner</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">locale</span><span style="color:#000000;--shiki-dark:#D4D4D4">: locale, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">audioFile</span><span style="color:#000000;--shiki-dark:#D4D4D4">: file)</span></span></code></pre>
+          </div>
+</div>
+<div>
+<p>The <code>/native</code> subpath runs inference in plain Node, prebuilt for linux-x64, linux-arm64 and
+darwin-arm64.</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">TypeScript</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#001080;--shiki-dark:#9CDCFE">Align</span><span style="color:#000000;--shiki-dark:#D4D4D4"> } </span><span style="color:#AF00DB;--shiki-dark:#C586C0">from</span><span style="color:#A31515;--shiki-dark:#CE9178"> "@desert-ant-labs/align/native"</span><span style="color:#000000;--shiki-dark:#D4D4D4">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> align</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> Align</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">load</span><span style="color:#000000;--shiki-dark:#D4D4D4">();</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> fixed</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> align</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">refine</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#001080;--shiki-dark:#9CDCFE">samples</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">16000</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#001080;--shiki-dark:#9CDCFE">words</span><span style="color:#000000;--shiki-dark:#D4D4D4">, { </span><span style="color:#001080;--shiki-dark:#9CDCFE">language:</span><span style="color:#A31515;--shiki-dark:#CE9178"> "en"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#001080;--shiki-dark:#9CDCFE">deviceId:</span><span style="color:#001080;--shiki-dark:#9CDCFE"> userId</span><span style="color:#000000;--shiki-dark:#D4D4D4"> });</span></span>
+<span class="line"><span style="color:#001080;--shiki-dark:#9CDCFE">align</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">dispose</span><span style="color:#000000;--shiki-dark:#D4D4D4">();</span></span></code></pre>
+          </div><h3 id="unsupported-locales">Unsupported locales</h3>
+<p>Not every locale is covered by the model. Check before you build the pipeline; when it is
+false, <code>refine</code> is a passthrough rather than an error:</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">guard</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> align.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">isSupported</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">languageCode</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"sv"</span><span style="color:#000000;--shiki-dark:#D4D4D4">) </span><span style="color:#AF00DB;--shiki-dark:#C586C0">else</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">/* use the original timestamps as-is */</span><span style="color:#000000;--shiki-dark:#D4D4D4"> }</span></span></code></pre>
+          </div><p>A <code>StreamingRefiner</code> checks the language it was created with the same way, with
+<code>try await refiner.isSupported()</code>. On JavaScript, <code>Align.isSupported(language)</code> is a
+synchronous check with the same meaning.</p>
+<p><code>refine</code> also keeps the original timestamp for any single word whose correction runs into the
+search edge, whose corrected range would end before it starts, or, when streaming, whose forward
+context is not buffered yet. Those fallbacks are checks on structure, not on accuracy: a
+correction that looks plausible but is wrong still lands. A stage that fails outright throws
+rather than falling back. See Limitations.</p>
+<p>Input that cannot be a time is refused before any work, whatever the language. Every <code>start</code>
+and <code>end</code> must be finite and from -1 to 10,000,000 seconds, and the sample rate finite and
+positive, and the audio must not be empty. Audio at another rate that resamples to more than
+about 37 hours at 16 kHz is refused too. Swift throws <code>AlignError.invalidInput</code>, naming the
+word; JavaScript rejects with a <code>RangeError</code>. A word more than about 1.2 seconds past the end
+of the audio has nothing to refine against, so it keeps its input times with <code>refined</code>
+false.</p>
+<h3 id="loading-the-model">Loading the model</h3>
+<p>The weights are fetched from the Hub on first use and cached. To fetch them earlier, for
+example during onboarding, or to ship them yourself, see
+<a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#model-downloads-and-caching">model downloads and caching</a>.</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> align = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Align</span><span style="color:#000000;--shiki-dark:#D4D4D4">()</span></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">if</span><span style="color:#000000;--shiki-dark:#D4D4D4"> !align.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">isDownloaded</span><span style="color:#000000;--shiki-dark:#D4D4D4">() {</span></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">    try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> align.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">download</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { fraction </span><span style="color:#AF00DB;--shiki-dark:#C586C0">in</span><span style="color:#795E26;--shiki-dark:#DCDCAA"> print</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"</span><span style="color:#0000FF;--shiki-dark:#569CD6">\(</span><span style="color:#1d6377;--shiki-dark:#4EC9B0">Int</span><span style="color:#000000FF;--shiki-dark:#D4D4D4">(fraction </span><span style="color:#000000;--shiki-dark:#D4D4D4">*</span><span style="color:#0a6b48;--shiki-dark:#B5CEA8"> 100</span><span style="color:#000000FF;--shiki-dark:#D4D4D4">)</span><span style="color:#0000FF;--shiki-dark:#569CD6">)</span><span style="color:#A31515;--shiki-dark:#CE9178">%"</span><span style="color:#000000;--shiki-dark:#D4D4D4">) }</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> offline = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Align</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">directory</span><span style="color:#000000;--shiki-dark:#D4D4D4">: myModelDirectory)   </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// adopted as-is, nothing downloaded</span></span></code></pre>
+          </div>
+</div>
+</div>
+<h2 id="files">Files</h2>
+<table><thead><tr><th>File</th><th>Format</th><th>Size</th><th>Contents</th></tr></thead><tbody><tr><td><code>align-coarse.<wbr>mlmodelc</code></td><td>Compiled Core ML (FP16)</td><td>~0.3 MB</td><td>Coarse stage</td></tr>
+<tr><td><code>align-fine.<wbr>mlmodelc</code></td><td>Compiled Core ML (FP16)</td><td>~0.3 MB</td><td>Fine stage</td></tr>
+<tr><td><code>align-coarse.<wbr>tflite</code></td><td>LiteRT (FP32)</td><td>~0.5 MB</td><td>Coarse stage</td></tr>
+<tr><td><code>align-fine.<wbr>tflite</code></td><td>LiteRT (FP32)</td><td>~0.5 MB</td><td>Fine stage</td></tr>
+<tr><td><code>mel_<wbr>filters.<wbr>bin</code></td><td>Float32 filter bank</td><td>~40 KB</td><td>Log-mel filter bank the runtime frontend needs</td></tr>
+<tr><td><code>calibrator.<wbr>bin</code></td><td>Gradient-boosted trees</td><td>~70 KB</td><td>Correction calibrator</td></tr>
+<tr><td><code>refiner_<wbr>config.<wbr>json</code></td><td>JSON</td><td>tiny</td><td>Runtime config</td></tr></tbody></table>
+<p>The compiled <code>.mlmodelc</code> stages, <code>mel_filters.bin</code>, <code>calibrator.bin</code>, and <code>refiner_config.json</code>
+are what the Swift SDK downloads on Apple; the <code>.tflite</code> pair replaces the two <code>.mlmodelc</code>
+directories on Linux, Windows and Node.</p>
+<h2 id="inputs-and-outputs">Inputs and outputs</h2>
+<ul>
+<li><strong>Input:</strong> mono audio plus any transcript&#39;s words with their proposed start/end times.</li>
+<li><strong>Output:</strong> the same words with corrected start/end times, or the original time when a
+correction is not structurally safe.</li>
+</ul>
+<h2 id="accuracy">Accuracy</h2>
+<p>On the clean condition, macro-averaged over the nine languages, Align cuts the proposer&#39;s raw
+timing error by roughly two-thirds. Per language it ranges from a third to over three quarters,
+and the noisy condition is lower. Both runtimes are scored on <code>gold-en-us</code>, the 258-boundary set
+corrected by hand against the waveform. There the on-device Core ML runtime&#39;s corpus mean boundary
+error is 44.8 ms (darwin-arm64, 2026-09-21), within 0.2 ms of the same checkpoint through the
+training-time frontend (45.0) and less than half the proposer&#39;s 100.8 ms, and the LiteRT export&#39;s
+corpus mean boundary error on that set matches the training-time reference to five significant
+figures. That is one corpus average in one language, not a per-boundary guarantee. The
+per-condition and per-language figures on this page are the training-side measurement; the Apple
+runtime&#39;s frontend changed at this release, so on-device Core ML numbers differ from v1.0.0&#39;s and
+are not carried over from it. The same per-condition figures are on the
+<a href="https://huggingface.co/desert-ant-labs/align">model card</a>, which also names the three
+weakest languages.</p>
+<h2 id="languages">Languages</h2>
+<p>English, Spanish, French, Italian, Portuguese, German, Japanese, Korean, and Chinese. A locale
+outside this set is passed through unchanged.</p>
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li>The macro-averaged figures are measured against machine forced-alignment estimates, not human
+annotations, so they show a large, consistent reduction of the proposer&#39;s timing error rather
+than sample-accurate ground truth.</li>
+<li>A learned correction is not guaranteed to improve every boundary; the structural fallback keeps
+the original timestamp when a correction looks unsafe but cannot catch every plausible-looking error.</li>
+<li>Japanese, Korean, and Chinese were the weakest languages before v1.0.0. They now improve their
+proposals by 33%, 55%, and 51%.</li>
+<li>Number timings are the weakest remaining case. On a small sample refinement moved digit
+boundaries further from the reference than leaving them alone, so treat spoken numbers as
+unimproved until a larger sample settles it.</li>
+<li>The LiteRT export is a third numeric path alongside Core ML and the training-time reference. The
+parity fixture is Core ML&#39;s own recorded output on synthetic audio: Core ML on the CPU
+reproduces it where it was measured (0.0 ms, against a 25 ms tolerance) while LiteRT drifts
+10.4 ms from it (linux-arm64, 2026-09-17). Treat the two runtimes as able to disagree by around
+10 ms on the same audio, not as agreeing to sub-millisecond.</li>
+<li>No browser build: the cascade is two graphs, and the WebAssembly host compiles one model per
+module.</li>
+<li>No Android SDK.</li>
+</ul>
+</div>
+          
+          
+        </div>
+      </div>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emo: On-device Emoji Suggestions | Desert Ant Labs</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="Type a task or a message and get the emoji that fit, in 22 languages, on the device.">
+<meta name="keywords" content="emoji suggestion, emoji prediction, emoji autocomplete, text to emoji, emoji keyboard, on-device, offline, multilingual, keyboard, Swift, Kotlin, TypeScript">
+<link rel="canonical" href="https://desertant.com/models/emo/">
+<link rel="alternate" hreflang="en" href="https://desertant.com/models/emo/">
+<link rel="alternate" hreflang="de" href="https://desertant.com/de/models/emo/">
+<link rel="alternate" hreflang="fr" href="https://desertant.com/fr/models/emo/">
+<link rel="alternate" hreflang="es" href="https://desertant.com/es/models/emo/">
+<link rel="alternate" hreflang="it" href="https://desertant.com/it/models/emo/">
+<link rel="alternate" hreflang="nl" href="https://desertant.com/nl/models/emo/">
+<link rel="alternate" hreflang="pt-BR" href="https://desertant.com/pt-br/models/emo/">
+<link rel="alternate" hreflang="pt-PT" href="https://desertant.com/pt-pt/models/emo/">
+<link rel="alternate" hreflang="zh-Hans" href="https://desertant.com/zh/models/emo/">
+<link rel="alternate" hreflang="ja" href="https://desertant.com/ja/models/emo/">
+<link rel="alternate" hreflang="ko" href="https://desertant.com/ko/models/emo/">
+<link rel="alternate" hreflang="sv" href="https://desertant.com/sv/models/emo/">
+<link rel="alternate" hreflang="x-default" href="https://desertant.com/models/emo/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Emo: On-device Emoji Suggestions">
+<meta property="og:description" content="Type a task or a message and get the emoji that fit, in 22 languages, on the device.">
+<meta property="og:url" content="https://desertant.com/models/emo/">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="es_ES">
+<meta property="og:locale:alternate" content="it_IT">
+<meta property="og:locale:alternate" content="nl_NL">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:locale:alternate" content="pt_PT">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:locale:alternate" content="ko_KR">
+<meta property="og:locale:alternate" content="sv_SE">
+<meta property="og:image" content="https://desertant.com/og/emo.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Emo: Suggest emoji faster than you can type.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Emo: On-device Emoji Suggestions">
+<meta name="twitter:description" content="Type a task or a message and get the emoji that fit, in 22 languages, on the device.">
+<meta name="twitter:image" content="https://desertant.com/og/emo.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Emo","applicationCategory":"DeveloperApplication","operatingSystem":"iOS, macOS, Android, Web, Node.js","description":"Type a task or a message and get the emoji that fit, in 22 languages, on the device.","url":"https://desertant.com/models/emo/","image":"https://desertant.com/og/emo.jpg","softwareVersion":"3.5.0","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","description":"Each model is free up to 100k monthly active devices. Inference is unlimited."},"featureList":["Curated vocabulary of 812 everyday emoji, with skin-tone variants.","Multilingual: 22 languages, including CJK, Arabic, Thai, and Hindi.","Well under 2ms per suggestion on device.","5MB on Apple, 11MB on LiteRT. No server call."],"sameAs":["https://github.com/Desert-Ant-Labs/desert-ant-core","https://huggingface.co/desert-ant-labs/emo"],"publisher":{"@type":"Organization","name":"Desert Ant Labs","url":"https://desertant.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desertant.com/"},{"@type":"ListItem","position":2,"name":"Text","item":"https://desertant.com/text/"},{"@type":"ListItem","position":3,"name":"Emo","item":"https://desertant.com/models/emo/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Emo?","acceptedAnswer":{"@type":"Answer","text":"Type a task or a message and get the emoji that fit, in 22 languages, on the device."}},{"@type":"Question","name":"Does Emo run on device?","acceptedAnswer":{"@type":"Answer","text":"Yes. Emo runs on the device, with no server call, so the data stays with the user."}},{"@type":"Question","name":"Which platforms does Emo support?","acceptedAnswer":{"@type":"Answer","text":"Emo ships as a native on-device SDK for Swift, Kotlin, JavaScript / TypeScript."}},{"@type":"Question","name":"How much does Emo cost?","acceptedAnswer":{"@type":"Answer","text":"Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses."}},{"@type":"Question","name":"How accurate or fast is Emo?","acceptedAnswer":{"@type":"Answer","text":"Suggestions in under 2ms from a 5MB Core ML model, across 22 languages."}}]}</script>
+</head>
+<body class="theme-terracotta">
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/" aria-current="page"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <article class="article theme-terracotta">
+        <section class="hero-model rise d1">
+          <div class="hero-model-content">
+            <div class="model-title" data-fx-host>
+              <h1 class="hero-model-title" data-effect="pulse">Emo</h1>
+            </div>
+            <div class="tag-row"><span class="tag">Emoji suggestions</span><span class="tag">Available</span></div>
+            <p class="lede">Type a task or a message and get the emoji that fit, in 22 languages, on the device.</p>
+        <div class="btn-row">
+          <a class="btn" href="#getting-started"><svg class="btn-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"/><path d="M12 5l7 7-7 7"/></svg><span>Get started</span></a>
+          <a class="btn btn--outline" href="/docs/emo/"><svg class="btn-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h5"/></svg><span>Docs</span></a>
+          <a class="btn btn--outline" href="https://huggingface.co/desert-ant-labs/emo"><img class="btn-hf" src="/assets/hf-logo-gray.svg" width="24" height="22" alt="" aria-hidden="true"><span>Model card</span></a>
+        </div>
+          </div>
+          <div class="hero-model-photo"><img src="/assets/photos/emo-card-816.webp" srcset="/assets/photos/emo-card-816.webp 816w, /assets/photos/emo-card.webp 1632w" sizes="(max-width: 860px) 100vw, 50vw" alt="" fetchpriority="high"></div>
+        </section>
+        <nav class="breadcrumb rise d2" aria-label="Breadcrumb">
+          <a href="/">Home</a><span class="sep" aria-hidden="true">/</span>
+          <a href="/#models">Models</a><span class="sep" aria-hidden="true">/</span>
+          <span aria-current="page">Emo</span>
+        </nav>
+      <section class="section rise d3" id="demo">
+        <h2 class="section-title">Demo</h2>
+        <div class="demo-frame"><div class="model-demo" data-demo="emo" data-src="/assets/vendor/desert-ant-labs-emo-3.5.0.mjs"></div></div>
+      </section>
+      <script type="module" src="/assets/demos.js"></script>
+
+      <section class="section section--narrow rise d3" id="overview">
+        <h2 class="section-title">Suggest emoji faster than you can type.</h2>
+        <div class="prose">
+          <p>Type "Dentist appointment" and get 🦷 🪥 🏥 🩺. Type "Pay my bills" and get 💰 💳 🧾. Emo is tuned for how people write in a task list or a chat, not how they write an essay, and every suggestion carries its skin-tone variants.</p>
+          <p>A picker shows you a grid to browse. Emo reads the text and proposes the emoji that fit, the way a predictive keyboard proposes the next word. Emo is small and fast enough to run on every keystroke, and never calls a server.</p>
+        </div>
+      </section>
+      <section class="section section--perf rise d4" id="performance" aria-label="Performance">
+        <h2 class="section-title">Suggestions in under 2ms.</h2>
+        <p class="section-lede">Suggestions in under 2ms from a 5MB Core ML model, across 22 languages.</p>
+        <div class="perf-hero no-photo">
+          <div class="stat-row">
+            <div class="stat"><div class="stat-value">&lt;2ms</div><div class="stat-label">Per suggestion</div><div class="stat-detail">on device</div></div>
+            <div class="stat"><div class="stat-value">5MB</div><div class="stat-label">On-device</div><div class="stat-detail">Core ML, model + tokenizer; 11MB via LiteRT</div></div>
+            <div class="stat"><div class="stat-value">22</div><div class="stat-label">Languages</div></div>
+            <div class="stat"><div class="stat-value">812</div><div class="stat-label">Emoji vocabulary</div></div>
+          </div>
+        </div>
+        <p class="perf-note">Internal measurements. Emoji semantics are approximate, so near-ties at the top of the ranking are expected.</p>
+      </section>
+      <section class="section section--uc rise d4" id="use-cases">
+        <h2 class="section-title">Use cases</h2>
+        <div class="uc-figure-grid">
+          <figure class="uc-figure">
+            <img src="/assets/photos/emo-card-816.webp" alt="" loading="lazy" width="1088" height="1360">
+            <h3>Suggest emoji faster than you can type.</h3>
+          </figure>
+          <div class="uc-figure-col">
+            <div class="use-case"><h3>Suggest as they type</h3><p>Offer emoji in the suggestion strip while someone is still typing, the way a predictive keyboard offers words, on the device and with no network round-trip.</p></div>
+            <div class="use-case"><h3>Label an event as it is created</h3><p>Tuned for short entries: "Dentist appointment" gets 🦷 🪥 🏥 🩺, so a calendar or task app can tag an item the moment someone saves it.</p></div>
+            <div class="use-case"><h3>Emoji for a draft message</h3><p>Suggest the emoji that fit a message as someone writes, in any of 22 languages, without sending the draft anywhere.</p></div>
+            <div class="use-case"><h3>Keep your picker, add suggestions</h3><p>Emo fills the suggestion strip above the keyboard, so a user who knows what they want still browses the grid, and everyone else gets the right emoji first.</p></div>
+          </div>
+        </div>
+      </section>
+      <section class="section rise d5" id="inspiration">
+        <h2 class="section-title">Inspiration</h2>
+        <p class="section-lede">Ideas to build with Emo. Copy a prompt into your coding agent and go.</p>
+        <div class="pinboard">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Add a suggestion strip that calls Desert Ant's Emo on-device as the user types and offers the emoji that fit the sentence, in their language, with no network call.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Add an emoji suggestion strip above the keyboard.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="In a chat app, use Desert Ant's Emo on-device to suggest a fitting reaction emoji for the message a user is looking at, faster than they could scroll a picker.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Suggest a reaction emoji for any message.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="gist emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="As a user drafts a post, run Desert Ant's Gist to tag its topic and Emo to suggest a fitting emoji, both on-device.
+
+Build it with the Desert Ant SDK. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Tag a post and suggest an emoji for it.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Emo on-device to add a fitting emoji to a task or event title as it's created, in the user's language.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Auto-add an emoji to a task or calendar title.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build an emoji picker that runs Desert Ant's Emo on-device so typing a phrase surfaces the emoji that fit the meaning, faster than scrolling.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Build an emoji search that understands a sentence, not just keywords.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="emo" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="In a chat or status field, run Desert Ant's Emo on-device to suggest a status emoji from the text the user is writing.
+
+Build it with the Desert Ant SDK. Emo (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/emo/. Install: SwiftPM desert-ant-core; Maven ai.desertant:emo:3.5.0; npm i @desert-ant-labs/emo @litertjs/core. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-terracotta-fill)"><i></i>Emo</span></div>
+            <p class="pin-text">Suggest a status emoji from what someone is typing.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+        </div>
+      </section>
+      <section class="section rise d5">
+        <h2 class="section-title">What the model does</h2>
+        <ul class="features">
+          <li>Curated vocabulary of 812 everyday emoji, with skin-tone variants.</li>
+          <li>Multilingual: 22 languages, including CJK, Arabic, Thai, and Hindi.</li>
+          <li>Well under 2ms per suggestion on device.</li>
+          <li>5MB on Apple, 11MB on LiteRT. No server call.</li>
+        </ul>
+      </section>
+
+      <section class="section rise d6" id="getting-started">
+        <h2 class="section-title">Getting started</h2>
+        <p class="section-lede">Add emoji suggestions to your iOS or macOS, Android or web app in a few lines of code. <a href="/docs/emo/">Emo docs</a>.</p>
+        <div class="platforms">
+          <div class="platform">
+            <div class="platform-head"><span class="platform-name">iOS, macOS</span></div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Install</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// Swift Package Manager</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">url</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"https://github.com/Desert-Ant-Labs/desert-ant-core"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">from</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// target dependency</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">product</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">name</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"Emo"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"desert-ant-core"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Example - Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#1d6377;--shiki-dark:#4EC9B0"> Emo</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> emo = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">()</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> suggestions = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> emo.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">suggestions</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">for</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"Pay my bills"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// [EmoSuggestion(emoji: "💰", confidence: ...), ...]</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Build with a prompt</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre tabindex="0" class="assistant-prompt">Add Emo from Desert Ant Labs to this Swift project (iOS, macOS).
+
+What it does: On-device Emoji Suggestions.
+
+SDK:
+
+Swift (iOS, macOS)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// Swift Package Manager
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core", from: "3.5.0")
+// target dependency
+.product(name: "Emo", package: "desert-ant-core")
+
+Reference:
+- Model page: https://desertant.com/models/emo/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.</pre>
+          </div>
+            <div class="platform-links"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core#readme">SDK on GitHub</a></div>
+          </div>
+          <div class="platform">
+            <div class="platform-head"><span class="platform-name">Android</span></div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Install</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// build.gradle.kts (Maven Central)</span></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">implementation</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"ai.desertant:emo:3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Example - Kotlin</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ai.desertant.emo.Emo</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">(context).</span><span style="color:#795E26;--shiki-dark:#DCDCAA">use</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { emo </span><span style="color:#0000FF;--shiki-dark:#569CD6">-></span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">    val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> suggestions = emo.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">suggestions</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"Pay my bills"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">    // List&#x3C;EmoSuggestion></span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">}</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Build with a prompt</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre tabindex="0" class="assistant-prompt">Add Emo from Desert Ant Labs to this Kotlin project (Android).
+
+What it does: On-device Emoji Suggestions.
+
+SDK:
+
+Kotlin (Android)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// build.gradle.kts (Maven Central)
+implementation("ai.desertant:emo:3.5.0")
+
+Reference:
+- Model page: https://desertant.com/models/emo/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.</pre>
+          </div>
+            <div class="platform-links"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core#readme">SDK on GitHub</a></div>
+          </div>
+          <div class="platform">
+            <div class="platform-head"><span class="platform-name">Web, Node.js</span></div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Install</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">npm</span><span style="color:#A31515;--shiki-dark:#CE9178"> i</span><span style="color:#A31515;--shiki-dark:#CE9178"> @desert-ant-labs/emo</span><span style="color:#A31515;--shiki-dark:#CE9178"> @litertjs/core</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Example - TypeScript</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#001080;--shiki-dark:#9CDCFE">Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4"> } </span><span style="color:#AF00DB;--shiki-dark:#C586C0">from</span><span style="color:#A31515;--shiki-dark:#CE9178"> "@desert-ant-labs/emo"</span><span style="color:#000000;--shiki-dark:#D4D4D4">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> emo</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> Emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">load</span><span style="color:#000000;--shiki-dark:#D4D4D4">();</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> results</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> emo</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">suggestions</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"Pay my bills"</span><span style="color:#000000;--shiki-dark:#D4D4D4">);</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// [{ emoji: "💰", confidence: 0.62 }, ...]</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Build with a prompt</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre tabindex="0" class="assistant-prompt">Add Emo from Desert Ant Labs to this JavaScript / TypeScript project (Web, Node.js).
+
+What it does: On-device Emoji Suggestions.
+
+SDK:
+
+JavaScript / TypeScript (Web, Node.js)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+npm i @desert-ant-labs/emo @litertjs/core
+
+Reference:
+- Model page: https://desertant.com/models/emo/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.</pre>
+          </div>
+            <div class="platform-links"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core#readme">SDK on GitHub</a></div>
+          </div>
+        </div>
+      </section>
+      <section class="section rise d5">
+        <h2 class="section-title">Specs</h2>
+        <dl class="specs">
+          <div><dt>Languages</dt><dd>22, including English, Spanish, French, German, Portuguese, and Japanese</dd></div>
+          <div><dt>On-device size</dt><dd>5MB on Apple via Core ML, 11MB via LiteRT elsewhere (model + tokenizer)</dd></div>
+          <div><dt>Speed</dt><dd>Under 2ms per suggestion</dd></div>
+          <div><dt>Model</dt><dd>Two-stream text classifier: lexical n-grams plus a multilingual embedding</dd></div>
+        </dl>
+      </section>
+      <div class="caveats rise d6">
+        <p class="model-caveat">Emo is tuned for short, intent-carrying text such as a task, an entry, or a message. Long-form text produces noisier suggestions.</p>
+        <p class="model-caveat">Emoji meaning is imprecise, so expect near-ties at the top of the ranking, and expect the lower-resource languages in the set to be a little weaker than English.</p>
+      </div>
+      <section class="section rise d6" id="faq">
+        <h2 class="section-title">FAQ</h2>
+        <div class="faq">
+          <div class="faq-item">
+            <h3 class="faq-q">What is Emo?</h3>
+            <p class="faq-a">Type a task or a message and get the emoji that fit, in 22 languages, on the device.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">Does Emo run on device?</h3>
+            <p class="faq-a">Yes. Emo runs on the device, with no server call, so the data stays with the user.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">Which platforms does Emo support?</h3>
+            <p class="faq-a">Emo ships as a native on-device SDK for Swift, Kotlin, JavaScript / TypeScript.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">How much does Emo cost?</h3>
+            <p class="faq-a">Each model is free up to 100k monthly active devices. Inference is unlimited. <a href="#" role="button" data-mail="Commercial license inquiry">Contact us</a> for custom licenses.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">How accurate or fast is Emo?</h3>
+            <p class="faq-a">Suggestions in under 2ms from a 5MB Core ML model, across 22 languages.</p>
+          </div>
+        </div>
+      </section>
+      <section class="section rise d6">
+        <h2 class="section-title">Resources</h2>
+        <ul class="resource-list">
+          <li><a href="/docs/emo/">Emo docs</a></li>
+          <li><a href="https://huggingface.co/desert-ant-labs/emo">Model weights on Hugging Face</a></li>
+          <li><a href="/swift/">Swift models</a></li>
+          <li><a href="/kotlin/">Kotlin models</a></li>
+          <li><a href="/js/">JS models</a></li>
+        </ul>
+      </section>
+      </article>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/models/emo/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/models/emo/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/models/emo/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/models/emo/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/models/emo/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/models/emo/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/models/emo/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/models/emo/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/models/emo/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/models/emo/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/models/emo/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/models/emo/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

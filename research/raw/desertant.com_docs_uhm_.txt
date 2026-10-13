@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uhm SDK docs | Desert Ant Labs</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="Install and use Uhm on device: filler-word detection in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="keywords" content="Uhm, SDK, documentation, on-device">
+<link rel="canonical" href="https://desertant.com/docs/uhm/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Uhm: Docs">
+<meta property="og:description" content="Install and use Uhm on device: filler-word detection in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta property="og:url" content="https://desertant.com/docs/uhm/">
+<meta property="og:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Desert Ant Labs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Uhm: Docs">
+<meta name="twitter:description" content="Install and use Uhm on device: filler-word detection in Swift, Kotlin, and JavaScript, with worked examples.">
+<meta name="twitter:image" content="https://desertant.com/og-image.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+
+</head>
+<body>
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/" class="is-on">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <div class="docs-layout">
+        <nav class="side-nav rise d2" aria-label="Documentation">
+            <p class="side-nav-title"><a href="/docs/">Docs</a><span class="sep" aria-hidden="true">/</span><span aria-current="page">Uhm</span></p>
+            <div class="side-nav-items">
+              <a class="side-nav-item side-nav-item--faun" href="/docs/align/">Align</a>
+              <a class="side-nav-item side-nav-item--teal" href="/docs/clear/">Clear</a>
+              <a class="side-nav-item side-nav-item--dusty-pink" href="/docs/clips/">Clips</a>
+              <a class="side-nav-item side-nav-item--light-peach" href="/docs/ear/">Ear</a>
+              <a class="side-nav-item side-nav-item--terracotta" href="/docs/emo/">Emo</a>
+              <a class="side-nav-item side-nav-item--stone" href="/docs/gist/">Gist</a>
+              <a class="side-nav-item side-nav-item--warm-grey" href="/docs/moderator/">Moderator</a>
+              <a class="side-nav-item side-nav-item--forest" href="/docs/redact/">Redact</a>
+              <a class="side-nav-item side-nav-item--sand" href="/docs/shapes/">Shapes</a>
+              <a class="side-nav-item side-nav-item--cool-grey" href="/docs/title/">Title</a>
+              <a class="side-nav-item side-nav-item--ink" href="/docs/tongue/">Tongue</a>
+              <a class="side-nav-item side-nav-item--sage" href="/docs/uhm/" aria-current="page">Uhm</a>
+              <a class="side-nav-item side-nav-item--dark-teal" href="/docs/voz/">Voz</a>
+            </div>
+          </nav>
+        <div class="docs-body">
+          <header class="docs-head-group rise d2">
+            <h1 class="headline">Uhm</h1>
+            <p class="docs-index-note docs-index-note--lg">On-device filler-word detection: frame-precise "uh"/"um"/"hmm" spans.</p>
+            <a class="btn btn--outline" href="/models/uhm/">Uhm model page</a>
+          </header>
+          <div class="prose docs-md rise d3"><dl class="specs">
+<div><dt><strong>Platforms</strong></dt><dd>iOS, macOS, tvOS, visionOS</dd></div>
+<div><dt><strong>Languages</strong></dt><dd>5</dd></div>
+<div><dt><strong>Weights</strong></dt><dd><a href="https://huggingface.co/desert-ant-labs/uhm">v1.1.0</a></dd></div>
+<div><dt><strong>Demo</strong></dt><dd><a href="https://desertant.com/models/uhm/">https://desertant.com/models/uhm/</a></dd></div>
+</dl>
+<h2 id="install">Install</h2>
+<p><strong>Swift</strong> (<a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#swift">requirements</a>)</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">url</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"https://github.com/Desert-Ant-Labs/desert-ant-core.git"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">from</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div><p>Then add the <code>Uhm</code> product to your target.</p>
+<h2 id="usage">Usage</h2>
+<p>Apple only today. Create one detector and reuse it: the model loads on first
+use, or earlier if you call <code>download</code>.</p>
+<h3 id="swift">Swift</h3>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#1d6377;--shiki-dark:#4EC9B0"> Uhm</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> uhm = </span><span style="color:#795E26;--shiki-dark:#DCDCAA">Uhm</span><span style="color:#000000;--shiki-dark:#D4D4D4">()</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> result = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> uhm.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">analyze</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">audioPath</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"interview.m4a"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">for</span><span style="color:#000000;--shiki-dark:#D4D4D4"> filler </span><span style="color:#AF00DB;--shiki-dark:#C586C0">in</span><span style="color:#000000;--shiki-dark:#D4D4D4"> result.fillers {</span></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">    print</span><span style="color:#000000;--shiki-dark:#D4D4D4">(filler.</span><span style="color:#001080;--shiki-dark:#9CDCFE">start</span><span style="color:#000000;--shiki-dark:#D4D4D4">, filler.</span><span style="color:#001080;--shiki-dark:#9CDCFE">end</span><span style="color:#000000;--shiki-dark:#D4D4D4">, filler.</span><span style="color:#001080;--shiki-dark:#9CDCFE">confidence</span><span style="color:#000000;--shiki-dark:#D4D4D4">)   </span><span style="color:#0a6b0a;--shiki-dark:#6A9955">// seconds, seconds, 0...1</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">}</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">result.</span><span style="color:#001080;--shiki-dark:#9CDCFE">audioDuration</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">result.</span><span style="color:#001080;--shiki-dark:#9CDCFE">phaseTimings</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#001080;--shiki-dark:#9CDCFE">inferenceSec</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">                         // where the time went</span></span></code></pre>
+          </div><p>Any format the platform decoder can read is accepted; audio is decoded to
+16 kHz mono internally. <code>analyze(audioURL:)</code>, <code>analyze(bytes:)</code> for in-memory
+audio, and <code>analyze(samples:sampleRate:)</code> for raw PCM are the other entry
+points.</p>
+<p><code>Options</code> trades recall against precision and drops spans that are too short.
+<code>bias</code> is the threshold preset: <code>.precision</code> (0.75) for automatic cuts,
+<code>.balanced</code> (0.65) by default, <code>.recall</code> (0.50) when you would rather review and
+confirm than miss one.</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> options = Uhm.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">Options</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">bias</span><span style="color:#000000;--shiki-dark:#D4D4D4">: .</span><span style="color:#001080;--shiki-dark:#9CDCFE">precision</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">minDurationSec</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#0a6b48;--shiki-dark:#B5CEA8">0.08</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> result = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> uhm.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">analyze</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">audioPath</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"interview.m4a"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">options</span><span style="color:#000000;--shiki-dark:#D4D4D4">: options)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">result.</span><span style="color:#001080;--shiki-dark:#9CDCFE">fillers</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#001080;--shiki-dark:#9CDCFE">first</span><span style="color:#000000;--shiki-dark:#D4D4D4">?.</span><span style="color:#001080;--shiki-dark:#9CDCFE">type</span><span style="color:#0a6b0a;--shiki-dark:#6A9955">      // .uh, .um, .hmm, .and, .other</span></span></code></pre>
+          </div><p>The type labeler is on by default and Apple-only; <code>type</code> stays nil elsewhere.
+Pass <code>includeTypes: false</code> to skip it when filler-vs-not spans are enough.</p>
+<p>Pass a <code>progressHandler</code> to follow a long file, and cancel the enclosing task to
+stop the run:</p>
+<div class="code-field">
+            <div class="code-head"><span class="code-label">Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> result = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#AF00DB;--shiki-dark:#C586C0"> await</span><span style="color:#000000;--shiki-dark:#D4D4D4"> uhm.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">analyze</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">audioPath</span><span style="color:#000000;--shiki-dark:#D4D4D4">: path) { fraction </span><span style="color:#AF00DB;--shiki-dark:#C586C0">in</span></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">    print</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"</span><span style="color:#0000FF;--shiki-dark:#569CD6">\(</span><span style="color:#1d6377;--shiki-dark:#4EC9B0">Int</span><span style="color:#000000FF;--shiki-dark:#D4D4D4">(fraction </span><span style="color:#000000;--shiki-dark:#D4D4D4">*</span><span style="color:#0a6b48;--shiki-dark:#B5CEA8"> 100</span><span style="color:#000000FF;--shiki-dark:#D4D4D4">)</span><span style="color:#0000FF;--shiki-dark:#569CD6">)</span><span style="color:#A31515;--shiki-dark:#CE9178">%"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">}</span></span></code></pre>
+          </div><h3 id="loading-the-model">Loading the model</h3>
+<p>The weights are fetched from the Hub on first use and cached. See
+<a href="https://github.com/Desert-Ant-Labs/desert-ant-core/blob/v3.5.0/README.md#model-downloads-and-caching">model downloads and caching</a>.</p>
+<h2 id="files">Files</h2>
+<table><thead><tr><th>File</th><th>Format</th><th>Size</th><th>Use</th></tr></thead><tbody><tr><td><code>uhm.<wbr>mlmodelc/</code></td><td>Core ML fp16 (compiled)</td><td>~45 MB</td><td>iOS / macOS on-device</td></tr>
+<tr><td><code>uhm-web-fp16.<wbr>onnx</code></td><td>ONNX fp16</td><td>~51 MB</td><td>Browser, server, Python (<code>onnxruntime</code>)</td></tr>
+<tr><td><code>uhm.<wbr>onnx</code></td><td>ONNX fp32</td><td>~98 MB</td><td>Quantization-free reference</td></tr></tbody></table>
+<p><code>uhm.mlmodelc/</code> is a compiled Core ML model directory. The Swift SDK downloads it with the Hugging Face Hub snapshot API, so only changed files are re-fetched on model updates.</p>
+<p>The shipped model is a DistilHuBERT fine-tune. It is the smaller and more precise Uhm runtime model; the older HuBERT-base tier is no longer published.</p>
+<h2 id="inputs-and-outputs">Inputs and outputs</h2>
+<ul>
+<li><strong>Input:</strong> 16 kHz mono audio, up to 30-second windows.</li>
+<li><strong>Output:</strong> per-frame softmax over 6 classes, one prediction every 20 ms.</li>
+<li><strong>Class indices:</strong> <code>0 = not_filler, 1 = uh, 2 = um, 3 = hmm, 4 = and, 5 = other</code>.</li>
+</ul>
+<p>Core ML input shape <code>(30, 1, 1, 16080)</code> float16 — the 30-second window pre-cut
+into 30 overlapping tiles — and output <code>(1, 6, 1, 1499)</code> float16. The SDK builds
+that layout for you; it exists because the Neural Engine caps every tensor axis
+at 16384, and it is what lets the whole model run there. Requires iOS 17 /
+macOS 14 or newer.</p>
+<p>The ONNX artifacts keep the plain <code>(1, 480000)</code> float32 in, <code>(1, 1499, 6)</code> out
+shape: the tiled layout is an Apple-silicon optimization and is slower on a GPU.</p>
+<h2 id="performance">Performance</h2>
+<p>Warm on-device runs on the published fp16 Core ML model:</p>
+<table><thead><tr><th>Device</th><th>Realtime factor</th></tr></thead><tbody><tr><td>iPhone 17 Pro</td><td>~296×</td></tr>
+<tr><td>iPhone 15 Pro</td><td>~169×</td></tr>
+<tr><td>iPad Pro M4</td><td>~279×</td></tr></tbody></table>
+<p>Realtime factor = audio duration ÷ analyze time; model load excluded.</p>
+<p>Those are measured on the <em>previous</em> export. The current one runs every
+operation on the Neural Engine and is 1.6× faster where it has been measured
+(M1: 115× → 188× end to end), so these numbers are conservative until they are
+re-measured on the devices themselves.</p>
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li>Trained on English; non-English performance is by acoustic transfer and has not been measured against per-language ground truth.</li>
+<li>Best on podcast / meeting / talking-head audio. Heavy background music, laughter, or multi-speaker overlap degrades quality.</li>
+<li>Type labels (<code>uh</code> / <code>um</code> / <code>hmm</code> / <code>and</code> / <code>other</code>) are secondary. Trust filler vs. not-filler more than the specific subtype.</li>
+</ul>
+<h2 id="built-on">Built on</h2>
+<ul>
+<li>Base architecture and pretrained weights: <a href="https://huggingface.co/ntu-spml/distilhubert"><code>ntu-spml/distilhubert</code></a>, a distilled variant of <a href="https://huggingface.co/facebook/hubert-base-ls960"><code>facebook/hubert-base-ls960</code></a>. Apache 2.0.</li>
+<li>Public fine-tuning audio: <a href="https://huggingface.co/datasets/edinburghcstr/ami">AMI Meeting Corpus</a> (<code>edinburghcstr/ami</code>, IHM split). CC BY 4.0, Edinburgh CSTR.</li>
+<li>Internal video content created by the Desert Ant Labs team.</li>
+</ul>
+</div>
+          
+          
+        </div>
+      </div>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+

@@ -1,0 +1,65 @@
+Desert Ant Labs 
+
+ Eye
+
+ Image and video scoring Closed beta 
+
+ On-device frame scoring that tells you which shot to keep from a burst or a clip, what is in the shot, and which shots repeat.
+
+ Contact us for early access 
+
+ Eye is in closed beta. In development. Early access on request.
+
+ Tag and rank images.
+
+ A burst leaves forty near-identical photos and a person who will never sort them. Eye picks the sharp, well-composed one and marks the rest as duplicates.
+
+ The quality answer breaks into five scores: interestingness, composition, subject clarity, thumbnail quality and aesthetic. Sort on the score to find the best photo in a burst or the best thumbnail in a clip. Eye also fingerprints each image, so near-identical shots group without comparing pixels.
+
+ Use cases
+
+ Keep one, not forty
+ Score a burst and surface the keeper, so a user sees one good photo instead of scrolling forty near identical ones. Runs on the device, so a camera roll never gets uploaded to be sorted.
+
+ Camera roll cleanup
+ Spot near-duplicates across a library and offer to keep the best one, on the phone, so a cleanup feature never uploads a customer's photos.
+
+ Pick the cover frame for a video
+ Score candidate frames for composition, subject clarity, and thumbnail quality, and let a video app propose a cover image the creator does not have to hunt for.
+
+ What the model does
+
+ One call returns a pick score, quality axes (interestingness, composition, thumbnail quality, subject clarity, aesthetic), a scene class, and tags and concepts.
+
+ Perceptual embedding for near-duplicate and burst dedupe.
+
+ Optional EyeFaces module (+22MB), identity-blind by design, with no face recognition.
+
+ Specs
+
+ Platforms
+ Apple (Swift); Android and web planned
+
+ FAQ
+
+ What is Eye?
+
+ On-device frame scoring that tells you which shot to keep from a burst or a clip, what is in the shot, and which shots repeat.
+
+ Does Eye run on device?
+
+ Yes. Eye runs on the device, with no server call, so the data stays with the user.
+
+ Is Eye available yet?
+
+ Eye is in closed beta. Request early access on this page.
+
+ How much does Eye cost?
+
+ Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses.
+
+ Early access
+
+ Tell us what you are building and we will get you set up.
+
+ Contact us for early access

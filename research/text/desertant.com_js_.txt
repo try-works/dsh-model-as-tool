@@ -1,0 +1,69 @@
+Desert Ant Labs 
+
+ Models 
+ Align Word timestamps Clear Speech enhancement Clips Clip selection Ear Spoken language detection Emo Emoji suggestions Gist Content topic tagging Moderator Content moderation Redact PII redaction Shapes Shape recognition Title Titles and descriptions Tongue Language identification Uhm Filler-word detection Voz Speech recognition 
+ All models 
+
+ Docs 
+
+ Blog 
+
+ Inspiration 
+ About 
+
+ Jobs 
+ Contact 
+
+ On-device AI Models for JavaScript
+
+ npm packages that run models in the browser and in Node, with TypeScript types included.
+
+ The JavaScript and TypeScript packages run in Node and the browser, scoped under @desert-ant-labs on npm. The packages run the models through transformers.js, ONNX Runtime Web, or LiteRT.js.
+
+ Everything runs locally, so data stays on the device. Install with npm and import with full TypeScript types.
+
+ Available models
+
+ Redact PII redaction 
+
+ PII redaction in the browser via LiteRT.js, no server round-trip.
+
+ Emo Emoji suggestions 
+
+ Multilingual emoji suggestions from text, 22 languages, in the browser or Node.
+
+ Gist Content topic tagging 
+
+ Content topics from any text across 101 languages, on device via WebAssembly and LiteRT.js.
+
+ Shapes Shape recognition 
+
+ Single-stroke shape recognition in WebAssembly with LiteRT.js.
+
+ Clear Speech enhancement 
+
+ Speech enhancement in the browser through WebAssembly and LiteRT.js.
+
+ Tongue Language identification 
+
+ Language identification for short text across 84 languages, runs client-side with no inference runtime to load.
+
+ Moderator Content moderation 
+
+ NSFW image moderation in the browser or Node, from a 9.2MB LiteRT model.
+
+ Align Word timestamps 
+
+ Tighter word timings for any transcript, in Node through LiteRT. Corrects Apple, Whisper, or Parakeet timings.
+
+ Ear Spoken language detection 
+
+ Spoken language identification across 99 languages, in the browser and in Node.
+
+ Voz Speech recognition 
+
+ On-device transcription with word timestamps, in the browser and Node on WebAssembly.
+
+ Pricing
+
+ Each model is free up to 100k monthly active devices. Inference is unlimited.

@@ -1,0 +1,269 @@
+Desert Ant Labs 
+
+ Models 
+ Align Word timestamps Clear Speech enhancement Clips Clip selection Ear Spoken language detection Emo Emoji suggestions Gist Content topic tagging Moderator Content moderation Redact PII redaction Shapes Shape recognition Title Titles and descriptions Tongue Language identification Uhm Filler-word detection Voz Speech recognition 
+ All models 
+
+ Docs 
+
+ Blog 
+
+ Inspiration 
+ About 
+
+ Jobs 
+ Contact 
+
+ Docs / Clear 
+
+ Align 
+ Clear 
+ Clips 
+ Ear 
+ Emo 
+ Gist 
+ Moderator 
+ Redact 
+ Shapes 
+ Title 
+ Tongue 
+ Uhm 
+ Voz 
+
+ Clear
+
+ On-device speech enhancement: denoise, dereverb, and loudness-normalize.
+
+ Clear model page 
+
+ Platforms 
+ iOS, macOS, tvOS, visionOS, Android, Linux, Windows, Browser, Node
+
+ Weights 
+ v0.3.0 
+
+ Demo 
+ https://desertant.com/models/clear/ 
+
+ Install
+
+ Swift Kotlin JavaScript 
+
+ requirements 
+
+ Swift 
+
+ . package ( url : "https://github.com/Desert-Ant-Labs/desert-ant-core.git" , from : "3.5.0" ) 
+
+ Then add the Clear product to your target.
+
+ requirements 
+
+ Kotlin 
+
+ implementation ( "ai.desertant:clear:3.5.0" ) 
+
+ requirements 
+
+ Terminal 
+
+ npm i @desert-ant-labs/clear @litertjs/core # browser 
+ npm i @desert-ant-labs/clear # Node, prebuilt native core 
+
+ Usage
+
+ Swift Kotlin JavaScript 
+
+ Swift 
+
+ import Clear 
+
+ let clear = Clear () 
+ let result = try await clear. enhance ( path : "in.wav" , to : "out.wav" ) 
+ print (result. realtimeFactor , result. measuredLUFS ?? 0 ) 
+
+ Without a filesystem, enhance in memory and get WAV bytes back:
+
+ Swift 
+
+ let (result, wav) = try await clear. enhance ( bytes : recording) 
+
+ The output is mono by default, whatever goes in. The model is mono, so keeping
+a stereo pair costs an inference pass per channel, about 1.8x a mono run, so
+it is opt-in:
+
+ Swift 
+
+ let stereo = try await clear. enhance ( channels : [left, right], sampleRate : 48_000 , 
+ options : . init ( channelMode : . preserve )) 
+ stereo. channels . count // 2 
+ stereo. measuredTruePeakDBFS // what the master actually peaks at 
+ stereo. phaseTimings . modelPredictSec // where the time went 
+
+ Mastering is joint, one gain and one limiter envelope across the channels, so
+it never moves the stereo image. Mastering.balanceChannelsLUFS is the
+exception, for a pair whose sides were recorded at different levels.
+
+ Kotlin 
+
+ import ai.desertant.clear.Clear 
+ import ai.desertant.clear.LoudnessPreset 
+ import ai.desertant.clear.Mastering 
+ import ai.desertant.clear.Options 
+
+ Clear (context). use { clear -> 
+ val result = clear. enhance (samples, 48_000.0 ) // 48 kHz out 
+ result.measuredTruePeakDbfs // what the master actually peaks at 
+
+ val forSpotify = Options (mastering = Mastering. of (LoudnessPreset.SPOTIFY)) 
+ val louder = clear. enhance (samples, 48_000.0 , forSpotify) 
+
+ // Mono out by default; ask to keep the pair, at an inference pass each. 
+ val stereo = clear. enhance ( listOf (left, right), 48_000.0 , 
+ Options (channelMode = ChannelMode.PRESERVE)) 
+ stereo.channelCount // 2 
+ } 
+
+ TypeScript 
+
+ import { Clear } from "@desert-ant-labs/clear" ; // browser 
+ // import { Clear } from "@desert-ant-labs/clear/native"; // server-side Node 
+
+ const clear = await Clear . load (); 
+ const result = await clear . enhance ( samples , 48_000 ); // Float32Array in, 48 kHz out 
+ result . measuredTruePeakDBFS ; // what the master actually peaks at 
+ await clear . enhance ( samples , 48_000 , { targetLUFS: "spotify" }); 
+
+ // One entry per channel, and ask to keep them: mono is the default. 
+ const stereo = await clear . enhance ([ left , right ], 48_000 , { channelMode: "preserve" }); 
+ stereo . channelCount ; // 2 
+ clear . dispose (); 
+
+ Loading the model
+
+ The weights are fetched from the Hub on first use and cached. See
+ model downloads and caching .
+
+ Sound
+
+ Delivers a rich, present, close-miked podcast sound .
+
+ Denoised. 
+HVAC, keyboard clicks, mouse rustle, mic bumps, room hum, laptop
+fans, coffee shop background, all pulled down without chewing
+consonants.
+
+ Dereverbed. 
+Untreated bedrooms, offices and hotel rooms come out sounding closer
+to a treated studio. The model does not add reverberation of its own.
+
+ Warm and present. 
+Low-mids brought forward so voice sits comfortably in a mix rather
+than sounding thin or distant.
+
+ Sibilance-safe. 
+No harsh peaks introduced when cleaning up S / T / F consonants.
+
+ No pumping or musical-noise artefacts. 
+Breaths, plosives and vocal texture stay intact.
+
+ Variants
+
+ Two variants ship. They take the same input, produce the same output format
+and cost the same to run, so switching between them is a one-line change in
+the SDK. Pick by the sound you want, not by platform: both ship for every
+runtime.
+
+ clear-studio
+
+ The default. Quiet, studio-like character; silences sit close to true
+zero.
+
+ Best for solo podcasts, tutorials, voiceover, video demos, screen
+recordings, and anything that wants a clean broadcast feel.
+
+ File Purpose Size 
+ clear-studio. mlmodelc 
+ Core ML for the Apple Neural Engine (iOS 16 model format)
+ 9.0 MB
+
+ clear-studio. mlmodelc. zip 
+ Same compiled model, zipped
+ 8.6 MB
+
+ clear-studio. onnx 
+ Cross-platform ONNX
+ 24 MB
+
+ clear-natural
+
+ Preserves room tone, breath, and lip texture.
+
+ For treated podcast studios, intentional voiceover, interviews where
+the room is part of the take, and remote guest recordings where
+absolute silence would sound wrong.
+
+ File Purpose Size 
+ clear-natural. mlmodelc 
+ Core ML for the Apple Neural Engine (iOS 16 model format)
+ 9.0 MB
+
+ clear-natural. mlmodelc. zip 
+ Same compiled model, zipped
+ 8.6 MB
+
+ clear-natural. onnx 
+ Cross-platform ONNX
+ 24 MB
+
+ Performance
+
+ The Core ML variants are optimized for the Apple Neural Engine.
+ MLComputePlan confirms that all 492 model operations run on ANE.
+
+ clear-studio , whole SDK pipeline on a 60-second clip, best of three:
+
+ Device Realtime factor 
+ iPhone 16 Pro
+ 302x 
+
+ MacBook Pro (M5)
+ 345x 
+
+ On iPhone 16 Pro, first-ever model loading takes approximately 3.4 seconds
+while Core ML compiles the ANE program. Cached launches load in approximately
+62 ms; applications should warm the model in the background.
+
+ Deployment target
+
+ Core ML model : iOS/iPadOS 16.0+ model format; ANE placement depends on hardware and OS.
+
+ Swift SDK : iOS 18+, macOS 15+, tvOS 18+, visionOS 2+.
+
+ Android : API 24+ (arm64-v8a, x86_64), via LiteRT.
+
+ Other platforms : the .tflite runs wherever LiteRT does: Linux, Windows, and the browser through LiteRT.js. The ONNX files are kept for runtimes the SDK does not cover.
+
+ What it's good for
+
+ Meeting recorders. Zoom, Teams, Meet, Detail exports, single or multi-speaker.
+
+ Bluetooth microphones. AirPods, Sony, headset mics.
+
+ Mobile devices. iPhone and Android built-in microphone recordings, voice notes, field recordings.
+
+ Laptop built-in microphones. MacBook and PC built-in mics.
+
+ Untreated rooms. Bedrooms, hotel rooms, kitchens, coffee shops.
+
+ Whenever the pitch is messy recording in, clean audio out .
+
+ What it is not
+
+ Not a general-purpose audio denoiser.
+Speech is the target; music, effects, and non-vocal signals get pulled down as noise.
+
+ Not a source separator.
+Overlapping speakers stay overlapping.
+
+ Not a voice changer, cloner, or transcription model.

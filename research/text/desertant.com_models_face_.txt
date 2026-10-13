@@ -1,0 +1,66 @@
+Desert Ant Labs 
+
+ Face
+
+ Face matching Closed beta 
+
+ On-device face matching that finds the same person across your photo library or through a video, with no image leaving the device.
+
+ Contact us for early access 
+
+ Face is in closed beta. In development. Early access on request.
+
+ Find people in photos, private on the device.
+
+ Open a photo library with Face and the pictures are grouped by person, so you find everyone in one tap. Pick one photo and Face finds every other photo and video moment that person appears in, so search by example needs no name.
+
+ All of the matching happens on the device. The photos stay where they are, nothing is uploaded, and there is no face infrastructure on your side to run or secure. Face is on Apple platforms first, in closed beta.
+
+ Use cases
+
+ Group a library by person
+ Sort a user's photos into people the way the system photo app does, in your own app, with no image leaving the device to be matched.
+
+ Search by example
+ Pick one face and Face returns every photo that person appears in, across a library or a shared album, in one pass.
+
+ Find a person across a clip
+ Match the same face frame after frame through a video, so an app can jump to every moment one person is on screen. Check whether the person in a clip is the person in a photo, without the footage leaving the device.
+
+ What the model does
+
+ Match a face against a set, group a library by person, or search by example.
+
+ Runs fully on device; images and face data never leave the device.
+
+ Specs
+
+ Platforms
+ Apple (Swift)
+
+ Status
+ Closed beta
+
+ FAQ
+
+ What is Face?
+
+ On-device face matching that finds the same person across your photo library or through a video, with no image leaving the device.
+
+ Does Face run on device?
+
+ Yes. Face runs on the device, with no server call, so the data stays with the user.
+
+ Is Face available yet?
+
+ Face is in closed beta. Request early access on this page.
+
+ How much does Face cost?
+
+ Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses.
+
+ Early access
+
+ Tell us what you are building and we will get you set up.
+
+ Contact us for early access

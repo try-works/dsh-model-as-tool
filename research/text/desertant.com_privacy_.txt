@@ -1,0 +1,73 @@
+Desert Ant Labs 
+
+ Models 
+ Align Word timestamps Clear Speech enhancement Clips Clip selection Ear Spoken language detection Emo Emoji suggestions Gist Content topic tagging Moderator Content moderation Redact PII redaction Shapes Shape recognition Title Titles and descriptions Tongue Language identification Uhm Filler-word detection Voz Speech recognition 
+ All models 
+
+ Docs 
+
+ Blog 
+
+ Inspiration 
+ About 
+
+ Jobs 
+ Contact 
+
+ Privacy
+
+ What desertant.com collects about you, and what we do with it.
+
+ The short version
+
+ This website has no analytics, no tracking pixels and no ads. We don't build a profile of what you read, and the fonts and scripts come from our own servers.
+
+ Our models run on your device. When you try a demo, your browser processes your audio, text and images, and nothing is sent to us.
+
+ What we collect
+
+ The contact form sends us your name, your email address and your message, plus your company, website, topic, model, platform and scale if you fill them in. Our host adds the country you're in and the page you sent the form from, so we can give you a useful answer. We keep these messages like any other email.
+
+ If you apply for a job, you send us your name, email address, LinkedIn and other profile links, previous roles, message, a CV if you add one, whether you want to stay on file, the country you're in, and the site or link that brought you to the post, like LinkedIn. Your application goes into our hiring system, which only the people hiring for the role can open. We also keep a copy in our jobs mailbox, so we can reply to you by email. Someone on the team deletes your application four weeks after the role closes. If you tick the box to stay on file, we keep it for up to 12 months and may contact you about other roles.
+
+ Cookies
+
+ We set one cookie, and only if you use the language switcher: lang , which remembers your language for a year. We don't store anything else on your device, so the site has no consent banner.
+
+ Demos
+
+ A demo runs the model in your browser. Your browser downloads the model file from Hugging Face or from our own servers, so those servers see your IP address, like with any download. What you type, say or upload stays in your browser.
+
+ Two demos are Hugging Face Spaces shown inside our page. Hugging Face's privacy policy applies to those.
+
+ Other companies
+
+ Cloudflare hosts this site, our hiring system, and the code behind the contact form and the job application form. Resend sends us the contact form as an email, and a job application too, without the CV, if our hiring system can't take it. We use Google Workspace for email. These companies only process your data for us.
+
+ We don't sell anything to anyone, and only the people who answer your message see it.
+
+ Your rights
+
+ Under the GDPR you can ask what we have about you, ask for a copy, and ask us to correct or delete it. Email the address below and we'll do it. Desert Ant Labs B.V. in Amsterdam is responsible for your data as the controller. If you think we got it wrong, you can complain to the Dutch data protection authority, the Autoriteit Persoonsgegevens.
+
+ Our legal basis for handling your message is our legitimate interest in answering it, or the steps before a contract if you ask about a license. For a job application, it's the steps before an employment contract, plus your consent if you ask us to keep it on file. You can withdraw that consent at any time.
+
+ Company
+
+ Registered as
+ Desert Ant Labs B.V.
+
+ Chamber of Commerce (KvK)
+ 42136051
+
+ Registered seat
+ Amsterdam, the Netherlands
+
+ Email
+ [email protected] 
+
+ Contact
+
+ [email protected] 
+
+ Last updated 2026-10-05.

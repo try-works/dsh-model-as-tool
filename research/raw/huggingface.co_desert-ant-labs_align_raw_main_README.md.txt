@@ -1,0 +1,191 @@
+---
+license: other
+license_name: desert-ant-labs-source-available-1.0
+license_link: https://license.desertant.com/1.0
+tags:
+- speech
+- word-timestamps
+- forced-alignment
+- speech-recognition
+- on-device
+- core-ml
+- litert
+- multilingual
+pipeline_tag: automatic-speech-recognition
+language:
+- de
+- en
+- es
+- fr
+- it
+- ja
+- ko
+- pt
+- zh
+---
+
+<!-- card-header:start (generated from manifest.json, edit below this block) -->
+# Align
+
+Accurate word timestamps for any transcript.
+
+Word-timestamp refinement for any transcript, on device.
+
+- **SDKs, install and examples:** https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/docs/models/align.md
+
+<!-- card-header:end -->
+
+Corrects the word-level timings that Apple's `SpeechTranscriber` and `SpeechAnalyzer`
+return, without replacing them. Align observes the same audio the analyzer already
+receives, runs a small Core ML cascade on the CPU and Neural Engine, and returns the
+familiar result surface with tightened `audioTimeRange` values. The models are tiny
+(**560KB** compiled Core ML) and refine a typical result in a few milliseconds
+on device.
+
+> Apple: `"world"` 2.61-3.04s  ➜  Align: `"world"` 2.57-2.98s
+
+## Try it
+
+<!-- card-install:start (generated from manifest.json, edit below this block) -->
+| | |
+| --- | --- |
+| **Platforms** | iOS, macOS, tvOS, visionOS, Linux, Windows, Node |
+| **Languages** | 9 |
+| **Weights** | [v1.1.0](https://huggingface.co/desert-ant-labs/align) |
+
+## Install
+
+**Swift** ([requirements](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/README.md#swift))
+
+```swift
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core.git", from: "3.6.0")
+```
+
+Then add the `Align` product to your target.
+
+**JavaScript** ([requirements](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/README.md#javascript-and-typescript))
+
+```bash
+npm i @desert-ant-labs/align
+```
+<!-- card-install:end -->
+
+## Files
+
+| File | Format | Size | Contents |
+|---|---|---:|---|
+| `align-coarse.mlmodelc` | Compiled Core ML (FP16) | 285KB | Coarse stage |
+| `align-fine.mlmodelc` | Compiled Core ML (FP16) | 274KB | Fine stage |
+| `align-coarse.tflite` | LiteRT (FP32) | ~0.5MB | Linux, Windows and Node via the SDK |
+| `align-fine.tflite` | LiteRT (FP32) | ~0.5MB | Linux, Windows and Node via the SDK |
+| `mel_filters.bin` | Float32 filter bank | 40KB | Log-mel filter bank the runtime frontend needs |
+| `calibrator.bin` | Gradient-boosted trees | 70KB | Correction calibrator |
+| `refiner_config.json` | JSON | tiny | Runtime config |
+| `LICENSE.md` | Text | tiny | Full license terms |
+
+The compiled `.mlmodelc` stages (Apple platforms) or `.tflite` stages (Linux, Windows and Node),
+plus `mel_filters.bin`, `calibrator.bin`, and `refiner_config.json`, are exactly what the SDK
+downloads.
+
+### LiteRT
+
+See [the LiteRT usage guide](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/docs/models/align.md)
+for how the SDK loads the `.tflite` pair on Linux, Windows and Node.
+
+## Inputs and outputs
+
+- **Input:** mono audio plus Apple's recognized words with their proposed start/end times.
+- **Output:** the same words with corrected start/end times, or Apple's original time when a
+  correction is not structurally safe.
+
+## Accuracy
+
+Measured on v1.0.0 over held-out recordings.
+
+### All nine languages
+
+| Condition | Raw error | Align error | Reduction |
+|---|---:|---:|---:|
+| Clean | 124.2ms | 43.9ms | 65% |
+| Noisy | 88.3ms | 33.4ms | 62% |
+
+Raw is each proposer's own timing before refinement; the English cell pools Whisper, Parakeet and
+Apple proposals.
+
+1.1.0 corrects the Apple runtime's log-mel scaling, so on-device results are re-measured for this
+release; the numbers above are the training-side measurement.
+
+Macro-averaged over the nine languages, so a language with more test data cannot carry the figure
+on its own.
+
+### Public benchmark, English
+
+A 500-clip sample of each official LibriSpeech `test-clean` and `test-other` split.
+
+| Engine | Split | Raw | Refined | Reduction | Within 50ms |
+|---|---|---:|---:|---:|---|
+| Apple SpeechAnalyzer | test-clean | 106.4ms | 20.2ms | 81% | 37% to 95% |
+| Apple SpeechAnalyzer | test-other | 111.6ms | 24.8ms | 78% | 35% to 92% |
+
+For editing work the p90 matters more than the mean. Large errors are what a viewer notices
+when a caption slips or a clip cuts mid-word.
+
+| Split | Raw p90 | Refined p90 |
+|---|---:|---:|
+| test-clean | 230.7ms | 33.0ms, about one frame of 30fps video |
+
+### Against hand-corrected boundaries
+
+258 word boundaries across 10 recordings, corrected by hand against the waveform rather than by
+another aligner. The only figure here not measured against machine references.
+
+| System | Error | Within 50ms |
+|---|---:|---|
+| Raw Whisper | 100.8ms | 43% |
+| WhisperX | 53.5ms | 67% |
+| Align | 45.0ms | 76% |
+
+## Languages
+
+English, Spanish, French, Italian, Portuguese, German, Japanese, Korean, and Chinese. A locale
+outside this set is passed through unchanged.
+
+## Limitations
+
+- References are machine forced-alignment estimates, not human annotations, so the figures show a
+  large, consistent reduction of Apple's timing error rather than sample-accurate ground truth.
+- A learned correction is not guaranteed to improve every boundary; the structural fallback keeps
+  Apple's timestamp when a correction looks unsafe but cannot catch every plausible-looking error.
+- Japanese, Korean, and Chinese were the weakest languages before v1.0.0. They now improve their
+  proposals by 33%, 55%, and 51%.
+- Spoken numbers are the weakest remaining case. On a small sample, refinement moved digit
+  boundaries further from the reference than leaving them alone, so treat them as unimproved
+  until a larger sample settles it.
+- LiteRT is a third numeric path alongside Core ML, for Linux, Windows and Node. There is no
+  browser build.
+
+<!-- card-footer:start (generated from manifest.json, edit above this block) -->
+## License
+
+[Desert Ant Labs Source-Available License](https://license.desertant.com/1.0). Free for most
+apps, and a commercial license is required at scale. Full terms are at the link.
+Licensing: <licensing@desertant.com>.
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+## Citation
+
+```bibtex
+@software{align_2026,
+  title  = {Align: Word-timestamp refinement for any transcript, on device},
+  author = {Desert Ant Labs},
+  year   = {2026},
+  url    = {https://huggingface.co/desert-ant-labs/align},
+}
+```
+
+---
+
+© 2026 Desert Ant Labs · <https://desertant.com>
+<!-- card-footer:end -->
+

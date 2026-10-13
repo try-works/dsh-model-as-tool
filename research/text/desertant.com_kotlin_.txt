@@ -1,0 +1,61 @@
+Desert Ant Labs 
+
+ Models 
+ Align Word timestamps Clear Speech enhancement Clips Clip selection Ear Spoken language detection Emo Emoji suggestions Gist Content topic tagging Moderator Content moderation Redact PII redaction Shapes Shape recognition Title Titles and descriptions Tongue Language identification Uhm Filler-word detection Voz Speech recognition 
+ All models 
+
+ Docs 
+
+ Blog 
+
+ Inspiration 
+ About 
+
+ Jobs 
+ Contact 
+
+ On-device AI Models for Android and Kotlin
+
+ Kotlin libraries that run models on device across Android and the JVM, on LiteRT and ONNX Runtime.
+
+ The Kotlin packages run on Android and the JVM. All publish to Maven Central under the `ai.desertant` namespace. Bundled models keep everything on the device, with no network call at runtime.
+
+ Add the dependency and call the model from Kotlin or Java. You get the same models and the same answers as on Apple and the web, native to Android.
+
+ Available models
+
+ Redact PII redaction 
+
+ Reversible PII redaction across 27 languages, from a LiteRT model bundled for Android and the JVM.
+
+ Emo Emoji suggestions 
+
+ Emoji suggestions from text in 22 languages, on device via LiteRT.
+
+ Gist Content topic tagging 
+
+ Content topics from any text across 101 languages, on device via LiteRT.
+
+ Shapes Shape recognition 
+
+ Single-stroke shape recognition for Android canvases and Compose.
+
+ Clear Speech enhancement 
+
+ Speech enhancement on Android through LiteRT.
+
+ Tongue Language identification 
+
+ Language identification for short text across 84 languages, from a 2MB model bundled in the jar.
+
+ Moderator Content moderation 
+
+ On-device NSFW image moderation from a 9.2MB LiteRT model, before an upload leaves the device.
+
+ Ear Spoken language detection 
+
+ Spoken language identification across 99 languages from 30 seconds of audio, on LiteRT.
+
+ Pricing
+
+ Each model is free up to 100k monthly active devices. Inference is unlimited.

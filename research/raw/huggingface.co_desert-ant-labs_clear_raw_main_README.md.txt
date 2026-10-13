@@ -1,0 +1,212 @@
+---
+license: other
+license_name: desert-ant-labs-source-available-1.0
+license_link: https://license.desertant.com/1.0
+tags:
+- audio
+- speech
+- speech-enhancement
+- speech-denoising
+- noise-suppression
+- dereverberation
+- podcast
+- on-device
+- core-ml
+- core-ai
+- onnx
+- ios
+- android
+pipeline_tag: audio-to-audio
+---
+
+<!-- card-header:start (generated from manifest.json, edit below this block) -->
+# Clear
+
+Studio sound, no cloud bill.
+
+On-device speech enhancement: denoise, dereverb, and loudness-normalize.
+
+- **SDKs, install and examples:** https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/docs/models/clear.md
+- **Website:** https://desertant.com/models/clear/
+
+<!-- card-header:end -->
+
+Record in a coffee shop and get studio sound, for podcasters, video creators and
+voice apps.
+
+Reduce noise, clean up audio,
+normalize volume. Works on noisy 48kHz mono or stereo audio: meeting recorders, bluetooth
+microphones, built-in phone mics, a laptop in a coffee shop.
+
+Runs entirely on the Apple Neural Engine via Core ML, and on Android via
+LiteRT. iOS 27 and macOS 27 add provisional Core AI builds of both variants.
+The Core ML assets use the iOS 16 model format; the Swift SDK currently
+supports iOS 17+ and macOS 14+.
+
+## Sound
+
+Delivers a **rich, present, close-miked podcast sound**.
+
+- **Denoised.**
+  HVAC, keyboard clicks, mouse rustle, mic bumps, room hum, laptop
+  fans, coffee shop background, all pulled down without chewing
+  consonants.
+- **Dereverbed.**
+  Untreated bedrooms, offices and hotel rooms come out sounding closer
+  to a treated studio. The model does not add reverberation of its own.
+- **Warm and present.**
+  Low-mids brought forward so voice sits comfortably in a mix rather
+  than sounding thin or distant.
+- **Sibilance-safe.**
+  No harsh peaks introduced when cleaning up S / T / F consonants.
+- **No pumping or musical-noise artefacts.**
+  Breaths, plosives and vocal texture stay intact.
+
+## Variants
+
+Two variants ship. They take the same input, produce the same output format
+and cost the same to run, so switching between them is a one-line change in
+the SDK. Pick by the sound you want, not by platform: both ship for every
+runtime.
+
+### clear-studio
+
+The default. Quiet, studio-like character; silences sit close to true
+zero.
+
+Best for solo podcasts, tutorials, voiceover, video demos, screen
+recordings, and anything that wants a clean broadcast feel.
+
+| File | Purpose | Size |
+|---|---|---:|
+| `clear-studio.mlmodelc` | Core ML for the Apple Neural Engine (iOS 16 model format) | 9.0MB |
+| `clear-studio.mlmodelc.zip` | Same compiled model, zipped | 8.6MB |
+| `clear-studio.onnx` | Cross-platform ONNX | 24MB |
+
+### clear-natural
+
+Preserves room tone, breath, and lip texture.
+
+For treated podcast studios, intentional voiceover, interviews where
+the room is part of the take, and remote guest recordings where
+absolute silence would sound wrong.
+
+| File | Purpose | Size |
+|---|---|---:|
+| `clear-natural.mlmodelc` | Core ML for the Apple Neural Engine (iOS 16 model format) | 9.0MB |
+| `clear-natural.mlmodelc.zip` | Same compiled model, zipped | 8.6MB |
+| `clear-natural.onnx` | Cross-platform ONNX | 24MB |
+
+## Performance
+
+The Core ML variants are optimized for the Apple Neural Engine.
+`MLComputePlan` confirms that all 492 model operations run on ANE.
+
+`clear-studio`, whole SDK pipeline on a 60-second clip, best of three:
+
+| Device | Realtime factor |
+|---|---:|
+| iPhone 16 Pro | **302x** |
+| MacBook Pro (M5) | **345x** |
+
+On iPhone 16 Pro, first-ever model loading takes approximately 3.4 seconds
+while Core ML compiles the ANE program. Cached launches load in approximately
+62ms; applications should warm the model in the background.
+
+### Core AI
+
+`clear-studio.aimodel` and `clear-natural.aimodel` are Core AI builds for
+iOS 27 and macOS 27, with fp16 weights. On an iPhone 17 Pro the studio
+variant runs the whole SDK pipeline at 413x realtime, against 366x for the
+Core ML build on the same device and clip.
+
+These files are provisional. The Core AI toolchain is in beta and its asset
+format has changed between beta releases, so both will be rebuilt against the
+released toolchain. No SDK resolves them yet.
+
+## Try it
+
+<!-- card-install:start (generated from manifest.json, edit below this block) -->
+| | |
+| --- | --- |
+| **Platforms** | iOS, macOS, tvOS, visionOS, Android, Linux, Windows, Browser, Node |
+| **Weights** | [v0.3.0](https://huggingface.co/desert-ant-labs/clear) |
+
+## Install
+
+**Swift** ([requirements](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/README.md#swift))
+
+```swift
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core.git", from: "3.6.0")
+```
+
+Then add the `Clear` product to your target.
+
+**Kotlin** ([requirements](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/README.md#android))
+
+```kotlin
+implementation("ai.desertant:clear:3.6.0")
+```
+
+**JavaScript** ([requirements](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/README.md#javascript-and-typescript))
+
+```bash
+npm i @desert-ant-labs/clear @litertjs/core   # browser
+npm i @desert-ant-labs/clear                  # Node, prebuilt native core
+```
+<!-- card-install:end -->
+
+## What it's good for
+
+- **Meeting recorders.** Zoom, Teams, Meet, Detail exports, single or multi-speaker.
+- **Bluetooth microphones.** AirPods, Sony, headset mics.
+- **Mobile devices.** iPhone and Android built-in microphone recordings, voice notes, field recordings.
+- **Laptop built-in microphones.** MacBook and PC built-in mics.
+- **Untreated rooms.** Bedrooms, hotel rooms, kitchens, coffee shops.
+
+Whenever the pitch is *messy recording in, clean audio out*.
+
+## What it is not
+
+- Not a general-purpose audio denoiser.
+  Speech is the target; music, effects, and non-vocal signals get pulled down as noise.
+- Not a source separator.
+  Overlapping speakers stay overlapping.
+- Not a voice changer, cloner, or transcription model.
+
+## Keywords
+
+speech enhancement · noise suppression · dereverberation · speech
+denoising · reduce noise · clean up audio · normalize volume · turn a
+recording into studio sound · messy recording in clean audio out ·
+podcast audio · voice cleanup · meeting recorder cleanup · bluetooth
+microphone cleanup · mobile device audio · built-in microphone ·
+on-device audio · edge ML · Core ML · ONNX · iOS speech enhancement ·
+Android speech enhancement · real-time speech enhancement ·
+studio sound · podcast sound · Apple Neural Engine · ANE
+
+<!-- card-footer:start (generated from manifest.json, edit above this block) -->
+## License
+
+[Desert Ant Labs Source-Available License](https://license.desertant.com/1.0). Free for most
+apps, and a commercial license is required at scale. Full terms are at the link.
+Licensing: <licensing@desertant.com>.
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+## Citation
+
+```bibtex
+@software{clear_2026,
+  title  = {Clear: On-device speech enhancement: denoise, dereverb, and loudness-normalize},
+  author = {Desert Ant Labs},
+  year   = {2026},
+  url    = {https://huggingface.co/desert-ant-labs/clear},
+}
+```
+
+---
+
+© 2026 Desert Ant Labs · <https://desertant.com>
+<!-- card-footer:end -->
+

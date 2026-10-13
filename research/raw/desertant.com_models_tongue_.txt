@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en" data-t-copy="Copy to clipboard" data-t-copied="Copied" data-t-heading-link="Link to this section">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tongue: On-device Language Identification | Desert Ant Labs</title>
+<script>var d=document.documentElement;d.classList.add('js');requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('ready');});});</script>
+<meta name="description" content="On-device language detection for text across 84 languages. Identify the language in tens of microseconds, from just a few words.">
+<meta name="keywords" content="language identification, language detection, langid, detect language from text, short text language detection, on-device, offline, multilingual, Swift, Kotlin, JavaScript, Android, iOS">
+<link rel="canonical" href="https://desertant.com/models/tongue/">
+<link rel="alternate" hreflang="en" href="https://desertant.com/models/tongue/">
+<link rel="alternate" hreflang="de" href="https://desertant.com/de/models/tongue/">
+<link rel="alternate" hreflang="fr" href="https://desertant.com/fr/models/tongue/">
+<link rel="alternate" hreflang="es" href="https://desertant.com/es/models/tongue/">
+<link rel="alternate" hreflang="it" href="https://desertant.com/it/models/tongue/">
+<link rel="alternate" hreflang="nl" href="https://desertant.com/nl/models/tongue/">
+<link rel="alternate" hreflang="pt-BR" href="https://desertant.com/pt-br/models/tongue/">
+<link rel="alternate" hreflang="pt-PT" href="https://desertant.com/pt-pt/models/tongue/">
+<link rel="alternate" hreflang="zh-Hans" href="https://desertant.com/zh/models/tongue/">
+<link rel="alternate" hreflang="ja" href="https://desertant.com/ja/models/tongue/">
+<link rel="alternate" hreflang="ko" href="https://desertant.com/ko/models/tongue/">
+<link rel="alternate" hreflang="sv" href="https://desertant.com/sv/models/tongue/">
+<link rel="alternate" hreflang="x-default" href="https://desertant.com/models/tongue/">
+
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Desert Ant Labs">
+<meta property="og:title" content="Tongue: On-device Language Identification">
+<meta property="og:description" content="On-device language detection for text across 84 languages. Identify the language in tens of microseconds, from just a few words.">
+<meta property="og:url" content="https://desertant.com/models/tongue/">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="es_ES">
+<meta property="og:locale:alternate" content="it_IT">
+<meta property="og:locale:alternate" content="nl_NL">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:locale:alternate" content="pt_PT">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:locale:alternate" content="ko_KR">
+<meta property="og:locale:alternate" content="sv_SE">
+<meta property="og:image" content="https://desertant.com/og/tongue.jpg?v=8">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Tongue: Detect language based on 3 words.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tongue: On-device Language Identification">
+<meta name="twitter:description" content="On-device language detection for text across 84 languages. Identify the language in tens of microseconds, from just a few words.">
+<meta name="twitter:image" content="https://desertant.com/og/tongue.jpg?v=8">
+<meta name="theme-color" content="#fbfaf4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>@layer critical,tokens,base,components;@layer critical{:root{color-scheme:light}body{margin:0;background:#fbfaf4;color:#0e1113;font-family:"Inclusive Sans",system-ui,sans-serif}a{color:inherit}img{max-width:100%}}</style>
+<link rel="preload" href="/brand/fonts/inclusive-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/brand/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/brand/index.css?v=f04dcad24d">
+<link rel="stylesheet" href="/assets/site.css?v=9c50bc58b7">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Tongue","applicationCategory":"DeveloperApplication","operatingSystem":"iOS, macOS, Android, Web, Node.js","description":"On-device language detection for text across 84 languages. Identify the language in tens of microseconds, from just a few words.","url":"https://desertant.com/models/tongue/","image":"https://desertant.com/og/tongue.jpg","softwareVersion":"3.5.0","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","description":"Each model is free up to 100k monthly active devices. Inference is unlimited."},"featureList":["84 languages: 59 decoded by the model, 25 settled by script alone.","2MB int8 weights, bundled in the package; nothing is downloaded.","Tens of microseconds per detection, on the main thread.","Identical answers on Swift, Kotlin, and JavaScript, held to shared golden vectors.","Reports a reliability score and marks every tie."],"sameAs":["https://github.com/Desert-Ant-Labs/desert-ant-core","https://huggingface.co/desert-ant-labs/tongue"],"publisher":{"@type":"Organization","name":"Desert Ant Labs","url":"https://desertant.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://desertant.com/"},{"@type":"ListItem","position":2,"name":"Text","item":"https://desertant.com/text/"},{"@type":"ListItem","position":3,"name":"Tongue","item":"https://desertant.com/models/tongue/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Tongue?","acceptedAnswer":{"@type":"Answer","text":"On-device language detection for text across 84 languages. Identify the language in tens of microseconds, from just a few words."}},{"@type":"Question","name":"Does Tongue run on device?","acceptedAnswer":{"@type":"Answer","text":"Yes. Tongue runs on the device, with no server call, so the data stays with the user."}},{"@type":"Question","name":"Which platforms does Tongue support?","acceptedAnswer":{"@type":"Answer","text":"Tongue ships as a native on-device SDK for Swift, Kotlin, JavaScript / TypeScript."}},{"@type":"Question","name":"How much does Tongue cost?","acceptedAnswer":{"@type":"Answer","text":"Each model is free up to 100k monthly active devices. Inference is unlimited. Contact us for custom licenses."}},{"@type":"Question","name":"How accurate or fast is Tongue?","acceptedAnswer":{"@type":"Answer","text":"At 2MB, Tongue scores 0.933 on three-word FLORES-200 input, against 0.887 for a 293MB detector."}}]}</script>
+</head>
+<body class="theme-ink">
+  
+  <header class="site-head site-head--float rise d0"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a>
+      <button type="button" class="nav-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true"></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <details><summary>Models</summary>
+          <div class="nav-panel"><div class="nav-grid" style="--nav-rows:5;--nav-rows-sm:7"><a class="nav-model" href="/models/align/"><span class="nav-thumb"><img src="/assets/photos/align-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Align</span><span class="nav-kind">Word timestamps</span></span></a><a class="nav-model" href="/models/clear/"><span class="nav-thumb"><img src="/assets/photos/clear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clear</span><span class="nav-kind">Speech enhancement</span></span></a><a class="nav-model" href="/models/clips/"><span class="nav-thumb"><img src="/assets/photos/clips-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Clips</span><span class="nav-kind">Clip selection</span></span></a><a class="nav-model" href="/models/ear/"><span class="nav-thumb"><img src="/assets/photos/ear-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Ear</span><span class="nav-kind">Spoken language detection</span></span></a><a class="nav-model" href="/models/emo/"><span class="nav-thumb"><img src="/assets/photos/emo-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Emo</span><span class="nav-kind">Emoji suggestions</span></span></a><a class="nav-model" href="/models/gist/"><span class="nav-thumb"><img src="/assets/photos/gist-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Gist</span><span class="nav-kind">Content topic tagging</span></span></a><a class="nav-model" href="/models/moderator/"><span class="nav-thumb"><img src="/assets/photos/moderator-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Moderator</span><span class="nav-kind">Content moderation</span></span></a><a class="nav-model" href="/models/redact/"><span class="nav-thumb"><img src="/assets/photos/redact-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Redact</span><span class="nav-kind">PII redaction</span></span></a><a class="nav-model" href="/models/shapes/"><span class="nav-thumb"><img src="/assets/photos/shapes-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Shapes</span><span class="nav-kind">Shape recognition</span></span></a><a class="nav-model" href="/models/title/"><span class="nav-thumb"><img src="/assets/photos/title-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Title</span><span class="nav-kind">Titles and descriptions</span></span></a><a class="nav-model" href="/models/tongue/" aria-current="page"><span class="nav-thumb"><img src="/assets/photos/tongue-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Tongue</span><span class="nav-kind">Language identification</span></span></a><a class="nav-model" href="/models/uhm/"><span class="nav-thumb"><img src="/assets/photos/uhm-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Uhm</span><span class="nav-kind">Filler-word detection</span></span></a><a class="nav-model" href="/models/voz/"><span class="nav-thumb"><img src="/assets/photos/voz-nav.webp" alt="" width="40" height="40" loading="lazy" decoding="async"></span><span><span class="nav-name">Voz</span><span class="nav-kind">Speech recognition</span></span></a></div><a class="nav-all" href="/models/">All models</a></div>
+        </details>
+        <a href="/docs/">Docs</a>
+        
+        <a href="/blog/">Blog</a>
+        
+        <a href="/inspiration/">Inspiration</a>
+        <a href="/about/">About</a>
+        
+        <a href="/jobs/">Jobs</a>
+        <a href="/contact/">Contact</a>
+      </nav></header>
+  <main class="stage">
+    <div class="col">
+      <article class="article theme-ink">
+        <section class="hero-model rise d1">
+          <div class="hero-model-content">
+            <div class="model-title" data-fx-host>
+              <h1 class="hero-model-title" data-effect="underline-thick">Tongue</h1>
+            </div>
+            <div class="tag-row"><span class="tag">Language identification</span><span class="tag">Available</span></div>
+            <p class="lede">On-device language detection for text across 84 languages. Identify the language in tens of microseconds, from just a few words.</p>
+        <div class="btn-row">
+          <a class="btn" href="#getting-started"><svg class="btn-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"/><path d="M12 5l7 7-7 7"/></svg><span>Get started</span></a>
+          <a class="btn btn--outline" href="/docs/tongue/"><svg class="btn-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h5"/></svg><span>Docs</span></a>
+          <a class="btn btn--outline" href="https://huggingface.co/desert-ant-labs/tongue"><img class="btn-hf" src="/assets/hf-logo-gray.svg" width="24" height="22" alt="" aria-hidden="true"><span>Model card</span></a>
+        </div>
+          </div>
+          <div class="hero-model-photo"><img src="/assets/photos/tongue-card-816.webp" srcset="/assets/photos/tongue-card-816.webp 816w, /assets/photos/tongue-card.webp 1632w" sizes="(max-width: 860px) 100vw, 50vw" alt="" fetchpriority="high"></div>
+        </section>
+        <nav class="breadcrumb rise d2" aria-label="Breadcrumb">
+          <a href="/">Home</a><span class="sep" aria-hidden="true">/</span>
+          <a href="/#models">Models</a><span class="sep" aria-hidden="true">/</span>
+          <span aria-current="page">Tongue</span>
+        </nav>
+      <section class="section rise d3" id="demo">
+        <h2 class="section-title">Demo</h2>
+        <div class="demo-frame"><div class="model-demo" data-demo="tongue" data-src="/assets/vendor/desert-ant-labs-tongue-3.5.0.mjs" data-model-base="https://huggingface.co/desert-ant-labs/tongue/resolve/v1.0.0"></div></div>
+      </section>
+      <script type="module" src="/assets/demos.js"></script>
+
+      <section class="section section--narrow rise d3" id="overview">
+        <h2 class="section-title">Detect language based on 3 words.</h2>
+        <div class="prose">
+          <p>"kann ich das haben" is German. "안녕하세요" is Korean. Three words is the hard case, and three words is what a search box gives you.</p>
+          <p>From three words, Tongue scores 0.933 where a 293MB detector scores 0.887. Tongue is 2MB, and works in two stages: some scripts belong to one language only, so Hangul is Korean and Thai is Thai, settled with no model involved. The rest go to the model.</p>
+          <p>Tongue needs no tokenizer, vocabulary file, or inference runtime, which is how the whole package fits in 2MB. When the input is too short to call, Tongue reports a tie.</p>
+        </div>
+      </section>
+      <section class="section section--perf rise d4" id="performance" aria-label="Performance">
+        <h2 class="section-title">0.933 from a 2MB model.</h2>
+        <p class="section-lede">At 2MB, Tongue scores 0.933 on three-word FLORES-200 input, against 0.887 for a 293MB detector.</p>
+        <div class="perf-hero no-photo">
+          <div class="stat-row">
+            <div class="stat"><div class="stat-value">0.933</div><div class="stat-label">FLORES-200, 3 words</div><div class="stat-detail">vs 0.887 for a 293MB detector</div></div>
+            <div class="stat"><div class="stat-value">0.992</div><div class="stat-label">Tweets</div><div class="stat-detail">eld benchmark, 9,066 rows</div></div>
+            <div class="stat"><div class="stat-value">84</div><div class="stat-label">Languages</div></div>
+            <div class="stat"><div class="stat-value">2MB</div><div class="stat-label">int8 weights</div><div class="stat-detail">no tokenizer, no runtime</div></div>
+          </div>
+        </div>
+        <p class="perf-note">Measured on the shipped int8 weights across three public benchmarks, with the other detectors run on identical rows and language subsets. Full tables and failure modes are on the model card.</p>
+      </section>
+      <section class="section section--uc rise d4" id="use-cases">
+        <h2 class="section-title">Use cases</h2>
+        <div class="uc-figure-grid">
+          <figure class="uc-figure">
+            <img src="/assets/photos/tongue-card-816.webp" alt="" loading="lazy" width="1088" height="1360">
+            <h3>Detect language based on 3 words.</h3>
+          </figure>
+          <div class="uc-figure-col">
+            <div class="use-case"><h3>Route text by language</h3><p>Pick the right translation model, analyzer, or support queue from the first few words a user types, entirely on device.</p></div>
+            <div class="use-case"><h3>Keyboards and input</h3><p>Detect the language mid-sentence to switch autocorrect, suggestions, or layouts, at a cost of tens of microseconds per keystroke.</p></div>
+            <div class="use-case"><h3>Search and content pipelines</h3><p>Tag short strings with a language before indexing or moderation, without a network round-trip or a per-request service.</p></div>
+            <div class="use-case"><h3>Ask for more text instead of guessing</h3><p>"la casa" is Italian and Spanish in equal measure. Tongue reports the tie, so your product waits for another word rather than switching the keyboard by mistake.</p></div>
+          </div>
+        </div>
+      </section>
+      <section class="section rise d5" id="inspiration">
+        <h2 class="section-title">Inspiration</h2>
+        <p class="section-lede">Ideas to build with Tongue. Copy a prompt into your coding agent and go.</p>
+        <div class="pinboard">
+          <figure class="prompt-card pin" style="--tilt: -2deg" data-models="tongue" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Tongue to identify the language of an incoming message from a few words, on-device, and route it to the right support queue, model, or translation path.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Install: SwiftPM desert-ant-core; Maven ai.desertant:tongue:3.5.0; npm i @desert-ant-labs/tongue. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span></div>
+            <p class="pin-text">Route incoming messages to the right language agent.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1.5deg" data-models="tongue" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="In a text field, run Desert Ant's Tongue on the first words to detect the language and switch keyboard, spellcheck, and autocorrect to match, in microseconds, on-device.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Install: SwiftPM desert-ant-core; Maven ai.desertant:tongue:3.5.0; npm i @desert-ant-labs/tongue. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span></div>
+            <p class="pin-text">Auto-switch the keyboard and spellcheck to the language being typed.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="tongue" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Use Desert Ant's Tongue to label each user post with its language on-device, so search, ranking, and moderation can branch by language without a server call.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Install: SwiftPM desert-ant-core; Maven ai.desertant:tongue:3.5.0; npm i @desert-ant-labs/tongue. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span></div>
+            <p class="pin-text">Tag user posts by language for search and moderation.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2deg" data-models="tongue redact" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Run Desert Ant's Tongue to detect a message's language, then Redact to strip PII with the right language coverage, both on-device.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Redact (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/redact/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span><span class="pin-model" style="--dot: var(--color-theme-forest-fill)"><i></i>Redact</span></div>
+            <p class="pin-text">Detect the language, then redact PII in that language.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1deg" data-models="tongue" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Run Desert Ant's Tongue on a search query on-device to route it to the right language index or analyzer, in microseconds.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Install: SwiftPM desert-ant-core; Maven ai.desertant:tongue:3.5.0; npm i @desert-ant-labs/tongue. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span></div>
+            <p class="pin-text">Detect the language of a search query and pick the right index.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 1deg" data-models="tongue gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Write an OpenClaw skill that runs Desert Ant's Tongue to detect a text's language and Gist to tag its topics, on-device, so an agent can route content without a server call.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">Build an OpenClaw skill that tags and language-routes text.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: -1.5deg" data-models="tongue gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Build a Slack or Discord bot that runs Desert Ant's Tongue and Gist in Node to detect each message's language and topic and route it, with no third-party classification service.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">A chat bot that tags and language-routes messages, in Node.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+          <figure class="prompt-card pin" style="--tilt: 2.5deg" data-models="tongue gist" data-modes="text">
+            <button type="button" class="prompt-card-copy" data-prompt="Write a SKILL.md agent skill that runs Desert Ant's Tongue to detect a text's language and Gist to tag its topics, on-device, so the agent can route or filter content without a server call.
+
+Build it with the Desert Ant SDK. Tongue (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/tongue/. Gist (Swift, Kotlin, JavaScript / TypeScript). Install and API: https://desertant.com/docs/gist/. SDK source: https://github.com/Desert-Ant-Labs/desert-ant-core. Machine-readable catalog of every model and SDK: https://desertant.com/llms.txt." aria-label="Copy prompt to clipboard"></button>
+            <div class="pin-models"><span class="pin-model" style="--dot: var(--color-theme-ink-fill)"><i></i>Tongue</span><span class="pin-model" style="--dot: var(--color-theme-stone-fill)"><i></i>Gist</span></div>
+            <p class="pin-text">Build an agent skill that tags and language-routes text for an agent.</p>
+            <div class="pin-actions">
+              <span class="pin-tool">Copy prompt</span>
+            </div>
+            <span class="prompt-card-copied" aria-hidden="true"><span class="tag">Copied to clipboard</span></span>
+          </figure>
+        </div>
+      </section>
+      <section class="section rise d5">
+        <h2 class="section-title">What the model does</h2>
+        <ul class="features">
+          <li>84 languages: 59 decoded by the model, 25 settled by script alone.</li>
+          <li>2MB int8 weights, bundled in the package; nothing is downloaded.</li>
+          <li>Tens of microseconds per detection, on the main thread.</li>
+          <li>Identical answers on Swift, Kotlin, and JavaScript, held to shared golden vectors.</li>
+          <li>Reports a reliability score and marks every tie.</li>
+        </ul>
+      </section>
+
+      <section class="section rise d6" id="getting-started">
+        <h2 class="section-title">Getting started</h2>
+        <p class="section-lede">Add language identification to your iOS or macOS, Android or web app in a few lines of code. <a href="/docs/tongue/">Tongue docs</a>.</p>
+        <div class="platforms">
+          <div class="platform">
+            <div class="platform-head"><span class="platform-name">iOS, macOS</span></div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Install</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// Swift Package Manager</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">url</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"https://github.com/Desert-Ant-Labs/desert-ant-core"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">from</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// target dependency</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">product</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#795E26;--shiki-dark:#DCDCAA">name</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"Tongue"</span><span style="color:#000000;--shiki-dark:#D4D4D4">, </span><span style="color:#795E26;--shiki-dark:#DCDCAA">package</span><span style="color:#000000;--shiki-dark:#D4D4D4">: </span><span style="color:#A31515;--shiki-dark:#CE9178">"desert-ant-core"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Example - Swift</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#1d6377;--shiki-dark:#4EC9B0"> Tongue</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">let</span><span style="color:#000000;--shiki-dark:#D4D4D4"> tongue = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">try</span><span style="color:#795E26;--shiki-dark:#DCDCAA"> Tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4">()</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">tongue.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">detect</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"kann ich das haben"</span><span style="color:#000000;--shiki-dark:#D4D4D4">).</span><span style="color:#001080;--shiki-dark:#9CDCFE">language</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// "de"</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Build with a prompt</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre tabindex="0" class="assistant-prompt">Add Tongue from Desert Ant Labs to this Swift project (iOS, macOS).
+
+What it does: On-device Language Identification.
+
+SDK:
+
+Swift (iOS, macOS)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// Swift Package Manager
+.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core", from: "3.5.0")
+// target dependency
+.product(name: "Tongue", package: "desert-ant-core")
+
+Reference:
+- Model page: https://desertant.com/models/tongue/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.</pre>
+          </div>
+            <div class="platform-links"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core#readme">SDK on GitHub</a></div>
+          </div>
+          <div class="platform">
+            <div class="platform-head"><span class="platform-name">Android</span></div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Install</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// build.gradle.kts (Maven Central)</span></span>
+<span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">implementation</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"ai.desertant:tongue:3.5.0"</span><span style="color:#000000;--shiki-dark:#D4D4D4">)</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Example - Kotlin</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> ai.desertant.tongue.Tongue</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">val</span><span style="color:#000000;--shiki-dark:#D4D4D4"> tongue = Tongue.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">bundled</span><span style="color:#000000;--shiki-dark:#D4D4D4">(context)</span></span>
+<span class="line"><span style="color:#000000;--shiki-dark:#D4D4D4">tongue.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">detect</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"kann ich das haben"</span><span style="color:#000000;--shiki-dark:#D4D4D4">).language</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// "de"</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Build with a prompt</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre tabindex="0" class="assistant-prompt">Add Tongue from Desert Ant Labs to this Kotlin project (Android).
+
+What it does: On-device Language Identification.
+
+SDK:
+
+Kotlin (Android)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+// build.gradle.kts (Maven Central)
+implementation("ai.desertant:tongue:3.5.0")
+
+Reference:
+- Model page: https://desertant.com/models/tongue/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.</pre>
+          </div>
+            <div class="platform-links"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core#readme">SDK on GitHub</a></div>
+          </div>
+          <div class="platform">
+            <div class="platform-head"><span class="platform-name">Web, Node.js</span></div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Install</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#795E26;--shiki-dark:#DCDCAA">npm</span><span style="color:#A31515;--shiki-dark:#CE9178"> i</span><span style="color:#A31515;--shiki-dark:#CE9178"> @desert-ant-labs/tongue</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Example - TypeScript</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre class="shiki shiki-themes light-plus dark-plus" style="background-color:#FFFFFF;--shiki-dark-bg:#1E1E1E;color:#000000;--shiki-dark:#D4D4D4" tabindex="0"><code><span class="line"><span style="color:#AF00DB;--shiki-dark:#C586C0">import</span><span style="color:#000000;--shiki-dark:#D4D4D4"> { </span><span style="color:#001080;--shiki-dark:#9CDCFE">Tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4"> } </span><span style="color:#AF00DB;--shiki-dark:#C586C0">from</span><span style="color:#A31515;--shiki-dark:#CE9178"> "@desert-ant-labs/tongue"</span><span style="color:#000000;--shiki-dark:#D4D4D4">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#0000FF;--shiki-dark:#569CD6">const</span><span style="color:#005a9e;--shiki-dark:#4FC1FF"> tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4"> = </span><span style="color:#AF00DB;--shiki-dark:#C586C0">await</span><span style="color:#001080;--shiki-dark:#9CDCFE"> Tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">load</span><span style="color:#000000;--shiki-dark:#D4D4D4">();</span></span>
+<span class="line"><span style="color:#001080;--shiki-dark:#9CDCFE">tongue</span><span style="color:#000000;--shiki-dark:#D4D4D4">.</span><span style="color:#795E26;--shiki-dark:#DCDCAA">detect</span><span style="color:#000000;--shiki-dark:#D4D4D4">(</span><span style="color:#A31515;--shiki-dark:#CE9178">"kann ich das haben"</span><span style="color:#000000;--shiki-dark:#D4D4D4">).</span><span style="color:#001080;--shiki-dark:#9CDCFE">language</span><span style="color:#000000;--shiki-dark:#D4D4D4">;</span></span>
+<span class="line"><span style="color:#0a6b0a;--shiki-dark:#6A9955">// "de"</span></span></code></pre>
+          </div>
+            <div class="code-field">
+            <div class="code-head"><span class="code-label">Build with a prompt</span><button type="button" class="code-copy" data-copy-pre aria-label="Copy to clipboard"><svg class="code-copy-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="code-copy-done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+            <pre tabindex="0" class="assistant-prompt">Add Tongue from Desert Ant Labs to this JavaScript / TypeScript project (Web, Node.js).
+
+What it does: On-device Language Identification.
+
+SDK:
+
+JavaScript / TypeScript (Web, Node.js)
+Repo: https://github.com/Desert-Ant-Labs/desert-ant-core#readme
+npm i @desert-ant-labs/tongue
+
+Reference:
+- Model page: https://desertant.com/models/tongue/
+- Full catalog and other models: https://desertant.com/llms.txt
+
+Add the SDK, then follow its README for the exact API and current version. Do not invent API names or method signatures; confirm them against the README.</pre>
+          </div>
+            <div class="platform-links"><a href="https://github.com/Desert-Ant-Labs/desert-ant-core#readme">SDK on GitHub</a></div>
+          </div>
+        </div>
+      </section>
+      <section class="section rise d5">
+        <h2 class="section-title">Specs</h2>
+        <dl class="specs">
+          <div><dt>Languages</dt><dd>84, across 31 scripts</dd></div>
+          <div><dt>On-device size</dt><dd>2MB int8 weights, inside the package</dd></div>
+          <div><dt>Speed</dt><dd>Tens of microseconds per detection</dd></div>
+          <div><dt>Model</dt><dd>Script router plus hashed character n-grams into an int8 linear head</dd></div>
+        </dl>
+      </section>
+      <div class="caveats rise d6">
+        <p class="model-caveat">One or two words is often undecidable, and no model size fixes the problem. Tongue reports a tie or a tentative answer, so treat low reliability as "unknown", not as an answer.</p>
+        <p class="model-caveat">Malay and Indonesian share too much vocabulary to separate on a short sample. Mongolian is covered in the traditional script only, so Cyrillic Mongolian is read as Russian.</p>
+        <p class="model-caveat">Brand names, numbers, and code are not language, and will get a guess.</p>
+      </div>
+      <section class="section rise d6" id="faq">
+        <h2 class="section-title">FAQ</h2>
+        <div class="faq">
+          <div class="faq-item">
+            <h3 class="faq-q">What is Tongue?</h3>
+            <p class="faq-a">On-device language detection for text across 84 languages. Identify the language in tens of microseconds, from just a few words.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">Does Tongue run on device?</h3>
+            <p class="faq-a">Yes. Tongue runs on the device, with no server call, so the data stays with the user.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">Which platforms does Tongue support?</h3>
+            <p class="faq-a">Tongue ships as a native on-device SDK for Swift, Kotlin, JavaScript / TypeScript.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">How much does Tongue cost?</h3>
+            <p class="faq-a">Each model is free up to 100k monthly active devices. Inference is unlimited. <a href="#" role="button" data-mail="Commercial license inquiry">Contact us</a> for custom licenses.</p>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">How accurate or fast is Tongue?</h3>
+            <p class="faq-a">At 2MB, Tongue scores 0.933 on three-word FLORES-200 input, against 0.887 for a 293MB detector.</p>
+          </div>
+        </div>
+      </section>
+      <section class="section rise d6">
+        <h2 class="section-title">Resources</h2>
+        <ul class="resource-list">
+          <li><a href="/docs/tongue/">Tongue docs</a></li>
+          <li><a href="https://huggingface.co/desert-ant-labs/tongue">Model weights on Hugging Face</a></li>
+          <li><a href="/swift/">Swift models</a></li>
+          <li><a href="/kotlin/">Kotlin models</a></li>
+          <li><a href="/js/">JS models</a></li>
+        </ul>
+      </section>
+      </article>
+<footer class="site-footer rise d7">
+      <div class="footer-grid">
+        <div class="footer-head"><a class="brandmark" href="/" aria-label="Desert Ant Labs home"><svg viewBox="0 0 40 38" width="23" height="22" aria-hidden="true" focusable="false"><rect class="brandmark-mark-bg" width="40" height="38" rx="9"/><g class="brandmark-mark-fg"><path d="M17.9 7.5H22.1V30.5H17.9Z M22.1 16.72H26.3V21.15H22.1Z M13.7 16.72H17.9V21.15H13.7Z M26.3 12.43H30.5V16.85H26.3Z M9.5 12.43H13.7V16.85H9.5Z M26.3 21.15H30.5V25.57H26.3Z M9.5 21.15H13.7V25.57H9.5Z"/></g></svg><span class="brandmark-name">Desert Ant Labs</span></a></div>
+        <div class="footer-col footer-col--nav">
+          <p class="eyebrow">Company</p>
+          <ul class="footer-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="/docs/">Docs</a></li>
+            <li><a href="/inspiration/">Inspiration</a></li>
+            <li><a href="/press/">Press</a></li>
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/jobs/">Jobs</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="https://license.desertant.com/">License</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--sdks">
+          <p class="eyebrow">Platforms</p>
+          <ul class="footer-list">
+            <li><a href="/swift/">Swift</a></li>
+            <li><a href="/kotlin/">Kotlin</a></li>
+            <li><a href="/js/">JavaScript</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-col--follow">
+          <p class="eyebrow">Follow</p>
+          <ul class="footer-list">
+            <li><a href="https://huggingface.co/desert-ant-labs">Hugging Face</a></li>
+            <li><a href="https://github.com/Desert-Ant-Labs">GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/audio/">Audio</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/align/">Align</a></li>
+            <li><a href="/models/clear/">Clear</a></li>
+            <li><a href="/models/clips/">Clips</a></li>
+            <li><a href="/models/ear/">Ear</a></li>
+            <li><a href="/models/uhm/">Uhm</a></li>
+            <li><a href="/models/voz/">Voz</a></li>
+            <li><a href="/models/who/">Who</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/text/">Text</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/emo/">Emo</a></li>
+            <li><a href="/models/gist/">Gist</a></li>
+            <li><a href="/models/redact/">Redact</a></li>
+            <li><a href="/models/title/">Title</a></li>
+            <li><a href="/models/tongue/">Tongue</a></li>
+            <li><a href="/models/schemer/">Schemer</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/toxic/">Toxic</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow"><a href="/vision/">Vision</a></p>
+          <ul class="footer-list">
+            <li><a href="/models/moderator/">Moderator</a></li>
+            <li><a href="/models/shapes/">Shapes</a></li>
+            <li><a href="/models/eye/">Eye</a> <span class="footer-beta">Beta</span></li>
+            <li><a href="/models/face/">Face</a> <span class="footer-beta">Beta</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-links">
+          <span class="footer-note">Each model is free up to 100k monthly active devices. Inference is unlimited.</span>
+        </div>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" class="lang-switch-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="English, Choose language"><svg class="lang-switch-globe" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.5"/><path d="M2.75 12h18.5M12 2.75c2.5 2.6 3.9 6 4 9.25-.1 3.25-1.5 6.65-4 9.25-2.5-2.6-3.9-6-4-9.25 .1-3.25 1.5-6.65 4-9.25Z" stroke="currentColor" stroke-width="1.5"/></svg><span>English</span><svg class="lang-switch-caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden><li role="option" aria-selected="true"><a class="lang-switch-item is-current" href="/models/tongue/" hreflang="en" data-lang="en"><span class="lang-switch-label"><span class="lang-endonym">English</span></span><span class="lang-check" aria-hidden="true">✓</span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/de/models/tongue/" hreflang="de" data-lang="de"><span class="lang-switch-label"><span class="lang-endonym">Deutsch</span><span class="lang-gloss">German</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/fr/models/tongue/" hreflang="fr" data-lang="fr"><span class="lang-switch-label"><span class="lang-endonym">Français</span><span class="lang-gloss">French</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/es/models/tongue/" hreflang="es" data-lang="es"><span class="lang-switch-label"><span class="lang-endonym">Español</span><span class="lang-gloss">Spanish</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/it/models/tongue/" hreflang="it" data-lang="it"><span class="lang-switch-label"><span class="lang-endonym">Italiano</span><span class="lang-gloss">Italian</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/nl/models/tongue/" hreflang="nl" data-lang="nl"><span class="lang-switch-label"><span class="lang-endonym">Nederlands</span><span class="lang-gloss">Dutch</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-br/models/tongue/" hreflang="pt-BR" data-lang="pt-br"><span class="lang-switch-label"><span class="lang-endonym">Português (Brasil)</span><span class="lang-gloss">Portuguese (Brazil)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/pt-pt/models/tongue/" hreflang="pt-PT" data-lang="pt-pt"><span class="lang-switch-label"><span class="lang-endonym">Português (Portugal)</span><span class="lang-gloss">Portuguese (Portugal)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/zh/models/tongue/" hreflang="zh-Hans" data-lang="zh"><span class="lang-switch-label"><span class="lang-endonym">简体中文</span><span class="lang-gloss">Chinese (Simplified)</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ja/models/tongue/" hreflang="ja" data-lang="ja"><span class="lang-switch-label"><span class="lang-endonym">日本語</span><span class="lang-gloss">Japanese</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/ko/models/tongue/" hreflang="ko" data-lang="ko"><span class="lang-switch-label"><span class="lang-endonym">한국어</span><span class="lang-gloss">Korean</span></span></a></li><li role="option" aria-selected="false"><a class="lang-switch-item" href="/sv/models/tongue/" hreflang="sv" data-lang="sv"><span class="lang-switch-label"><span class="lang-endonym">Svenska</span><span class="lang-gloss">Swedish</span></span></a></li></ul>
+      </div>
+      </div>
+    </footer>
+    </div>
+  </main>
+  <script defer src="/assets/main.js?v=8657716418"></script>
+<script defer src="/brand/js/effects.js?v=ee7e5c7f3c"></script>
+<script type="module" src="/brand/js/nav.js?v=dfc551149c"></script>
+<script type="module" src="/brand/js/copy.js?v=4904763c8a"></script>
+<script type="module" src="/brand/js/pinboard.js?v=55e8824f80"></script>
+</body>
+</html>
+
