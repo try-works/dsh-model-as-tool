@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://try-works.dev/tool-mode/extension-manifest-1.1.0.schema.json",
+  "title": "Tool Mode extension manifest",
+  "description": "The manifest an extension package ships and the host validates before importing any extension code (EXT-14). Schemas referenced from here are offline package files: a remote $ref is not fetched and an executable schema generator is never run during discovery.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocolVersion", "id", "version", "displayName", "description", "activation", "runtimeApi", "compatibility", "execution", "permissions"],
+  "properties": {
+    "protocolVersion": {
+      "description": "TMX protocol version. Minor versions are additive; a different major requires reviewed migration (EXT-16).",
+      "type": "string",
+      "pattern": "^1\\.(0|1)\\.\\d+$"
+    },
+    "id": {
+      "description": "Extension identity. MUST equal the package name exactly (EXT-14).",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 214
+    },
+    "version": {
+      "description": "Package version. MUST equal package.json version exactly (EXT-14).",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "description": { "type": "string", "minLength": 10, "maxLength": 2000 },
+    "license": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "activation": {
+      "description": "How activation behaves. A built-in is a first-party package following the identical protocol, not an exception embedded in the host (EXT-03).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy"],
+      "properties": {
+        "policy": { "type": "string", "enum": ["operator", "bundled-default"] },
+        "deactivatable": { "type": "boolean", "default": true }
+      }
+    },
+    "runtimeApi": {
+      "description": "Module runtime API major this extension implements. 1.0 and 1.1 manifests both use major 1 (EXT-16).",
+      "type": "integer",
+      "const": 1
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hostApi"],
+      "properties": {
+        "hostApi": { "type": "string", "pattern": "^[\\^~]?\\d+\\.\\d+\\.\\d+$" },
+        "requiredFeatures": {
+          "description": "Features the host must provide. An unknown required feature blocks activation rather than degrading silently (EXT-14).",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "execution": {
+      "description": "How extension code runs. Assertion of isolation is not proof of sandboxing (EXT-20).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["module", "declarative"] },
+        "entry": { "type": "string", "pattern": "^\\./" },
+        "isolation": { "type": "string", "enum": ["managed-process", "host-inline"] }
+      }
+    },
+    "configurationSchema": { "type": "string", "pattern": "^\\./" },
+    "permissions": {
+      "description": "Requests privileges; it does not grant them (EXT-14). The host applies its own export policy on top (EXT-23).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["networkOrigins", "inputFiles", "storage", "secrets", "nativeCode"],
+      "properties": {
+        "networkOrigins": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "inputFiles": { "type": "boolean" },
+        "storage": { "type": "string", "enum": ["none", "extension-private"] },
+        "secrets": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "nativeCode": {
+          "description": "An explicit review signal, not permission to run arbitrary operator commands.",
+          "type": "boolean"
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "assetSet", "assetLock", "platforms"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "assetSet": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "assetLock": { "type": "string", "pattern": "^\\./" },
+          "platforms": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["os", "arch"],
+              "properties": {
+                "os": { "type": "string", "enum": ["win32", "darwin", "linux"] },
+                "arch": { "type": "string", "enum": ["x64", "arm64"] },
+                "accelerator": { "type": "string", "enum": ["cpu", "gpu", "npu"] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "contractId", "contractVersion", "description", "inputSchema", "outputSchema"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 120 },
+          "name": {
+            "description": "The caller-facing tool name. A custom contribution owns it; an implementation of a standard contract must use the contract's name (EXT-21, EXT-22).",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "maxLength": 64
+          },
+          "contractId": { "type": "string", "minLength": 3, "maxLength": 214 },
+          "contractVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+          "description": { "type": "string", "minLength": 10, "maxLength": 2000 },
+          "inputSchema": { "type": "string", "pattern": "^\\./" },
+          "outputSchema": { "type": "string", "pattern": "^\\./" }
+        }
+      }
+    },
+    "implementations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "contractId", "contractVersion", "recipeVersion"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 120 },
+          "contractId": { "type": "string", "minLength": 3, "maxLength": 214 },
+          "contractVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+          "modelId": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "recipeVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "description", "path"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 120 },
+          "name": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 64 },
+          "description": { "type": "string", "minLength": 10, "maxLength": 1000 },
+          "path": { "type": "string", "pattern": "^\\./" },
+          "requiresTools": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  },
+  "patternProperties": {
+    "^x-[a-z0-9-]+$": {
+      "description": "The only extension point for vendor data. Any other unknown top-level field is rejected (EXT-14)."
+    }
+  }
+}

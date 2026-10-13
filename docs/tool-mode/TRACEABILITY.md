@@ -19,7 +19,7 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **1** / 210 (0%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **192**
+- Requirements NOT_RUN: **186**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
@@ -38,7 +38,7 @@ is the honest default rather than an omission.
 | RES | 10 | 0 | 0 | 10 | 0 |
 | CODE | 12 | 0 | 0 | 12 | 0 |
 | OBS | 5 | 0 | 0 | 5 | 0 |
-| EXT | 36 | 0 | 0 | 36 | 0 |
+| EXT | 36 | 0 | 6 | 30 | 0 |
 | HLM | 14 | 0 | 0 | 14 | 0 |
 | RCP | 12 | 0 | 0 | 12 | 0 |
 | DEC | 8 | 0 | 0 | 6 | 2 |
@@ -224,11 +224,11 @@ is the honest default rather than an omission.
 | EXT-10 | No installation scripts. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-11 | Archive and source defenses. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-12 | Integrity is not trust. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-13 | Static discovery. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-14 | Manifest fields. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-13 | Static discovery. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | discoverExtension reads package.json and the manifest as BOUNDED data (256 KB / 512 KB limits) and never imports the entry: the test fixture writes an entry that throws on import, and reaching the assertions proves it never ran. It enforces name, version, type:module, an explicit exports map, the toolMode.manifest field, containment of the manifest path, and rejects malformed or oversized JSON as INVALID_EXTENSION. Remaining: quarantine fetch, archive inspection and the install/activate lifecycle are not implemented. |
+| EXT-14 | Manifest fields. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | extension-manifest-1.1.0.schema.json ships with the SDK and is enforced at runtime via Ajv 2020-12. Beyond the schema it checks exact id/version agreement with the package, unique local ids per contribution kind, duplicate caller-facing tool NAMES reported as TOOL_NAME_CONFLICT, referenced files that must exist, paths that must not escape the package, and unknown REQUIRED features blocking activation as INCOMPATIBLE_PROTOCOL. Unknown top-level fields are rejected while the x- vendor namespace is admitted. Remaining: asset-lock validation (EXT-15) and keyed digests. |
 | EXT-15 | Model asset locks. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-16 | Versioning. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-17 | Publish the SDK and reference host. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-16 | Versioning. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | A 1.0 manifest is normalized to module execution as a VIEW, leaving the input object untouched so the recorded digest still describes the installed bytes; the lift provenance is attached after validation rather than smuggled past the closed schema. Protocol 1.1.0, runtime API major 1, and the five separate identities are documented in code. Remaining: minor-version conformance tests and the contract/recipe/model revision separation are not implemented end to end. |
+| EXT-17 | Publish the SDK and reference host. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | @try-works/tool-mode-extension-sdk exists, builds, loads standalone under plain Node, and imports neither DSH nor the Tool Mode host (asserted by test). It ships the manifest schema, JSON Schema types, lifecycle types, the management error vocabulary and manifest/discovery validation. Remaining: conformance helpers, the reference test host with a fake harness broker, and publication to npm. |
 | EXT-18 | Context contracts. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-19 | Import and lifecycle discipline. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-20 | Managed worker execution. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
@@ -236,7 +236,7 @@ is the honest default rather than an omission.
 | EXT-22 | Collision and provider selection. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-23 | Identity-bound permissions. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-24 | Coherent publication. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-25 | Persist orthogonal state. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-25 | Persist orthogonal state. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | Six orthogonal dimensions are modelled separately (installation, desired activation, observed activation, per-deployment readiness, per-profile tool selection, export authorization) and the operator summary is DERIVED rather than stored, so it cannot disagree with the parts. Tests cover installed-but-inactive, preparing, no-tools-enabled, faulted-outranks-preparing, and that local enablement is independent of export authorization. Remaining: nothing persists this state yet; there is no profile store. |
 | EXT-26 | Activate. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-27 | Deactivate. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-28 | Uninstall third-party packages. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
@@ -245,7 +245,7 @@ is the honest default rather than an omission.
 | EXT-31 | Operator experience. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-32 | Discovery and management permissions. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-33 | Store layout and immutable lock. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
-| EXT-34 | Errors. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
+| EXT-34 | Errors. | 16. Tool Mode Extension Protocol — independent model/tool... | PARTIAL | All 15 published codes exist with the operation, safe recovery advice and a retryable flag DERIVED from the code so a permission refusal cannot be mistaken for a transient fault. Recovery text is passed through a sanitiser that strips credential- and path-shaped spans. Remaining: the codes are not yet raised by install/activate/uninstall, which do not exist. |
 | EXT-35 | Provenance and telemetry. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 | EXT-36 | Author kit and independent proof. | 16. Tool Mode Extension Protocol — independent model/tool... | NOT_RUN | — |
 
