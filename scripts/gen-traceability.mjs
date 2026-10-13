@@ -76,7 +76,7 @@ function tidy(text, max = 96) {
  */
 function extractRequirements(spec) {
   const found = []
-  const re = /\*\*([A-Z]{2,6}-\d{2})\.\s*([^*]*)\*\*/g
+  const re = /\*\*([A-Z][A-Z0-9]{1,5}-\d{2})\.\s*([^*]*)\*\*/g
   let match
   while ((match = re.exec(spec.text)) !== null) {
     const line = spec.text.slice(0, match.index).split('\n').length
