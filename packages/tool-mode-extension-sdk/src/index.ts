@@ -73,3 +73,13 @@ export {
 } from './install/staged.ts'
 
 export { createZipArchiveSource } from './install/zip-source.ts'
+
+export {
+  digestInstalledContent,
+  ExtensionStore,
+  LOCK_FILE,
+  type InstalledRecord,
+  type ProfileStateFile,
+  type StateReadResult,
+  type StoreLock,
+} from './install/store.ts'

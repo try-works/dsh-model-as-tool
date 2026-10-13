@@ -18,6 +18,7 @@ import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:f
 import { join, resolve, sep } from 'node:path'
 import { ManagementError } from './../errors.ts'
 import { discoverExtension, type ExtensionDiscovery } from './../discovery.ts'
+import { digestInstalledContent, ExtensionStore } from './store.ts'
 import {
   DEFAULT_ARCHIVE_LIMITS,
   validateArchiveEntries,
@@ -106,8 +107,12 @@ export interface StagedInstallResult {
  *
  * Steps, in order: fetch into quarantine → verify integrity → list entries →
  * validate the entry list → extract → discover → validate compatibility →
- * promote atomically. A failure at any step removes the quarantine, so a partial
- * install never becomes visible.
+ * promote atomically → record the installation. A failure at any step removes the
+ * quarantine, so a partial install never becomes visible.
+ *
+ * The store is RECORDED rather than merely written to: an installation that is not
+ * in the lock document cannot be activated later, because nothing would know what
+ * bytes were approved.
  *
  * @param options - the source, the store, the injected archive source, and limits.
  * @returns the installed (but inactive) extension.
@@ -121,6 +126,8 @@ export async function stagedInstall(options: {
   readonly expectedSha512: string
   readonly archive: ArchiveSource
   readonly limits?: InstallLimits
+  /** When false, the lock document is not updated. Defaults to true. */
+  readonly record?: boolean
 }): Promise<StagedInstallResult> {
   const limits = options.limits ?? DEFAULT_INSTALL_LIMITS
   const storeDir = resolve(options.storeDir)
@@ -182,6 +189,23 @@ export async function stagedInstall(options: {
       source: { kind: options.source.kind, requested: options.source.requested },
       installedAt: new Date().toISOString(),
     }, null, 2)}\n`)
+
+    // Recorded AFTER the bytes are in place: a lock entry naming a directory that
+    // does not exist would be worse than no entry, because verification would then
+    // report a missing installation as a changed one.
+    if (options.record !== false) {
+      const store = new ExtensionStore(storeDir)
+      store.recordInstall({
+        extensionId: discovery.packageName,
+        version: discovery.packageVersion,
+        installPath: destination,
+        archiveDigest,
+        // Digest the content as installed, so a later edit is detectable.
+        contentDigest: digestInstalledContent(destination),
+        source: { kind: options.source.kind, requested: options.source.requested },
+        installedAt: new Date().toISOString(),
+      })
+    }
 
     return {
       extensionId: discovery.packageName,

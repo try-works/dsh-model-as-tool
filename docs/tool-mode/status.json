@@ -107,7 +107,7 @@
     },
     "EXT-25": {
       "status": "PARTIAL",
-      "evidence": "Six orthogonal dimensions are modelled separately (installation, desired activation, observed activation, per-deployment readiness, per-profile tool selection, export authorization) and the operator summary is DERIVED rather than stored, so it cannot disagree with the parts. Tests cover installed-but-inactive, preparing, no-tools-enabled, faulted-outranks-preparing, and that local enablement is independent of export authorization. Remaining: nothing persists this state yet; there is no profile store."
+      "evidence": "The six dimensions are modelled separately and now PERSIST: a profile state file round-trips installation, desired and observed activation, per-deployment readiness, per-profile tool selection with the selected implementation, and export authorization independently, with profiles kept apart. A corrupt or oversized file, or one malformed entry, invalidates the whole file rather than dropping just the bad part, because a file that is demonstrably untrustworthy must not activate anything. Remaining: activation does not yet write these states, so persistence is exercised by tests rather than by a lifecycle operation."
     },
     "EXT-34": {
       "status": "PARTIAL",
@@ -119,7 +119,7 @@
     },
     "EXT-08": {
       "status": "PARTIAL",
-      "evidence": "The ordered pipeline exists: fetch into a unique quarantine directory -> verify SHA-512 -> list entries -> validate the entry list -> extract -> discover as data -> promote by atomic rename -> write a receipt -> remove quarantine on every path. Fetch and extract are INJECTED, so the SDK stays free of a network stack and an archive library and every rejection path is drivable in tests. Remaining: dependency resolution and locking, the permission/licence/platform preview, and operator approval are not implemented."
+      "evidence": "The ordered pipeline runs and now RECORDS its result: fetch into a unique quarantine directory -> verify SHA-512 -> list entries -> validate the entry list -> extract -> discover as data -> promote by atomic rename -> record in the store lock -> remove quarantine on every path. Recording happens AFTER the bytes are in place, because a lock entry naming a directory that does not exist would make verification report a missing installation as a changed one. Remaining: dependency resolution and locking, the permission/licence/platform preview, and operator approval are not implemented."
     },
     "EXT-11": {
       "status": "PARTIAL",
@@ -127,7 +127,7 @@
     },
     "EXT-33": {
       "status": "PARTIAL",
-      "evidence": "An operator-owned store layout exists: <store>/extensions/<identity>/<version>, keyed by identity AND version so an update installs side by side rather than mutating a live directory, with a unique per-attempt quarantine under <store>/.staging and an install receipt. The identity is VALIDATED as a legal package name rather than escaped, so an implausible identity is refused instead of being silently installed under a mangled name. Remaining: no profile state, no dependency locks, no cleanup-pending tombstones."
+      "evidence": "The store now RECORDS what it installs: an operator-owned extensions.lock.json holds complete resolved source/identity records (identity, version, install path, archive digest, CONTENT digest, source, timestamp), so identity survives restart and a package edited on disk after installation is detected before activation rather than trusted. Version-keyed layout keeps two versions side by side. Corrupted state FAILS CLOSED: a lock or profile file that cannot be trusted yields NO records and a diagnostic, never a fallback to \"everything installed is active\", and a lock that could not be read is refused as an append target rather than silently overwritten. All writes are atomic (temp plus rename) and a failed write throws instead of reporting success. Remaining: per-install dependency locks and transaction records are not implemented, and cleanup-pending tombstones do not exist."
     }
   },
   "acceptance": {
@@ -138,6 +138,10 @@
     "AT-01": {
       "status": "NOT_RUN",
       "evidence": "Requires a clean compatible DSH installation and a built tarball of the Tool Mode bundle. The packages build and install individually, but the bundle does not exist yet."
+    },
+    "AT-18": {
+      "status": "PARTIAL",
+      "evidence": "The durable-write half is satisfied for the extension store: a write that fails throws rather than reporting success, all writes go through a temporary file and a rename, and no temporary file survives. Corrupted state fails closed with a diagnostic rather than enabling every installed package. Remaining: the migration half (existing enable/disable choices surviving an upgrade) is not exercised, because the extension store has no prior format to migrate from."
     }
   }
 }
