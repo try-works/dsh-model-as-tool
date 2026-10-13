@@ -5,6 +5,7 @@ lib/
 
 # Local spike used to probe upstream SDK behaviour; not part of the deliverable.
 spike/
+spike-mcp/
 
 # Raw upstream captures are an input to the research, not the research itself.
 research/raw/
