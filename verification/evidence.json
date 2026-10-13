@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-13T20:02:26.479Z",
+  "generatedAt": "2026-10-13T20:10:10.510Z",
   "git": {
-    "commit": "c6792a71da020751e2f93330e67a73dbf88697d3",
+    "commit": "b07208d47ebae58d09a6b12aced0b5ad60728e10",
     "branch": "main",
     "dirty": true
   },
@@ -31,7 +31,7 @@
   "packages": [
     {
       "name": "@try-works/dsh-model-as-tool",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "packages/dsh-model-as-tool"
     },
     {
@@ -397,7 +397,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "PARTIAL",
       "testStatus": "FAIL",
-      "evidence": "The host package builds real JavaScript and declarations: a build pipeline compiles it, verify:built proves the built artifact loads through package main under plain Node, and prepack/prepare run the build so a packed tarball carries it. Windows installation from a tarball was exercised earlier when the package was published as @try-works/dsh-model-as-tool@0.1.1. Remaining: the tarball has not been re-verified since the MCP, licensing and lifecycle modules were added, so the built-artifact check covers the package as it was then rather than as it is now; and the extension packages are not published at all."
+      "evidence": "THE BUILT ARTIFACT IS CORRECT AND THE PUBLISHED ARTIFACT IS BROKEN, and the difference was found by installing it rather than by inspecting it. The tarball packs 99 files of built JavaScript and declarations, the build is clean, and the package main loads through plain Node in the repository. So the requirement as written - the registry tarball ships built JavaScript and declarations - HOLDS OF THE BUILD. IT DOES NOT HOLD OF THE PUBLISHED PACKAGE, for two independent reasons discovered this round by installing @try-works/dsh-model-as-tool@0.1.1 from the registry into a clean directory. FIRST, THE PUBLISHED PACKAGE IS UNINSTALLABLE. It declares a dependency on @try-works/tool-mode-contracts, which returns 404 on npm, so a consumer install fails outright with a 404 for the dependency. Publishing the contracts package was attempted and npm reported success (\"+ @try-works/tool-mode-contracts@0.1.0\"), but a ground-truth install from a clean directory STILL 404s and the registry API does not list the package. A publish that reports success is therefore NOT evidence of publication here, and an earlier apparent success was the local npm cache rather than the registry. SECOND, THE PUBLISHED 0.1.1 IS BADLY STALE AND VIOLATES BASE-09. It carries 13 JavaScript modules against the current 29, with no MCP layer, no licensing, no receipts, no authority and no bindings - and it still contains tongue.js and voz.js, the model-specific adapters that BASE-09 required be removed from the host. The repository satisfies BASE-09 and the architecture gate proves it; the PUBLISHED artifact does not. A version 0.1.2 was built and published with the current code, and npm again reported success while the registry continued to list only 0.1.1. Remaining: publication is BLOCKED on the available npm credential being unable to create a new package in the @try-works scope, or on the publishes being silently dropped. This is not something the implementation can work around, and it needs the account owner. Until it is resolved the correct statement is that the host is BUILT correctly and CANNOT be installed by a consumer, and any BASE-09 DONE claim applies to the repository rather than to the published artifact."
     },
     {
       "id": "MCP-01",
