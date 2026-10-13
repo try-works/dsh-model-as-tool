@@ -26,6 +26,7 @@ import { registerModelTool } from './registrar.ts'
 import { registerContractTool, type ContractBinding, type HostIdentity } from './bindings.ts'
 import { createGrant } from './authority.ts'
 import { ProviderBridge } from './provider-bridge.ts'
+import { buildSurface } from './publication.ts'
 import { STANDARD_CONTRACTS, type ToolContract } from '@try-works/tool-mode-contracts'
 import { renderSkillBody } from './skills.ts'
 import { loadPlaybooks } from './playbook.ts'
@@ -379,6 +380,52 @@ export function apply(ctx: Context, config: Config = {}): void {
         )
         return false
       }
+
+      /**
+       * EXT-24: decide what may be published BEFORE registering anything.
+       *
+       * The surface is built whole and consulted first, so a tool is registered
+       * only when the surface actually published it. Registering first and
+       * reconciling afterwards is the state EXT-24 forbids: a caller would observe
+       * an available tool whose binding was not yet in place.
+       */
+      const surface = buildSurface({
+        generation: host.activationGeneration,
+        tools: [{
+          name: binding.contract.toolName,
+          contractId: binding.contract.contract,
+          selectedModelId: binding.implementation.id,
+          implementations: [
+            {
+              extensionId: binding.implementation.provider?.extension ?? binding.implementation.npmPackage ?? 'unknown',
+              modelId: binding.implementation.id,
+              // There is no preparation lifecycle yet, so a model the capability
+              // resolver proved runnable is treated as ready. When preparation
+              // exists this reads the deployment's real readiness instead, and the
+              // surface already withholds the tool when it is not ready.
+              readiness: 'ready',
+              runnable: true,
+            },
+            ...binding.alternatives.map(alternativeId => ({
+              extensionId: alternativeId,
+              modelId: alternativeId,
+              readiness: 'ready' as const,
+              runnable: true,
+            })),
+          ],
+        }],
+        skills: [],
+      })
+      const decision = surface.tools[0]
+      if (decision === undefined) {
+        const reason = surface.withheld[0]
+        ctx.logger.info(
+          `model-tools: ${entry.name} is active but its tool is withheld (${reason?.code ?? 'unknown'}): `
+          + `${reason?.message ?? 'no reason reported'}`,
+        )
+        return false
+      }
+
       const existing = registeredContracts.get(entry.contract)
       if (existing !== undefined) {
         // Already served by another implementation: this model joins that tool.
