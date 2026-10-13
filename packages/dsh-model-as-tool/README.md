@@ -137,6 +137,57 @@ npm i @desert-ant-labs/voz onnxruntime-node   # transcription on Windows/Linux/m
 
 The plugin never bundles or re-hosts model weights.
 
+## What gets downloaded, and when
+
+Three separate things arrive at three separate times. Measured sizes are from a
+Windows x64 install of this package.
+
+**1. The plugin itself — ~58 kB, from npm, at install.** `lib/`, the two catalog
+JSON files, `cordis.patch.yml` and this README. It contains **no model weights
+and no inference runtime**.
+
+**2. The model SDK packages — from npm, at install, only if you asked for them.**
+They are `optionalDependencies`, so a failed or skipped download does not fail the
+install; the capability resolver simply reports the model as unavailable.
+
+| Package | Size on disk | Contains |
+| --- | --- | --- |
+| `@desert-ant-labs/tongue` | 2.1 MB | **The model itself** — `tongue_int8.bin` (2.0 MB) ships inside the tarball |
+| `@desert-ant-labs/voz` | 44.2 MB | The WebAssembly runtime (`VozWeb.wasm`), not the weights |
+| `onnxruntime-node` | 287.1 MB | The prebuilt inference engine for this platform |
+
+**3. The weights — from Hugging Face, on first call, not at install.** Each SDK
+pins one revision and verifies the download, then caches it. Voz fetches about
+**367 MB** on its first transcription:
+
+```
+~/.cache/desert-ant-models/desert-ant-labs/voz      367 MB   (first call)
+```
+
+Tongue never downloads anything: its model is inside the npm package.
+
+Point an SDK at a pre-populated folder to run offline (each adapter accepts a
+`directory`), and set `HF_TOKEN` for a gated repo. Because the licence forbids
+redistribution, the plugin never bundles or mirrors weights — it downloads them
+the way the vendor intends, once, into the vendor's own cache.
+
+### Install cost is real, so it is opt-out
+
+Installing with the optional dependencies present pulls roughly **333 MB** before
+any model runs, and a first Voz call adds **367 MB** more. If that is unwanted,
+install the plugin with them skipped and add only what you use:
+
+```sh
+npm i @try-works/dsh-model-as-tool --omit=optional
+npm i @desert-ant-labs/tongue        # 2 MB, and its model is included
+```
+
+**Watch out for the other model packages.** They ship prebuilt native cores for
+`linux-x64`, `linux-arm64` and `darwin-arm64` inside one tarball — roughly 50 MB
+each — so `@desert-ant-labs/redact` is ~166 MB of which the great majority is
+Linux and macOS binaries that can never load on Windows. Installing one on
+Windows buys ~130 MB that cannot run.
+
 ## Development
 
 ```sh

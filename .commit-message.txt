@@ -1,0 +1,18 @@
+docs: document what gets downloaded, and when
+
+Three separate things arrive at three separate times, and the README did not say
+so. Measured on a Windows x64 install:
+
+- the plugin itself, ~58 kB from npm, containing no weights or runtime
+- the model SDK packages from npm: tongue 2.1 MB (its model file is INSIDE the
+  tarball), voz 44.2 MB (WASM runtime only), onnxruntime-node 287.1 MB
+- the weights from Hugging Face on first call: voz ~367 MB cached under
+  ~/.cache/desert-ant-models; tongue never downloads
+
+Also records two costs a user should be able to see before installing: the
+optional dependency set pulls ~333 MB before any model runs, and the other model
+packages ship native cores for three platforms in one tarball, so ~130 MB of
+@desert-ant-labs/redact is Linux/macOS binaries that cannot load on Windows.
+
+Cross-checked against the upstream SDK README, which states the same mechanism
+(download on first use, pinned revision, verified, Tongue bundled).
