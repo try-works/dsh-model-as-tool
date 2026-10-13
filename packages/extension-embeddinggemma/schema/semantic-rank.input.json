@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "semantic_rank input",
+  "description": "Input for semantic_rank: a query and its candidates embedded over EmbeddingGemma 2, ranked by cosine similarity (MOD-10). The implementation enforces the two bounds JSON Schema cannot express — `top_k` must not exceed the number of candidates, and candidate ids must be unique — because a short result would otherwise be indistinguishable from having ranked fewer candidates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query", "candidates"],
+  "properties": {
+    "query": { "$ref": "#/$defs/item" },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/item" },
+      "description": "The candidates in the caller's order. That order is what breaks an exact score tie (MOD-10), so it is part of the answer, not incidental."
+    },
+    "top_k": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 256,
+      "description": "How many ranked results to return. It must not exceed `candidates.length`; the implementation rejects that rather than returning fewer rows (MOD-10, TOOL-05)."
+    },
+    "dimensions": {
+      "type": "integer",
+      "enum": [768, 512, 256, 128],
+      "default": 768,
+      "description": "The width the query and every candidate are embedded at. All of them share one width and one space, or the scores are not comparable (MOD-04, MOD-14)."
+    }
+  },
+  "$defs": {
+    "timeRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startSeconds", "endSeconds"],
+      "properties": {
+        "startSeconds": { "type": "number", "minimum": 0 },
+        "endSeconds": { "type": "number", "minimum": 0 }
+      },
+      "description": "A source interval in seconds. The implementation refuses an inverted or empty interval (MOD-18)."
+    },
+    "videoSampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "maxFrames"],
+      "properties": {
+        "mode": { "const": "uniform" },
+        "maxFrames": { "type": "integer", "minimum": 1, "maximum": 300 }
+      },
+      "description": "MOD-08: sampling is requested explicitly and the timestamps actually used are returned."
+    },
+    "mediaPart": {
+      "description": "One part of an item, as a closed discriminated union on `kind`. Part order is significant and is never flattened (MOD-06).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "text"],
+          "properties": {
+            "kind": { "const": "text" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "text"],
+          "properties": {
+            "kind": { "const": "code" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "language": { "type": "string", "minLength": 1, "maxLength": 64 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "image" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "audio" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "range": { "$ref": "#/$defs/timeRange" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path", "sampling"],
+          "properties": {
+            "kind": { "const": "video" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "range": { "$ref": "#/$defs/timeRange" },
+            "sampling": { "$ref": "#/$defs/videoSampling" }
+          }
+        }
+      ]
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "parts"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/mediaPart" }
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    }
+  }
+}

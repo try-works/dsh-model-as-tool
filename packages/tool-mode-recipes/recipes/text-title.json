@@ -1,0 +1,45 @@
+{
+  "id": "text-title",
+  "version": "1.0.0",
+  "description": "Proposes a bounded title and description for supplied text through an authorized harness model, using the TOOL-06 rules to refuse invented facts and empty titles.",
+  "tool": {
+    "name": "text_title",
+    "contractId": "text.title"
+  },
+  "inputs": {
+    "text": {
+      "type": "string",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 32768,
+      "description": "The text to propose a title for."
+    },
+    "kind": {
+      "type": "string",
+      "required": false,
+      "enum": [
+        "section",
+        "page",
+        "document"
+      ],
+      "default": "section",
+      "description": "What is being titled."
+    },
+    "repairFeedback": {
+      "type": "string",
+      "required": false,
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "Validation feedback for a permitted single repair (HLM-07)."
+    }
+  },
+  "promptTemplate": "Propose a title and a one-sentence description for the {{kind}} text supplied below.\n\nRules:\n- The title must be at most 80 characters and the description at most 240.\n- State only what the text supports. Never mention a number, name, version or count that does not appear in the text.\n- Keep the meaning of the source: title its actual subject and do not broaden, narrow or reinterpret the claim.\n- Do not call another tool. Do not ask for more input.\n\nText to title:\n{{text}}\n\nReply with ONE JSON object and nothing else, in exactly this shape:\n{\"title\": \"...\", \"description\": \"...\"}\nIf the text cannot be titled, reply with {\"refused\": true, \"refusalReason\": \"...\"} instead.\nNever reply with an empty title, and never wrap the JSON in prose or a code fence.\n\nValidation feedback from a previous attempt: {{repairFeedback}}",
+  "maxOutputTokens": 512,
+  "imageInputs": {
+    "max": 0
+  },
+  "policy": {
+    "record": true,
+    "allowRemote": true
+  }
+}

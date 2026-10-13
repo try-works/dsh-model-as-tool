@@ -1,0 +1,164 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/extension-embeddinggemma",
+  "version": "0.1.0",
+  "displayName": "EmbeddingGemma 2 multimodal embeddings",
+  "description": "Multimodal embedding and retrieval tools over EmbeddingGemma 2 (google/embeddinggemma-2 through a pinned ONNX conversion): multimodal_embed produces 768-, 512-, 256- or 128-dimensional L2-normalized vectors, and semantic_similarity and semantic_rank apply deterministic cosine math over them. This build declares the deployment, its asset groups and its tool contracts and implements the deterministic vector operations; it wires no ONNX session yet, so the tools report needs-preparation instead of pretending to run.",
+  "license": "MIT",
+  "activation": {
+    "policy": "operator",
+    "deactivatable": true
+  },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": []
+  },
+  "execution": {
+    "kind": "module",
+    "entry": "./lib/index.js",
+    "isolation": "host-inline"
+  },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": true,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": true
+  },
+  "models": [
+    {
+      "id": "embeddinggemma-2",
+      "assetSet": "embeddinggemma-2-onnx",
+      "assetLock": "./models.lock.json",
+      "platforms": [
+        {
+          "os": "win32",
+          "arch": "x64",
+          "accelerator": "cpu"
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "id": "multimodal-embed",
+      "name": "multimodal_embed",
+      "contractId": "@try-works/extension-embeddinggemma/multimodal_embed",
+      "contractVersion": "1.0.0",
+      "description": "Embed one or more items into a shared embedding space over EmbeddingGemma 2. Returns L2-normalized vectors of 768, 512, 256 or 128 dimensions plus a per-item processing record of the modality, source range and video sampling that produced each one. This build reads text and code parts only: image, audio and video parts are refused by name until the Node decoders are wired. It does not describe an image in words, transcribe speech, return OCR text or produce calibrated decisions.",
+      "inputSchema": "./schema/multimodal-embed.input.json",
+      "outputSchema": "./schema/multimodal-embed.output.json"
+    },
+    {
+      "id": "semantic-similarity",
+      "name": "semantic_similarity",
+      "contractId": "@try-works/extension-embeddinggemma/semantic_similarity",
+      "contractVersion": "1.0.0",
+      "description": "Cosine similarity between two items embedded in one space over EmbeddingGemma 2, supporting text-to-text, text-to-image, text-to-audio and image-to-image pairings on a qualified build. The score is a cosine similarity, not a probability that the two mean the same thing, and it is comparable only within one embedding space. This build reads text and code parts only, so any media part is refused by name rather than silently ignored.",
+      "inputSchema": "./schema/semantic-similarity.input.json",
+      "outputSchema": "./schema/semantic-similarity.output.json"
+    },
+    {
+      "id": "semantic-rank",
+      "name": "semantic_rank",
+      "contractId": "@try-works/extension-embeddinggemma/semantic_rank",
+      "contractVersion": "1.0.0",
+      "description": "Rank candidate items against a query by embedding cosine similarity over EmbeddingGemma 2, returning the caller's own IDs in stable descending score order with exact ties broken by input order. This is embedding ranking, not the cross-encoder text_rerank tool: the two produce different score kinds and are not interchangeable. This build reads text and code parts only, so any media part is refused by name.",
+      "inputSchema": "./schema/semantic-rank.input.json",
+      "outputSchema": "./schema/semantic-rank.output.json"
+    }
+  ],
+  "implementations": [
+    {
+      "id": "embeddinggemma2-onnx",
+      "contractId": "@try-works/extension-embeddinggemma/multimodal_embed",
+      "contractVersion": "1.0.0",
+      "modelId": "embeddinggemma-2",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "embeddinggemma2-similarity",
+      "contractId": "@try-works/extension-embeddinggemma/semantic_similarity",
+      "contractVersion": "1.0.0",
+      "modelId": "embeddinggemma-2",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "embeddinggemma2-rank",
+      "contractId": "@try-works/extension-embeddinggemma/semantic_rank",
+      "contractVersion": "1.0.0",
+      "modelId": "embeddinggemma-2",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": [],
+  "licenses": [
+    {
+      "layer": "code",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "weights",
+      "name": "Apache License 2.0",
+      "url": "https://huggingface.co/google/embeddinggemma-2",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": true,
+      "attributionText": "EmbeddingGemma 2 by Google, licensed under the Apache License 2.0",
+      "obligations": [
+        "preserve the Apache-2.0 licence text and any NOTICE the model repository ships",
+        "state that the ONNX artifacts are a conversion of google/embeddinggemma-2 and record what was changed",
+        "the terms at the cited model card are the authority; this declaration records what the model card states, and a reviewer should read it rather than trust the label"
+      ]
+    },
+    {
+      "layer": "engine",
+      "name": "ONNX Runtime (MIT), installed from npm by the operator",
+      "url": "https://github.com/microsoft/onnxruntime/blob/main/LICENSE",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": true,
+      "attributionText": "ONNX Runtime",
+      "obligations": [
+        "preserve the ONNX Runtime licence notice",
+        "onnxruntime-node ships a prebuilt native binding, so the deployment carries native code (declared in permissions)"
+      ]
+    },
+    {
+      "layer": "sdk",
+      "name": "Transformers.js / @huggingface/transformers (Apache License 2.0)",
+      "url": "https://github.com/huggingface/transformers.js/blob/main/LICENSE",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": true,
+      "attributionText": "Transformers.js by Hugging Face",
+      "obligations": [
+        "preserve the Apache-2.0 licence text and the NOTICE for Transformers.js",
+        "the client library is an ordinary npm dependency the operator installs; the extension performs no network call of its own"
+      ]
+    },
+    {
+      "layer": "conversion-artifacts",
+      "name": "Apache License 2.0 conversion artifacts derived from google/embeddinggemma-2",
+      "url": "https://huggingface.co/onnx-community/embeddinggemma-2-ONNX",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": true,
+      "attributionText": "Apache License 2.0 conversion of EmbeddingGemma 2 (onnx-community)",
+      "obligations": [
+        "derive the conversion from the Apache-2.0 source checkpoint and inherit its terms",
+        "record the exact conversion, quantization profile and preprocessor the qualified artifact was produced with (MOD-01); none is recorded yet, and models.lock.json says so"
+      ]
+    }
+  ],
+  "network": {
+    "requiredTelemetry": false,
+    "otherNetworkUse": true
+  }
+}

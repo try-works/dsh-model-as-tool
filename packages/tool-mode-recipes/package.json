@@ -1,0 +1,38 @@
+{
+  "name": "@try-works/tool-mode-recipes",
+  "version": "0.1.0",
+  "description": "Declarative harness-model recipe format, a provider-neutral LLM broker and the built-in text_title and describe_image recipes",
+  "license": "MIT",
+  "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/try-works/dsh-model-as-tool.git",
+    "directory": "packages/tool-mode-recipes"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": { "types": "./lib/index.d.ts", "default": "./lib/index.js" },
+    "./recipes/text-title.json": "./recipes/text-title.json",
+    "./recipes/describe-image.json": "./recipes/describe-image.json",
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "lib/**/*.d.ts.map",
+    "recipes/*.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

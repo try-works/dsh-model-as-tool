@@ -1,0 +1,44 @@
+{
+  "name": "@try-works/extension-embeddinggemma",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "First-party Tool Mode extension implementing multimodal_embed, semantic_similarity and semantic_rank on EmbeddingGemma 2",
+  "license": "MIT",
+  "exports": {
+    "./tool-mode": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./vectors": {
+      "types": "./lib/vectors.d.ts",
+      "default": "./lib/vectors.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "schema",
+    "tool-mode.extension.json",
+    "models.lock.json",
+    "README.md"
+  ],
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@try-works/tool-mode-extension-sdk": "^0.1.0"
+  },
+  "optionalDependencies": {
+    "@huggingface/transformers": "^3.0.0",
+    "onnxruntime-node": "^1.20.0"
+  },
+  "devDependencies": {
+    "@try-works/tool-mode-extension-sdk": "^0.1.0",
+    "ajv": "^8.20.0"
+  }
+}

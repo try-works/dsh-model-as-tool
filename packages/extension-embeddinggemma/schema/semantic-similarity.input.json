@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "semantic_similarity input",
+  "description": "Input for semantic_similarity: two items embedded with the qualified SYMMETRIC similarity recipe and compared by cosine in one space (MOD-09). Both items must be embedded at the same width and with the same recipe; the implementation refuses a pairing that would compare two different spaces rather than returning a number that looks plausible.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["left", "right"],
+  "properties": {
+    "left": { "$ref": "#/$defs/item" },
+    "right": { "$ref": "#/$defs/item" },
+    "dimensions": {
+      "type": "integer",
+      "enum": [768, 512, 256, 128],
+      "default": 768,
+      "description": "The width both sides are embedded at. One width for both: comparing vectors of different widths is meaningless similarity, not a smaller comparison (MOD-04, BASE-12)."
+    }
+  },
+  "$defs": {
+    "timeRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startSeconds", "endSeconds"],
+      "properties": {
+        "startSeconds": { "type": "number", "minimum": 0 },
+        "endSeconds": { "type": "number", "minimum": 0 }
+      },
+      "description": "A source interval in seconds. The implementation refuses an inverted or empty interval (MOD-18); JSON Schema cannot express the ordering."
+    },
+    "videoSampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "maxFrames"],
+      "properties": {
+        "mode": { "const": "uniform" },
+        "maxFrames": { "type": "integer", "minimum": 1, "maximum": 300 }
+      },
+      "description": "MOD-08: the caller requests sampling explicitly and the timestamps actually used are returned."
+    },
+    "mediaPart": {
+      "description": "One part of an item, as a closed discriminated union on `kind`. Part order is significant and is never flattened (MOD-06).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "text"],
+          "properties": {
+            "kind": { "const": "text" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "text"],
+          "properties": {
+            "kind": { "const": "code" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "language": { "type": "string", "minLength": 1, "maxLength": 64 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "image" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "audio" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "range": { "$ref": "#/$defs/timeRange" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path", "sampling"],
+          "properties": {
+            "kind": { "const": "video" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "range": { "$ref": "#/$defs/timeRange" },
+            "sampling": { "$ref": "#/$defs/videoSampling" }
+          }
+        }
+      ]
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "parts"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/mediaPart" }
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    }
+  }
+}

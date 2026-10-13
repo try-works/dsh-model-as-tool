@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "multimodal_embed output",
+  "description": "Output for multimodal_embed: one vector per input item in input order, plus the processing record that says which modality, source range and video sampling produced it. The `meta` envelope is the shared Tool Mode envelope (DECL-03), stamped by the host: the implementation must not supply it, and the schema requires it so a result cannot reach a caller without provenance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["vectors", "processing", "meta"],
+  "properties": {
+    "vectors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/vector" }
+    },
+    "processing": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/processing" }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract", "contractVersion", "implementationId", "extension",
+        "extensionVersion", "activationGeneration", "executionLocation",
+        "receiptId", "warnings"
+      ],
+      "properties": {
+        "contract": { "type": "string", "minLength": 1 },
+        "contractVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "implementationId": { "type": "string", "minLength": 1 },
+        "extension": { "type": "string", "minLength": 1 },
+        "extensionVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+" },
+        "activationGeneration": { "type": "integer", "minimum": 0 },
+        "executionLocation": { "type": "string", "enum": ["host", "device", "team-server", "remote"] },
+        "receiptId": { "type": "string", "minLength": 1 },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      },
+      "description": "The shared Tool Mode envelope, identical to TOOL_META_SCHEMA in @try-works/tool-mode-contracts (DECL-03)."
+    }
+  },
+  "$defs": {
+    "vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "values", "dimensions", "normalized", "embeddingSpaceId", "purpose", "role"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "values": {
+          "type": "array",
+          "minItems": 128,
+          "maxItems": 768,
+          "items": { "type": "number" },
+          "description": "The embedding. MOD-04 requires every element to be finite and the length to match `dimensions`; JSON Schema cannot express finiteness, so validateVector enforces it and a non-finite element is a rejection rather than something normalized away."
+        },
+        "dimensions": { "type": "integer", "enum": [768, 512, 256, 128] },
+        "normalized": {
+          "const": true,
+          "description": "Unit-norm L2. Always true: the derived tools compute cosines, and a dot product over unnormalized vectors is not a cosine (MOD-03, MOD-04)."
+        },
+        "embeddingSpaceId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The canonical identity of the space that produced this vector, computed from content rather than from a mutable model name (MOD-03). Two vectors may be compared only when this matches."
+        },
+        "purpose": { "type": "string", "enum": ["retrieval", "code_retrieval", "similarity", "classification", "clustering"] },
+        "role": { "type": "string", "enum": ["query", "document", "symmetric"] }
+      }
+    },
+    "processing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "modalities", "sourceRanges", "sampledVideoFrames", "observedAudioSampleRates", "truncated"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "modalities": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "enum": ["text", "code", "image", "audio", "video"] }
+        },
+        "sourceRanges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["partIndex", "range"],
+            "properties": {
+              "partIndex": { "type": "integer", "minimum": 0 },
+              "range": { "$ref": "#/$defs/timeRange" }
+            }
+          }
+        },
+        "sampledVideoFrames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["partIndex", "timestampsSeconds"],
+            "properties": {
+              "partIndex": { "type": "integer", "minimum": 0 },
+              "timestampsSeconds": { "type": "array", "items": { "type": "number", "minimum": 0 } }
+            }
+          },
+          "description": "The TRUE source timestamps of the frames that were used, so a caller can tell what was examined rather than what was requested (MOD-08)."
+        },
+        "observedAudioSampleRates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["partIndex", "sourceHz", "modelHz"],
+            "properties": {
+              "partIndex": { "type": "integer", "minimum": 0 },
+              "sourceHz": { "type": "number", "exclusiveMinimum": 0 },
+              "modelHz": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        },
+        "truncated": {
+          "const": false,
+          "description": "Always false in v1. This release REJECTS an item that cannot fit the qualified context instead of dropping part of it (MOD-08); a value of true would need a new documented schema, not a quiet change here."
+        }
+      }
+    },
+    "timeRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startSeconds", "endSeconds"],
+      "properties": {
+        "startSeconds": { "type": "number", "minimum": 0 },
+        "endSeconds": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
