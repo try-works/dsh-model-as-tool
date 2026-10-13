@@ -1,0 +1,27 @@
+docs: compare dsh-model-as-tool with the "Tool Mode" proposal
+
+Adds docs/tool-mode-comparison.md, an evidence-based review of an external
+design write-up that proposes a portable capability runtime with this plugin as
+its first harness binding.
+
+Checked rather than assumed:
+- the cited prior work is real (D:\DEV\dsh-stt has src/provider-kit/{audio,http,
+  oneshot,preparation,worker}.js and per-provider spec.js files; D:\DEV\role-model
+  exists), so the proposal rests on inspected code
+- `capability` is a metadata string only: grepping src/ finds it in types and
+  comments, and nothing branches on it
+- no receipt, policy, artifact or version concept exists anywhere in src/
+- path arguments are unvalidated (no existsSync/isAbsolute/realpath in the
+  adapters or transport)
+
+Records eight places the plugin already matches the proposal, seven where it is
+genuinely behind (capability-as-label, no receipts, unvalidated paths,
+unapproved downloads, single lifecycle strategy, generic transports being the
+"model name" anti-pattern, and no quality evaluation), and where I would push
+back: building a resolver with one implementation per capability and a host where
+only 2 of 18 models can run is architecture ahead of demand.
+
+One correction to the write-up: the "returns nonsense with confidence" warning is
+quoted from the Ear model page motivating Ear, not from Voz's own documentation,
+though the risk does apply to any transcriber. Our Voz skill nevertheless omits
+that warning, which is a real content gap.
