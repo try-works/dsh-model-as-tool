@@ -1,0 +1,13 @@
+{
+  "name": "@try-works/fixture-slice1",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Slice 1 fixture extension: a deterministic tool with no model, used to prove the external-extension path installs, activates, executes and uninstalls.",
+  "type": "module",
+  "exports": {
+    "./tool-mode": "./lib/index.js"
+  },
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  }
+}

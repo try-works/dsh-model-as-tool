@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["token"],
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "The token to echo.",
+      "maxLength": 256
+    },
+    "upper": {
+      "type": "boolean",
+      "description": "Upper-case the echoed token."
+    }
+  }
+}

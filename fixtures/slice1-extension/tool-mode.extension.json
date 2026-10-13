@@ -1,0 +1,91 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/fixture-slice1",
+  "version": "1.0.0",
+  "displayName": "Slice 1 fixture",
+  "description": "A deterministic extension used to prove the external-extension path end to end. It owns no model and performs no inference, so every result it produces is reproducible without a runtime, weights or a network.",
+  "activation": {
+    "policy": "operator"
+  },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": []
+  },
+  "execution": {
+    "kind": "module",
+    "entry": "./lib/index.js"
+  },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": false
+  },
+  "licenses": [
+    {
+      "layer": "code",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "engine",
+      "name": "none: the fixture implements its tool directly",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "weights",
+      "name": "none: the fixture owns no model",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "sdk",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "conversion-artifacts",
+      "name": "none: no conversion step is performed",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    }
+  ],
+  "network": {
+    "requiredTelemetry": false,
+    "otherNetworkUse": false
+  },
+  "models": [],
+  "tools": [
+    {
+      "id": "fixture-echo",
+      "name": "fixture_echo",
+      "contractId": "fixture.echo",
+      "contractVersion": "1.0.0",
+      "description": "Echo the supplied token back, optionally upper-cased, to prove a call reached this extension. It performs no inference and touches no file or network.",
+      "inputSchema": "./schemas/input.json",
+      "outputSchema": "./schemas/output.json"
+    }
+  ],
+  "implementations": [],
+  "skills": []
+}
