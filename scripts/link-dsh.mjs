@@ -51,6 +51,25 @@ const PEERS = {
   '@deepseek-ai/dsh-session': 'packages/core/session',
   '@deepseek-ai/dsh-util-values': 'packages/util/values',
   '@deepseek-ai/dsh-ptc-runtime': 'packages/ptc-runtime/ptc-runtime',
+  /**
+   * The Node PTC backend and the services it composes.
+   *
+   * `dsh-ptc-runtime-node` is NOT in this repo's node_modules and NOT in any DSH profile
+   * directory — it resolves only from the base bundle. Without a link here the import
+   * fails with ERR_MODULE_NOT_FOUND, which is what made slice 2 look like a missing
+   * upstream product when it was a missing resolution path. Its own peer set is
+   * `dsh-ptc-runtime, dsh-session, dsh-timeout, dsh-fs, dsh-subprocess, dsh-sandbox,
+   * dsh-sandbox-policy`, and every target below was confirmed to exist on this host.
+   */
+  '@deepseek-ai/dsh-ptc-runtime-node': 'packages/ptc-runtime/ptc-runtime-node',
+  '@deepseek-ai/dsh-fs': 'packages/fs/fs',
+  '@deepseek-ai/dsh-fs-local': 'packages/fs/fs-local',
+  '@deepseek-ai/dsh-subprocess': 'packages/subprocess/subprocess',
+  '@deepseek-ai/dsh-subprocess-local': 'packages/subprocess/subprocess-local',
+  '@deepseek-ai/dsh-sandbox': 'packages/sandbox/sandbox',
+  '@deepseek-ai/dsh-sandbox-local': 'packages/sandbox/sandbox-local',
+  '@deepseek-ai/dsh-session-projection': 'packages/session/session-projection',
+  '@deepseek-ai/dsh-timeout': 'packages/util/timeout',
   '@deepseek-ai/dsh-user-approval': 'packages/interaction/user-approval',
   '@deepseek-ai/dsh-sandbox-policy': 'packages/sandbox/sandbox-policy',
 }
