@@ -1,4 +1,4 @@
-# dsh-model-tools
+# dsh-model-as-tool
 
 Install on-device models as DSH tools and skills, with per-platform capability
 gating. Ships with the [Desert Ant Labs](https://desertant.com/models/) catalog.
@@ -88,8 +88,33 @@ service, so the bridge must be your own machine.
 ## Installing tools at run time
 
 `model_tools` actions: `list`, `installed`, `describe <id>`, `enable <id>`,
-`disable <id>`. Enabling a model that cannot run here fails with the resolver's
-reason instead of silently doing nothing.
+`disable <id>`, `reset [<id>]`.
+
+**Enable and disable are remembered across restarts.** A plugin `config` states
+the *deployment* default; `enable`/`disable` record the *user's* choice on top of
+it:
+
+- `disable` always wins, so a user can turn off something the config ships.
+- `enable` adds to the config selection, so a user can turn something on without
+  editing YAML.
+- `reset` forgets the choice and makes the configuration authoritative again.
+
+Choices are stored as JSON at `<DSH_HOME>/model-as-tool/state.json`, written
+through a temporary file and a rename so a crash cannot leave a truncated
+document that reads as "everything is gone".
+
+```json
+{ "enabled": ["voz"], "disabled": ["tongue"] }
+```
+
+The plugin writes its own state file rather than rewriting your
+`cordis.patch.yml`: a rewrite there would fight the profile's reload and could
+clobber comments you wrote. Point it elsewhere with `stateFile`, or set
+`persist: false` for the earlier session-scoped behaviour.
+
+Enabling a model that cannot run here fails with the resolver's reason and
+nothing is written — persisting a failed enable would install it silently on the
+next start.
 
 ## Install
 
@@ -139,20 +164,35 @@ build whose behaviour proves the plugin is installable; passing tests against
 | Command | Purpose |
 | --- | --- |
 | `npm run demo` | Mount the plugin on a real context and print what it registered |
+| `npm run gating` | Print the resolved route for every catalogued model |
 | `npm run gen-docs` | Regenerate the data-derived docs from the catalog |
 | `npm run bridge` | Run the reference bridge for an Apple/Linux machine |
+
+Tests always mount through `tests/helpers.ts`, which points the durable state at
+a throwaway directory. That is not cosmetic: the plugin writes user choices into
+`DSH_HOME` by default, so an unisolated test would edit the developer's real
+configuration and a later test would read those edits as a user decision.
 
 ## Configuration
 
 ```yaml
 - id: model-tools
-  name: '@dsh-plugins/dsh-model-tools'
+  name: '@try-works/dsh-model-as-tool'
   config:
     models: []              # empty = every runnable model; or list ids, e.g. [tongue]
     exclude: []             # ids to drop after `models`
     exposeUnavailable: false # true registers tools that will fail at call time
     registerSkills: true
     registerControlTool: true
+    persist: true           # remember enable/disable across restarts
+    # stateFile: /path/to/state.json   # default <DSH_HOME>/model-as-tool/state.json
+    allowNpm: true          # false forces the CLI/bridge routes
+    cli:
+      enabled: true         # use the Desert Ant CLI when it is on PATH
+      command: desertant
+    remote:
+      endpoint: ''          # a bridge on a machine that can run what this one cannot
+      token: ''
     # catalogFile: /path/to/other-catalog.json
     # playbookFile: /path/to/other-playbooks.json
 ```

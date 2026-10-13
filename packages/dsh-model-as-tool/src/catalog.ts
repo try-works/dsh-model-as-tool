@@ -5,7 +5,7 @@
  * inspect or override it without rebuilding: `catalogFile` points at another
  * document with the same shape.
  *
- * @module @dsh-plugins/dsh-model-tools/catalog
+ * @module @try-works/dsh-model-as-tool/catalog
  */
 
 import { readFileSync } from 'node:fs'

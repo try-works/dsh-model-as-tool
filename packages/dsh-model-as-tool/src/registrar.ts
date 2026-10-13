@@ -7,7 +7,7 @@
  * `ctx.tools.register`, whose returned disposer is the only unregister API, so
  * the plugin can add or drop a model's tool at runtime as capability changes.
  *
- * @module @dsh-plugins/dsh-model-tools/registrar
+ * @module @try-works/dsh-model-as-tool/registrar
  */
 
 import { defineTool, type ParameterPropertySpec, type ParameterSchemaSpec } from '@deepseek-ai/dsh-tools'

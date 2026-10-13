@@ -1,4 +1,4 @@
-# The dsh-model-tools bundle patch: one insert row over the empty profile root.
+# The dsh-model-as-tool bundle patch: one insert row over the empty profile root.
 #
 # A user's profile `cordis.patch.yml` (or the file this row is installed into)
 # addresses this row by id, so a deployment can change the config without
@@ -11,7 +11,7 @@
 
 - insert:
     - id: model-tools
-      name: '@dsh-plugins/dsh-model-tools'
+      name: '@try-works/dsh-model-as-tool'
       config:
         # Every model that can actually run in this process.
         models: []

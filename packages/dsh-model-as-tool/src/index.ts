@@ -1,5 +1,5 @@
 /**
- * dsh-model-tools — install on-device models as DSH tools and skills.
+ * dsh-model-as-tool — install on-device models as DSH tools and skills.
  *
  * The plugin composes five layers: a JSON catalog describing every model, a
  * capability resolver that decides which of them can run in this process, an
@@ -10,7 +10,7 @@
  * installs none of them still starts cleanly and reports exactly what is
  * missing. A model only becomes a tool when its adapter can really invoke it.
  *
- * @module @dsh-plugins/dsh-model-tools
+ * @module @try-works/dsh-model-as-tool
  */
 
 import type { Context } from '@deepseek-ai/cordis'
@@ -26,6 +26,15 @@ import { registerModelTool } from './registrar.ts'
 import { renderSkillBody } from './skills.ts'
 import { loadPlaybooks } from './playbook.ts'
 import { commandExists, DEFAULT_CLI_COMMAND } from './transport.ts'
+import {
+  createFileStateStore,
+  createMemoryStateStore,
+  defaultStateFile,
+  resolveSelection,
+  withChoice,
+  type PersistedState,
+  type StateStore,
+} from './state.ts'
 import type { ModelCatalogEntry } from './types.ts'
 
 export const name = 'model-tools'
@@ -89,12 +98,24 @@ export interface Config {
    * through the CLI or the bridge. Default true.
    */
   allowNpm?: boolean
+  /**
+   * Where the user's enable/disable choices are persisted. Defaults to
+   * `<DSH_HOME>/model-as-tool/state.json`.
+   */
+  stateFile?: string
+  /**
+   * Whether `enable`/`disable` persist across restarts. Default true; false
+   * restores the earlier session-scoped behaviour.
+   */
+  persist?: boolean
 }
 
 /** Validate and default the plugin configuration. */
 export const Config: z<Config> = z.object({
   catalogFile: z.string(),
   playbookFile: z.string(),
+  stateFile: z.string(),
+  persist: z.boolean().default(true),
   models: z.array(z.string()).default([]),
   exclude: z.array(z.string()).default([]),
   exposeUnavailable: z.boolean().default(false),
@@ -173,6 +194,14 @@ export function apply(ctx: Context, config: Config = {}): void {
   const excluded = new Set(config.exclude ?? [])
   const exposeUnavailable = config.exposeUnavailable ?? false
   const registerSkills = config.registerSkills ?? true
+
+  // Persistence: the config states the deployment default, the store records the
+  // user's choices on top of it, so enable/disable outlives the session.
+  const persist = config.persist ?? true
+  const stateStore: StateStore = persist
+    ? createFileStateStore(config.stateFile ?? defaultStateFile())
+    : createMemoryStateStore()
+  let persisted: PersistedState = stateStore.read()
 
   const cliCommand = config.cli?.command ?? DEFAULT_CLI_COMMAND
   const cliEnabled = config.cli?.enabled ?? true
@@ -261,9 +290,38 @@ export function apply(ctx: Context, config: Config = {}): void {
     return true
   }
 
+  /**
+   * Record one user choice durably.
+   *
+   * A failed write is reported rather than swallowed: the caller asked for a
+   * change that is supposed to survive a restart, and quietly keeping it
+   * in-memory would make the next session silently disagree.
+   * @param modelId - the model the user acted on.
+   * @param enabled - true to turn on, false to turn off.
+   * @returns whether the choice was written to the durable store.
+   */
+  const remember = (modelId: string, enabled: boolean): boolean => {
+    persisted = withChoice(persisted, modelId, enabled)
+    if (!persist) return false
+    stateStore.write(persisted)
+    return true
+  }
+
+  /** The configuration's own selection, before the user's choices are layered on. */
+  const configuredIds = resolved
+    .filter(item => (wanted === undefined || wanted.has(item.entry.id)) && !excluded.has(item.entry.id))
+    .map(item => item.entry.id)
+
   for (const item of resolved) {
-    if (wanted !== undefined && !wanted.has(item.entry.id)) continue
-    if (excluded.has(item.entry.id)) continue
+    const { install: selection, disabled } = resolveSelection(configuredIds, persisted)
+    if (!selection.has(item.entry.id)) {
+      if (disabled.has(item.entry.id) && item.verdict.runnable) {
+        ctx.logger.info(`model-tools: ${item.entry.name} stays uninstalled (disabled by the user)`)
+      }
+      continue
+    }
+    // A model the user enabled that cannot run here is reported, not installed:
+    // the persisted choice is kept so it takes effect once a route appears.
     install(item)
   }
 
@@ -272,22 +330,25 @@ export function apply(ctx: Context, config: Config = {}): void {
       name: 'model_tools',
       description:
         'Inspect and control the on-device models available to this agent: list what each one does and whether it '
-        + 'can run on this machine, install a model\'s tool for this session, or remove one. Use it before calling a '
-        + 'model tool when unsure which one fits, to install a model the user asked for, or to explain why a model '
-        + 'is unavailable here. Models that cannot run in this process report the exact reason.',
+        + 'can run on this machine, install a model\'s tool, or remove one. Installs and removals are remembered '
+        + 'across restarts. Use it before calling a model tool when unsure which one fits, to install a model the '
+        + 'user asked for, or to explain why a model is unavailable here. Models that cannot run in this process '
+        + 'report the exact reason.',
       parameters: {
         action: {
           type: 'string',
           required: true,
-          enum: ['list', 'installed', 'describe', 'enable', 'disable'],
+          enum: ['list', 'installed', 'describe', 'enable', 'disable', 'reset'],
           description:
             'list: every catalogued model and whether it runs here. installed: only the models whose tools are '
-            + 'registered. describe: full detail for one model. enable: install a model\'s tool now. '
-            + 'disable: remove a model\'s tool now.',
+            + 'registered. describe: full detail for one model. enable: install a model\'s tool and remember it. '
+            + 'disable: remove a model\'s tool and remember it. reset: forget the remembered choice for one model, '
+            + 'or for every model when no id is given.',
         },
         model: {
           type: 'string',
-          description: 'Model id, required for describe, enable and disable (for example "tongue" or "title").',
+          description:
+            'Model id, required for describe, enable and disable, and optional for reset (for example "tongue" or "title").',
         },
       },
       output: {
@@ -311,6 +372,8 @@ export function apply(ctx: Context, config: Config = {}): void {
                   skill: { type: 'string', required: true },
                   runnable: { type: 'boolean', required: true },
                   installed: { type: 'boolean', required: true },
+                  /** The user's remembered choice for this model. */
+                  choice: { type: 'string', required: true, enum: ['none', 'enabled', 'disabled'] },
                   route: { type: 'string', required: true },
                   reason: { type: 'string', required: true },
                   languages: {
@@ -327,19 +390,25 @@ export function apply(ctx: Context, config: Config = {}): void {
             },
             installed: { type: 'integer', required: true },
             runnable: { type: 'integer', required: true },
-            /** Set by enable/disable: whether the requested change took effect. */
+            /** Set by enable/disable/reset: whether the requested change took effect. */
             changed: { type: 'boolean' },
-            /** Set by enable/disable: what the call did to the tool surface. */
+            /** Set by enable/disable/reset: what the call did to the tool surface. */
             action: { type: 'string' },
+            /** Set by enable/disable/reset: whether the choice was written to the durable store. */
+            persisted: { type: 'boolean' },
+            /** Where choices are stored, so a caller can tell the user what to edit. */
+            stateFile: { type: 'string' },
           },
         },
         render: (_args, value) => {
           const headline = value.action !== undefined
-            ? `${value.action}: ${value.changed === true ? 'done' : 'no change'}. `
+            ? `${value.action}: ${value.changed === true ? 'done' : 'no change'}`
+              + `${value.persisted === true ? ', remembered across restarts' : ''}. `
             : ''
           const lines = value.models.map(model =>
             `- [${model.installed ? 'installed' : model.runnable ? 'ready' : 'unavailable'}] `
-            + `${model.id} (\`${model.tool}\`): ${model.summary}`
+            + `${model.id} (\`${model.tool}\`)${model.choice === 'none' ? '' : ` (${model.choice} by you)`}: `
+            + `${model.summary}`
             + (model.runnable || model.installed ? '' : `\n  why not: ${model.reason}`),
           )
           return [{
@@ -354,15 +423,49 @@ export function apply(ctx: Context, config: Config = {}): void {
         const action = args.action
         const modelId = args.model
 
-        /** The current snapshot, with per-model installed state. */
+        /** The user's remembered choice for one model. */
+        const choiceOf = (id: string): 'none' | 'enabled' | 'disabled' =>
+          persisted.enabled.includes(id) ? 'enabled' : persisted.disabled.includes(id) ? 'disabled' : 'none'
+
+        /** The current snapshot, with per-model installed and remembered state. */
         const snapshot = (items: ResolvedModel[]) => items.map(item => ({
           ...(describeModels([item])[0] as ModelDescriptor),
           installed: installed.has(item.entry.id),
+          choice: choiceOf(item.entry.id),
         }))
         const counts = () => ({
           installed: installed.size,
           runnable: resolved.filter(item => item.verdict.runnable).length,
+          ...persist ? { stateFile: config.stateFile ?? defaultStateFile() } : {},
         })
+
+        if (action === 'reset') {
+          // Forgetting a choice is what makes the config authoritative again.
+          if (modelId !== undefined) {
+            if (!byId.has(modelId)) throw new Error(`unknown model "${modelId}"`)
+            persisted = {
+              enabled: persisted.enabled.filter(id => id !== modelId),
+              disabled: persisted.disabled.filter(id => id !== modelId),
+            }
+          } else {
+            persisted = { enabled: [], disabled: [] }
+          }
+          if (persist) stateStore.write(persisted)
+          // Re-apply the config's own selection, so a reset takes effect now
+          // rather than only at the next start.
+          for (const item of resolved) {
+            if (configuredIds.includes(item.entry.id)) install(item)
+            else uninstall(item.entry.id)
+          }
+          const models = modelId === undefined ? resolved : [byId.get(modelId) as ResolvedModel]
+          return Promise.resolve({
+            models: snapshot(models),
+            ...counts(),
+            changed: true,
+            action,
+            persisted: persist,
+          })
+        }
 
         if (action === 'describe' || action === 'enable' || action === 'disable') {
           if (modelId === undefined) throw new Error(`${action} requires a "model" id`)
@@ -379,11 +482,15 @@ export function apply(ctx: Context, config: Config = {}): void {
               `${item.entry.name} cannot be installed here. ${item.verdict.reason}`,
             )
           }
+          // Only remember a choice that actually took effect: persisting a
+          // failed enable would install it silently on the next start.
+          const remembered = remember(modelId, action === 'enable')
           return Promise.resolve({
             models: snapshot([item]),
             ...counts(),
             changed,
             action,
+            persisted: remembered,
           })
         }
 
@@ -436,6 +543,18 @@ export {
 } from './transport.ts'
 export { renderSkillBody } from './skills.ts'
 export { loadPlaybooks, DEFAULT_PLAYBOOK_FILE, type ModelPlaybook } from './playbook.ts'
+export {
+  createFileStateStore,
+  createMemoryStateStore,
+  defaultStateFile,
+  parseState,
+  resolveSelection,
+  withChoice,
+  EMPTY_STATE,
+  StateError,
+  type PersistedState,
+  type StateStore,
+} from './state.ts'
 export type {
   CapabilityVerdict,
   ModelCatalogEntry,

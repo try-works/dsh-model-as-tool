@@ -6,7 +6,7 @@
  * the model composes with its neighbours. Playbooks live in their own document
  * so they can be revised without touching the catalog or the code.
  *
- * @module @dsh-plugins/dsh-model-tools/playbook
+ * @module @try-works/dsh-model-as-tool/playbook
  */
 
 import { readFileSync } from 'node:fs'

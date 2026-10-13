@@ -13,7 +13,7 @@
  * `HttpPost`) so behaviour is testable without spawning a process or opening a
  * socket, and so a deployment can substitute its own runner.
  *
- * @module @dsh-plugins/dsh-model-tools/transport
+ * @module @try-works/dsh-model-as-tool/transport
  */
 
 import { spawn } from 'node:child_process'

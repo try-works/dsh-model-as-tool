@@ -6,7 +6,7 @@
  * used downstream. This module renders one skill body per registered model from
  * the catalog plus that model's playbook entry.
  *
- * @module @dsh-plugins/dsh-model-tools/skills
+ * @module @try-works/dsh-model-as-tool/skills
  */
 
 import type { ModelCatalogEntry } from './types.ts'

@@ -1,6 +1,6 @@
 # Turning a model into a DSH tool
 
-How `@dsh-plugins/dsh-model-tools` makes an on-device model callable by a DSH
+How `@try-works/dsh-model-as-tool` makes an on-device model callable by a DSH
 agent, and why it is built the way it is.
 
 ## The problem

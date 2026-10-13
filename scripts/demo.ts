@@ -11,7 +11,7 @@ import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import SkillRegistry from '@deepseek-ai/dsh-skill'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
-import * as plugin from '../packages/dsh-model-tools/src/index.ts'
+import * as plugin from '../packages/dsh-model-as-tool/src/index.ts'
 
 const ctx = new Context()
 await ctx.plugin(SystemPrompt)

@@ -7,7 +7,7 @@
  * it drives any model through the Desert Ant CLI or a user-hosted bridge, using
  * only the catalog's verb and parameter declarations.
  *
- * @module @dsh-plugins/dsh-model-tools/adapters/index
+ * @module @try-works/dsh-model-as-tool/adapters/index
  */
 
 import type { ModelCatalogEntry } from '../types.ts'

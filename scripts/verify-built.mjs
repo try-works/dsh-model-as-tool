@@ -23,7 +23,7 @@ import { ToolCallId } from '@deepseek-ai/dsh-llm'
 // `main`, exactly as Node's resolver would for an installed dependency. The
 // package is located by path rather than through node_modules, because linking
 // it there would make npm prune the model packages it depends on.
-const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), '../packages/dsh-model-tools')
+const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), '../packages/dsh-model-as-tool')
 const packageJsonPath = join(packageDir, 'package.json')
 const manifest = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
 const entryPoint = join(packageDir, manifest.main)

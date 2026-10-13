@@ -5,7 +5,7 @@ code) write an adapter.
 
 ## 1. Add the catalog entry
 
-Append to `packages/dsh-model-tools/catalog/desert-ant-models.json`:
+Append to `packages/dsh-model-as-tool/catalog/desert-ant-models.json`:
 
 ```json
 {
@@ -83,8 +83,8 @@ Re-run the resolver after editing:
 
 ```sh
 node --import tsx -e "
-import('./packages/dsh-model-tools/src/catalog.ts').then(async c => {
-  const { resolveCapability } = await import('./packages/dsh-model-tools/src/capability.ts')
+import('./packages/dsh-model-as-tool/src/catalog.ts').then(async c => {
+  const { resolveCapability } = await import('./packages/dsh-model-as-tool/src/capability.ts')
   for (const e of c.loadCatalog()) {
     const v = resolveCapability(e)
     console.log(v.runnable ? 'RUN ' : 'no  ', e.id, '-', v.reason)
@@ -151,7 +151,7 @@ Adapter rules:
 
 ## 4. Write the playbook
 
-Add the model's id to `packages/dsh-model-tools/catalog/playbooks.json`. Every
+Add the model's id to `packages/dsh-model-as-tool/catalog/playbooks.json`. Every
 field is optional and defaults to an empty list; sections with no content are
 omitted from the rendered skill.
 

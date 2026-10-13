@@ -9,7 +9,7 @@
  * Loading is expensive (the weights are ~349 MB and ONNX Runtime compiles three
  * graphs), so the instance is cached for the process and reused.
  *
- * @module @dsh-plugins/dsh-model-tools/adapters/voz
+ * @module @try-works/dsh-model-as-tool/adapters/voz
  */
 
 import type { ModelCatalogEntry } from '../types.ts'

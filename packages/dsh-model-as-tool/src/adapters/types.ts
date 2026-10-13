@@ -7,7 +7,7 @@
  * model sees) belongs to the catalog, the capability resolver, and the
  * registrar.
  *
- * @module @dsh-plugins/dsh-model-tools/adapters/types
+ * @module @try-works/dsh-model-as-tool/adapters/types
  */
 
 import type { ModelCatalogEntry } from '../types.ts'

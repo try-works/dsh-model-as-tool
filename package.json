@@ -7,9 +7,9 @@
   "license": "MIT",
   "scripts": {
     "link:dsh": "node scripts/link-dsh.mjs",
-    "build": "tsc -p packages/dsh-model-tools/tsconfig.build.json",
-    "typecheck": "tsc --noEmit -p packages/dsh-model-tools/tsconfig.json",
-    "test": "tsx --test packages/dsh-model-tools/tests/plugin.test.ts packages/dsh-model-tools/tests/transport.test.ts",
+    "build": "tsc -p packages/dsh-model-as-tool/tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p packages/dsh-model-as-tool/tsconfig.json",
+    "test": "tsx --test packages/dsh-model-as-tool/tests/*.test.ts",
     "verify:built": "node scripts/verify-built.mjs",
     "verify": "npm run typecheck && npm run build && npm test && npm run verify:built",
     "gating": "tsx scripts/gating-report.ts",

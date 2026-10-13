@@ -2,7 +2,7 @@
  * Data model for the Desert Ant Labs model catalog and the capability layer
  * that decides whether a model can actually run in the current DSH process.
  *
- * @module @dsh-plugins/dsh-model-tools/types
+ * @module @try-works/dsh-model-as-tool/types
  */
 
 /** The kind of value a model consumes. */

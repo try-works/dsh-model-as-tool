@@ -7,7 +7,7 @@
  * is imported on first use, the loaded model is cached for the process, and the
  * synchronous `detect()` is wrapped in the async tool contract.
  *
- * @module @dsh-plugins/dsh-model-tools/adapters/tongue
+ * @module @try-works/dsh-model-as-tool/adapters/tongue
  */
 
 import type { ModelCatalogEntry } from '../types.ts'

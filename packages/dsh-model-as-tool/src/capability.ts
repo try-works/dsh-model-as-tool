@@ -7,7 +7,7 @@
  * reportable, so `model_tools` can explain what is missing instead of the agent
  * discovering a broken tool at call time.
  *
- * @module @dsh-plugins/dsh-model-tools/capability
+ * @module @try-works/dsh-model-as-tool/capability
  */
 
 import { createRequire } from 'node:module'

@@ -1,0 +1,33 @@
+feat(dsh-model-as-tool): persist enable/disable, rename for publication
+
+Two requested changes.
+
+1. Install choices are durable, not session-scoped.
+
+A plugin config states the DEPLOYMENT default; the new state store records the
+USER's choice on top of it: `disabled` always wins, `enabled` adds to the
+configured selection, and `reset` forgets the override so the config is
+authoritative again. State lives in <DSH_HOME>/model-as-tool/state.json and is
+written temp-file-then-rename, so a crash cannot leave a truncated document
+that reads as "everything is gone".
+
+The plugin writes its own state file rather than rewriting the profile's
+cordis.patch.yml: a rewrite there fights the profile reload and can clobber
+user comments. `stateFile` relocates it; `persist: false` restores the old
+session-scoped behaviour. A failed enable persists nothing, so an unrunnable
+model is not installed silently on the next start.
+
+2. Renamed to @try-works/dsh-model-as-tool.
+
+Package name, directory, module ids, bundle patch row, docs and scripts all
+updated. Added publishConfig (public access) plus repository/homepage/bugs.
+
+Also fixed a real isolation bug the rename exposed: tests called
+enable/disable without a stateFile, so they wrote the developer's real
+DSH_HOME and left `tongue` disabled, which then broke unrelated tests. Mounting
+now goes through tests/helpers.ts, which always points the durable state at a
+throwaway directory; the leaked file was removed.
+
+Verified: 51/51 tests across three suites (up from 35), typecheck, build, and
+the built artifact loading through package main under plain Node. npm pack
+--dry-run contains lib/, catalog/, cordis.patch.yml and README, and no src/.

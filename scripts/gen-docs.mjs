@@ -13,8 +13,8 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const catalog = JSON.parse(readFileSync(join(root, 'packages/dsh-model-tools/catalog/desert-ant-models.json'), 'utf8'))
-const playbooks = JSON.parse(readFileSync(join(root, 'packages/dsh-model-tools/catalog/playbooks.json'), 'utf8'))
+const catalog = JSON.parse(readFileSync(join(root, 'packages/dsh-model-as-tool/catalog/desert-ant-models.json'), 'utf8'))
+const playbooks = JSON.parse(readFileSync(join(root, 'packages/dsh-model-as-tool/catalog/playbooks.json'), 'utf8'))
 
 mkdirSync(join(root, 'docs'), { recursive: true })
 
@@ -111,7 +111,7 @@ play.push('# Model tool playbook — use cases, tool shapes and skills', '')
 play.push('One section per catalogued model: what the tool is called, the jobs it is for,')
 play.push('when an agent should and should not reach for it, how to drive it, and what to')
 play.push('watch out for. This is the source material the plugin renders into each model\'s')
-play.push('skill, from `packages/dsh-model-tools/catalog/playbooks.json`.', '')
+play.push('skill, from `packages/dsh-model-as-tool/catalog/playbooks.json`.', '')
 play.push('## Which models are actually installable today', '')
 play.push('| Model | Tool | Skill | Windows x64 | Why not, when unavailable |')
 play.push('| --- | --- | --- | --- | --- |')

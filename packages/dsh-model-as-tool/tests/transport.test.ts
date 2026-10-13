@@ -4,20 +4,22 @@
  * The CLI runner and the HTTP poster are injected, so every path is exercised
  * without spawning a process or opening a socket — including the failure paths
  * that a real CLI only reaches on a machine that has one installed.
+ *
+ * Mounting always goes through the shared harness, which isolates the durable
+ * state: the install-flow tests call `enable`/`disable`, and without isolation
+ * those calls would edit the developer's real `DSH_HOME` configuration.
  */
 
 import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
-import SkillRegistry from '@deepseek-ai/dsh-skill'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
 
 import * as plugin from '../src/index.ts'
 import { loadCatalog } from '../src/catalog.ts'
 import { resolveCapability } from '../src/capability.ts'
 import { createAdapter } from '../src/adapters/index.ts'
+import { cleanup, mountPlugin } from './helpers.ts'
 import {
   buildArgv,
   createCliTransport,
@@ -38,14 +40,7 @@ const entryOf = (id: string) => {
 const signal = new AbortController().signal
 let counter = 0
 
-async function setup(config: plugin.Config = {}): Promise<Context> {
-  const ctx = new Context()
-  await ctx.plugin(SystemPrompt)
-  await ctx.plugin(ToolRuntime)
-  await ctx.plugin(SkillRegistry)
-  await ctx.plugin(plugin, config)
-  return ctx
-}
+const setup = mountPlugin
 
 function call(ctx: Context, name: string, args: unknown) {
   return ctx.tools.execute({
@@ -256,6 +251,7 @@ describe('plugin — install flow', () => {
   const contexts: Context[] = []
   after(async () => {
     for (const ctx of contexts.splice(0)) await ctx.fiber.dispose()
+    await cleanup()
   })
   const mount = async (config: plugin.Config = {}): Promise<Context> => {
     const ctx = await setup(config)

@@ -5,8 +5,8 @@
  * Usage: npx tsx scripts/gating-report.ts
  */
 
-import { loadCatalog } from '../packages/dsh-model-tools/src/catalog.ts'
-import { resolveCapability } from '../packages/dsh-model-tools/src/capability.ts'
+import { loadCatalog } from '../packages/dsh-model-as-tool/src/catalog.ts'
+import { resolveCapability } from '../packages/dsh-model-as-tool/src/capability.ts'
 
 const entries = loadCatalog()
 const byRoute: Record<string, string[]> = {}

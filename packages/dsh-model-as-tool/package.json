@@ -1,5 +1,5 @@
 {
-  "name": "@dsh-plugins/dsh-model-tools",
+  "name": "@try-works/dsh-model-as-tool",
   "version": "0.1.0",
   "description": "Install Desert Ant Labs on-device models as DSH tools and skills, with per-platform capability gating",
   "keywords": [
@@ -11,6 +11,19 @@
     "models-as-tools"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/try-works/dsh-model-as-tool.git",
+    "directory": "packages/dsh-model-as-tool"
+  },
+  "homepage": "https://github.com/try-works/dsh-model-as-tool#readme",
+  "bugs": {
+    "url": "https://github.com/try-works/dsh-model-as-tool/issues"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

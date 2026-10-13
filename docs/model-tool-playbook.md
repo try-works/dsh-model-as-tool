@@ -3,7 +3,7 @@
 One section per catalogued model: what the tool is called, the jobs it is for,
 when an agent should and should not reach for it, how to drive it, and what to
 watch out for. This is the source material the plugin renders into each model's
-skill, from `packages/dsh-model-tools/catalog/playbooks.json`.
+skill, from `packages/dsh-model-as-tool/catalog/playbooks.json`.
 
 ## Which models are actually installable today
 

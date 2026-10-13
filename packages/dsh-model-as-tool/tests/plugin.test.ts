@@ -14,19 +14,13 @@ import SkillRegistry from '@deepseek-ai/dsh-skill'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
 
 import * as plugin from '../src/index.ts'
+import { cleanup, isolatedStateFile, mountPlugin } from './helpers.ts'
 
 const signal = new AbortController().signal
 let callCounter = 0
 
-/** Mount the plugin on a real context carrying the shipping service stack. */
-async function setup(config: plugin.Config = {}): Promise<Context> {
-  const ctx = new Context()
-  await ctx.plugin(SystemPrompt)
-  await ctx.plugin(ToolRuntime)
-  await ctx.plugin(SkillRegistry)
-  await ctx.plugin(plugin, config)
-  return ctx
-}
+/** Mount the plugin through the isolating harness (throwaway state file). */
+const setup = mountPlugin
 
 /** Invoke a registered tool through the real registry pipeline. */
 function call(ctx: Context, name: string, args: unknown) {
@@ -43,7 +37,7 @@ function text(result: { content: { type: string; text?: string }[] }): string {
   return result.content.filter(block => block.type === 'text').map(block => block.text).join('')
 }
 
-describe('dsh-model-tools', () => {
+describe('dsh-model-as-tool', () => {
   const contexts: Context[] = []
   after(async () => {
     for (const ctx of contexts.splice(0)) {
@@ -51,6 +45,7 @@ describe('dsh-model-tools', () => {
       // idempotent, so the shared cleanup can call it unconditionally.
       await ctx.fiber.dispose()
     }
+    await cleanup()
   })
   const mount = async (config: plugin.Config = {}): Promise<Context> => {
     const ctx = await setup(config)
@@ -159,13 +154,15 @@ describe('dsh-model-tools', () => {
   })
 
   it('drops its registrations when the plugin fiber is disposed', async () => {
+    // This test needs the plugin's own Fiber, so it mounts by hand — but it
+    // still routes the durable state at a throwaway file.
     const root = new Context()
     await root.plugin(SystemPrompt)
     await root.plugin(ToolRuntime)
     await root.plugin(SkillRegistry)
     // `ctx.plugin()` resolves to the plugin's own Fiber; disposing it must lift
     // only what the plugin registered, leaving the service stack readable.
-    const fiber = await root.plugin(plugin, {})
+    const fiber = await root.plugin(plugin, { stateFile: isolatedStateFile() })
     assert.ok(root.tools.schemas().some(entry => entry.name === 'lang_detect'))
     assert.ok(root.tools.schemas().some(entry => entry.name === 'model_tools'))
 
