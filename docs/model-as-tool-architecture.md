@@ -44,10 +44,11 @@ allowlist".
 catalog/desert-ant-models.json   ← 18 models, declarative
         │
         ▼
-src/capability.ts                ← can it run here? why not?
+src/capability.ts                ← can it run here? by which route? why not?
         │
         ▼
-src/adapters/{tongue,voz}.ts     ← lazy import + invoke
+src/adapters/{tongue,voz}.ts     ← lazy import + invoke   (in-process)
+src/transport.ts                 ← CLI / bridge           (out-of-process)
         │
         ▼
 src/registrar.ts                 ← defineTool + ctx.tools.register
@@ -101,7 +102,15 @@ interface ModelAdapter {
 }
 ```
 
-Two rules every adapter follows:
+There are two kinds:
+
+- A **model adapter** is hand-written for a model with a real in-process SDK
+  (Tongue, Voz).
+- A **transport adapter** is generic: it drives *any* model through the Desert Ant
+  CLI or a bridge, using only the catalog's verb and parameter declarations. This
+  is what makes the other 16 models reachable at all.
+
+Both obey the same rules:
 
 - **Lazy, speculative-free loading.** The package specifier is held in a variable
   and passed to `import()`, so it never enters the module graph at plugin load.
@@ -112,6 +121,48 @@ Two rules every adapter follows:
 
 A failed load clears the cache, so a transient failure or a later install can be
 retried instead of poisoning the tool for the process lifetime.
+
+### 3b. Transports — reaching a model this machine cannot run
+
+Two out-of-process routes exist, and they are what turn "16 of 18 models are
+unavailable on Windows" into "16 more models are one configuration away".
+
+**CLI.** The Desert Ant CLI exposes every shipping model as
+`desertant <verb> … --json` and runs on macOS and Linux. The transport maps the
+tool arguments onto it mechanically: the first declared parameter becomes a
+positional (several positionals for a file model), every other parameter becomes
+`--option key=value`, and `--json --quiet` makes stdout one JSON value with no
+colour and no progress noise. Its exit codes are honoured — `1` is a runtime
+error, `64` is a usage error, and the CLI's own stderr is the message the agent
+sees.
+
+**Bridge.** For models that cannot run even under the CLI on the local OS —
+above all the Apple-only ones — the plugin can POST to a bridge the *user* runs
+on a machine that can execute the model:
+
+```
+POST <endpoint>/invoke      Authorization: Bearer <token>
+  { "model": "title", "verb": "title", "input": "…", "options": { "max-tokens": "96" } }
+  → 200 { "ok": true,  "result": <the model's JSON> }
+  → 5xx { "ok": false, "error": "<message>" }
+```
+
+A reference implementation is in
+[`scripts/desert-ant-bridge.mjs`](../scripts/desert-ant-bridge.mjs); it is a thin
+wrapper over the CLI, binds to loopback, and requires a token. The plugin never
+runs this service, and the licence is why: re-hosting the models as a service for
+others is prohibited, so the bridge must be the user's own machine. See
+[reaching Apple-only models](#reaching-apple-only-models-title) below.
+
+Both transports take their side-effecting primitive by injection
+(`CommandRunner`, `HttpPost`), which is why every path — including the failure
+paths a real CLI only reaches on a machine that has one — is covered by tests
+without spawning a process.
+
+**Route preference** is deliberate: an in-process package wins (fastest, no
+external dependency), then the CLI (local, out-of-process), then the bridge
+(another machine). `allowNpm: false` forces everything through the out-of-process
+routes for a deployment that would rather not load model packages in-process.
 
 ### 4. Registrar — the tool contract
 
@@ -217,20 +268,67 @@ registered**, and `model_tools` says exactly why:
 
 **The realistic routes to a `suggest_title` tool**, in order of honesty:
 
-1. **Run it where it can run.** Add a `cli`/`remote` adapter that reaches an
-   Apple machine — the Desert Ant CLI already exposes `da title "<text>" --json`
-   on macOS. This is a new adapter, not a redesign: the capability resolver gains
-   a route and the tool appears where it is reachable.
-2. **Substitute a different model for the job.** For "title a section", the
-   agent can use the LLM it already is, or a local model better suited to
-   generation. The skill should say so rather than leaving a gap.
-3. **Do not fake it.** Registering a `suggest_title` tool that throws on this
+1. **Reach a machine that can run it.** The bridge transport exists for exactly
+   this. On the Mac:
+
+   ```sh
+   curl -fsSL https://raw.githubusercontent.com/Desert-Ant-Labs/desert-ant-cli/main/install.sh | sh
+   node scripts/desert-ant-bridge.mjs --token "$(openssl rand -hex 16)"
+   ```
+
+   and in the DSH profile:
+
+   ```yaml
+   - id: model-tools
+     config:
+       remote:
+         endpoint: http://mac-studio.local:8787
+         token: <the token>
+   ```
+
+   On the next load, `suggest_title` is registered and `model_tools describe
+   title` reports `route: remote` instead of a refusal. Nothing else changes: the
+   catalog entry, the parameter schema, the skill and the licence text are the
+   same ones that were already there. This is the payoff of routing capability
+   through a resolver rather than hard-coding it — a new transport is a new
+   *route*, not a new tool.
+
+2. **Run it on Linux.** Title is Core ML/MLX-only, so this does not help it, but
+   the same CLI transport gives Redact, Emo, Gist, Clear, Ear, Moderator, Shapes
+   and Align a working route on any macOS or Linux host — no bridge required.
+
+3. **Substitute a different model for the job.** For "title a section", the agent
+   can use the LLM it already is. The skill should say so rather than leaving a
+   gap.
+
+4. **Do not fake it.** Registering a `suggest_title` tool that throws on this
    machine wastes a model turn and misleads the agent — which is precisely what
    `exposeUnavailable: false` prevents.
 
-Note that the licence independently forbids option 4 — standing up a hosted
-Desert Ant service and proxying it — so any remote route must be the user's own
-machine, not a re-hosted API.
+Note that the licence independently forbids option 5 — standing up a hosted
+Desert Ant service for others — so any remote route must be the user's own
+machine, which is why the reference bridge binds to loopback and demands a token.
+
+## Installing and removing tools at run time
+
+The capability resolver decides what *can* run; the user decides what *is*
+installed. `model_tools` exposes that as actions:
+
+| Action | Effect |
+| --- | --- |
+| `list` | Every catalogued model, with `installed`, `runnable` and the reason |
+| `installed` | Only the models whose tools are currently registered |
+| `describe <id>` | One model in full |
+| `enable <id>` | Register that model's tool and skill now |
+| `disable <id>` | Unregister them now |
+
+`enable` on a model that cannot run here fails with the resolver's reason rather
+than silently doing nothing — an agent that asked for a tool should learn why it
+did not get one.
+
+Because `ctx.tools.register` returns the disposer that is the only unregister
+API, enable/disable is just register/dispose, and the whole surface still tears
+down with the plugin's fiber.
 
 ## Adding a model
 

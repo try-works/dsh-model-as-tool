@@ -94,7 +94,17 @@ export interface ModelCatalogEntry {
 }
 
 /** How an adapter reaches a model at run time. */
-export type ModelRoute = 'npm-native' | 'npm-onnxruntime' | 'cli' | 'unavailable'
+export type ModelRoute =
+  /** An npm package loaded in this process. */
+  | 'npm-native'
+  /** An npm package plus a caller-supplied ONNX Runtime module. */
+  | 'npm-onnxruntime'
+  /** The Desert Ant CLI, run as a child process (macOS and Linux). */
+  | 'cli'
+  /** A user-hosted bridge, reached over HTTP. */
+  | 'remote'
+  /** No route available in this process. */
+  | 'unavailable'
 
 /** The capability resolver's verdict for one model in the current process. */
 export interface CapabilityVerdict {

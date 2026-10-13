@@ -62,6 +62,20 @@ da redact "Email Anna at anna@example.hu" --json
 da voz talk.mp4 --json | da clips talk.mp4 --transcript -
 ```
 
+## The four routes a DSH tool can take to a model
+
+The plugin resolves these in order and reports which one it used.
+
+| Route | Reaches | Requirement |
+| --- | --- | --- |
+| `npm-native` | Models with a prebuilt Node core | The npm package, on linux-x64 / linux-arm64 / darwin-arm64 |
+| `npm-onnxruntime` | Voz | The npm package plus `onnxruntime-node` (ships win32-x64) |
+| `cli` | Every shipping model | The `desertant` CLI on PATH (macOS, Linux) |
+| `remote` | Any model, including Apple-only | A bridge the user runs on a machine that can execute it |
+
+The `remote` route is what makes an Apple-only model such as Title usable
+from a Windows host; `scripts/desert-ant-bridge.mjs` is a reference bridge.
+
 ## Licence
 
 The models are under the [Desert Ant Labs Source-Available License 1.0](https://license.desertant.com/1.0),

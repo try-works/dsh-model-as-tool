@@ -9,16 +9,18 @@ for every model that cannot run — instead of a tool that fails at call time.
 
 ## What it does
 
-The plugin composes five layers:
+The plugin composes six layers:
 
 1. **Catalog** (`catalog/desert-ant-models.json`) — all 18 Desert Ant models,
    their inputs, outputs, language counts and the npm package that runs them.
 2. **Capability resolver** (`src/capability.ts`) — decides, per model, whether it
    can actually run *in this process*, and why not when it cannot.
 3. **Adapters** (`src/adapters/`) — lazily import a model package and invoke it.
-4. **Registrar** (`src/registrar.ts`) — turns each runnable model into a
+4. **Transports** (`src/transport.ts`) — reach a model this machine cannot run:
+   through the Desert Ant CLI, or through a bridge on a machine that can.
+5. **Registrar** (`src/registrar.ts`) — turns each reachable model into a
    `defineTool` definition registered on `ctx.tools`.
-5. **Skills** (`src/skills.ts` + `catalog/playbooks.json`) — publishes one skill
+6. **Skills** (`src/skills.ts` + `catalog/playbooks.json`) — publishes one skill
    per registered tool describing when to use it, when not to, and how.
 
 Nothing is imported from a model package at plugin load, so a deployment that
@@ -30,7 +32,7 @@ installs none of them still starts cleanly and reports exactly what is missing.
 | --- | --- | --- | --- |
 | `lang_detect` | Tongue | **yes** | Pure JavaScript, 2 MB model inside the package, no network |
 | `transcribe_audio` | Voz | **yes** | Needs `onnxruntime-node`; ~349 MB weights download on first use |
-| `model_tools` | — | yes | Lists every catalogued model and whether/how it runs here |
+| `model_tools` | — | yes | Lists every catalogued model, and installs/removes tools |
 
 The other 16 catalog models are reported by `model_tools` with the exact reason
 they cannot run, for example:
@@ -41,6 +43,53 @@ they cannot run, for example:
   why not: Redact has no prebuilt native build for win32-x64; @desert-ant-labs/redact/native
   ships one for linux-x64, linux-arm64 and darwin-arm64 only.
 ```
+
+## Reaching the other 16 models
+
+A model only needs a route, not a rewrite. Two routes cover the rest.
+
+### The CLI (macOS and Linux)
+
+Every shipping model is `desertant <verb> … --json`, so wherever the CLI is
+installed the plugin will drive it. Nothing to configure — it is detected on
+PATH:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Desert-Ant-Labs/desert-ant-cli/main/install.sh | sh
+```
+
+That immediately makes Redact, Emo, Gist, Clear, Ear, Moderator, Shapes, Align,
+Tongue and Voz callable on that machine.
+
+### The bridge (an Apple machine, for Apple-only models)
+
+Title and Uhm run only on Apple silicon. Run the reference bridge there and point
+the plugin at it:
+
+```sh
+# on the Mac
+node scripts/desert-ant-bridge.mjs --token "$(openssl rand -hex 16)"
+```
+
+```yaml
+- id: model-tools
+  config:
+    remote:
+      endpoint: http://mac-studio.local:8787
+      token: <the token>
+```
+
+`suggest_title` then registers here with `route: remote`, and the existing
+catalog entry, parameter schema and skill apply unchanged. The bridge is a thin
+wrapper over the CLI; it binds to loopback and requires a token. **The plugin
+does not host anything** — the licence forbids re-hosting the models as a
+service, so the bridge must be your own machine.
+
+## Installing tools at run time
+
+`model_tools` actions: `list`, `installed`, `describe <id>`, `enable <id>`,
+`disable <id>`. Enabling a model that cannot run here fails with the resolver's
+reason instead of silently doing nothing.
 
 ## Install
 
