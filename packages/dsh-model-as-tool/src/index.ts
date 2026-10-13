@@ -23,6 +23,8 @@ import { loadCatalog } from './catalog.ts'
 import { resolveCapability, type ResolvedModel } from './capability.ts'
 import { createAdapter } from './adapters/index.ts'
 import { registerModelTool } from './registrar.ts'
+import { registerContractTool, type ContractBinding, type HostIdentity } from './bindings.ts'
+import { STANDARD_CONTRACTS, type ToolContract } from '@try-works/tool-mode-contracts'
 import { renderSkillBody } from './skills.ts'
 import { loadPlaybooks } from './playbook.ts'
 import { commandExists, DEFAULT_CLI_COMMAND } from './transport.ts'
@@ -39,6 +41,12 @@ import type { ModelCatalogEntry } from './types.ts'
 
 export const name = 'model-tools'
 export const inject = ['tools']
+
+/**
+ * This package's version, stamped into every result as `extensionVersion`.
+ * Kept as a literal so the runtime does not depend on reading its own manifest.
+ */
+export const HOST_VERSION = '0.1.1'
 
 /** Plugin configuration. */
 export interface Config {
@@ -108,6 +116,24 @@ export interface Config {
    * restores the earlier session-scoped behaviour.
    */
   persist?: boolean
+  /**
+   * Which model serves each standard contract, as `{ "stt.transcribe": "voz" }`.
+   *
+   * Provider selection is host configuration (BASE-02), not something a caller
+   * chooses per call. An override naming a model that cannot run here is ignored
+   * in favour of the first eligible implementation rather than silently
+   * registering a tool that would fail.
+   */
+  providers?: Record<string, string>
+  /**
+   * Register the deprecated per-model compatibility aliases.
+   *
+   * Off by default so they stay out of the default catalog and a caller sees one
+   * transcription tool rather than two (BASE-03). When on, the alias keeps its
+   * original argument and result contract through a tested adapter — it is never
+   * silently reinterpreted as the new contract.
+   */
+  legacyAliases?: boolean
 }
 
 /** Validate and default the plugin configuration. */
@@ -116,6 +142,8 @@ export const Config: z<Config> = z.object({
   playbookFile: z.string(),
   stateFile: z.string(),
   persist: z.boolean().default(true),
+  providers: z.dict(z.string()).default({}),
+  legacyAliases: z.boolean().default(false),
   models: z.array(z.string()).default([]),
   exclude: z.array(z.string()).default([]),
   exposeUnavailable: z.boolean().default(false),
@@ -138,6 +166,8 @@ interface InstalledModel {
   readonly toolName: string
   readonly dispose: () => void
   disposeSkill?: () => void
+  /** Disposer for the opt-in deprecated alias, when one was registered (BASE-03). */
+  disposeAlias?: () => void
 }
 
 /** One model as the `model_tools` control tool reports it. */
@@ -226,10 +256,56 @@ export function apply(ctx: Context, config: Config = {}): void {
   const byId = new Map(resolved.map(item => [item.entry.id, item]))
 
   /**
+   * Choose the implementation that serves each standard contract (BASE-02).
+   *
+   * A contract is registered once. Selection is host configuration: an explicit
+   * `providers` override wins only if that model can actually run here, and
+   * otherwise the first eligible implementation in catalog order is used. The
+   * alternatives are kept so discovery can report them without a caller having to
+   * choose a model.
+   */
+  const contractById = new Map<string, ToolContract>(
+    STANDARD_CONTRACTS.map(contract => [contract.contract, contract]),
+  )
+  const bindings = new Map<string, ContractBinding>()
+  for (const contract of STANDARD_CONTRACTS) {
+    const eligible = resolved.filter(
+      item => item.entry.contract === contract.contract && item.verdict.runnable,
+    )
+    if (eligible.length === 0) continue
+    const override = config.providers?.[contract.contract]
+    const chosen = eligible.find(item => item.entry.id === override) ?? eligible[0]
+    if (chosen === undefined) continue
+    const adapter = createAdapter(chosen.entry, { route: chosen.verdict.route, ...transportOptions })
+    if (adapter === undefined) continue
+    bindings.set(contract.contract, {
+      contract,
+      implementation: chosen.entry,
+      adapter,
+      route: chosen.verdict.route,
+      alternatives: eligible.filter(item => item.entry.id !== chosen.entry.id).map(item => item.entry.id),
+    })
+  }
+
+  // The host owns provenance: `extension`/`version` name THIS package, and the
+  // receipt counter lives here, so an implementation cannot forge either.
+  let receiptCounter = 0
+  const host: HostIdentity = {
+    extension: '@try-works/dsh-model-as-tool',
+    extensionVersion: HOST_VERSION,
+    activationGeneration: 1,
+    nextReceiptId: () => `rcpt_${(++receiptCounter).toString(36).padStart(6, '0')}`,
+  }
+
+  /** Contracts already registered, so a second implementation joins rather than duplicates. */
+  const registeredContracts = new Map<string, { toolName: string; dispose: () => void }>()
+
+  /**
    * Register one model's tool and skill.
    *
-   * Idempotent: registering an already-installed model is a no-op, so the
-   * control tool can call it without first checking.
+   * A model bound to a standard contract contributes to that CONTRACT's single
+   * tool; a model with no contract keeps its own per-model tool. Idempotent in
+   * both cases, so the control tool can call it without first checking.
    * @param item - the resolved model to install.
    * @returns whether the model is installed after the call.
    */
@@ -238,21 +314,54 @@ export function apply(ctx: Context, config: Config = {}): void {
     if (installed.has(entry.id)) return true
     if (!verdict.runnable && !exposeUnavailable) return false
 
-    const adapter = createAdapter(entry, { route: verdict.route, ...transportOptions })
-    if (adapter === undefined) {
-      // Runnable but no adapter yet: report rather than register a dead tool.
-      ctx.logger.info(
-        `model-tools: ${entry.name} can run here (${verdict.route}) but no adapter ships yet; skipping ${entry.tool.name}`,
+    let toolName = entry.tool.name
+    let dispose: () => void
+
+    if (entry.contract !== null && contractById.has(entry.contract)) {
+      const binding = bindings.get(entry.contract)
+      if (binding === undefined) {
+        // The model implements a contract but lost provider selection, or cannot
+        // run. Report rather than register a second tool for the same contract.
+        ctx.logger.info(
+          `model-tools: ${entry.name} implements ${entry.contract} but is not the selected provider; `
+          + 'no separate tool is registered (BASE-02)',
+        )
+        return false
+      }
+      const existing = registeredContracts.get(entry.contract)
+      if (existing !== undefined) {
+        // Already served by another implementation: this model joins that tool.
+        toolName = existing.toolName
+        dispose = () => {}
+      } else {
+        const registered = registerContractTool(
+          ctx as unknown as { tools: { register(definition: unknown): () => void } },
+          binding,
+          host,
+        )
+        registeredContracts.set(entry.contract, registered)
+        toolName = registered.toolName
+        dispose = registered.dispose
+      }
+    } else {
+      const adapter = createAdapter(entry, { route: verdict.route, ...transportOptions })
+      if (adapter === undefined) {
+        // Runnable but no adapter yet: report rather than register a dead tool.
+        ctx.logger.info(
+          `model-tools: ${entry.name} can run here (${verdict.route}) but no adapter ships yet; skipping ${entry.tool.name}`,
+        )
+        return false
+      }
+      const registration = registerModelTool(
+        ctx as unknown as { tools: { register(definition: unknown): () => void } },
+        entry,
+        adapter,
       )
-      return false
+      toolName = registration.toolName
+      dispose = registration.dispose
     }
 
-    const registration = registerModelTool(
-      ctx as unknown as { tools: { register(definition: unknown): () => void } },
-      entry,
-      adapter,
-    )
-    const record: InstalledModel = { ...registration, entry }
+    const record: InstalledModel = { entry, toolName, dispose }
 
     if (registerSkills) {
       const skills = ctx.get('skills')
@@ -268,9 +377,25 @@ export function apply(ctx: Context, config: Config = {}): void {
       }
     }
 
+    // BASE-03: the deprecated alias is opt-in, so the default catalog shows one
+    // transcription tool. It keeps its own name and adapter, never the new
+    // contract's schema, so an old caller's arguments are not reinterpreted.
+    if (config.legacyAliases === true && entry.contract !== null && entry.tool.name !== toolName) {
+      const aliasAdapter = createAdapter(entry, { route: verdict.route, ...transportOptions })
+      if (aliasAdapter !== undefined) {
+        const alias = registerModelTool(
+          ctx as unknown as { tools: { register(definition: unknown): () => void } },
+          entry,
+          aliasAdapter,
+        )
+        record.disposeAlias = alias.dispose
+        ctx.logger.info(`model-tools: registered deprecated alias ${alias.toolName} (BASE-03)`)
+      }
+    }
+
     installed.set(entry.id, record)
     ctx.logger.info(
-      `model-tools: registered ${entry.tool.name} for ${entry.name} (${verdict.route})`,
+      `model-tools: registered ${toolName} for ${entry.name} (${verdict.route})`,
     )
     return true
   }
@@ -284,7 +409,17 @@ export function apply(ctx: Context, config: Config = {}): void {
     const record = installed.get(modelId)
     if (record === undefined) return false
     record.disposeSkill?.()
+    record.disposeAlias?.()
     record.dispose()
+    // A contract-served model's registration is owned by the contract; dropping
+    // the last model that used it must also release the contract's tool, or a
+    // removed implementation would keep answering calls.
+    if (record.entry.contract !== null) {
+      const stillInstalled = [...installed.values()].some(
+        other => other.entry.id !== modelId && other.entry.contract === record.entry.contract,
+      )
+      if (!stillInstalled) registeredContracts.delete(record.entry.contract)
+    }
     installed.delete(modelId)
     ctx.logger.info(`model-tools: unregistered ${record.toolName}`)
     return true
@@ -427,12 +562,22 @@ export function apply(ctx: Context, config: Config = {}): void {
         const choiceOf = (id: string): 'none' | 'enabled' | 'disabled' =>
           persisted.enabled.includes(id) ? 'enabled' : persisted.disabled.includes(id) ? 'disabled' : 'none'
 
-        /** The current snapshot, with per-model installed and remembered state. */
-        const snapshot = (items: ResolvedModel[]) => items.map(item => ({
-          ...(describeModels([item])[0] as ModelDescriptor),
-          installed: installed.has(item.entry.id),
-          choice: choiceOf(item.entry.id),
-        }))
+        /**
+         * The current snapshot, with per-model installed and remembered state.
+         *
+         * `tool` reports the name actually REGISTERED, not the catalog's per-model
+         * name: under a contract two implementations share one tool, and reporting
+         * the catalog name would tell a caller to call something that does not exist.
+         */
+        const snapshot = (items: ResolvedModel[]) => items.map(item => {
+          const record = installed.get(item.entry.id)
+          return {
+            ...(describeModels([item])[0] as ModelDescriptor),
+            ...record === undefined ? {} : { tool: record.toolName },
+            installed: record !== undefined,
+            choice: choiceOf(item.entry.id),
+          }
+        })
         const counts = () => ({
           installed: installed.size,
           runnable: resolved.filter(item => item.verdict.runnable).length,
@@ -511,6 +656,7 @@ export function apply(ctx: Context, config: Config = {}): void {
   ctx.effect(() => () => {
     for (const record of installed.values()) {
       record.disposeSkill?.()
+      record.disposeAlias?.()
       record.dispose()
     }
     installed.clear()

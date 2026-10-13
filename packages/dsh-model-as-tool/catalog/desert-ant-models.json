@@ -4,6 +4,7 @@
     "name": "Align",
     "summary": "Word-timestamp refinement for any transcript, on device, from 0.7MB.",
     "capability": "audio.word-alignment",
+    "contract": null,
     "input": "audio",
     "output": "{ words: [{ text, start, end }] } aligned against the audio",
     "languages": null,
@@ -39,6 +40,7 @@
     "name": "Clear",
     "summary": "On-device speech enhancement: denoise, dereverb and loudness-normalize to 48 kHz.",
     "capability": "audio.speech-enhancement",
+    "contract": null,
     "input": "audio",
     "output": "A cleaned audio file path plus processing metadata",
     "languages": null,
@@ -74,6 +76,7 @@
     "name": "Clips",
     "summary": "Clip selection that turns a long recording into ranked shorts and highlights from a transcript.",
     "capability": "video.clip-selection",
+    "contract": null,
     "input": "video",
     "output": "{ clips: [{ index, start, end, title, file }] } ranked by interest",
     "languages": null,
@@ -109,6 +112,7 @@
     "name": "Ear",
     "summary": "On-device spoken language identification across 102 languages from a short audio stretch.",
     "capability": "audio.spoken-language-identification",
+    "contract": null,
     "input": "audio",
     "output": "{ language, confidence, candidates: [{ language, probability }] }",
     "languages": 102,
@@ -143,6 +147,7 @@
     "name": "Emo",
     "summary": "Type a task or message and get the emoji that fit, in 22 languages, on the device.",
     "capability": "text.emoji-suggestion",
+    "contract": null,
     "input": "text",
     "output": "[{ emoji, confidence }] ranked suggestions",
     "languages": 22,
@@ -163,7 +168,10 @@
       "description": "Suggest emoji that fit a piece of text, in 22 languages, running entirely on device.",
       "params": {
         "text": "The text to suggest emoji for.",
-        "limit": { "description": "Maximum number of suggestions to return (default 5).", "type": "integer" }
+        "limit": {
+          "description": "Maximum number of suggestions to return (default 5).",
+          "type": "integer"
+        }
       },
       "returns": "Ranked emoji suggestions with confidence scores."
     },
@@ -178,6 +186,7 @@
     "name": "Eye",
     "summary": "On-device frame scoring that tells you which shot to keep, what is in it, and which shots repeat.",
     "capability": "image.frame-scoring",
+    "contract": null,
     "input": "image",
     "output": "[{ frame, score, labels, duplicate_of }]",
     "languages": null,
@@ -197,8 +206,14 @@
       "name": "score_frames",
       "description": "Score a burst or clip of frames to choose the best shot, describe what is in it and detect repeated shots.",
       "params": {
-        "image_paths": { "description": "Absolute paths of the frames to score.", "type": "string[]" },
-        "top": { "description": "How many top frames to return (default 5).", "type": "integer" }
+        "image_paths": {
+          "description": "Absolute paths of the frames to score.",
+          "type": "string[]"
+        },
+        "top": {
+          "description": "How many top frames to return (default 5).",
+          "type": "integer"
+        }
       },
       "returns": "Frames ranked by score, with labels and duplicate grouping."
     },
@@ -213,6 +228,7 @@
     "name": "Face",
     "summary": "On-device face matching that finds the same person across a photo library or through a video.",
     "capability": "image.face-matching",
+    "contract": null,
     "input": "image",
     "output": "[{ path, faces: [{ box, match_id }] }]",
     "languages": null,
@@ -232,7 +248,10 @@
       "name": "match_faces",
       "description": "Match the same person across a set of images or a video, entirely on device, with no image leaving the machine.",
       "params": {
-        "image_paths": { "description": "Absolute paths of the images to match faces across.", "type": "string[]" },
+        "image_paths": {
+          "description": "Absolute paths of the images to match faces across.",
+          "type": "string[]"
+        },
         "video_path": "Optional video to track faces through instead of still images."
       },
       "returns": "Detected face boxes grouped by person identity."
@@ -248,6 +267,7 @@
     "name": "Gist",
     "summary": "On-device topic tagging across a 36-topic taxonomy, in 101 languages, with no server call.",
     "capability": "text.topic-tagging",
+    "contract": null,
     "input": "text",
     "output": "{ topics: [{ topic, score }] }",
     "languages": 101,
@@ -268,7 +288,10 @@
       "description": "Tag a title, post or article with the topics it covers, from a fixed 36-topic taxonomy across 101 languages.",
       "params": {
         "text": "The text to tag.",
-        "limit": { "description": "Maximum number of topics to return (default 5).", "type": "integer" }
+        "limit": {
+          "description": "Maximum number of topics to return (default 5).",
+          "type": "integer"
+        }
       },
       "returns": "Ranked topic labels from the fixed taxonomy with scores."
     },
@@ -283,6 +306,7 @@
     "name": "Moderator",
     "summary": "On-device NSFW detection that flags nudity before upload, trained only on licensed and synthetic data.",
     "capability": "image.nsfw-detection",
+    "contract": null,
     "input": "image",
     "output": "{ nsfw, score, labels: [...] }",
     "languages": null,
@@ -302,7 +326,10 @@
       "name": "detect_nsfw",
       "description": "Check images for nudity or sexual content on device before they are uploaded or shown.",
       "params": {
-        "image_paths": { "description": "Absolute paths of the images to check.", "type": "string[]" }
+        "image_paths": {
+          "description": "Absolute paths of the images to check.",
+          "type": "string[]"
+        }
       },
       "returns": "A per-image NSFW verdict with score and labels."
     },
@@ -317,6 +344,7 @@
     "name": "Redact",
     "summary": "On-device redaction that strips personal data as you type, in 27 languages, with restore support.",
     "capability": "text.pii-redaction",
+    "contract": null,
     "input": "text",
     "output": "{ redactedText, items: [{ label, original, placeholder, confidence }] }",
     "languages": 27,
@@ -337,8 +365,14 @@
       "description": "Replace personal data (names, emails, phone numbers, addresses, card numbers and more) in text with stable placeholders, on device, before the text reaches any remote service.",
       "params": {
         "text": "The text to redact.",
-        "labels": { "description": "Optional list of entity labels to restrict redaction to, for example [\"EMAIL\", \"PHONE\"].", "type": "string[]" },
-        "minimum_confidence": { "description": "Optional confidence floor between 0 and 1 (default 0.6).", "type": "number" }
+        "labels": {
+          "description": "Optional list of entity labels to restrict redaction to, for example [\"EMAIL\", \"PHONE\"].",
+          "type": "string[]"
+        },
+        "minimum_confidence": {
+          "description": "Optional confidence floor between 0 and 1 (default 0.6).",
+          "type": "number"
+        }
       },
       "returns": "The redacted text plus the placeholder map, so originals can be restored after a remote round trip."
     },
@@ -353,6 +387,7 @@
     "name": "Schemer",
     "summary": "Extract typed fields from any text against your own schema, on device, with empty fields left empty.",
     "capability": "text.structured-extraction",
+    "contract": null,
     "input": "text",
     "output": "An object matching the caller-supplied schema",
     "languages": null,
@@ -388,6 +423,7 @@
     "name": "Shapes",
     "summary": "On-device shape recognition that turns one hand-drawn stroke into a rectangle, ellipse, triangle, star or line in under 10ms.",
     "capability": "stroke.shape-recognition",
+    "contract": null,
     "input": "stroke",
     "output": "{ shape, confidence, candidates: [...] }",
     "languages": null,
@@ -423,6 +459,7 @@
     "name": "Title",
     "summary": "On-device titles and descriptions: a short factual title and a one- or two-sentence description for any passage.",
     "capability": "text.title-generation",
+    "contract": null,
     "input": "text",
     "output": "{ title, description, isEmpty }",
     "languages": null,
@@ -443,7 +480,10 @@
       "description": "Write a short factual title and a one- or two-sentence description for a passage of text: a landing-page section, a documentation page or an article.",
       "params": {
         "text": "The passage to title.",
-        "max_tokens": { "description": "Optional generation cap in tokens (default 96).", "type": "integer" }
+        "max_tokens": {
+          "description": "Optional generation cap in tokens (default 96).",
+          "type": "integer"
+        }
       },
       "returns": "A title and a description, or an empty card when the model returned neither."
     },
@@ -458,6 +498,7 @@
     "name": "Tongue",
     "summary": "On-device language identification for short text across 84 languages, from just a few words.",
     "capability": "text.language-identification",
+    "contract": "text.language_detect",
     "input": "text",
     "output": "{ language, reliability, candidates: [{ language, probability }], isTooCloseToCall }",
     "languages": 84,
@@ -478,7 +519,10 @@
       "description": "Identify the language of a short piece of text across 84 languages, on device, in microseconds. Works from as little as three words.",
       "params": {
         "text": "The text whose language to identify.",
-        "top": { "description": "How many runner-up language candidates to include (default 3).", "type": "integer" }
+        "top": {
+          "description": "How many runner-up language candidates to include (default 3).",
+          "type": "integer"
+        }
       },
       "returns": "The detected language code, a reliability verdict, and the top scoring candidates with probabilities."
     },
@@ -493,6 +537,7 @@
     "name": "Toxic",
     "summary": "On-device moderation that flags hateful, abusive and threatening text in 23 European languages.",
     "capability": "text.toxicity-detection",
+    "contract": null,
     "input": "text",
     "output": "{ toxic, score, labels: [...] }",
     "languages": 23,
@@ -513,7 +558,10 @@
       "description": "Flag hateful, abusive and threatening text in 23 European languages, on device, before the message is sent.",
       "params": {
         "text": "The text to check.",
-        "minimum_confidence": { "description": "Optional confidence floor between 0 and 1.", "type": "number" }
+        "minimum_confidence": {
+          "description": "Optional confidence floor between 0 and 1.",
+          "type": "number"
+        }
       },
       "returns": "A toxicity verdict with score and the matched labels."
     },
@@ -528,6 +576,7 @@
     "name": "Uhm",
     "summary": "On-device filler detection that marks every um, uh and hmm to within 20ms, an hour of audio in 12s.",
     "capability": "audio.filler-detection",
+    "contract": null,
     "input": "audio",
     "output": "[{ start, end, word }] filler spans to cut",
     "languages": null,
@@ -562,6 +611,7 @@
     "name": "Voz",
     "summary": "Transcribe 10 minutes of audio in 2s on an iPhone, 14x faster than Whisper, with word timestamps.",
     "capability": "audio.speech-recognition",
+    "contract": "stt.transcribe",
     "input": "audio",
     "output": "{ text, words: [{ text, start, end }], realtimeFactor }",
     "languages": 25,
@@ -572,7 +622,9 @@
     "windowsSupport": "onnxruntime-node",
     "npmPackage": "@desert-ant-labs/voz",
     "npmSubpath": null,
-    "requiresRuntime": ["onnxruntime-node"],
+    "requiresRuntime": [
+      "onnxruntime-node"
+    ],
     "cliVerb": "voz",
     "license": "source-available",
     "docsUrl": "https://desertant.com/models/voz/",
@@ -582,7 +634,10 @@
       "description": "Transcribe an audio or video file on device with word-level timestamps across 25 languages. Nothing is uploaded and no API key is needed.",
       "params": {
         "audio_path": "Absolute path to the audio or video file, or a 16 kHz mono WAV.",
-        "include_words": { "description": "Whether to include the per-word timestamps (default true).", "type": "boolean" }
+        "include_words": {
+          "description": "Whether to include the per-word timestamps (default true).",
+          "type": "boolean"
+        }
       },
       "returns": "The transcript text, optional per-word start and end times, and the measured realtime factor."
     },
@@ -597,6 +652,7 @@
     "name": "Who",
     "summary": "On-device speaker labeling that turns a recording into per-person turns with face boxes and timestamps.",
     "capability": "audio.speaker-labeling",
+    "contract": null,
     "input": "audio",
     "output": "[{ speaker, start, end, face_box }] turns",
     "languages": null,

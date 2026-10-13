@@ -21,6 +21,7 @@ import {
   crossFieldRules,
   langDetect,
   ProjectionError,
+  projectToDsh,
   STANDARD_CONTRACTS,
   sttTranscribe,
   toDshParameters,
@@ -118,21 +119,50 @@ describe('DECL-02 — real schemas, not generic open objects', () => {
     assert.equal(params.top?.default, 3)
   })
 
-  it('refuses to silently discard a constraint DSH cannot express (BASE-04)', () => {
+  it('reports a constraint DSH cannot advertise, and still enforces it (BASE-04)', () => {
     const constrained = toLooseContract({
       inputSchema: {
         type: 'object',
         additionalProperties: false,
         required: ['text'],
-        properties: { text: { oneOf: [{ type: 'string' }, { type: 'number' }] } },
+        properties: { text: { type: 'string', minLength: 3 } },
       },
     })
-    assert.throws(() => toDshParameters(constrained), (error: unknown) => {
-      assert.ok(error instanceof ProjectionError)
-      assert.match(error.message, /text\.oneOf/)
-      assert.match(error.message, /not permitted/)
-      return true
+    const projection = projectToDsh(constrained)
+    // It is not silently discarded: the parameter schema cannot advertise
+    // minLength, so the fact is reported rather than lost.
+    assert.deepEqual(projection.runtimeEnforced, ['text.minLength'])
+    assert.equal((projection.parameters.text as { minLength?: unknown }).minLength, undefined)
+
+    // And it is genuinely enforced, because argument validation runs against the
+    // untouched contract rather than against the projected subset. Registering
+    // first is required: validation refuses to run against an uncompiled contract
+    // rather than silently skipping the check.
+    assertValidContract(constrained)
+    assertValidInput(constrained, { text: 'abc' })
+    assert.throws(() => assertValidInput(constrained, { text: 'ab' }), ContractViolationError)
+  })
+
+  it('refuses to validate arguments before the contract is registered', () => {
+    // A distinct contract id: validators are cached per contract, so reusing the
+    // shared fixture's id would find a validator registered by an earlier test and
+    // the assertion would pass for the wrong reason.
+    assert.throws(
+      () => assertValidInput(toLooseContract({ contract: 'test.unregistered', toolName: 'test_unregistered' }), { ok: true }),
+      /before the contract was registered/,
+    )
+  })
+
+  it('refuses a contract whose required property is not declared', () => {
+    const inconsistent = toLooseContract({
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['missing'],
+        properties: { present: { type: 'string' } },
+      },
     })
+    assert.throws(() => projectToDsh(inconsistent), ProjectionError)
   })
 })
 

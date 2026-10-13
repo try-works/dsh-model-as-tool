@@ -41,6 +41,9 @@ interface TongueModule {
   Tongue: { load(options?: { from?: string }): Promise<TongueInstance> }
 }
 
+/** The npm package this adapter knows how to call. */
+export const TONGUE_PACKAGE = '@desert-ant-labs/tongue'
+
 /** Default number of runner-up candidates reported to the model. */
 const DEFAULT_TOP = 3
 const MAX_TOP = 20
@@ -48,13 +51,19 @@ const MAX_TOP = 20
 /**
  * Build the Tongue adapter.
  *
- * The model is loaded once and reused, because `Tongue.load()` parses the
- * bundled 2 MB weight file and detection afterwards is synchronous.
+ * The factory is keyed on the PACKAGE, not the catalog id: an adapter's job is to
+ * know how to call one SDK, so any catalog row bound to this package can share it.
+ * Keying on the model id instead would mean a second conforming implementation of
+ * the same contract could never be served — exactly the model-name switch BASE-02
+ * and EXT-01 exist to prevent.
+ *
+ * The model is loaded once and reused, because `Tongue.load()` parses the bundled
+ * 2 MB weight file and detection afterwards is synchronous.
  * @param entry - the catalog entry this adapter serves.
- * @returns the adapter, or undefined if the entry is not Tongue.
+ * @returns the adapter, or undefined if the entry does not use this SDK.
  */
 export function createTongueAdapter(entry: ModelCatalogEntry): ModelAdapter | undefined {
-  if (entry.id !== 'tongue') return undefined
+  if (entry.npmPackage !== TONGUE_PACKAGE) return undefined
 
   let loaded: Promise<TongueInstance> | undefined
 

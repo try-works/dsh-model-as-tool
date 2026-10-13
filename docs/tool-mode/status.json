@@ -23,15 +23,15 @@
     },
     "BASE-02": {
       "status": "PARTIAL",
-      "evidence": "The contract layer now names tools independently of models: `@try-works/tool-mode-contracts` defines `stt_transcribe`/`lang_detect` with no model id anywhere in them (asserted by test). The HOST still registers one tool per model, so the binding is not yet consumed."
+      "evidence": "Tool identity is now independent of model identity: a catalog `contract` binding decides the tool name, the host registers ONE tool per contract, and a two-implementation catalog test proves two models yield one `lang_detect`. Adapter factories are now keyed on the npm PACKAGE rather than the model id, because keying on the id was itself a model-name switch that made a second conforming implementation unservable. Provider override is host config with documented fallback. Remaining: the merge is proven with test fixtures, not with two distinct real models."
     },
     "BASE-03": {
-      "status": "NOT_RUN",
-      "evidence": "`lang_detect` preserved and `stt_transcribe` now exists as a contract name, but the host still registers `transcribe_audio`, and no opt-in deprecated alias or hidden-from-default-catalog behaviour exists yet."
+      "status": "PARTIAL",
+      "evidence": "`stt_transcribe` is now the canonical registered name and `transcribe_audio` is an opt-in alias (`legacyAliases`, default false) so it stays out of the default catalog. Tests assert the alias is absent by default, appears only when enabled, and keeps its own argument shape (`audio_path`) rather than being reinterpreted as the canonical contract's (`audio.path`). Remaining: not exercised against a real recording."
     },
     "BASE-04": {
       "status": "PARTIAL",
-      "evidence": "Explicit requiredness from the schema's `required` array, real per-tool output schemas, tested cross-field rules and refusal to silently drop unrepresentable constraints (ProjectionError) are implemented and tested in tool-mode-contracts. The existing host registrar still infers requiredness from parameter order."
+      "evidence": "Explicit requiredness comes from the contract schema required array; parameter-order inference is gone from the contract path. Real per-tool output schemas are enforced by Ajv on every result. DSH cannot advertise every JSON-Schema keyword, so the projection reports what it omits and argument validation enforces it against the untouched contract (tested: minLength is reported as runtime-enforced and still rejects a short value). Remaining: the legacy per-model registrar path still infers requiredness from parameter order."
     },
     "MODEL-01": {
       "status": "PARTIAL",
@@ -47,7 +47,7 @@
     },
     "DECL-03": {
       "status": "PARTIAL",
-      "evidence": "ToolMeta is defined once with contract/contractVersion/implementationId/extension/extensionVersion/activationGeneration/executionLocation/receiptId/warnings and every result is schema-validated against it. Host-side stamping of authoritative provenance is not implemented."
+      "evidence": "ToolMeta is defined once and now STAMPED BY THE HOST on every contract-registered call: extension/version/receipt come from host state and the implementation cannot forge them. Tests assert the envelope, the implementation id that actually ran, distinct receipts per call, and that an adapter cannot override the host identity. Remaining: host stamping covers contract-registered tools only."
     },
     "DECL-04": {
       "status": "PARTIAL",

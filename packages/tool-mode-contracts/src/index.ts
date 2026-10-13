@@ -20,7 +20,15 @@ export {
 
 export { withMeta, type ExecutionLocation, type ToolMeta } from './meta.ts'
 
-export { crossFieldRules, ProjectionError, toDshParameters, type CrossFieldRule, type DshParameters } from './dsh.ts'
+export {
+  crossFieldRules,
+  ProjectionError,
+  projectToDsh,
+  toDshParameters,
+  type CrossFieldRule,
+  type DshParameters,
+  type DshProjection,
+} from './dsh.ts'
 
 export { sttTranscribe, STT_ADMITTED_FORMATS } from './contracts/stt-transcribe.ts'
 export { langDetect } from './contracts/lang-detect.ts'

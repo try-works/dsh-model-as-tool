@@ -51,16 +51,23 @@ interface VozModule {
   }
 }
 
+/** The npm package this adapter knows how to call. */
+export const VOZ_PACKAGE = '@desert-ant-labs/voz'
+
 /** Cap on the words returned inline, so a long recording cannot flood the context. */
 const MAX_WORDS = 2000
 
 /**
  * Build the Voz adapter.
+ *
+ * Keyed on the package rather than the catalog id, for the same reason as the
+ * Tongue adapter: the adapter knows an SDK, so any catalog row bound to it can be
+ * served, which is what lets a second implementation join the contract.
  * @param entry - the catalog entry this adapter serves.
- * @returns the adapter, or undefined if the entry is not Voz.
+ * @returns the adapter, or undefined if the entry does not use this SDK.
  */
 export function createVozAdapter(entry: ModelCatalogEntry): ModelAdapter | undefined {
-  if (entry.id !== 'voz') return undefined
+  if (entry.npmPackage !== VOZ_PACKAGE) return undefined
 
   let loaded: Promise<VozInstance> | undefined
 

@@ -82,12 +82,28 @@ for (const [specifier, relative] of Object.entries(PEERS)) {
   if (link(join(root, 'node_modules', ...specifier.split('/')), join(checkout, relative))) linked += 1
 }
 
-// The plugin package is deliberately NOT linked into the root `node_modules`.
+/**
+ * This repository's own publishable packages, linked by their published names.
+ *
+ * Sibling packages must resolve the way an installed deployment resolves them —
+ * through node_modules by package name — otherwise the host would work inside the
+ * monorepo and fail once published. These are linked even though they live here,
+ * because the point is to exercise the same resolution path a consumer uses.
+ */
+const WORKSPACE = {
+  '@try-works/tool-mode-contracts': 'packages/tool-mode-contracts',
+}
+let workspaceLinked = 0
+for (const [specifier, relative] of Object.entries(WORKSPACE)) {
+  if (link(join(root, 'node_modules', ...specifier.split('/')), join(root, relative))) workspaceLinked += 1
+}
+
+// The host package itself is deliberately NOT linked into the root `node_modules`.
 // Doing so makes npm treat it as a member of the dependency tree, and the next
 // `npm install` then prunes everything inside its own `node_modules` — including
-// the model packages the tests need. Scripts that want the package resolve it by
+// the model packages the tests need. Scripts that want the host resolve it by
 // path instead; `verify-built` reads its `main` field directly.
-console.log(`linked ${linked}/${Object.keys(PEERS).length} peer package(s)`)
+console.log(`linked ${linked}/${Object.keys(PEERS).length} peer package(s), ${workspaceLinked}/${Object.keys(WORKSPACE).length} workspace package(s)`)
 if (linked < Object.keys(PEERS).length) {
   console.error('some peers are missing; the checkout may be incomplete or built differently')
   process.exit(1)

@@ -73,6 +73,15 @@ export interface ModelCatalogEntry {
   readonly name: string
   readonly summary: string
   readonly capability: string
+  /**
+   * The standard contract this model implements, or null when none exists yet.
+   *
+   * This is what makes tool identity independent of model identity (BASE-02): the
+   * contract decides the tool name a caller sees, so a second model implementing
+   * the same contract joins the existing tool instead of creating a duplicate. A
+   * model with no contract keeps a per-model tool under its own name.
+   */
+  readonly contract: string | null
   readonly input: ModelInput
   readonly output: string
   readonly languages: number | null

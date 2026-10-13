@@ -19,14 +19,14 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **1** / 210 (0%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **197**
+- Requirements NOT_RUN: **196**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
 
 | Family | Total | DONE | PARTIAL | NOT_RUN | BLOCKED |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| BASE | 14 | 1 | 2 | 11 | 0 |
+| BASE | 14 | 1 | 3 | 10 | 0 |
 | ARCH | 6 | 0 | 0 | 6 | 0 |
 | RUN | 8 | 0 | 0 | 8 | 0 |
 | MCP | 13 | 0 | 0 | 13 | 0 |
@@ -51,9 +51,9 @@ is the honest default rather than an omission.
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | BASE-01 |  | 2. Verified starting point and upgrade requirements | DONE | Catalog, adapters, skills, persistence and platform checks preserved; the plugin was extended in place across commits fcb79ea..2e27e2a rather than recreated. |
-| BASE-02 |  | 2. Verified starting point and upgrade requirements | PARTIAL | The contract layer now names tools independently of models: `@try-works/tool-mode-contracts` defines `stt_transcribe`/`lang_detect` with no model id anywhere in them (asserted by test). The HOST still registers one tool per model, so the binding is not yet consumed. |
-| BASE-03 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | `lang_detect` preserved and `stt_transcribe` now exists as a contract name, but the host still registers `transcribe_audio`, and no opt-in deprecated alias or hidden-from-default-catalog behaviour exists yet. |
-| BASE-04 |  | 2. Verified starting point and upgrade requirements | PARTIAL | Explicit requiredness from the schema's `required` array, real per-tool output schemas, tested cross-field rules and refusal to silently drop unrepresentable constraints (ProjectionError) are implemented and tested in tool-mode-contracts. The existing host registrar still infers requiredness from parameter order. |
+| BASE-02 |  | 2. Verified starting point and upgrade requirements | PARTIAL | Tool identity is now independent of model identity: a catalog `contract` binding decides the tool name, the host registers ONE tool per contract, and a two-implementation catalog test proves two models yield one `lang_detect`. Adapter factories are now keyed on the npm PACKAGE rather than the model id, because keying on the id was itself a model-name switch that made a second conforming implementation unservable. Provider override is host config with documented fallback. Remaining: the merge is proven with test fixtures, not with two distinct real models. |
+| BASE-03 |  | 2. Verified starting point and upgrade requirements | PARTIAL | `stt_transcribe` is now the canonical registered name and `transcribe_audio` is an opt-in alias (`legacyAliases`, default false) so it stays out of the default catalog. Tests assert the alias is absent by default, appears only when enabled, and keeps its own argument shape (`audio_path`) rather than being reinterpreted as the canonical contract's (`audio.path`). Remaining: not exercised against a real recording. |
+| BASE-04 |  | 2. Verified starting point and upgrade requirements | PARTIAL | Explicit requiredness comes from the contract schema required array; parameter-order inference is gone from the contract path. Real per-tool output schemas are enforced by Ajv on every result. DSH cannot advertise every JSON-Schema keyword, so the projection reports what it omits and argument validation enforces it against the untouched contract (tested: minLength is reported as runtime-enforced and still rejects a short value). Remaining: the legacy per-model registrar path still infers requiredness from parameter order. |
 | BASE-05 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-06 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
 | BASE-07 |  | 2. Verified starting point and upgrade requirements | NOT_RUN | — |
@@ -128,7 +128,7 @@ is the honest default rather than an omission.
 | --- | --- | --- | --- | --- |
 | DECL-01 |  | 7. Declarations, output contracts, discovery, and skills | PARTIAL | Contracts are authored once with stable name, identity, version, input/output schema, semantics, limits and unsupported cases; DSH parameter projection is generated from that one source. MCP projection and Code Mode type generation are not implemented. |
 | DECL-02 |  | 7. Declarations, output contracts, discovery, and skills | PARTIAL | The two standard contracts publish real requiredness, nesting, nullability and units, and validation REFUSES an open-object output or a missing envelope (tested). Covers 2 of the release tool set; the remaining contracts do not exist. |
-| DECL-03 |  | 7. Declarations, output contracts, discovery, and skills | PARTIAL | ToolMeta is defined once with contract/contractVersion/implementationId/extension/extensionVersion/activationGeneration/executionLocation/receiptId/warnings and every result is schema-validated against it. Host-side stamping of authoritative provenance is not implemented. |
+| DECL-03 |  | 7. Declarations, output contracts, discovery, and skills | PARTIAL | ToolMeta is defined once and now STAMPED BY THE HOST on every contract-registered call: extension/version/receipt come from host state and the implementation cannot forge them. Tests assert the envelope, the implementation id that actually ran, distinct receipts per call, and that an adapter cannot override the host identity. Remaining: host stamping covers contract-registered tools only. |
 | DECL-04 |  | 7. Declarations, output contracts, discovery, and skills | PARTIAL | Contracts declare scoreKind/calibrated, and a fabricated `confidence` field is refused by output validation (tested). Not yet enforced across the whole tool surface. |
 | DECL-05 |  | 7. Declarations, output contracts, discovery, and skills | NOT_RUN | — |
 | DECL-06 |  | 7. Declarations, output contracts, discovery, and skills | NOT_RUN | — |

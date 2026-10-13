@@ -76,6 +76,31 @@ function parseParam(raw: unknown, scope: string, key: string): ModelParam {
 }
 
 /**
+ * Validate the optional `contract` binding.
+ *
+ * A model without a contract is legitimate — it keeps a per-model tool — but a
+ * malformed contract identity would bind a tool to a name no caller can address,
+ * so it fails at load rather than at registration.
+ * @param value - the raw field.
+ * @param scope - entry description for error messages.
+ * @param source - document description for error messages.
+ * @returns the contract id, or null when unbound.
+ */
+function parseContract(value: unknown, scope: string, source: string): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== 'string') {
+    throw new CatalogError(`${source}: ${scope} field "contract" must be a contract id or null`)
+  }
+  if (!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/.test(value)) {
+    throw new CatalogError(
+      `${source}: ${scope} field "contract" ${JSON.stringify(value)} must be a dotted lower-case `
+      + 'contract identity (for example "stt.transcribe")',
+    )
+  }
+  return value
+}
+
+/**
  * Parse and validate one catalog entry. Validation is strict on purpose: every
  * downstream decision (which tool to register, whether it can run, what the
  * model sees) reads these fields, so a malformed entry must fail at load rather
@@ -154,6 +179,7 @@ export function parseCatalogEntry(raw: unknown, source: string, index: number): 
     name: requireString(entry, 'name', source),
     summary: requireString(entry, 'summary', source),
     capability: requireString(entry, 'capability', source),
+    contract: parseContract(entry.contract, scope, source),
     input: input as ModelInput,
     output: requireString(entry, 'output', source),
     languages: nullableNumber('languages'),
