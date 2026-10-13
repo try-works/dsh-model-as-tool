@@ -1,0 +1,108 @@
+{
+  "lockVersion": 1,
+  "assetSets": {
+    "needle3-native": {
+      "model": {
+        "provider": "cactus-compute",
+        "identity": "Cactus-Compute/needle3",
+        "url": "https://huggingface.co/Cactus-Compute/needle3",
+        "revision": "93e88ede867e4311c39151285e74df513e4b835b",
+        "revisionKind": "the HuggingFace repository commit sha the artifacts were fetched at",
+        "sourceRepository": "https://github.com/cactus-compute/needle",
+        "sourceCommit": "3da4261073199444f2e070800854436fbc31fb6a",
+        "engineVersionDeclaredByFetchPy": "3.3.1",
+        "engineVersionDeclaredByConfig": "3.1.0",
+        "modalities": ["text"],
+        "note": "There is no GitHub release and no npm package: GET /repos/cactus-compute/needle/releases returns []. The windows-x86_64/ folder the review directive names lives in this HuggingFace MODEL repository, not in the git tree, so the HuggingFace revision is what makes the bytes immutable. The two engine versions disagree and BOTH are recorded: needle/agent/fetch.py ENGINE_VERSIONS[3] names 3.3.1 at source commit 3da42610, while the pinned revision's own config.json says engine_version 3.1.0. Neither is silently preferred; see PINNING.md."
+      },
+      "engine": {
+        "kind": "native executable, one-shot CLI (windows-x86_64/needle.exe)",
+        "version": "the version string the engine itself does not print; see engineVersionDeclaredByFetchPy and engineVersionDeclaredByConfig",
+        "abi": "the binary is linked against WS2_32.dll and contains WSAStartup, listen, bind, socket and the format string http://127.0.0.1:%d, which is the --serve HTTP server. The extension never passes --serve or --port and network-bridge refuses them, so this capability exists in the artifact and is not exercised.",
+        "note": "A C ABI header (windows-x86_64/needle.h, 4528 bytes, sha256 a27dac4b3239eead91d124b7f7dbce5495c13019903fd817b68c16d39b055a99) was read for the engine contract. It documents needle_load, needle_init, needle_complete, needle_reset, needle_transcribe, needle_stream_transcribe_process, needle_stream_transcribe_stop and needle_embed. The header is NOT shipped in this package and is not used at runtime: it matters because it shows a needle_reset EXISTS for an in-process binding, which is evidence that the engine carries per-process state. This package therefore uses one process per call rather than assuming the CLI resets anything."
+      },
+      "tokenizer": {
+        "kind": "bundled",
+        "identity": "the vocabulary inside needle3.cact",
+        "note": "Needle 3 ships no separate tokenizer file for this deployment: the .cact archive carries the weights, the vocabulary and the metadata together. The repository's tokenizer/ directory (tokenizer.model, tokenizer.vocab) belongs to the fine-tuning and export pipeline, not to the engine's runtime load, which takes only the .cact. The identity is recorded as bundled rather than guessed at a vocabulary size, because the archive was not unpacked on this host to count it."
+      },
+      "assets": [
+        {
+          "id": "needle-engine-win-x64",
+          "fileName": "needle.exe",
+          "url": "https://huggingface.co/Cactus-Compute/needle3/resolve/93e88ede867e4311c39151285e74df513e4b835b/windows-x86_64/needle.exe",
+          "bytes": 1569280,
+          "sha256": "47cd411a022d22e393d87ce091848fd446e6d25df2ce31b12a7328337557c85b",
+          "role": "the native inference engine for Windows x86_64, run as a one-shot child process",
+          "verified": "downloaded and hashed on this host on 2026-10-14; executed successfully (--help exits 0, and a one-shot --prompt inference returned a tool call)"
+        },
+        {
+          "id": "needle3-weights",
+          "fileName": "needle3.cact",
+          "url": "https://huggingface.co/Cactus-Compute/needle3/resolve/93e88ede867e4311c39151285e74df513e4b835b/needle3.cact",
+          "bytes": 35335380,
+          "sha256": "c9d915eca282ed42d1a09b143b592adb4cc6744ffe2d294adf5cfc5548170c38",
+          "role": "the 2-bit Needle 3 archive: weights, vocabulary and metadata in one file",
+          "verified": "downloaded and hashed on this host on 2026-10-14; loaded successfully by the engine in the same one-shot inference"
+        }
+      ],
+      "pinning": {
+        "state": "measured",
+        "reason": "Both artifacts were downloaded over HTTPS, their byte sizes recorded, their SHA-256 computed locally from the received bytes, and the engine was executed against the weights. A second artifact that is present in the repository but NOT pinned is recorded under inspectedNotPinned so a later reader can tell a deliberate omission from an unexamined one.",
+        "measuredOn": "2026-10-14",
+        "measuredFrom": "https://huggingface.co/Cactus-Compute/needle3 at revision 93e88ede867e4311c39151285e74df513e4b835b",
+        "requiredBeforeQualification": [
+          "an end-to-end run on a machine where the host, not an environment variable, prepared the assets",
+          "a recorded run at a second revision, to show the pin actually fails on a different artifact rather than merely matching the one it was computed from",
+          "a decision on whether the WASM route (wasm/needle.js plus wasm/needle.wasm) is qualified as a fallback for platforms with no published native folder"
+        ]
+      },
+      "inspectedNotPinned": [
+        {
+          "fileName": "windows-x86_64/needle.h",
+          "bytes": 4528,
+          "sha256": "a27dac4b3239eead91d124b7f7dbce5495c13019903fd817b68c16d39b055a99",
+          "why": "the C ABI header: read for the engine contract, not loaded at runtime"
+        },
+        {
+          "fileName": "wasm/needle.js",
+          "bytes": 63072,
+          "sha256": "964681b2a5ec3c4db2f06e45a5b60c8981a7d4ab4cac16ef6bf5b1988657a5f1",
+          "why": "the WASM loader for the alternative qualification route; the directive states WASM is additional, not a prerequisite"
+        },
+        {
+          "fileName": "wasm/needle.wasm",
+          "bytes": 929343,
+          "sha256": "not computed (present in the repository listing; not downloaded on this host)",
+          "why": "recorded so its absence from the pin is a stated fact rather than an omission"
+        },
+        {
+          "fileName": "windows-arm64/needle.exe",
+          "bytes": 1357824,
+          "sha256": "not computed (present in the repository listing; not downloaded on this host)",
+          "why": "the Windows arm64 engine exists upstream; this package declares win32/x64 only, because a platform table is not proof of correct inference"
+        }
+      ],
+      "platforms": [
+        { "os": "win32", "arch": "x64", "accelerator": "cpu" }
+      ],
+      "platformNote": "Only the platform that was actually exercised is declared. The upstream repository publishes macos-arm64, macos-x86_64 (via wheels), linux-x86_64, linux-arm64, linux-armv7, linux-riscv64, linux-mipsel, android-*, ios-*, tvos-arm64, watchos-arm64, wasm and wasm-component folders; declaring any of them here would advertise a route nothing has run on.",
+      "network": {
+        "preparationFetches": [
+          "https://huggingface.co/Cactus-Compute/needle3/resolve/93e88ede867e4311c39151285e74df513e4b835b/windows-x86_64/needle.exe",
+          "https://huggingface.co/Cactus-Compute/needle3/resolve/93e88ede867e4311c39151285e74df513e4b835b/needle3.cact"
+        ],
+        "when": "once, during asset preparation by the host, before any inference",
+        "note": "The extension performs no network call of its own and the engine performs none: the pinned binary's import table names only the UCRT, KERNEL32 and WS2_32, and no string in it is an upstream endpoint. The manifest therefore declares network.otherNetworkUse true while permissions.networkOrigins stays empty. Separately, the Python wrapper publishes anonymous usage counts through needle/_telemetry.py, controlled by NEEDLE_TELEMETRY and DO_NOT_TRACK; that code is NOT part of the native route and the bridge's scrubbed environment removes both variables anyway, so there is no telemetry to preserve or suppress here — the finding is that the control does not apply to this artifact."
+      },
+      "license": {
+        "name": "Apache License 2.0",
+        "url": "https://github.com/cactus-compute/needle/blob/main/LICENSE",
+        "attributionRequired": true,
+        "redistribution": "permitted",
+        "note": "Identified from the upstream repository's own LICENSE file (11358 bytes, the Apache-2.0 text) and from GitHub's licence detection, which reports spdx_id Apache-2.0 for cactus-compute/needle. The HuggingFace model repository ships a LICENSE file of the same 11358 bytes. The identification is repository-level: individual source files carry no per-file Apache header, so an auditor should read the licence text rather than treat this label as per-artifact provenance."
+      },
+      "note": "The assets array is NOT empty, unlike the EmbeddingGemma package's: both files were downloaded, hashed and executed on this host, so the lock records measured values rather than a plan to measure them. What is still missing is the HOST-driven preparation path: the run that produced these digests used a local scratch directory and explicit paths, so the acquisition step a host performs has not itself been exercised against these URLs."
+    }
+  }
+}

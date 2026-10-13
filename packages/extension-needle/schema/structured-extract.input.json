@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://try-works.dev/tool-mode/extension-needle/structured-extract.input.schema.json",
+  "title": "structured_extract input",
+  "description": "Input for structured_extract: the source text (inline or a host-authorized file) and the shape to extract into. Exactly one of `text` and `path` must be supplied; the two-source form exists so a caller can read a document the host already granted without this package ever opening a caller-supplied string itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["instruction", "schema"],
+  "anyOf": [
+    { "required": ["text"], "not": { "required": ["path"] } },
+    { "required": ["path"], "not": { "required": ["text"] } }
+  ],
+  "properties": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32768,
+      "description": "The source document, inline."
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "description": "A path the HOST authorizes through resolvePath; the resolved path is what is read, so a check-then-open window cannot be won by a symlink."
+    },
+    "instruction": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192,
+      "description": "What to extract, in the caller's words. It is a prompt, so it is the caller's responsibility; the ENGINE's grammar, not this text, is what makes the result well-formed."
+    },
+    "schema": {
+      "type": "object",
+      "description": "A JSON Schema object describing the record to extract. Only the subset the engine's grammar compiler accepts is used: `type`, `properties`, `required`, `items`, `enum`, `const` and `description`. Unsupported keywords are REFUSED by name rather than silently dropped, because a dropped constraint produces a plausible object that violates the caller's contract.",
+      "properties": {
+        "type": { "const": "object" },
+        "properties": { "type": "object" },
+        "required": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" }
+      },
+      "required": ["properties"]
+    },
+    "system": {
+      "type": "string",
+      "maxLength": 4096,
+      "description": "Session facts: the date, the locale, the device."
+    },
+    "max_new_tokens": {
+      "type": "integer",
+      "minimum": 16,
+      "maximum": 4096,
+      "default": 512
+    }
+  }
+}

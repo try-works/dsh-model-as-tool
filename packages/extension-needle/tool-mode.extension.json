@@ -1,0 +1,146 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/extension-needle",
+  "version": "0.1.0",
+  "displayName": "Cactus Needle 3 tool calling and structured extraction",
+  "description": "Tool proposal and structured extraction over the pinned Cactus Needle 3 native engine (Cactus-Compute/needle3, windows-x86_64/needle.exe at revision 93e88ede867e4311c39151285e74df513e4b835b). tools_plan returns proposed tool calls as DATA and never executes them; structured_extract fills a caller-supplied JSON Schema through the engine's constraining grammar. The engine is run as a ONE-SHOT child process per call with an argument array and no shell, a scrubbed environment, bounded stdout and stderr, real cancellation and a real timeout, and never with the engine's --serve HTTP listener. This build declares the deployment, its pinned artifacts and its tool contracts, and it refuses an invocation naming any artifact it cannot verify rather than pretending to run the model.",
+  "license": "MIT",
+  "activation": {
+    "policy": "operator",
+    "deactivatable": true
+  },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": []
+  },
+  "execution": {
+    "kind": "module",
+    "entry": "./lib/index.js",
+    "isolation": "host-inline"
+  },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": true,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": true
+  },
+  "models": [
+    {
+      "id": "needle3",
+      "assetSet": "needle3-native",
+      "assetLock": "./models.lock.json",
+      "platforms": [
+        {
+          "os": "win32",
+          "arch": "x64",
+          "accelerator": "cpu"
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "id": "tools-plan",
+      "name": "tools_plan",
+      "contractId": "@try-works/extension-needle/tools_plan",
+      "contractVersion": "1.0.0",
+      "description": "Propose the tool calls a request implies, as DATA, over the pinned Cactus Needle 3 native engine. Returns each proposal as a name plus an arguments object, with the engine's own reasoning, confidence and grounding report. It EXECUTES NOTHING: the proposals are inert values, this package exposes no dispatcher for them, and a proposal whose name is not in the offered tool list is marked rejected rather than silently dropped. It is not a planner that runs a loop, does not call tools, and does not verify that a proposed argument is semantically right, only that it satisfies the tool's declared JSON Schema.",
+      "inputSchema": "./schema/tools-plan.input.json",
+      "outputSchema": "./schema/tools-plan.output.json"
+    },
+    {
+      "id": "structured-extract",
+      "name": "structured_extract",
+      "contractId": "@try-works/extension-needle/structured_extract",
+      "contractVersion": "1.0.0",
+      "description": "Extract structured data from text into a caller-supplied JSON Schema, over the pinned Cactus Needle 3 native engine. The schema is compiled to a byte-level grammar by the engine, so a returned object is well-formed by construction; this package then RE-VALIDATES it and reports every violation instead of discarding the attempt, because a well-formed object is not automatically a correct one. Fields the engine could not ground are reported in the engine's own grounding report. It does not answer questions, does not summarise, and does not call tools.",
+      "inputSchema": "./schema/structured-extract.input.json",
+      "outputSchema": "./schema/structured-extract.output.json"
+    }
+  ],
+  "implementations": [
+    {
+      "id": "needle3-native-tools-plan",
+      "contractId": "@try-works/extension-needle/tools_plan",
+      "contractVersion": "1.0.0",
+      "modelId": "needle3",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "needle3-native-structured-extract",
+      "contractId": "@try-works/extension-needle/structured_extract",
+      "contractVersion": "1.0.0",
+      "modelId": "needle3",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": [],
+  "licenses": [
+    {
+      "layer": "code",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "engine",
+      "name": "Apache License 2.0",
+      "url": "https://github.com/cactus-compute/needle/blob/main/LICENSE",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": true,
+      "attributionText": "Cactus Needle, Copyright Cactus Compute, licensed under the Apache License 2.0",
+      "obligations": [
+        "preserve the Apache-2.0 licence text and any NOTICE the upstream repository ships",
+        "record that the engine executes as a downloaded native binary, windows-x86_64/needle.exe at revision 93e88ede867e4311c39151285e74df513e4b835b, whose SHA-256 is pinned in models.lock.json",
+        "the engine binary links WS2_32 and implements an HTTP server behind --serve; this package never passes that flag and the bridge refuses it, but a deployment review must still account for the capability being present in the binary",
+        "the Apache-2.0 identification is read from the upstream repository's own licence file and GitHub's licence detection (spdx_id Apache-2.0 on cactus-compute/needle); the individual files carry no per-file header, so this is a repository-level identification rather than a per-artifact one"
+      ]
+    },
+    {
+      "layer": "weights",
+      "name": "Apache License 2.0",
+      "url": "https://huggingface.co/Cactus-Compute/needle3",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": true,
+      "attributionText": "Needle 3 weights by Cactus Compute, licensed under the Apache License 2.0",
+      "obligations": [
+        "preserve the Apache-2.0 licence text; the model repository ships a LICENSE file of 11358 bytes, which is the Apache-2.0 text",
+        "needle3.cact is a 2-bit quantised archive produced by Cactus Compute's own cactus-quants pipeline (config.json records scheme embedding=4,mhc=4,default=2, group_size 128); no conversion is performed by this package, so the published artifact is used as published",
+        "the terms at the cited repository are the authority; this declaration records what the repository states and a reviewer should read it rather than trust the label"
+      ]
+    },
+    {
+      "layer": "sdk",
+      "name": "MIT (the Tool Mode extension SDK this package is built against)",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": [
+        "no vendor SDK is required: the native route depends on no package from the model vendor, which is why this layer is the Tool Mode SDK rather than a vendor library"
+      ]
+    },
+    {
+      "layer": "conversion-artifacts",
+      "name": "none: the engine and the weights are used exactly as Cactus Compute published them",
+      "url": "https://huggingface.co/Cactus-Compute/needle3",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": [
+        "no conversion, re-quantisation, re-packaging or renaming step is performed, so no conversion artifact is created or distributed by this package"
+      ]
+    }
+  ],
+  "network": {
+    "requiredTelemetry": false,
+    "otherNetworkUse": true
+  }
+}

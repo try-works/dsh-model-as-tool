@@ -74,6 +74,59 @@ const ENV_ALLOW_LIST: readonly string[] = [
  */
 const LISTENER_FLAGS: readonly string[] = ['--serve', '--port']
 
+/**
+ * Flags whose value is CALLER-SUPPLIED prose, and which are therefore the only place a caller
+ * can reach the vector's flag positions.
+ *
+ * Narrow on purpose. `--model`, `--tools` and `--tool-index` carry paths this package chose or
+ * verified, never caller text, so refusing a listener flag after them would reject a
+ * legitimate path with no security benefit. `--prompt` and `--system` are the two whose
+ * contents a caller writes.
+ */
+const CALLER_TEXT_FLAGS: readonly string[] = ['--prompt', '--system']
+
+/**
+ * Refuse an argument vector that would open a listener.
+ *
+ * `needle.exe --serve` binds an HTTP server on 127.0.0.1:8080 whose turns accumulate into
+ * one conversation, so it is simultaneously a network surface and a stateful one. The
+ * directive for this slice forbids a public engine listener, and the deployment is
+ * one-shot; making that a REFUSAL rather than an omission means a later change that
+ * threads a caller-controlled flag through cannot reintroduce it quietly.
+ *
+ * Two shapes are refused, and the second one is defence in depth rather than a fix for an
+ * observed failure:
+ *
+ * - the flag as its own element, anywhere (`['--model', 'w.cact', '--serve']`);
+ * - the flag immediately after a CALLER-TEXT flag (`['--system', '--serve']`), which is the
+ *   vector a caller produces by supplying `--serve` as their system text. MEASURED on the
+ *   pinned binary: `needle.exe --prompt --serve` answers one query and exits, because the
+ *   parser consumes the element after `--prompt` as the prompt's value whatever it looks
+ *   like. The refusal exists so that stays true if the parser changes, or if another call
+ *   site assembles a vector this package did not build.
+ * @param args - the proposed argument vector.
+ * @throws Error naming the offending element.
+ */
+export function assertNoListenerArgument(args: readonly string[]): void {
+  for (const [index, arg] of args.entries()) {
+    const flag = LISTENER_FLAGS.find(candidate => arg === candidate || arg.startsWith(`${candidate}=`))
+    if (flag === undefined) continue
+    const previous = index === 0 ? undefined : args[index - 1]
+    if (previous !== undefined && CALLER_TEXT_FLAGS.includes(previous)) {
+      // The flag is in the value position of a flag a caller writes. This is the shape a
+      // caller produces by choosing "--serve" as their prompt or system text.
+      throw new Error(
+        `the value ${JSON.stringify(arg)} for ${previous} would be read as the flag ${flag} and could `
+        + "start the engine's HTTP listener; a prompt or system text must not be a bare flag",
+      )
+    }
+    throw new Error(
+      `the argument ${JSON.stringify(arg)} would start the engine's HTTP listener; `
+      + `this extension runs one-shot processes only and never passes ${flag}`,
+    )
+  }
+}
+
 /** Default cap on each output stream, in bytes. */
 export const DEFAULT_MAX_OUTPUT_BYTES = 2 * 1024 * 1024
 
@@ -143,29 +196,6 @@ export interface ProcessRequest {
 /** The input the bridge accepts when a body is supplied. */
 export interface ProcessInput {
   readonly body?: string
-}
-
-/**
- * Refuse an argument vector that would open a listener.
- *
- * `needle.exe --serve` binds an HTTP server on 127.0.0.1:8080 whose turns accumulate into
- * one conversation, so it is simultaneously a network surface and a stateful one. The
- * directive for this slice forbids a public engine listener, and the deployment is
- * one-shot; making that a REFUSAL rather than an omission means a later change that
- * threads a caller-controlled flag through cannot reintroduce it quietly.
- * @param args - the proposed argument vector.
- * @throws Error naming the offending element.
- */
-export function assertNoListenerArgument(args: readonly string[]): void {
-  for (const arg of args) {
-    const flag = LISTENER_FLAGS.find(candidate => arg === candidate || arg.startsWith(`${candidate}=`))
-    if (flag !== undefined) {
-      throw new Error(
-        `the argument ${JSON.stringify(arg)} would start the engine's HTTP listener; `
-        + `this extension runs one-shot processes only and never passes ${flag}`,
-      )
-    }
-  }
 }
 
 /**

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://try-works.dev/tool-mode/extension-needle/tools-plan.input.schema.json",
+  "title": "tools_plan input",
+  "description": "Input for tools_plan: a request, plus the tools the model may propose calls to. The tools are DECLARATIONS the model reads; they are never invoked by this package. `tools` is required and non-empty because a plan with no tool set is not a plan — the engine treats an empty or unparseable tool document as 'no tools declared' and returns an empty call, which is indistinguishable from a refusal.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request", "tools"],
+  "properties": {
+    "request": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32768,
+      "description": "The user request, verbatim. It reaches the engine as ONE argv element, never interpolated into a command line."
+    },
+    "tools": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "description": "The tools offered for this turn. The implementation refuses a proposal naming a tool outside this list rather than passing it through.",
+      "items": { "$ref": "#/$defs/offeredTool" }
+    },
+    "system": {
+      "type": "string",
+      "maxLength": 4096,
+      "description": "Session facts the model should assume: the date, the locale, the device. Static-prefix text, so a change here changes the cached prefix."
+    },
+    "max_new_tokens": {
+      "type": "integer",
+      "minimum": 16,
+      "maximum": 4096,
+      "default": 512,
+      "description": "Response-token budget. The engine's own default is 512; the ceiling here is a deployment limit, not an engine limit."
+    }
+  },
+  "$defs": {
+    "offeredTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "parameters"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$",
+          "maxLength": 64,
+          "description": "The caller-facing tool name a proposal may use. The engine's grammar is constrained by this string, so it is validated before it reaches a tool document."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "description": "What the tool does, for the model. A description that overstates a capability produces proposals for work the tool cannot do."
+        },
+        "parameters": {
+          "type": "object",
+          "description": "The tool's JSON Schema `parameters` object. Validated as a JSON Schema before it is written to the engine's tool document; the model's output is constrained by it."
+        }
+      }
+    }
+  }
+}

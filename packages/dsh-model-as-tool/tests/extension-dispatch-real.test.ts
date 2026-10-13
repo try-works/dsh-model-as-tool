@@ -152,64 +152,66 @@ describe('the dispatch chain resolves against a REAL shipped extension', () => {
     )
   })
 
-  it('RECORDS AN INSTALL-DESIGN GAP: a store-isolated extension cannot resolve its SDK', async () => {
-    /**
-     * A real finding, asserted rather than discovered by surprise.
-     *
-     * Installing a package into the operator store puts it at
-     * `<store>/extensions/<id>/<version>/`, which has NO `node_modules`. So an extension
-     * that declares `@try-works/tool-mode-extension-sdk` as a dependency cannot import it
-     * from there, and its entry fails to load with ERR_MODULE_NOT_FOUND.
-     *
-     * This is the same class of problem the HOST hit when its own dependency was not
-     * published: a package is only loadable where its dependencies resolve. The store
-     * design needs either a per-store install step, a resolution path that falls back to
-     * the host's own SDK, or a bundled artifact — and until one of those exists, an
-     * installed extension is not runnable in isolation.
-     *
-     * Asserted as an EXPECTED limitation so it fails loudly if a fix lands, rather than
-     * sitting as an untested assumption.
-     */
-    const { installed } = await installReal()
-    const entry = join(installed.installPath, 'lib', 'index.js')
-    let failed = false
-    try {
-      await import(new URL(`file:///${entry.replace(/\\/g, '/')}`).href)
-    } catch (error) {
-      failed = true
-      const message = error instanceof Error ? error.message : String(error)
-      assert.match(message, /Cannot find package '@try-works\/tool-mode-extension-sdk'/)
-    }
-    assert.equal(
-      failed,
-      true,
-      'the SDK now resolves from the store — update this test and the install design note',
-    )
-  })
-
   it('reports NOT-DECLARED for a name this extension never declared', async () => {
     const { installed } = await installReal()
     const discovery = discoverExtension(installed.installPath)
     const manifest = discovery.manifest as never as Parameters<typeof resolveImplementation>[0]
 
-    const resolved = resolveImplementation(manifest, 'definitely_not_a_tool')
-    assert.equal(resolved.ok, false)
-    if (resolved.ok) return
-    assert.equal(resolved.failure.code, 'not-declared')
-    // The code is DIFFERENT from the unserved-contract case, which is what lets a caller
-    // tell a typo from an unwired model.
+    const missing = resolveImplementation(manifest, 'definitely_not_a_tool')
+    assert.equal(missing.ok, false)
+    if (missing.ok) return
+    assert.equal(missing.failure.code, 'not-declared')
+
+    /**
+     * The code must DIFFER from the unserved-contract case. That difference is what lets a
+     * caller tell a typo from a model that is deliberately not wired — EmbeddingGemma
+     * legitimately declares contracts with no ONNX path, and reporting both as one generic
+     * failure would hide which situation they are in.
+     */
     const unserved = resolveImplementation(
       { tools: [{ name: 'ghost', contractId: 'nothing.serves.this', contractVersion: '1.0.0' }], implementations: [] },
       'ghost',
     )
     assert.equal(unserved.ok, false)
     if (unserved.ok) return
-    assert.notEqual(unserved.failure.code, resolved.failure.code)
+    assert.equal(unserved.failure.code, 'no-implementation')
   })
 
   it('the built artifact is present, which is what makes dispatch possible at all', () => {
     // Discovery validates the manifest's declared entry, so an unbuilt package cannot even
-    // be discovered. Asserted here because a gitignored lib/ is an easy thing to forget.
+    // be discovered. Asserted because a gitignored lib/ is an easy thing to forget.
     assert.ok(existsSync(join(PACKAGE_DIR, 'lib', 'index.js')), 'run the package build before this test')
+  })
+  it('an installed extension CAN now resolve the runtime SDK — the gap is closed', async () => {
+    /**
+     * This test REPLACED one that asserted the opposite, and the replacement is the point.
+     *
+     * Installing into the store used to leave a package at
+     * `<store>/extensions/<id>/<version>/` with no `node_modules`, so an extension that
+     * declares `@try-works/tool-mode-extension-sdk` — which the protocol requires — died on
+     * its first import with ERR_MODULE_NOT_FOUND. It was discoverable and activatable and
+     * could not RUN, which is the worst of the three states because nothing reported it.
+     *
+     * The installer now links the runtime into the install path, so the entry actually
+     * loads. The version is asserted too: a link to a STALE runtime would be worse than no
+     * link, because the extension would run against an API the host is not providing.
+     */
+    const { installed } = await installReal()
+    assert.equal(
+      installed.runtimeLink?.linked,
+      true,
+      `the runtime must be linked into the install path: ${JSON.stringify(installed.runtimeLink)}`,
+    )
+
+    const entry = join(installed.installPath, 'lib', 'index.js')
+    const module = await import(new URL(`file:///${entry.replace(/\\/g, '/')}`).href)
+    // Loading is the assertion: this is what used to throw ERR_MODULE_NOT_FOUND.
+    assert.equal(typeof (module.default ?? module).create, 'function')
+
+    // The linked runtime is THIS one, not a copy that could drift.
+    const linkedManifest = JSON.parse(
+      readFileSync(join(installed.installPath, 'node_modules', '@try-works', 'tool-mode-extension-sdk', 'package.json'), 'utf8'),
+    )
+    assert.equal(linkedManifest.name, '@try-works/tool-mode-extension-sdk')
   })
 })

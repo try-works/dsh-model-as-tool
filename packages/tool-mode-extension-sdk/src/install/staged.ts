@@ -15,6 +15,7 @@
  */
 
 import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { linkRuntimeSdk, type RuntimeLinkOutcome } from './runtime-link.ts'
 import { join, resolve, sep } from 'node:path'
 import { ManagementError } from './../errors.ts'
 import { discoverExtension, type ExtensionDiscovery } from './../discovery.ts'
@@ -137,6 +138,8 @@ export async function stagedInstall(options: {
   const attempt = join(staging, `attempt-${process.pid}-${Date.now().toString(36)}`)
 
   mkdirSync(attempt, { recursive: true })
+    /** Set when the runtime link could not be made, reported rather than thrown. */
+    let runtimeLinkDiagnostic: RuntimeLinkOutcome | undefined
   try {
     const bytes = await options.archive.fetch(options.source, {
       maxBytes: limits.maxArchiveBytes,
@@ -182,10 +185,26 @@ export async function stagedInstall(options: {
     }
     mkdirSync(join(destination, '..'), { recursive: true })
     renameSync(extracted, destination)
+
+    /**
+     * Make the RUNTIME SDK resolvable from inside the installed package.
+     *
+     * Without this the package lands in a directory with no `node_modules`, so an extension
+     * that declares the SDK — which the protocol requires it to depend on — dies on its
+     * first import with ERR_MODULE_NOT_FOUND. It is discoverable and activatable and cannot
+     * RUN, which is the worst of the three states because nothing reports it as broken.
+     *
+     * A failure here is RECORDED rather than thrown: a package that imports nothing (a
+     * declarative or tool-only extension) runs fine without the link, and failing the
+     * install would break working packages to fix a problem they do not have.
+     */
+    runtimeLinkDiagnostic = linkRuntimeSdk(destination)
+
     writeFileSync(join(destination, '.tool-mode-install.json'), `${JSON.stringify({
       extensionId: discovery.packageName,
       version: discovery.packageVersion,
       archiveDigest,
+      ...runtimeLinkDiagnostic === undefined ? {} : { runtimeLink: runtimeLinkDiagnostic },
       source: { kind: options.source.kind, requested: options.source.requested },
       installedAt: new Date().toISOString(),
     }, null, 2)}\n`)
@@ -200,6 +219,7 @@ export async function stagedInstall(options: {
         version: discovery.packageVersion,
         installPath: destination,
         archiveDigest,
+      ...runtimeLinkDiagnostic === undefined ? {} : { runtimeLink: runtimeLinkDiagnostic },
         // Digest the content as installed, so a later edit is detectable.
         contentDigest: digestInstalledContent(destination),
         source: { kind: options.source.kind, requested: options.source.requested },
@@ -214,6 +234,7 @@ export async function stagedInstall(options: {
       activation: 'inactive',
       discovery,
       archiveDigest,
+      ...runtimeLinkDiagnostic === undefined ? {} : { runtimeLink: runtimeLinkDiagnostic },
     }
   } finally {
     // Quarantine is removed on EVERY path, success included: the promoted copy is

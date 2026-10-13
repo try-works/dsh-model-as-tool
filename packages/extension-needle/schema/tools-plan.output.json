@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://try-works.dev/tool-mode/extension-needle/tools-plan.output.schema.json",
+  "title": "tools_plan output",
+  "description": "Output for tools_plan. The proposals are DATA. Each carries the name and argument object the engine produced, plus the package's own verdict on it. There is deliberately no field an executable handle, a callback or a resolved tool could travel in: the object is closed, and the package exposes no dispatcher, so a caller that wants a call to happen must perform it itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposals", "rejected", "reasoning", "meta"],
+  "properties": {
+    "proposals": {
+      "type": "array",
+      "maxItems": 16,
+      "description": "Proposed calls whose name was offered AND whose arguments satisfy the offered tool's schema. Nothing here has been executed.",
+      "items": { "$ref": "#/$defs/proposal" }
+    },
+    "rejected": {
+      "type": "array",
+      "maxItems": 16,
+      "description": "Proposed calls this package REFUSED to pass through, each with the reason. Reported rather than dropped: a silently discarded proposal looks identical to a model that proposed nothing.",
+      "items": { "$ref": "#/$defs/proposal" }
+    },
+    "suppressed": {
+      "type": "array",
+      "maxItems": 16,
+      "description": "Calls the ENGINE withheld, carried through so a caller sees the same suppression the engine applied.",
+      "items": { "$ref": "#/$defs/proposal" }
+    },
+    "reasoning": {
+      "type": "string",
+      "maxLength": 8192,
+      "description": "The engine's own stated reasoning for the turn. It is the model's account of itself, not a verified explanation."
+    },
+    "confidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "The engine's self-reported confidence. It is not a calibrated probability and must not be presented as one."
+    },
+    "grounding": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The engine's grounding report, passed through unchanged. `ungrounded` names values the engine could not tie to the input.",
+      "required": ["ungrounded", "negation"],
+      "properties": {
+        "ungrounded": { "type": "array", "items": {} },
+        "negation": { "type": "boolean" }
+      }
+    },
+    "meta": { "$ref": "#/$defs/meta" }
+  },
+  "$defs": {
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "arguments", "offered", "valid", "issues"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "arguments": {
+          "type": "object",
+          "description": "The argument object the engine produced, verbatim. It is data only."
+        },
+        "offered": {
+          "type": "boolean",
+          "description": "Whether the name was in the caller's offered set. False means the engine produced a name the caller never declared."
+        },
+        "valid": {
+          "type": "boolean",
+          "description": "Whether the arguments satisfy the offered tool's declared schema. A well-formed call is not necessarily a correct one."
+        },
+        "issues": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "type": "string", "maxLength": 512 },
+          "description": "Every argument violation found, so a caller can see the whole report rather than the first problem."
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contractVersion",
+        "implementationId",
+        "extension",
+        "extensionVersion",
+        "activationGeneration",
+        "executionLocation",
+        "receiptId",
+        "warnings"
+      ],
+      "description": "The host stamps this envelope. The provider never authors it (EXT-17).",
+      "properties": {
+        "contract": { "type": "string" },
+        "contractVersion": { "type": "string" },
+        "implementationId": { "type": "string" },
+        "extension": { "type": "string" },
+        "extensionVersion": { "type": "string" },
+        "activationGeneration": { "type": "integer" },
+        "executionLocation": { "type": "string", "enum": ["device", "remote"] },
+        "receiptId": { "type": "string" },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://try-works.dev/tool-mode/extension-needle/structured-extract.output.schema.json",
+  "title": "structured_extract output",
+  "description": "Output for structured_extract. `extraction` is null when the engine returned no call, and that is a REPORTED outcome rather than an error: a document with none of the requested fields is a legitimate answer. When the engine did return an object, the package re-validates it against the caller's schema and publishes every violation in `issues` instead of discarding the attempt — the caller decides whether a partially grounded extraction is usable.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["extraction", "proposed", "valid", "issues", "meta"],
+  "properties": {
+    "extraction": {
+      "type": ["object", "null"],
+      "description": "The extracted record, verbatim from the engine. Null when no call was returned; never an empty object standing in for a failure."
+    },
+    "proposed": {
+      "type": "boolean",
+      "description": "Whether the engine returned a call at all. False is the honest report of 'nothing matched'."
+    },
+    "valid": {
+      "type": "boolean",
+      "description": "Whether `extraction` satisfies the caller's schema. A constrained grammar makes the object well-formed, which is not the same as correct."
+    },
+    "issues": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "type": "string", "maxLength": 512 },
+      "description": "Every violation of the caller's schema, so a partial extraction is visible rather than silently accepted."
+    },
+    "reasoning": {
+      "type": "string",
+      "maxLength": 8192,
+      "description": "The engine's own account of the turn."
+    },
+    "confidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "grounding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ungrounded", "negation"],
+      "description": "The engine's grounding report. `negation` true means the model believes the input NEGATES the record, which a caller must not read as a positive extraction.",
+      "properties": {
+        "ungrounded": { "type": "array", "items": {} },
+        "negation": { "type": "boolean" }
+      }
+    },
+    "meta": { "$ref": "#/$defs/meta" }
+  },
+  "$defs": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contractVersion",
+        "implementationId",
+        "extension",
+        "extensionVersion",
+        "activationGeneration",
+        "executionLocation",
+        "receiptId",
+        "warnings"
+      ],
+      "description": "The host stamps this envelope. The provider never authors it (EXT-17).",
+      "properties": {
+        "contract": { "type": "string" },
+        "contractVersion": { "type": "string" },
+        "implementationId": { "type": "string" },
+        "extension": { "type": "string" },
+        "extensionVersion": { "type": "string" },
+        "activationGeneration": { "type": "integer" },
+        "executionLocation": { "type": "string", "enum": ["device", "remote"] },
+        "receiptId": { "type": "string" },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
