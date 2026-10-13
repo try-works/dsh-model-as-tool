@@ -78,11 +78,24 @@ export function buildParameters(entry: ModelCatalogEntry): ParameterSchemaSpec {
  * @param value - the canonical value the adapter returned.
  * @returns the model-facing content blocks.
  */
+/**
+ * Render a canonical value as model-facing content blocks.
+ *
+ * Keyed on the CONTRACT, never on the model id. A model-specific presentation
+ * branch is a model-specific postprocessing recipe living in the host, which
+ * EXT-01 forbids — and it would also mean a second implementation of the same
+ * contract rendered differently, contradicting the point of having a contract.
+ * Anything unrecognised falls through to the canonical JSON, so a new contract
+ * degrades to readable data rather than to nothing.
+ * @param entry - the catalog entry, for its contract binding.
+ * @param value - the canonical value the adapter returned.
+ * @returns the model-facing content blocks.
+ */
 export function renderResult(
   entry: ModelCatalogEntry,
   value: Record<string, unknown>,
 ): { type: 'text'; text: string }[] {
-  if (entry.id === 'tongue' && typeof value.language === 'string') {
+  if (entry.contract === 'text.language_detect' && typeof value.language === 'string') {
     const candidates = Array.isArray(value.candidates) ? value.candidates : []
     const detail = candidates
       .filter((candidate): candidate is { language: string; probability: number } =>
@@ -90,14 +103,18 @@ export function renderResult(
         && typeof (candidate as { language?: unknown }).language === 'string')
       .map(candidate => `${candidate.language} ${(candidate.probability * 100).toFixed(1)}%`)
       .join(', ')
-    const tooClose = value.isTooCloseToCall === true ? ' (too close to call)' : ''
+    // Both spellings are accepted: an implementation reports its own vocabulary and
+    // the host translates, so this reads whichever one reached here.
+    const tooClose = value.tooCloseToCall === true || value.isTooCloseToCall === true
+      ? ' (too close to call)'
+      : ''
     return [{
       type: 'text',
       text: `Detected language: ${value.language}${tooClose}`
         + (detail.length > 0 ? `\nCandidates: ${detail}` : ''),
     }]
   }
-  if (entry.id === 'voz' && typeof value.text === 'string') {
+  if (entry.contract === 'stt.transcribe' && typeof value.text === 'string') {
     const wordCount = typeof value.wordCount === 'number' ? value.wordCount : 0
     return [{
       type: 'text',

@@ -649,6 +649,10 @@
       "name": "desert-ant-voz",
       "description": "Transcribe audio on device with word timestamps using the Desert Ant Voz model.",
       "whenToUse": "Use to get a transcript or captions from a recording locally, without uploading audio to a hosted API."
+    },
+    "provider": {
+      "extension": "@try-works/extension-desert-ant-voz",
+      "modelId": "voz"
     }
   },
   {

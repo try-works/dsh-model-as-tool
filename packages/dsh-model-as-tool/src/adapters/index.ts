@@ -12,7 +12,6 @@
 
 import type { ModelCatalogEntry } from '../types.ts'
 import type { AdapterFactory, ModelAdapter } from './types.ts'
-import { createVozAdapter } from './voz.ts'
 import type { ProviderBridge } from '../provider-bridge.ts'
 import {
   createCliTransport,
@@ -22,17 +21,17 @@ import {
 } from '../transport.ts'
 
 /**
- * Hand-written adapters still living inside the host.
+ * Hand-written adapters living inside the host.
  *
- * EMPTY, and it must stay that way: BASE-09 requires every model-specific
- * implementation to be an independently versioned extension package with no
- * private built-in path. Tongue was extracted to
- * `@try-works/extension-desert-ant-tongue` and is now reached through the public
- * extension API like any third-party package.
+ * EMPTY, and it must stay that way (BASE-09). Every model-specific implementation
+ * is now an independently versioned extension package reached through the public
+ * extension API: Tongue is `@try-works/extension-desert-ant-tongue` and Voz is
+ * `@try-works/extension-desert-ant-voz`. The host holds no adapter for any model,
+ * so a first-party package has no privilege a published one lacks.
  *
- * Voz is the remaining deviation and is held in `voz.ts` rather than listed here,
- * so its removal is a single deletion rather than an edit to a list that looks
- * legitimate. The extension is `@try-works/extension-desert-ant-voz`.
+ * The parameter is kept rather than deleted because a test may still inject
+ * factories, and an empty list DOCUMENTED as needing to stay empty is a stronger
+ * statement than a removed hook.
  */
 export const ADAPTER_FACTORIES: readonly AdapterFactory[] = []
 
@@ -104,10 +103,10 @@ export function createAdapter(
   if (options.route === 'remote') {
     return transportAdapter(entry, createRemoteTransport(entry, options))
   }
-  // The one remaining built-in path, pending extraction to
-  // `@try-works/extension-desert-ant-voz`. It is confined to this single call so
-  // its removal deletes code rather than a lookup.
-  return createVozAdapter(entry)
+  // No extension, no factory and no transport serves this model. Returning
+  // undefined is correct: a model with no implementation simply has no tool,
+  // rather than falling back to something that cannot run it.
+  return undefined
 }
 
 export type { AdapterFactory, AdapterInvocation, JsonValue, ModelAdapter } from './types.ts'

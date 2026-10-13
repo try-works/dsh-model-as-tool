@@ -1,0 +1,45 @@
+{
+  "lockVersion": 1,
+  "assetSets": {
+    "voz-weights": {
+      "assets": [],
+      "engine": {
+        "version": "the onnxruntime-node version resolved beside the extension",
+        "kind": "onnxruntime"
+      },
+      "tokenizer": {
+        "kind": "bundled",
+        "identity": "voz-tokenizer"
+      },
+      "model": {
+        "revision": "the version resolved from the optional dependency",
+        "identity": "@desert-ant-labs/voz",
+        "provider": "desert-ant-labs"
+      },
+      "note": "Voz downloads roughly 367 MB of weights into its own cache on first load, at the MODEL package's initiative rather than the host's. The empty asset array asserts the host prepares and fetches nothing itself; preparation of downloaded executables still requires the separate executable-preparation approval before first use.",
+      "platforms": [
+        {
+          "arch": "x64",
+          "accelerator": "cpu",
+          "os": "win32"
+        },
+        {
+          "arch": "arm64",
+          "accelerator": "gpu",
+          "os": "darwin"
+        },
+        {
+          "arch": "x64",
+          "accelerator": "cpu",
+          "os": "linux"
+        }
+      ],
+      "license": {
+        "url": "https://desertant.com/license",
+        "name": "Desert Ant Labs Source-Available License 1.0",
+        "attributionRequired": true,
+        "redistribution": "not-permitted"
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/extension-desert-ant-voz",
+  "version": "0.1.0",
+  "displayName": "Desert Ant Voz speech transcription",
+  "description": "On-device speech recognition over the Desert Ant Labs Voz model, exposed as the standard tool-mode/stt_transcribe contract.",
+  "license": "MIT",
+  "activation": {
+    "policy": "operator",
+    "deactivatable": true
+  },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": []
+  },
+  "execution": {
+    "kind": "module",
+    "entry": "./lib/index.js",
+    "isolation": "host-inline"
+  },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": true,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": true
+  },
+  "models": [
+    {
+      "id": "voz",
+      "assetSet": "voz-weights",
+      "assetLock": "./models.lock.json",
+      "platforms": [
+        {
+          "os": "win32",
+          "arch": "x64",
+          "accelerator": "cpu"
+        },
+        {
+          "os": "darwin",
+          "arch": "arm64",
+          "accelerator": "gpu"
+        },
+        {
+          "os": "linux",
+          "arch": "x64",
+          "accelerator": "cpu"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "implementations": [
+    {
+      "id": "voz-default",
+      "contractId": "tool-mode/stt_transcribe",
+      "contractVersion": "1.0.0",
+      "modelId": "voz",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": []
+}
