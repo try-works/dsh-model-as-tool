@@ -48,7 +48,8 @@
     "catalog/desert-ant-models.json",
     "catalog/playbooks.json",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "bin"
   ],
   "dsh": {
     "bundle": {
@@ -84,5 +85,8 @@
   },
   "dependencies": {
     "@try-works/tool-mode-contracts": "^0.1.0"
+  },
+  "bin": {
+    "dsh-tool-mode-mcp-stdio": "./bin/dsh-tool-mode-mcp-stdio.mjs"
   }
 }

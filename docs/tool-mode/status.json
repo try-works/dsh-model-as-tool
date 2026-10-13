@@ -183,7 +183,7 @@
     },
     "MCP-04": {
       "status": "PARTIAL",
-      "evidence": "A modern tools/list and tools/call are proven to be processable as the FIRST application request, with no initialize handshake and no protocol session, because the dispatch layer is stateless by construction: there is no session table to require one. Two successive dispatches producing equal results is the observable evidence that nothing accumulated, and the responses are validated against the pinned schema. Remaining: the exact SDK version and protocol/client compatibility matrix are not recorded as a released artifact, which the requirement names explicitly; no legacy translation mode is offered or tested."
+      "evidence": "A modern tools/list and tools/call are proven to be processable as the FIRST application request, with no initialize handshake and no protocol session, because the dispatch layer is stateless by construction: there is no session table to require one. Two successive dispatches producing equal results is the observable evidence that nothing accumulated, and every response is validated against the pinned upstream schema. The bridge also preserves per-request metadata across the stdio hop rather than caching it. Remaining: the exact SDK version and protocol/client compatibility matrix are not recorded as a released artifact, which the requirement names explicitly; no legacy translation mode is offered or tested."
     },
     "MCP-05": {
       "status": "PARTIAL",
@@ -215,7 +215,7 @@
     },
     "MCP-03": {
       "status": "PARTIAL",
-      "evidence": "Two simultaneous authorized clients with INDEPENDENT tokens are proven to work against the same host, and one client credential is refused by another client endpoint, which is what independently revocable credentials mean in practice. Three interleaved requests each echo their own id. Remaining: the stdio bridge executable does not exist, so stdio-only clients cannot connect yet; nothing yet runs two clients against one long-lived server process, only against two handler instances sharing a host surface."
+      "evidence": "The stdio bridge exists as a library (src/mcp/stdio.ts) and an executable (bin/dsh-tool-mode-mcp-stdio.mjs), and per P26-05 it is an HTTP CLIENT rather than a second protocol implementation: it generates the modern per-request headers and posts to the same endpoint a network client uses, so there is no second interpretation of the protocol to drift out of step. Two simultaneous authorized clients with independently revocable credentials are proven against one host surface, and a client credential is refused by another client endpoint. Remain: the stdout-purity property of the executable is verified STATICALLY rather than by running it, because this sandbox cannot spawn a child with piped stdio (named pipes are blocked); the check asserts there are exactly two stdout writes and that both are protocol frames, that every diagnostic goes through a named stderr sink, and that console.log does not appear at all. That is weaker than an end-to-end run and is recorded as such."
     },
     "SEC-02": {
       "status": "PARTIAL",
@@ -232,6 +232,14 @@
     "P26-07": {
       "status": "DONE",
       "evidence": "No resumability is implemented, and the absence is asserted rather than assumed: sending Last-Event-ID changes neither the status nor the body, because there is no replay path to enter, and the response advertises no event-stream channel it does not serve. A retry is therefore a new request with fresh authorization, which is what the requirement asks for. This is a small requirement satisfied by not building the thing it forbids."
+    },
+    "P26-08": {
+      "status": "PARTIAL",
+      "evidence": "The requirements are implemented and each has a test: stdout carries protocol traffic and NOTHING else while diagnostics go through a separate named sink, so there is no single output to confuse; the request body is forwarded VERBATIM so ids and per-request metadata cannot drift between the two hops, with the bridge regenerating only the headers; nothing is retained between requests except in-flight cancellation state keyed by request id and removed when the request settles, so one stdio process is not treated as one conversation; EOF aborts bridge-owned in-flight requests and sends nothing to the host, which is shared and not the bridge to stop; and a malformed frame is answered on the PROTOCOL channel because a client waiting for a reply would not see a diagnostic. Remaining: the executable is not run end-to-end (sandbox limitation above), and a legacy stdio translation mode is neither offered nor tested."
+    },
+    "P26-06": {
+      "status": "PARTIAL",
+      "evidence": "Stdio cancellation uses notifications/cancelled and aborts EXACTLY the referenced request: a test holds two requests in flight, cancels one, and asserts the first signal is aborted while the second is NOT, which is the property that stops one cancellation tearing down a shared worker. A cancellation for a request the bridge does not own is reported rather than ignored, because that usually means the client and bridge disagree about what is in flight. A JSON response channel is implemented. Remaining: no request-scoped SSE response channel, so closing an HTTP SSE response cannot cancel its request; cancellation is not translated into an HTTP abort of a request sharing a bridge or model worker in the network direction, because there is no SSE stream to close."
     }
   },
   "acceptance": {
