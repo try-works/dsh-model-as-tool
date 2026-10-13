@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T18:58:00.888Z",
+  "generatedAt": "2026-10-13T19:10:16.200Z",
   "specification": [
     {
       "id": "TM-DSH-001",
@@ -1084,9 +1084,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/authority.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "planPreparation computes the pre-approval disclosure the requirement asks for: total download bytes, total storage bytes stated SEPARATELY because an operator approving bandwidth is not thereby approving disk, the pinned license terms surfaced BEFORE the download, and whether any asset is executable. Prebuilt engine downloads count as executable installation, and the plan flags requiresExecutableApproval when any asset is executable, so an engine download cannot ride along with a model download under one approval. The DeploymentIdentity type pins every field the requirement names: model revision, engine/SDK version, quantization, tokenizer, preprocessing recipe, plus asset hashes and source and license metadata on the plan. Remaining: NOTHING PRODUCES A PLAN YET. The catalog carries no asset locks, so no real deployment has a plan computed for it, and the requirement that the disclosure happen BEFORE approval is unexercised because there is no approval flow. Asset hashes are declared on PlannedAsset but no lock file populates them."
     },
     {
       "id": "RES-03",
@@ -1096,9 +1096,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/authority.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "A FAILED OR INTERRUPTED PREPARATION CANNOT BECOME READY, which is asserted directly: a failing load records the failure with its reason, every joiner of a failed load is told it failed rather than being handed a partial success, and the NEXT caller RETRIES rather than inheriting the failure, so a transient network error does not poison the deployment permanently. Uninstall and asset purge are separate operations: purgeCandidates deletes only assets with no remaining owner, and a test proves an asset shared with another owner is RETAINED because deleting it would break a deployment nobody uninstalled. Assets are keyed by CONTENT digest rather than filename, which is what makes sharing safe. Remaining: downloads are not implemented at all - there is no atomic fetch, no verification against a digest, no resumability and no retry policy - so the atomicity the requirement names is declared in the purge and identity layers but not in an acquisition path. No sharing or ownership record is persisted, and no end-user-machine build is performed, which satisfies the no-source-changes clause only because nothing is built at all."
     },
     {
       "id": "RES-04",
@@ -1120,9 +1120,9 @@
       "owningModule": "packages/dsh-model-as-tool/src/authority.ts",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "NOT_RUN",
-      "testStatus": "NOT_RUN",
-      "evidence": null
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "A DeploymentCoordinator implements single-flight preparation and loading per EXACT provider deployment, with tests that COUNT loader invocations: the single-flight test asserts the loader ran exactly once for three concurrent callers, because a coordinator that started two loads of a 349 MB model would pass every other assertion while doubling memory, and only a count catches that. The deployment key includes every identity field - extension, model, revision, engine version, quantization, tokenizer and preprocessing recipe - and a test mutates each one to assert it changes the key. Quantization is the sharpest case: the same model at int8 and fp16 produce different outputs, so loading one must not satisfy a request for the other. Reference counting is implemented and enforced: unloading a busy deployment is REFUSED and reports how many callers are using it, because unloading there would discard their work. Release is idempotent so a double release cannot corrupt the count, and revocation is the one case permitted to discard a busy deployment, explicitly and only on request. Cancellation is PER INVOCATION: a cancelled caller gives up while the deployment stays loaded and available to others, asserted by a test where a cancelled and an uncancelled caller share one load and only one is rejected. Killing the deployment on one caller cancellation would destroy another legitimate work, which the requirement forbids. WIRING WAS ATTEMPTED AND REVERTED, and the reason is worth recording. Routing provider.load() through the coordinator at the bridge moved loading AHEAD of path authorization, so a call with a denied path loaded roughly 349 MB of weights before refusing; the existing deny-before-load test failed at 9.4 seconds and caught it. The coordinator therefore remains a tested standalone component whose correct place is INSIDE an implementation load path, after the checks that must precede a load. Wiring it at the bridge would have traded a security property for a resource optimisation. Remaining: no implementation uses the coordinator yet, so it is exercised by test rather than by a real load; the catalog does not carry model revision, engine version, quantization, tokenizer or recipe, so those key components are recorded as unpinned, which is honest but means two genuinely different builds would currently share a key."
     },
     {
       "id": "RES-06",

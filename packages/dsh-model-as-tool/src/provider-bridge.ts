@@ -182,6 +182,22 @@ export class ProviderBridge {
     invocation: AdapterInvocation,
   ): Promise<Record<string, JsonValue>> {
     const authority = invocation.authority ?? createInvocationAuthority(this.#grant, 'interactive')
+
+    /**
+     * The load is deliberately NOT coordinated here.
+     *
+     * An earlier version routed `provider.load()` through the DeploymentCoordinator at
+     * this point, and the suite caught the consequence: loading then happened BEFORE
+     * the implementation authorized its inputs, so a call with a denied path loaded
+     * ~349 MB of weights before refusing. SEC-06 wants the denial first, and the
+     * extension performs path resolution inside `invoke`, so the coordinator cannot be
+     * placed here without inverting that.
+     *
+     * The coordinator is therefore a tested, standalone component (RES-02/03/05) whose
+     * place is INSIDE an implementation's own load path, where it can sit after the
+     * checks that must precede a load. Wiring it here would have traded a security
+     * property for a resource optimisation.
+     */
     const input: JsonObject = {}
     for (const [key, value] of Object.entries(invocation.args)) {
       input[key] = value as JsonValue
@@ -198,11 +214,12 @@ export class ProviderBridge {
       },
     })
 
-    // The host authors the reserved root `meta` (EXT-17). An extension supplying
-    // one is asserting its own provenance, which it does not get to do.
+    // The host authors the reserved root `meta` (EXT-17). An extension supplying one
+    // is asserting its own provenance, which it does not get to do.
     assertNoReservedMeta(payload, binding.modelId)
     return payload as Record<string, JsonValue>
   }
+
 
   /** Build the context an extension receives, which carries no host internals. */
   #contextFor(extensionId: string): ExtensionContextV1 {
