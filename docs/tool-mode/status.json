@@ -440,6 +440,18 @@
     "TOOL-05": {
       "status": "NOT_RUN",
       "evidence": "No cross-encoder reranking tool exists in any form: no pair scoring, no deterministic tie handling, no score-kind reporting, and no top_k validation. The MODEL-05 capability machinery would describe such a tool correctly but nothing implements it."
+    },
+    "AT-13": {
+      "status": "PARTIAL",
+      "evidence": "Windows traversal, absolute-path escape, junction escape, device/UNC paths and unauthorized roots are all refused, with Unicode and space-containing valid paths admitted (authority.test.ts, real filesystem). Remaining: the artifact/receipt identifier half of the test, which needs a receipt store that does not exist yet."
+    },
+    "AT-01": {
+      "status": "NOT_RUN",
+      "evidence": "Requires a clean compatible DSH installation and a built tarball of the Tool Mode bundle. The packages build and install individually, but the bundle does not exist yet."
+    },
+    "AT-18": {
+      "status": "PARTIAL",
+      "evidence": "The durable-write half is satisfied for the extension store: a write that fails throws rather than reporting success, all writes go through a temporary file and a rename, and no temporary file survives. Corrupted state fails closed with a diagnostic rather than enabling every installed package. Remaining: the migration half (existing enable/disable choices surviving an upgrade) is not exercised, because the extension store has no prior format to migrate from."
     }
   },
   "acceptance": {

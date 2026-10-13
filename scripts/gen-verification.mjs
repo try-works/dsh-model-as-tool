@@ -232,7 +232,20 @@ const requirements = inventory()
 const acceptanceIds = new Set(requirements.filter(entry => entry.id.startsWith('AT-')).map(entry => entry.id))
 
 const records = requirements.map(entry => {
-  const requirementStatus = status.requirements?.[entry.id]?.status ?? status.acceptance?.[entry.id] ?? 'NOT_RUN'
+  /**
+ * An acceptance status is recorded EITHER as a plain string or as `{status, evidence}`.
+ *
+ * Both shapes exist in the file, and the two generators disagreed about which one to
+ * expect: this one read a string, the traceability generator read `.status`, and the
+ * result was three acceptance tests whose status coerced to `[object Object]` here and
+ * `undefined` there. Accepting both is the fix; forcing one shape on both would only
+ * move the breakage to whichever generator was not updated.
+ */
+const acceptanceEntry = status.acceptance?.[entry.id]
+const acceptanceStatus = typeof acceptanceEntry === 'string'
+  ? acceptanceEntry
+  : acceptanceEntry?.status
+const requirementStatus = status.requirements?.[entry.id]?.status ?? acceptanceStatus ?? 'NOT_RUN'
   const hasTest = ['DONE', 'PARTIAL'].includes(requirementStatus)
   return {
     id: entry.id,

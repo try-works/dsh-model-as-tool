@@ -181,3 +181,57 @@ describe('TDD-10 — the release report', () => {
     assert.match(text, /not yet run against a real inference/)
   })
 })
+
+describe('TDD-06 — every recorded status is one of the five vocabulary values', () => {
+  /**
+   * A status recorded as an OBJECT rather than a string was silently coerced to
+   * `[object Object]` by every consumer, which removed the item from the inventory's
+   * counts while leaving it present in the source. Three acceptance tests were lost that
+   * way, and nothing noticed, because the coercion is invisible in both directions.
+   */
+  const VOCABULARY = ['DONE', 'PARTIAL', 'BLOCKED', 'NOT_RUN', 'NOT_APPLICABLE']
+
+  it('records requirement statuses as plain strings from the vocabulary', () => {
+    const status = JSON.parse(readFileSync('docs/tool-mode/status.json', 'utf8'))
+    const offenders: string[] = []
+    for (const [id, entry] of Object.entries(status.requirements ?? {})) {
+      if (typeof entry?.status !== 'string') offenders.push(`${id}: ${typeof entry?.status}`)
+      else if (!VOCABULARY.includes(entry.status)) offenders.push(`${id}: ${entry.status}`)
+    }
+    assert.deepEqual(offenders, [], 'a status must be a vocabulary string, never a nested object')
+  })
+
+  it('records acceptance statuses in a shape both generators agree on', () => {
+    /**
+     * An acceptance entry is EITHER a plain string OR `{status, evidence}`.
+     *
+     * Both shapes are present in the file, and the two generators disagreed about which
+     * to expect: one read a string, the other read `.status`. The result was three
+     * acceptance tests whose status coerced to `[object Object]` in one and `undefined`
+     * in the other. This asserts what matters - that a status can be EXTRACTED and is a
+     * vocabulary value - rather than insisting on one shape, because forcing a single
+     * shape on both would only move the breakage to whichever was not updated.
+     */
+    const status = JSON.parse(readFileSync('docs/tool-mode/status.json', 'utf8'))
+    const offenders: string[] = []
+    for (const [id, value] of Object.entries(status.acceptance ?? {})) {
+      const extracted = typeof value === 'string' ? value : (value as { status?: unknown })?.status
+      if (typeof extracted !== 'string') offenders.push(`${id}: no extractable status (${typeof value})`)
+      else if (!VOCABULARY.includes(extracted)) offenders.push(`${id}: ${extracted}`)
+    }
+    assert.deepEqual(offenders, [], 'every acceptance entry must yield a vocabulary status')
+  })
+
+  it('does not let a malformed status reach the generated inventory', () => {
+    // The gate is about the OUTPUT too: whatever the source says, the inventory a
+    // consumer reads must never contain a coerced value.
+    const requirements = JSON.parse(readFileSync(REQUIREMENTS, 'utf8'))
+    for (const item of requirements.requirements) {
+      assert.equal(
+        typeof item.requirementStatus, 'string',
+        `${item.id} has a non-string status in the generated inventory`,
+      )
+      assert.equal(item.requirementStatus.includes('[object'), false, `${item.id} was coerced`)
+    }
+  })
+})

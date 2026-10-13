@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-13T20:41:31.120Z",
+  "generatedAt": "2026-10-13T20:49:04.118Z",
   "git": {
-    "commit": "ee2d9b2559ccd7fd9fb2676fb94fae4ee1799d87",
+    "commit": "a061e0cf39f33c0596b985d114d0cc76c609987c",
     "branch": "main",
     "dirty": true
   },
@@ -57,9 +57,9 @@
   ],
   "counts": {
     "PASS": 3,
-    "FAIL": 93,
+    "FAIL": 95,
     "BLOCKED": 6,
-    "NOT_RUN": 215,
+    "NOT_RUN": 213,
     "NOT_APPLICABLE": 0
   },
   "requirements": [
@@ -2795,15 +2795,9 @@
       "owningModule": "unmapped",
       "testLayer": "acceptance",
       "requiredPlatform": "win32",
-      "requirementStatus": {
-        "status": "NOT_RUN",
-        "evidence": "Requires a clean compatible DSH installation and a built tarball of the Tool Mode bundle. The packages build and install individually, but the bundle does not exist yet."
-      },
+      "requirementStatus": "NOT_RUN",
       "testStatus": "NOT_RUN",
-      "evidence": {
-        "status": "NOT_RUN",
-        "evidence": "Requires a clean compatible DSH installation and a built tarball of the Tool Mode bundle. The packages build and install individually, but the bundle does not exist yet."
-      }
+      "evidence": "Requires a clean compatible DSH installation and a built tarball of the Tool Mode bundle. The packages build and install individually, but the bundle does not exist yet."
     },
     {
       "id": "AT-02",
@@ -2945,15 +2939,9 @@
       "owningModule": "unmapped",
       "testLayer": "acceptance",
       "requiredPlatform": "win32",
-      "requirementStatus": {
-        "status": "PARTIAL",
-        "evidence": "Windows traversal, absolute-path escape, junction escape, device/UNC paths and unauthorized roots are all refused, with Unicode and space-containing valid paths admitted (authority.test.ts, real filesystem). Remaining: the artifact/receipt identifier half of the test, which needs a receipt store that does not exist yet."
-      },
-      "testStatus": "NOT_RUN",
-      "evidence": {
-        "status": "PARTIAL",
-        "evidence": "Windows traversal, absolute-path escape, junction escape, device/UNC paths and unauthorized roots are all refused, with Unicode and space-containing valid paths admitted (authority.test.ts, real filesystem). Remaining: the artifact/receipt identifier half of the test, which needs a receipt store that does not exist yet."
-      }
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "Windows traversal, absolute-path escape, junction escape, device/UNC paths and unauthorized roots are all refused, with Unicode and space-containing valid paths admitted (authority.test.ts, real filesystem). Remaining: the artifact/receipt identifier half of the test, which needs a receipt store that does not exist yet."
     },
     {
       "id": "AT-14",
@@ -3011,15 +2999,9 @@
       "owningModule": "unmapped",
       "testLayer": "acceptance",
       "requiredPlatform": "any",
-      "requirementStatus": {
-        "status": "PARTIAL",
-        "evidence": "The durable-write half is satisfied for the extension store: a write that fails throws rather than reporting success, all writes go through a temporary file and a rename, and no temporary file survives. Corrupted state fails closed with a diagnostic rather than enabling every installed package. Remaining: the migration half (existing enable/disable choices surviving an upgrade) is not exercised, because the extension store has no prior format to migrate from."
-      },
-      "testStatus": "NOT_RUN",
-      "evidence": {
-        "status": "PARTIAL",
-        "evidence": "The durable-write half is satisfied for the extension store: a write that fails throws rather than reporting success, all writes go through a temporary file and a rename, and no temporary file survives. Corrupted state fails closed with a diagnostic rather than enabling every installed package. Remaining: the migration half (existing enable/disable choices surviving an upgrade) is not exercised, because the extension store has no prior format to migrate from."
-      }
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "The durable-write half is satisfied for the extension store: a write that fails throws rather than reporting success, all writes go through a temporary file and a rename, and no temporary file survives. Corrupted state fails closed with a diagnostic rather than enabling every installed package. Remaining: the migration half (existing enable/disable choices surviving an upgrade) is not exercised, because the extension store has no prior format to migrate from."
     },
     {
       "id": "AT-19",
@@ -4123,12 +4105,12 @@
     "AT-10 is NOT_RUN",
     "AT-11 is NOT_RUN",
     "AT-12 is NOT_RUN",
-    "AT-13 is NOT_RUN",
+    "AT-13 is FAIL",
     "AT-14 is NOT_RUN",
     "AT-15 is NOT_RUN",
     "AT-16 is NOT_RUN",
     "AT-17 is NOT_RUN",
-    "AT-18 is NOT_RUN",
+    "AT-18 is FAIL",
     "AT-19 is NOT_RUN",
     "AT-20 is NOT_RUN",
     "AT-21 is NOT_RUN",

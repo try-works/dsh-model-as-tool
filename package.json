@@ -25,9 +25,10 @@
     "build:ext-voz": "tsc -p packages/extension-desert-ant-voz/tsconfig.build.json",
     "verify:architecture": "node scripts/check-architecture.mjs",
     "verify:mcp": "node scripts/probe-mcp-conformance.mjs",
-    "verification": "node scripts/gen-verification.mjs",
+    "verification": "node scripts/gen-verification.mjs && node scripts/gen-final-report.mjs",
     "verify:verification": "node scripts/gen-verification.mjs --check",
-    "release:gate": "node scripts/gen-verification.mjs --release-gate"
+    "release:gate": "node scripts/gen-verification.mjs --release-gate",
+    "final-report": "node scripts/gen-final-report.mjs"
   },
   "devDependencies": {
     "@desert-ant-labs/tongue": "^3.6.0",
