@@ -27,6 +27,7 @@ import { registerContractTool, type ContractBinding, type HostIdentity } from '.
 import { createGrant } from './authority.ts'
 import { ProviderBridge } from './provider-bridge.ts'
 import { buildSurface } from './publication.ts'
+import type { InvocationReceipt } from './receipt.ts'
 import { STANDARD_CONTRACTS, type ToolContract } from '@try-works/tool-mode-contracts'
 import { renderSkillBody } from './skills.ts'
 import { loadPlaybooks } from './playbook.ts'
@@ -49,7 +50,10 @@ export const inject = ['tools']
  * This package's version, stamped into every result as `extensionVersion`.
  * Kept as a literal so the runtime does not depend on reading its own manifest.
  */
-export const HOST_VERSION = '0.1.1'
+export /** How many invocation receipts are retained in memory (EXT-35). */
+const MAX_RETAINED_RECEIPTS = 200
+
+const HOST_VERSION = '0.1.1'
 
 /** Plugin configuration. */
 export interface Config {
@@ -293,6 +297,8 @@ export function apply(ctx: Context, config: Config = {}): void {
   // package, the receipt counter lives here, and the grant is built from operator
   // configuration, so an implementation can forge neither (BASE-05, DECL-03).
   let receiptCounter = 0
+  /** The most recent invocation receipts (EXT-35), bounded so retention cannot grow without limit. */
+  const invocationReceipts: InvocationReceipt[] = []
   const grant = createGrant({
     grantId: config.grantId ?? 'local-interactive',
     // Every registered tool is granted to the interactive operator; an external
@@ -310,6 +316,13 @@ export function apply(ctx: Context, config: Config = {}): void {
     nextReceiptId: () => `rcpt_${(++receiptCounter).toString(36).padStart(6, '0')}`,
     grant,
     callerKind: 'interactive',
+    // EXT-35: bounded in-memory retention. A receipt is provenance, not a log of
+    // content, so retaining the last N costs little and makes the record
+    // recoverable after the call rather than only during it.
+    recordReceipt: receipt => {
+      invocationReceipts.push(receipt)
+      if (invocationReceipts.length > MAX_RETAINED_RECEIPTS) invocationReceipts.shift()
+    },
   }
 
   /**
@@ -598,7 +611,7 @@ export function apply(ctx: Context, config: Config = {}): void {
         action: {
           type: 'string',
           required: true,
-          enum: ['list', 'installed', 'describe', 'enable', 'disable', 'reset'],
+          enum: ['list', 'installed', 'describe', 'enable', 'disable', 'reset', 'receipts'],
           description:
             'list: every catalogued model and whether it runs here. installed: only the models whose tools are '
             + 'registered. describe: full detail for one model. enable: install a model\'s tool and remember it. '
@@ -694,6 +707,23 @@ export function apply(ctx: Context, config: Config = {}): void {
             },
             installed: { type: 'integer', required: true },
             runnable: { type: 'integer', required: true },
+            /** Set by the receipts action: recent invocation provenance (EXT-35). */
+            receipts: {
+              type: 'array',
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  receiptId: { type: 'string', required: true },
+                  contract: { type: 'string', required: true },
+                  implementationId: { type: 'string', required: true },
+                  extension: { type: 'string', required: true },
+                  modelIdentity: { type: 'string', required: true },
+                  activationGeneration: { type: 'integer', required: true },
+                  executionLocation: { type: 'string', required: true },
+                },
+              },
+            },
             /** Set by enable/disable/reset: whether the requested change took effect. */
             changed: { type: 'boolean' },
             /** Set by enable/disable/reset: what the call did to the tool surface. */
@@ -784,11 +814,32 @@ export function apply(ctx: Context, config: Config = {}): void {
             choice: choiceOf(item.entry.id),
           }
         })
+        /**
+         * The most recent invocation receipts (EXT-35).
+         *
+         * Exposed through discovery so the provenance is observable rather than
+         * merely recorded: a receipt nobody can read is indistinguishable from no
+         * receipt at all.
+         */
+        const receipts = () => invocationReceipts.map(receipt => ({
+          receiptId: receipt.receiptId,
+          contract: receipt.contract,
+          implementationId: receipt.implementationId,
+          extension: receipt.extension,
+          modelIdentity: receipt.modelIdentity,
+          activationGeneration: receipt.activationGeneration,
+          executionLocation: receipt.executionLocation,
+        }))
+
         const counts = () => ({
           installed: installed.size,
           runnable: resolved.filter(item => item.verdict.runnable).length,
           ...persist ? { stateFile: config.stateFile ?? defaultStateFile() } : {},
         })
+
+        if (action === 'receipts') {
+          return { models: [], ...counts(), receipts: receipts() } as never
+        }
 
         if (action === 'reset') {
           // Forgetting a choice is what makes the config authoritative again.

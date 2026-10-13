@@ -153,3 +153,58 @@ describe('EXT-32 — discovery stays read-only', () => {
     assert.equal(text.includes('private'), false, 'the listing must not disclose filesystem layout')
   })
 })
+
+describe('EXT-35 — receipts are emitted for successful calls', () => {
+  it('records provenance for a call that completed', async () => {
+    const ctx = await mountPlugin()
+    const before = await call(ctx, 'model_tools', { action: 'receipts' })
+    if (before.isError) throw new Error(`expected success: ${before.error.message}`)
+    const first = (before.value as { receipts: unknown[] }).receipts.length
+
+    const detection = await call(ctx, 'lang_detect', { text: 'kann ich das haben' })
+    if (detection.isError) throw new Error(`expected success: ${detection.error.message}`)
+
+    const after = await call(ctx, 'model_tools', { action: 'receipts' })
+    if (after.isError) throw new Error('expected success')
+    const receipts = (after.value as { receipts: {
+      receiptId: string, contract: string, implementationId: string,
+      extension: string, modelIdentity: string, activationGeneration: number,
+      executionLocation: string,
+    }[] }).receipts
+    assert.equal(receipts.length, first + 1, 'a successful call must leave exactly one receipt')
+
+    const latest = receipts[receipts.length - 1]
+    assert.equal(latest?.contract, 'text.language_detect')
+    assert.equal(latest?.implementationId, 'tongue')
+    // Which PACKAGE ran, not just which catalog row.
+    assert.equal(latest?.extension, '@try-works/extension-desert-ant-tongue')
+    assert.equal(latest?.modelIdentity, 'tongue')
+    assert.equal(typeof latest?.activationGeneration, 'number')
+    assert.match(String(latest?.receiptId), /^rcpt_/)
+  })
+
+  it('does NOT record a receipt for a call that was refused', async () => {
+    const ctx = await mountPlugin()
+    const before = await call(ctx, 'model_tools', { action: 'receipts' })
+    if (before.isError) throw new Error('expected success')
+    const first = (before.value as { receipts: unknown[] }).receipts.length
+
+    const refused = await call(ctx, 'lang_detect', { text: '   ' })
+    assert.equal(refused.isError, true)
+
+    const after = await call(ctx, 'model_tools', { action: 'receipts' })
+    if (after.isError) throw new Error('expected success')
+    // A receipt for a call that failed validation would claim provenance for a
+    // result nobody received.
+    assert.equal((after.value as { receipts: unknown[] }).receipts.length, first)
+  })
+
+  it('the receipt view exposes no request content', async () => {
+    const ctx = await mountPlugin()
+    await call(ctx, 'lang_detect', { text: 'a very distinctive phrase' })
+    const result = await call(ctx, 'model_tools', { action: 'receipts' })
+    if (result.isError) throw new Error('expected success')
+    // EXT-35 metadata-only: the invoked text must not appear in a receipt.
+    assert.equal(JSON.stringify(result.value).includes('distinctive'), false)
+  })
+})

@@ -26,6 +26,7 @@ import {
 } from '@try-works/tool-mode-contracts'
 import type { ModelCatalogEntry, ModelRoute } from './types.ts'
 import { toContractPayload, toNativeArgs } from './contract-payload.ts'
+import { buildInvocationReceipt, type InvocationReceipt } from './receipt.ts'
 import {
   authorizeTool,
   createInvocationAuthority,
@@ -53,6 +54,14 @@ export interface HostIdentity {
   readonly grant: ToolGrant
   /** How the host classified this caller. */
   readonly callerKind: InvocationAuthority['callerKind']
+  /**
+   * Where an invocation receipt is delivered (EXT-35).
+   *
+   * Optional so a host without a receipt store still works; when present it sees one
+   * receipt per SUCCESSFUL call, which is what makes the provenance recoverable
+   * after the fact rather than only during the call.
+   */
+  readonly recordReceipt?: (receipt: InvocationReceipt) => void
 }
 
 /** One contract with the implementation chosen to serve it. */
@@ -118,6 +127,46 @@ export function buildMeta(
     receiptId: host.nextReceiptId(),
     warnings: [...warnings],
   }
+}
+
+/**
+ * Build the EXT-35 receipt for one call.
+ *
+ * Separate from {@link buildMeta} because it answers a different question: the
+ * envelope says what the caller received, while the receipt says what RAN and from
+ * which bytes. The extra provenance — the extension package, its content digest,
+ * the model and recipe identity — is what makes a receipt usable after the fact,
+ * when the version alone no longer identifies the code.
+ * @param binding - the contract and the implementation chosen for it.
+ * @param host - host identity and the receipt factory.
+ * @param meta - the envelope already stamped, for the receipt identity.
+ * @returns the invocation receipt.
+ */
+export function buildReceipt(
+  binding: Pick<ContractBinding, 'contract' | 'implementation' | 'route'>,
+  host: HostIdentity,
+  meta: Pick<ToolMeta, 'receiptId'>,
+  warnings: readonly string[] = [],
+): InvocationReceipt {
+  return buildInvocationReceipt({
+    receiptId: meta.receiptId,
+    contract: binding.contract.contract,
+    contractVersion: binding.contract.version,
+    implementationId: binding.implementation.id,
+    extension: binding.implementation.provider?.extension
+      ?? host.extension,
+    extensionVersion: host.extensionVersion,
+    // The catalog carries no digest, so it is reported as unknown rather than
+    // invented. A receipt that guesses at provenance is worse than one that admits
+    // it does not have it.
+    extensionContentDigest: null,
+    dependencyLockDigest: null,
+    modelIdentity: binding.implementation.provider?.modelId ?? binding.implementation.id,
+    recipeVersion: null,
+    activationGeneration: host.activationGeneration,
+    executionLocation: executionLocationOf(binding.route),
+    warnings,
+  })
 }
 
 /**
@@ -188,8 +237,14 @@ export function registerContractTool(
       // `ToolMeta` is a plain interface without an index signature, so it is not
       // structurally a `JsonValue`; the value is losslessly JSON either way, and
       // `assertValidOutput` is the real check.
-      const value = { ...payload, meta: buildMeta(binding, host) } as Record<string, unknown>
+      const meta = buildMeta(binding, host)
+      const value = { ...payload, meta } as Record<string, unknown>
       assertValidOutput(contract, value)
+
+      // EXT-35: the receipt is emitted once the call SUCCEEDED. A receipt for a
+      // call that failed validation would claim provenance for a result nobody
+      // received, so the sink sees only calls that actually completed.
+      host.recordReceipt?.(buildReceipt(binding, host, meta))
       return value as Record<string, never> | Record<string, JsonValue>
     },
     presentCall(callArgs) {
