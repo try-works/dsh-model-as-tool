@@ -19,7 +19,8 @@
 import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { createMcpHost, type HostSurface } from '../src/mcp/host-binding.ts'
+import { createMcpHost, type HostSurface, type PublishedTool } from '../src/mcp/host-binding.ts'
+import { STANDARD_CONTRACTS } from '@try-works/tool-mode-contracts'
 import { startHttpServer, type HttpTransportConfig } from '../src/mcp/http.ts'
 import { PROTOCOL_VERSION, META_KEYS } from '../src/mcp/protocol.ts'
 import { cleanup, mountPlugin } from './helpers.ts'
@@ -41,22 +42,26 @@ function config(port = 0): HttpTransportConfig {
   } as HttpTransportConfig
 }
 
-/** A host surface backed by the REAL plugin's tool registry. */
+/** A host surface backed by the REAL plugin's tool registry and REAL contracts. */
 async function liveServer() {
   const ctx = await mountPlugin({})
-  // The published set is read from the live registry, so a tool registered by the plugin
-  // is advertised without this test restating it.
-  const published = ctx.tools.schemas().map(schema => ({
-    toolName: schema.name,
-    contract: `live.${schema.name}`,
-    contractVersion: '1.0.0',
-    implementationId: 'live',
-    extension: { id: '@try-works/dsh-model-as-tool', version: '0.0.0' },
-    description: schema.description ?? schema.name,
-    // properties is present because the server reads it while building the tool list.
-    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-    outputSchema: { type: 'object', properties: {}, additionalProperties: false },
-  }))
+  /**
+   * The published set is built from the REPOSITORY'S OWN standard contracts.
+   *
+   * The first version of this file hand-wrote a synthetic surface and set `contract` to a
+   * STRING, where the real shape has `contract` as an object carrying `description`,
+   * `inputSchema` and `outputSchema`. `tools/list` then answered `-32603` with
+   * "Cannot read properties of undefined (reading 'properties')".
+   *
+   * That was a defect in THIS TEST, not in the server: a tool arrives with its contract,
+   * and the binding reads the schemas off it. Using the real contracts means the surface
+   * cannot drift from what the binding actually consumes — which is the whole reason
+   * driving the live path is worth doing.
+   */
+  const registered = new Set(ctx.tools.schemas().map(schema => schema.name))
+  const published: PublishedTool[] = STANDARD_CONTRACTS
+    .filter(contract => registered.has(contract.toolName))
+    .map(contract => ({ toolName: contract.toolName, contract }))
   const surface: HostSurface = {
     published,
     async execute({ name, arguments: args }) {
@@ -66,8 +71,23 @@ async function liveServer() {
         name,
         arguments: args,
       })
-      if (result.isError) throw new Error(result.error?.message ?? 'tool failed')
-      return result.value as Record<string, unknown>
+      /**
+       * Return the OUTCOME WRAPPER, not the bare value.
+       *
+       * `HostSurface.execute` promises `{ isError, value?, message? }`. The first version
+       * of this surface returned the raw tool value, so `callTool` read `outcome.isError`
+       * as undefined (falsy), took the success branch, and found `outcome.value` also
+       * undefined — producing a response whose `structuredContent` was `null` and whose
+       * text was the string "null" from stringifying it.
+       *
+       * The tool had in fact run correctly and returned the right object; the wrapper was
+       * what went missing. A bare value is a plausible mistake precisely because it LOOKS
+       * like a successful result.
+       */
+      if (result.isError) {
+        return { isError: true, message: result.error?.message ?? 'the tool failed' }
+      }
+      return { isError: false, value: result.value }
     },
   }
   const host = createMcpHost({ surface, serverInfo: { name: 'tool-mode', version: '0.1.3' } })
@@ -178,7 +198,7 @@ describe('slice 1 — LIVE MCP conformance against the running server', () => {
     }
   })
 
-  it('advertises the live registry through tools/list', { skip: 'known defect: tools/list answers -32603 for a non-plugin host surface' }, async () => {
+  it('advertises the live registry through tools/list', async () => {
     const { endpoint, names } = await liveServer()
     try {
       const response = await rpc(endpoint.url, {
@@ -198,7 +218,7 @@ describe('slice 1 — LIVE MCP conformance against the running server', () => {
     }
   })
 
-  it('runs a REAL inference through tools/call over HTTP', { skip: 'blocked by the tools/list defect above' }, async () => {
+  it('runs a REAL inference through tools/call over HTTP', async () => {
     const { endpoint } = await liveServer()
     try {
       const response = await rpc(endpoint.url, {
