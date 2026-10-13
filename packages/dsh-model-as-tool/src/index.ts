@@ -24,7 +24,11 @@ import { resolveCapability, type ResolvedModel } from './capability.ts'
 import { createAdapter } from './adapters/index.ts'
 import { registerModelTool } from './registrar.ts'
 import { registerContractTool, type ContractBinding, type HostIdentity } from './bindings.ts'
+import { join } from 'node:path'
 import { createContributionRegistrar } from './extension-registrar.ts'
+import { createDispatch, describeDispatchFailure, type DispatchEnvironment, type DispatchManifest } from './extension-dispatch.ts'
+import { discoverExtension, loadExtensionModule, resolveExtensionEntry, type ExtensionContextV1 } from '@try-works/tool-mode-extension-sdk'
+import type { JsonValue } from './adapters/types.ts'
 import { ExtensionStore, ExtensionLifecycle } from '@try-works/tool-mode-extension-sdk'
 import { createGrant } from './authority.ts'
 import { ProviderBridge } from './provider-bridge.ts'
@@ -1017,6 +1021,85 @@ export function apply(ctx: Context, config: Config = {}): void {
   const extensionStoreDir = config.extensionStore ?? ''
   if (extensionStoreDir.length > 0) {
     const store = new ExtensionStore(extensionStoreDir)
+
+    /**
+     * How dispatch reaches an ACTIVATED extension.
+     *
+     * The module is imported and the instance created ONCE per extension and cached,
+     * because `create()` is documented as lightweight and repeating it per call would
+     * re-run an extension's activation on every invocation. PROVIDERS are created per call
+     * inside `createDispatch`, so a deactivated extension is never served from a stale
+     * provider handle.
+     */
+    const extensionInstances = new Map<string, Promise<{ createProvider(request: { modelId: string; configuration: Readonly<Record<string, unknown>> }): Promise<unknown> }>>()
+    /** Per-instance storage. See the note on storage below. */
+    const memoryStorage = new Map<string, JsonValue>()
+
+    /**
+     * The host-issued context an extension receives.
+     *
+     * It carries NO DSH context, no registry access, no global credentials and no
+     * unfiltered environment (ARCH-06) — an extension gets identity, private storage, a
+     * bounded logger and a teardown signal, and nothing else.
+     */
+    function contextForExtension(extensionId: string): ExtensionContextV1 {
+      const installed = store.listInstalled().value.find(record => record.extensionId === extensionId)
+      return {
+        extensionId,
+        extensionVersion: installed?.version ?? '0.0.0',
+        activationGeneration: 1,
+        /**
+         * Storage is an IN-MEMORY map for the life of this instance, and that is stated
+         * rather than implied: a full private on-disk store is separate work, and a stub
+         * that LOOKS persistent while losing everything on restart would be worse than one
+         * that visibly does not persist.
+         */
+        storage: {
+          // The declared private directory, so an extension that writes files has a place
+          // the HOST chose rather than one the extension invented for itself.
+          directory: join(store.rootDir, 'extension-private', extensionId),
+          async read(key: string) { return memoryStorage.get(`${extensionId}:${key}`) },
+          async write(key: string, value: JsonValue) {
+            memoryStorage.set(`${extensionId}:${key}`, value)
+          },
+        },
+        logger: {
+          log: (level, message) => {
+            if (level === 'error') ctx.logger.error(`[${extensionId}] ${message}`)
+            else if (level === 'warn') ctx.logger.warn(`[${extensionId}] ${message}`)
+            else ctx.logger.info(`[${extensionId}] ${message}`)
+          },
+        },
+        signal: new AbortController().signal,
+        configuration: {},
+      }
+    }
+    function environmentFor(extensionId: string): DispatchEnvironment {
+      const discoveryFor = () => {
+        const installed = store.listInstalled().value.find(record => record.extensionId === extensionId)
+        if (installed === undefined) {
+          throw new Error(`${extensionId} is not installed, so its tools cannot be dispatched`)
+        }
+        return discoverExtension(installed.installPath)
+      }
+      return {
+        getManifest: () => discoveryFor().manifest as unknown as DispatchManifest,
+        async providerFor(modelId) {
+          let pending = extensionInstances.get(extensionId)
+          if (pending === undefined) {
+            pending = (async () => {
+              const discovery = discoveryFor()
+              const module = await loadExtensionModule(resolveExtensionEntry(discovery))
+              return module.create(contextForExtension(extensionId)) as never
+            })()
+            extensionInstances.set(extensionId, pending)
+          }
+          const instance = await pending
+          return instance.createProvider({ modelId, configuration: {} }) as never
+        },
+        contextFor: implementationId => ({ implementationId }),
+      }
+    }
     const registrar = createContributionRegistrar({
       activated: new Set(
         store.readProfileState('default').value
@@ -1025,9 +1108,16 @@ export function apply(ctx: Context, config: Config = {}): void {
       ),
       registry: {
         registerTool: tool => {
-          // The tool is registered through the SAME DSH registry a native tool uses, so an
-          // extension contribution is subject to the same pipeline rather than a parallel
-          // one (ARCH-05).
+          /**
+           * The tool is registered through the SAME DSH registry a native tool uses, so an
+           * extension contribution is subject to the same pipeline rather than a parallel
+           * one (ARCH-05).
+           *
+           * Its `execute` walks the REAL chain: the TMX runtime API has no
+           * tool-invocation surface, so a tool is a name whose contract binds to an
+           * implementation, and the implementation is a model provider. The provider is
+           * created on first CALL, keeping activation lightweight (EXT-19).
+           */
           const dispose = ctx.tools.register(defineTool({
             name: tool.name,
             description: `Provided by ${tool.ownerExtension}.`,
@@ -1036,15 +1126,17 @@ export function apply(ctx: Context, config: Config = {}): void {
               schema: { type: 'object', additionalProperties: true },
               render: (_args, value) => [{ type: 'text', text: JSON.stringify(value, null, 2) }],
             },
-            async execute() {
-              /**
-               * A contribution that reached the registry without an implementation behind
-               * it must REFUSE rather than return an empty success: an extension declares
-               * its tools in a manifest, and a declaration is not an implementation.
-               */
-              throw new Error(
-                `${tool.name} is declared by ${tool.ownerExtension} but no implementation is bound in this build`,
-              )
+            async execute(args, exec) {
+              const dispatch = await createDispatch(environmentFor(tool.ownerExtension), tool.name)
+              if (!dispatch.ok) {
+                // A declared-but-unserved contract is an ERROR naming which situation the
+                // caller is in, never an empty success.
+                throw new Error(describeDispatchFailure(dispatch.failure))
+              }
+              return await dispatch.execute(
+                (args ?? {}) as Record<string, unknown>,
+                exec?.signal ?? new AbortController().signal,
+              ) as Record<string, JsonValue>
             },
           }))
           return dispose
@@ -1097,6 +1189,7 @@ export function apply(ctx: Context, config: Config = {}): void {
     ctx.effect(() => () => { extensionLifecycle = undefined }, 'model-tools extension teardown')
     ctx.logger.info(`model-tools: extension store mounted at ${config.extensionStore}`)
   }
+
 
   const runnable = resolved.filter(item => item.verdict.runnable).length
   ctx.logger.info(
