@@ -1,0 +1,25 @@
+# The dsh-model-tools bundle patch: one insert row over the empty profile root.
+#
+# A user's profile `cordis.patch.yml` (or the file this row is installed into)
+# addresses this row by id, so a deployment can change the config without
+# forking the package. Later patch layers win per row.
+#
+# `models: []` means "no explicit allowlist": every model whose runtime resolves
+# in this process is registered. Naming ids narrows the surface; naming a model
+# that cannot run here is harmless, because the allowlist is intersected with
+# what the capability resolver proves runnable.
+
+- insert:
+    - id: model-tools
+      name: '@dsh-plugins/dsh-model-tools'
+      config:
+        # Every model that can actually run in this process.
+        models: []
+        exclude: []
+        # Do not register a tool for a model whose runtime is missing: a tool
+        # that cannot work costs a model turn to discover.
+        exposeUnavailable: false
+        # Publish one skill per registered tool, teaching when to use it.
+        registerSkills: true
+        # Register the `model_tools` inspection tool.
+        registerControlTool: true

@@ -1,0 +1,531 @@
+{
+  "tongue": {
+    "useCases": [
+      "Route a localisation task: detect the language of a user message, ticket or document before choosing templates, fonts or a translation target.",
+      "Verify generated copy: check that text the agent just wrote is in the language it was asked to write.",
+      "Triage an inbox or a corpus by language without calling a hosted classifier.",
+      "Guard a translation pipeline: only translate when the detected language differs from the target."
+    ],
+    "whenToUse": [
+      "You have a short piece of text (even three or four words is enough) and you need its language code.",
+      "The text must not leave the machine, so a local detector is required.",
+      "You need a fast, cheap check that can run on every message rather than on a sample."
+    ],
+    "whenNotToUse": [
+      "The input is audio: use detect_spoken_language (Ear) instead.",
+      "The text is a single proper noun, a URL, an emoji or pure digits — there is too little signal and the result will be unreliable.",
+      "You need translation; this model identifies language, it does not translate."
+    ],
+    "workflow": [
+      "Call lang_detect with the raw text; do not pre-clean it, since punctuation and casing carry signal.",
+      "Read `language` as the answer and `reliability` as the confidence verdict.",
+      "Treat isTooCloseToCall true as 'ask or abstain' rather than guessing between the top candidates.",
+      "When the answer drives a destructive or expensive action, confirm with a candidate margin before acting."
+    ],
+    "pairsWith": [
+      "detect_spoken_language (Ear) when the source is a recording",
+      "transcribe_audio (Voz) to pick the transcription language first"
+    ],
+    "caveats": [
+      "Language identification over short text is inherently ambiguous between close relatives (da/no/sv, es/ca, id/ms); the candidate list is the honest answer, not just the top label.",
+      "The model ships inside the npm package, so there is no download and no network call.",
+      "It reports ISO 639-1 style codes; map them if the consumer expects another convention."
+    ]
+  },
+  "voz": {
+    "useCases": [
+      "Transcribe a meeting, interview or voice note locally so the audio never leaves the machine.",
+      "Produce captions or subtitles with word-level timing that a cut or highlight list can be built from.",
+      "Turn a recording into text the agent can then summarise, search or index.",
+      "Find where a phrase was said, using the per-word timestamps rather than re-listening."
+    ],
+    "whenToUse": [
+      "The task needs the words of an audio or video file, and the audio is private or too large to upload.",
+      "You need timing, not just text: captions, clip boundaries or 'jump to that moment' behaviour.",
+      "The recording is one of the 25 supported languages."
+    ],
+    "whenNotToUse": [
+      "The file is not speech (music, ambient, a tone) — expect an empty transcript, which is a correct result rather than a failure.",
+      "You only need the language, not the words: detect_spoken_language is far cheaper.",
+      "The environment cannot supply an ONNX Runtime module, or the ~349 MB of weights cannot be downloaded."
+    ],
+    "workflow": [
+      "Confirm the runtime is present first; on Node this model needs onnxruntime-node, and the plugin reports that as the unavailable reason when it is missing.",
+      "Prefer a 16 kHz mono WAV when a decoder is unavailable: convert with ffmpeg -i in.mp4 -ac 1 -ar 16000 out.wav.",
+      "Transcribe once and reuse the result: transcription is the expensive step and its output feeds clips, alignment and summaries.",
+      "Pass include_words true only when timing is actually needed; a long transcript with word timings is a large payload.",
+      "Treat an empty `text` with wordCount 0 as 'no speech found' rather than an error."
+    ],
+    "pairsWith": [
+      "select_clips (Clips) consumes the transcript to cut highlights",
+      "align_transcript (Align) refines word timings against the audio",
+      "detect_fillers (Uhm) finds the hesitations to cut",
+      "detect_speakers (Who) attributes turns to people"
+    ],
+    "caveats": [
+      "The weights are ~349 MB and ONNX Runtime holds roughly 1.2 GB resident; load once and reuse rather than per call.",
+      "The first call downloads the bundle, so the first transcription is much slower than later ones.",
+      "Node CPU inference is materially slower than the browser's GPU path; budget time for long recordings.",
+      "A decoder can return less audio than the container claims; the SDK reports that instead of silently truncating."
+    ]
+  },
+  "redact": {
+    "useCases": [
+      "Scrub names, emails, phone numbers and account numbers from text before it is sent to a remote model or API.",
+      "Sanitise a transcript, ticket or log excerpt so it can be shared or committed.",
+      "Produce a shareable version of a document while keeping a placeholder map to restore the originals afterwards.",
+      "Meet a data-minimisation requirement in an agent pipeline that would otherwise forward raw personal data."
+    ],
+    "whenToUse": [
+      "Text containing personal data is about to leave the machine, the repository or the trust boundary.",
+      "You need the redacted text AND the ability to put the originals back after a remote round trip.",
+      "The text is in one of the 27 supported languages."
+    ],
+    "whenNotToUse": [
+      "Nothing personal is present: redaction adds placeholders that a later reader must resolve.",
+      "You need anonymisation that survives re-identification statistically; placeholder substitution is not that.",
+      "The text is audio or an image: transcribe or OCR it first."
+    ],
+    "workflow": [
+      "Call redact_pii with the raw text and keep the returned items list — it is the restore map.",
+      "Send only the redacted text to the remote service.",
+      "Call the result's restore on the reply to put the original values back, on the machine, before showing it to the user.",
+      "Narrow with `labels` when only specific categories matter, and raise minimum_confidence to trade recall for precision."
+    ],
+    "pairsWith": [
+      "transcribe_audio (Voz) to get text that then needs scrubbing",
+      "moderate_text (Toxic) for a different risk category over the same text"
+    ],
+    "caveats": [
+      "Organisation names are detected but not redacted by default, because a company is not a natural person; pass ORG in labels to include them.",
+      "Structured patterns such as emails, card numbers and IMEI are matched by rule and always apply, independent of the model's confidence.",
+      "The free-tier licence counts monthly active devices per platform per model; it does not restrict the volume of inference."
+    ]
+  },
+  "emo": {
+    "useCases": [
+      "Decorate release notes, changelog entries or commit summaries with fitting emoji.",
+      "Pick an emoji for a UI label, notification or section heading.",
+      "Suggest reactions for a chat or support message."
+    ],
+    "whenToUse": [
+      "Text is being written for a surface where an emoji improves scanning or tone.",
+      "The text is in one of the 22 supported languages.",
+      "The choice should be consistent rather than a matter of the model's taste."
+    ],
+    "whenNotToUse": [
+      "The destination is a code identifier, a commit subject under a strict convention, or a formal document.",
+      "You need sentiment or intent; this model suggests emoji, it does not classify meaning.",
+      "A single emoji is required: take the top suggestion rather than asking for more and guessing."
+    ],
+    "workflow": [
+      "Call suggest_emoji with the text as written.",
+      "Take the top suggestion when one emoji is needed; ask for a larger limit only when offering a choice.",
+      "Do not stack several suggestions into one label."
+    ],
+    "pairsWith": ["suggest_title (Title) when a section needs both a heading and a marker"],
+    "caveats": [
+      "Emoji convention is cultural; a suggestion is a proposal, not a rule.",
+      "Skin-tone variants are not selected by this tool."
+    ]
+  },
+  "gist": {
+    "useCases": [
+      "Tag a document, post or issue with topics before indexing or routing it.",
+      "Route incoming content to the right owner, queue or template by topic.",
+      "Build a browsable topic facet over a corpus.",
+      "Check a draft against the taxonomy to see whether it is on-topic."
+    ],
+    "whenToUse": [
+      "The content must be classified into a stable, fixed taxonomy rather than free-form tags.",
+      "The classification must not leave the machine.",
+      "You want multi-label output rather than one exclusive category."
+    ],
+    "whenNotToUse": [
+      "You need free-form keywords or entity extraction: the taxonomy here is fixed at 36 topics.",
+      "The text is very short or empty; there is not enough signal for multi-label tagging.",
+      "You need sentiment or toxicity — those are different models."
+    ],
+    "workflow": [
+      "Call tag_topics with the text; use the title when a full document is too long.",
+      "Treat the returned topics as a set, ranked by score; keep those above the threshold the consumer cares about.",
+      "Because the taxonomy is fixed, store the label ids rather than the display strings so a relabelling does not break the index."
+    ],
+    "pairsWith": ["lang_detect (Tongue) for language-aware downstream routing"],
+    "caveats": [
+      "A fixed taxonomy means genuinely novel subjects fall into the nearest existing topic rather than creating a new one.",
+      "Scores are model confidences, not calibrated probabilities."
+    ]
+  },
+  "moderator": {
+    "useCases": [
+      "Screen a user-supplied image before it is stored, published or forwarded.",
+      "Gate an upload pipeline so objectionable content never reaches a CDN or a review queue unlabelled.",
+      "Batch-audit an asset library for policy compliance."
+    ],
+    "whenToUse": [
+      "Images are entering a system from an untrusted source.",
+      "The check must happen locally, for privacy or because the images may not be uploaded to a third party.",
+      "A binary flag plus a score is enough for the decision."
+    ],
+    "whenNotToUse": [
+      "The content is text: use moderate_text (Toxic) instead.",
+      "You need a nuanced appropriateness judgement for a specific audience; this is nudity/sexual-content detection.",
+      "The decision is irreversible and high-stakes without human review."
+    ],
+    "workflow": [
+      "Call detect_nsfw with the image paths; the model loads once for the whole batch.",
+      "Treat the score as a threshold you choose, not a verdict, and log the score with the decision.",
+      "Route borderline scores to human review rather than auto-rejecting."
+    ],
+    "pairsWith": ["moderate_text (Toxic) to cover the text side of the same pipeline"],
+    "caveats": [
+      "The model was trained only on licensed and synthetic data, which is what makes it safe to ship commercially — but it also bounds what it has seen.",
+      "A false negative publishes content; choose the threshold with that asymmetry in mind."
+    ]
+  },
+  "clear": {
+    "useCases": [
+      "Clean up a recording before publishing a podcast or a video.",
+      "Remove room echo and background noise from a voice note so it can be transcribed more accurately.",
+      "Level the loudness of a set of recordings so they sit together consistently."
+    ],
+    "whenToUse": [
+      "Speech is present and the problem is noise, echo or inconsistent level.",
+      "The audio must not be uploaded to a service.",
+      "A downstream step (transcription, clipping) benefits from cleaner input."
+    ],
+    "whenNotToUse": [
+      "The recording is music: enhancement is tuned for speech.",
+      "The problem is that words are wrong, not that the audio is noisy — that is transcription's job.",
+      "You need a specific broadcast loudness standard certified; verify the output rather than assuming."
+    ],
+    "workflow": [
+      "Enhance first, then transcribe: cleaner input gives better word timings.",
+      "Keep the original file; write the enhanced audio to a new path.",
+      "Check the loudness of the result before publishing rather than trusting the default target."
+    ],
+    "pairsWith": [
+      "transcribe_audio (Voz) as the downstream consumer",
+      "detect_fillers (Uhm) after cleanup"
+    ],
+    "caveats": [
+      "Enhancement is a transformation: it can remove breath and room tone that a listener expected, and it is not reversible.",
+      "Very noisy input can be over-suppressed, producing artefacts; spot-check the output."
+    ]
+  },
+  "ear": {
+    "useCases": [
+      "Choose the transcription language before running speech recognition.",
+      "Route an inbound call recording to a language-specific queue or agent.",
+      "Check that a recording is in the language it claims to be."
+    ],
+    "whenToUse": [
+      "You have audio and need its spoken language, not its words.",
+      "Running full transcription just to learn the language would be wasteful.",
+      "The language is unknown across a large set (102 supported)."
+    ],
+    "whenNotToUse": [
+      "The source is written text: use lang_detect (Tongue).",
+      "You already know the language and need the words: go straight to transcribe_audio.",
+      "The clip is shorter than a few seconds of speech."
+    ],
+    "workflow": [
+      "Detect the spoken language on a short representative stretch rather than the whole file.",
+      "Pass the result as the language hint to transcription.",
+      "On a low-confidence or heavily multilingual recording, treat the answer as provisional."
+    ],
+    "pairsWith": [
+      "transcribe_audio (Voz) as the immediate consumer",
+      "lang_detect (Tongue) to cross-check against any accompanying written text"
+    ],
+    "caveats": [
+      "Code-switching and heavy accents degrade accuracy.",
+      "A recording with music or noise before speech can mislead the detector; sample from where speech actually is."
+    ]
+  },
+  "shapes": {
+    "useCases": [
+      "Snap a hand-drawn ink stroke to a clean geometric shape in a drawing or whiteboard tool.",
+      "Normalise a diagram sketch into precise primitives before rendering.",
+      "Recognise a gesture stroke as a command shape."
+    ],
+    "whenToUse": [
+      "You have stroke points and need the intended geometric primitive.",
+      "Latency matters and the stroke is a single closed or open path."
+    ],
+    "whenNotToUse": [
+      "The input is a raster image: this consumes stroke coordinates, not pixels.",
+      "The drawing is complex or multi-stroke; recognition is per stroke.",
+      "The intended shape is not one of rectangle, ellipse, triangle, star or line."
+    ],
+    "workflow": [
+      "Capture points in drawing order at a reasonable sample rate; keep the raw points for undo.",
+      "Pass closed true only when the stroke actually closes.",
+      "Use the confidence to decide between snapping and leaving the stroke as freehand."
+    ],
+    "pairsWith": [],
+    "caveats": [
+      "A wobbly or over-sampled stroke can be classified by its noise rather than its intent; simplify before recognition if the result is unstable.",
+      "Only the five documented primitives are recognised."
+    ]
+  },
+  "align": {
+    "useCases": [
+      "Refine coarse segment timings from a transcript into word-accurate timings for captions.",
+      "Produce the timing data a clip cutter or highlight list needs.",
+      "Re-time a transcript produced by a different engine against the original audio."
+    ],
+    "whenToUse": [
+      "You already have the transcript text and the audio, and you need better word timings.",
+      "The existing timings are segment-level or drifted.",
+      "The transcriber was not this project's own model."
+    ],
+    "whenNotToUse": [
+      "You have audio but no transcript: transcribe first, alignment refines an existing transcript.",
+      "You need the words themselves to be corrected; alignment places words, it does not fix them.",
+      "The transcript does not correspond to the audio."
+    ],
+    "workflow": [
+      "Transcribe first, then align the transcript against the same audio file.",
+      "Feed the exact transcript text that was produced; paraphrasing breaks the alignment.",
+      "Drop the aligned timings straight into the caption or cut step."
+    ],
+    "pairsWith": ["transcribe_audio (Voz) produces the transcript to align"],
+    "caveats": [
+      "Alignment cannot rescue a transcript with missing or inserted words; it degrades where the two disagree.",
+      "Runs on Node only in the JavaScript SDK, and the native core targets linux-x64, linux-arm64 and darwin-arm64."
+    ]
+  },
+  "clips": {
+    "useCases": [
+      "Turn a long podcast, interview or meeting into a ranked list of short clips.",
+      "Produce social cuts from a webinar recording.",
+      "Surface the moments most likely to be worth watching from an archive."
+    ],
+    "whenToUse": [
+      "The recording is long and talking-led, and a set of candidate highlights is wanted.",
+      "A transcript exists or can be produced, since selection works from the transcript.",
+      "The output is a cut list for a human to review, not a final edit."
+    ],
+    "whenNotToUse": [
+      "There is no speech: selection is transcript-driven.",
+      "You need a finished, publishable edit rather than candidates.",
+      "The recording is already short; the overhead is not worth it."
+    ],
+    "workflow": [
+      "Transcribe once, then pass that transcript in so transcription does not repeat.",
+      "Review the ranked clip list and treat the ranking as a suggestion.",
+      "Reuse the written clip paths from the result rather than predicting filenames."
+    ],
+    "pairsWith": [
+      "transcribe_audio (Voz) for the transcript input",
+      "suggest_title (Title) to give each selected clip a title and description"
+    ],
+    "caveats": [
+      "The files this model consumes are documented upstream as not being a stable interface (naming mismatches, int64 versus int32, large memory use); do not depend on their layout.",
+      "Clip boundaries are model-suggested; check the first and last second of each before publishing."
+    ]
+  },
+  "title": {
+    "useCases": [
+      "Write the heading and one-line description for a landing-page section.",
+      "Generate a documentation page title and summary from its body.",
+      "Give each selected clip or chapter a title and description.",
+      "Name an article, note or changelog entry."
+    ],
+    "whenToUse": [
+      "A passage needs a short factual title plus a one- or two-sentence description.",
+      "The text is long enough to have a subject — a section, page or transcript — rather than a fragment.",
+      "You want a factual label rather than a marketing headline."
+    ],
+    "whenNotToUse": [
+      "You need persuasive or brand copy; this model writes factual titles.",
+      "The passage is a single sentence with no distinct subject.",
+      "You are on Windows or Linux: see the caveat below — this model cannot run there."
+    ],
+    "workflow": [
+      "Pass the full passage, not a summary of it; the model needs the material to name.",
+      "Use the returned title and description together: the title for navigation, the description for context.",
+      "Cap generation with max_tokens when input is unusual, since the model can otherwise generate without end.",
+      "On an empty card, fall back to the passage's own first sentence rather than retrying blindly."
+    ],
+    "pairsWith": ["select_clips (Clips) to title each selected clip"],
+    "caveats": [
+      "Title runs on Apple platforms only, on the GPU through MLX, and requires the Swift MLX package trait. There is no JavaScript or Kotlin SDK and no Windows or Linux build, so this tool cannot run on a Windows DSH host.",
+      "On iOS the model must be suspended before the app backgrounds, because the platform revokes GPU access.",
+      "Treat it as a remote capability: call it from an Apple machine, not from this process."
+    ]
+  },
+  "uhm": {
+    "useCases": [
+      "Find every hesitation in a recording so an editor can cut them.",
+      "Tighten a spoken transcript by removing filler spans.",
+      "Measure how disfluent a speaker is across a set of recordings."
+    ],
+    "whenToUse": [
+      "Spoken audio needs its filler words located with tight time bounds.",
+      "You are preparing an edited cut and need exact spans to remove.",
+      "The language and speaker are broadly covered by the model."
+    ],
+    "whenNotToUse": [
+      "You need the transcript: detect_fillers returns spans, not words.",
+      "The audio is music or non-speech.",
+      "You intend to remove every match automatically without listening: over-cutting is easy."
+    ],
+    "workflow": [
+      "Transcribe first so you can see the fillers in context.",
+      "Use the returned spans as cut candidates, keeping a margin so the cut does not clip neighbouring words.",
+      "Review the cut list; some 'uh' sounds are meaningful emphasis."
+    ],
+    "pairsWith": [
+      "transcribe_audio (Voz) for the words around the fillers",
+      "clear (Clear) to clean audio before editing"
+    ],
+    "caveats": [
+      "Runs on Apple platforms only through the Swift SDK; it is not available to a Windows or Linux DSH host.",
+      "Spans are millisecond-precise but a cut still needs a small crossfade to avoid clicks."
+    ]
+  },
+  "schemer": {
+    "useCases": [
+      "Turn unstructured text into typed JSON against a schema the caller defines.",
+      "Extract invoice, contract or form fields without a hosted model.",
+      "Normalise incoming free-text records into a database shape."
+    ],
+    "whenToUse": [
+      "The target schema is known and the source is text.",
+      "Extraction must happen locally.",
+      "A field being absent from the text should stay absent rather than be guessed."
+    ],
+    "whenNotToUse": [
+      "The schema is unknown or you want open-ended information extraction.",
+      "The task needs reasoning beyond field mapping.",
+      "The text is audio or an image."
+    ],
+    "workflow": [
+      "Write the narrowest schema that answers the question; every optional field is a chance to hallucinate.",
+      "Pass the schema with the text in one call.",
+      "Treat a missing field as a real answer: the model leaves fields empty when the text is silent.",
+      "Validate the returned object against the schema before trusting it downstream."
+    ],
+    "pairsWith": ["redact_pii (Redact) before extraction when the text holds personal data"],
+    "caveats": [
+      "In closed beta: the weights are published but no SDK ships them, so this tool cannot be installed yet.",
+      "Schema-constrained extraction fails quietly if the schema itself is ambiguous; make field names and descriptions unambiguous."
+    ]
+  },
+  "toxic": {
+    "useCases": [
+      "Pre-screen user-generated text before publishing or forwarding it.",
+      "Flag abuse in a support or community inbox for human review.",
+      "Audit a corpus for hateful or threatening content."
+    ],
+    "whenToUse": [
+      "Text is entering a system from an untrusted source and needs a risk signal.",
+      "The content is in one of the 23 supported European languages.",
+      "The result will be reviewed by a human before any action is taken."
+    ],
+    "whenNotToUse": [
+      "The content is an image: use detect_nsfw (Moderator).",
+      "You need a legal determination; this is a triage signal.",
+      "Auto-banning on the score alone — false positives on reclaimed language and quoted abuse are expected."
+    ],
+    "workflow": [
+      "Call moderate_text with the text and a deliberate confidence floor.",
+      "Use the verdict to prioritise human review, not to decide alone.",
+      "Record the score alongside the decision so thresholds can be tuned later."
+    ],
+    "pairsWith": ["redact_pii (Redact) to strip personal data before a reviewer sees the text"],
+    "caveats": [
+      "In closed beta: the weights are published but no SDK ships them.",
+      "Coverage is 23 European languages; other languages are out of scope.",
+      "Quoted or reported speech is a known source of false positives."
+    ]
+  },
+  "who": {
+    "useCases": [
+      "Split an interview into per-speaker turns for a readable transcript.",
+      "Attribute quotes to people in a meeting recording.",
+      "Label speakers so an edit can cut between them."
+    ],
+    "whenToUse": [
+      "A recording has multiple speakers and the transcript needs attribution.",
+      "Timestamps per turn are needed for cutting or captions.",
+      "The speakers are distinguishable by voice."
+    ],
+    "whenNotToUse": [
+      "Only one person speaks: attribution adds nothing.",
+      "You need to know who a person is by name; this labels turns, it does not identify identities.",
+      "The audio quality is too poor to separate voices."
+    ],
+    "workflow": [
+      "Transcribe first, then attribute turns to the transcript.",
+      "Treat speaker labels as anonymous clusters until a human assigns names.",
+      "Use the face boxes on video to help a human confirm which cluster is which person."
+    ],
+    "pairsWith": [
+      "transcribe_audio (Voz) for the words",
+      "match_faces (Face) to help map clusters to people"
+    ],
+    "caveats": [
+      "In closed beta: the weights are published but no SDK ships them.",
+      "Overlapping speech and similar voices cause cluster swaps; verify before publishing attributed quotes."
+    ]
+  },
+  "face": {
+    "useCases": [
+      "Group a photo library by person without uploading any image.",
+      "Find every appearance of a person in a video.",
+      "De-duplicate near-identical portrait shots."
+    ],
+    "whenToUse": [
+      "Images or video must be grouped by identity and privacy rules forbid uploading them.",
+      "You need face boxes and cluster ids rather than names.",
+      "The faces are reasonably large and frontal."
+    ],
+    "whenNotToUse": [
+      "You need to identify a named individual from a database; that is a different, consent-bound task.",
+      "Faces are tiny, profile-only or heavily occluded.",
+      "Biometric processing is not lawful in your jurisdiction for this purpose — check before using."
+    ],
+    "workflow": [
+      "Run matching over the set and keep cluster ids stable for the session.",
+      "Let a human name each cluster; do not infer identity from the model.",
+      "Keep the images on the machine; only the cluster metadata needs to travel."
+    ],
+    "pairsWith": ["detect_speakers (Who) to correlate speakers with on-screen faces"],
+    "caveats": [
+      "In closed beta: the weights are published but no SDK ships them.",
+      "Face matching is biometric processing and is regulated in many jurisdictions; the local-only design helps but does not by itself make a use lawful.",
+      "Quality of the crop dominates accuracy."
+    ]
+  },
+  "eye": {
+    "useCases": [
+      "Choose the best frame from a burst for a thumbnail or hero image.",
+      "Reduce a clip to its most representative shots.",
+      "Detect and drop repeated near-identical shots before review."
+    ],
+    "whenToUse": [
+      "A burst or clip must be reduced to the frames worth keeping.",
+      "You need a quality signal plus content labels without uploading the images.",
+      "De-duplication matters as much as ranking."
+    ],
+    "whenNotToUse": [
+      "You need aesthetic judgement for a brand; scoring is technical.",
+      "The material is a single deliberate shot.",
+      "You need object detection over many categories."
+    ],
+    "workflow": [
+      "Score the burst and take the top frame, or the best frame per duplicate group.",
+      "Use the labels to sanity-check that the chosen frame shows what was expected.",
+      "Keep the original files; scoring selects, it does not edit."
+    ],
+    "pairsWith": ["detect_nsfw (Moderator) to screen the frames that would otherwise be published"],
+    "caveats": [
+      "In closed beta: the weights are published but no SDK ships them.",
+      "Scores favour technical quality (sharpness, exposure) over editorial suitability."
+    ]
+  }
+}

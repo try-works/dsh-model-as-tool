@@ -1,1 +1,14 @@
+# Build output and dependencies
+node_modules/
+lib/
+*.tsbuildinfo
+
+# Local spike used to probe upstream SDK behaviour; not part of the deliverable.
+spike/
+
+# Raw upstream captures are an input to the research, not the research itself.
+research/raw/
+research/text/
+
+# recursive-mode runtime state
 /.recursive/config/recursive-router-discovered.json

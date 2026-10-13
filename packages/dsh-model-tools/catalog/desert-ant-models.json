@@ -1,0 +1,629 @@
+[
+  {
+    "id": "align",
+    "name": "Align",
+    "summary": "Word-timestamp refinement for any transcript, on device, from 0.7MB.",
+    "capability": "audio.word-alignment",
+    "input": "audio",
+    "output": "{ words: [{ text, start, end }] } aligned against the audio",
+    "languages": null,
+    "modelSizeMB": 0.7,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "browser-only",
+    "npmPackage": "@desert-ant-labs/align",
+    "npmSubpath": "/native",
+    "requiresRuntime": [],
+    "cliVerb": "align",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/align/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/align",
+    "tool": {
+      "name": "align_transcript",
+      "description": "Refine word-level timestamps in a transcript against its audio, for accurate captions, cuts and highlights.",
+      "params": {
+        "audio_path": "Absolute path to the audio or video file.",
+        "transcript": "The transcript text to align against the audio."
+      },
+      "returns": "The transcript split into words, each with a start and end time in seconds."
+    },
+    "skill": {
+      "name": "desert-ant-align",
+      "description": "Align transcript words to audio timestamps with the Desert Ant Align model.",
+      "whenToUse": "Use when captions, cuts or highlight spans need word-accurate timing rather than coarse segment times."
+    }
+  },
+  {
+    "id": "clear",
+    "name": "Clear",
+    "summary": "On-device speech enhancement: denoise, dereverb and loudness-normalize to 48 kHz.",
+    "capability": "audio.speech-enhancement",
+    "input": "audio",
+    "output": "A cleaned audio file path plus processing metadata",
+    "languages": null,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "browser-only",
+    "npmPackage": "@desert-ant-labs/clear",
+    "npmSubpath": "/native",
+    "requiresRuntime": [],
+    "cliVerb": "clear",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/clear/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/clear",
+    "tool": {
+      "name": "enhance_speech",
+      "description": "Clean up a recording on device: remove noise and room echo and level the loudness to a podcast-ready 48 kHz.",
+      "params": {
+        "audio_path": "Absolute path to the input audio or video file.",
+        "output_path": "Absolute path to write the enhanced audio to."
+      },
+      "returns": "The path of the enhanced audio file."
+    },
+    "skill": {
+      "name": "desert-ant-clear",
+      "description": "Enhance noisy speech recordings on device with the Desert Ant Clear model.",
+      "whenToUse": "Use when a recording needs denoising, dereverberation or loudness normalization before publication."
+    }
+  },
+  {
+    "id": "clips",
+    "name": "Clips",
+    "summary": "Clip selection that turns a long recording into ranked shorts and highlights from a transcript.",
+    "capability": "video.clip-selection",
+    "input": "video",
+    "output": "{ clips: [{ index, start, end, title, file }] } ranked by interest",
+    "languages": null,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "browser-only",
+    "npmPackage": null,
+    "npmSubpath": null,
+    "requiresRuntime": [],
+    "cliVerb": "clips",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/clips/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/clips",
+    "tool": {
+      "name": "select_clips",
+      "description": "Rank and cut the most interesting short clips and highlights out of a podcast, interview or meeting recording.",
+      "params": {
+        "media_path": "Absolute path to the recording to cut clips from.",
+        "transcript": "Optional pre-computed transcript JSON, so transcription runs only once."
+      },
+      "returns": "Ranked clips, each with its start and end time, a title and the written clip file."
+    },
+    "skill": {
+      "name": "desert-ant-clips",
+      "description": "Select and cut ranked short clips from long recordings with the Desert Ant Clips model.",
+      "whenToUse": "Use when a long recording must become shorts, highlights or a social cut list."
+    }
+  },
+  {
+    "id": "ear",
+    "name": "Ear",
+    "summary": "On-device spoken language identification across 102 languages from a short audio stretch.",
+    "capability": "audio.spoken-language-identification",
+    "input": "audio",
+    "output": "{ language, confidence, candidates: [{ language, probability }] }",
+    "languages": 102,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "browser-only",
+    "npmPackage": "@desert-ant-labs/ear",
+    "npmSubpath": "/native",
+    "requiresRuntime": [],
+    "cliVerb": "ear",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/ear/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/ear",
+    "tool": {
+      "name": "detect_spoken_language",
+      "description": "Identify which language is being spoken in a recording, before transcription starts, across 102 languages.",
+      "params": {
+        "audio_path": "Absolute path to the audio or video file."
+      },
+      "returns": "The detected spoken language with a confidence and runner-up candidates."
+    },
+    "skill": {
+      "name": "desert-ant-ear",
+      "description": "Identify the spoken language of a recording on device with the Desert Ant Ear model.",
+      "whenToUse": "Use to pick a transcription language or route audio before running speech recognition."
+    }
+  },
+  {
+    "id": "emo",
+    "name": "Emo",
+    "summary": "Type a task or message and get the emoji that fit, in 22 languages, on the device.",
+    "capability": "text.emoji-suggestion",
+    "input": "text",
+    "output": "[{ emoji, confidence }] ranked suggestions",
+    "languages": 22,
+    "modelSizeMB": 10.2,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "browser-only",
+    "npmPackage": "@desert-ant-labs/emo",
+    "npmSubpath": "/native",
+    "requiresRuntime": [],
+    "cliVerb": "emo",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/emo/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/emo",
+    "tool": {
+      "name": "suggest_emoji",
+      "description": "Suggest emoji that fit a piece of text, in 22 languages, running entirely on device.",
+      "params": {
+        "text": "The text to suggest emoji for.",
+        "limit": { "description": "Maximum number of suggestions to return (default 5).", "type": "integer" }
+      },
+      "returns": "Ranked emoji suggestions with confidence scores."
+    },
+    "skill": {
+      "name": "desert-ant-emo",
+      "description": "Suggest fitting emoji for text with the Desert Ant Emo model.",
+      "whenToUse": "Use when writing release notes, commit summaries or UI copy that should carry emoji."
+    }
+  },
+  {
+    "id": "eye",
+    "name": "Eye",
+    "summary": "On-device frame scoring that tells you which shot to keep, what is in it, and which shots repeat.",
+    "capability": "image.frame-scoring",
+    "input": "image",
+    "output": "[{ frame, score, labels, duplicate_of }]",
+    "languages": null,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": true,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "no-sdk",
+    "npmPackage": null,
+    "npmSubpath": null,
+    "requiresRuntime": [],
+    "cliVerb": null,
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/eye/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/eye",
+    "tool": {
+      "name": "score_frames",
+      "description": "Score a burst or clip of frames to choose the best shot, describe what is in it and detect repeated shots.",
+      "params": {
+        "image_paths": { "description": "Absolute paths of the frames to score.", "type": "string[]" },
+        "top": { "description": "How many top frames to return (default 5).", "type": "integer" }
+      },
+      "returns": "Frames ranked by score, with labels and duplicate grouping."
+    },
+    "skill": {
+      "name": "desert-ant-eye",
+      "description": "Score and rank frames to pick the best shot with the Desert Ant Eye model.",
+      "whenToUse": "Use when a burst or clip must be reduced to the best shot or de-duplicated."
+    }
+  },
+  {
+    "id": "face",
+    "name": "Face",
+    "summary": "On-device face matching that finds the same person across a photo library or through a video.",
+    "capability": "image.face-matching",
+    "input": "image",
+    "output": "[{ path, faces: [{ box, match_id }] }]",
+    "languages": null,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": true,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "no-sdk",
+    "npmPackage": null,
+    "npmSubpath": null,
+    "requiresRuntime": [],
+    "cliVerb": null,
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/face/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/face",
+    "tool": {
+      "name": "match_faces",
+      "description": "Match the same person across a set of images or a video, entirely on device, with no image leaving the machine.",
+      "params": {
+        "image_paths": { "description": "Absolute paths of the images to match faces across.", "type": "string[]" },
+        "video_path": "Optional video to track faces through instead of still images."
+      },
+      "returns": "Detected face boxes grouped by person identity."
+    },
+    "skill": {
+      "name": "desert-ant-face",
+      "description": "Match and group the same person across images with the Desert Ant Face model.",
+      "whenToUse": "Use to group a photo set by person, or to find a person's appearances in footage, without uploading images."
+    }
+  },
+  {
+    "id": "gist",
+    "name": "Gist",
+    "summary": "On-device topic tagging across a 36-topic taxonomy, in 101 languages, with no server call.",
+    "capability": "text.topic-tagging",
+    "input": "text",
+    "output": "{ topics: [{ topic, score }] }",
+    "languages": 101,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "browser-only",
+    "npmPackage": "@desert-ant-labs/gist",
+    "npmSubpath": "/native",
+    "requiresRuntime": [],
+    "cliVerb": "gist",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/gist/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/gist",
+    "tool": {
+      "name": "tag_topics",
+      "description": "Tag a title, post or article with the topics it covers, from a fixed 36-topic taxonomy across 101 languages.",
+      "params": {
+        "text": "The text to tag.",
+        "limit": { "description": "Maximum number of topics to return (default 5).", "type": "integer" }
+      },
+      "returns": "Ranked topic labels from the fixed taxonomy with scores."
+    },
+    "skill": {
+      "name": "desert-ant-gist",
+      "description": "Tag content with topics from a fixed taxonomy using the Desert Ant Gist model.",
+      "whenToUse": "Use to classify or route content into a stable topic taxonomy before indexing or display."
+    }
+  },
+  {
+    "id": "moderator",
+    "name": "Moderator",
+    "summary": "On-device NSFW detection that flags nudity before upload, trained only on licensed and synthetic data.",
+    "capability": "image.nsfw-detection",
+    "input": "image",
+    "output": "{ nsfw, score, labels: [...] }",
+    "languages": null,
+    "modelSizeMB": 9.2,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "browser-only",
+    "npmPackage": "@desert-ant-labs/moderator",
+    "npmSubpath": "/native",
+    "requiresRuntime": [],
+    "cliVerb": "moderator",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/moderator/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/moderator",
+    "tool": {
+      "name": "detect_nsfw",
+      "description": "Check images for nudity or sexual content on device before they are uploaded or shown.",
+      "params": {
+        "image_paths": { "description": "Absolute paths of the images to check.", "type": "string[]" }
+      },
+      "returns": "A per-image NSFW verdict with score and labels."
+    },
+    "skill": {
+      "name": "desert-ant-moderator",
+      "description": "Screen images for NSFW content on device with the Desert Ant Moderator model.",
+      "whenToUse": "Use to gate user-supplied images before storing, publishing or sending them anywhere."
+    }
+  },
+  {
+    "id": "redact",
+    "name": "Redact",
+    "summary": "On-device redaction that strips personal data as you type, in 27 languages, with restore support.",
+    "capability": "text.pii-redaction",
+    "input": "text",
+    "output": "{ redactedText, items: [{ label, original, placeholder, confidence }] }",
+    "languages": 27,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "browser-only",
+    "npmPackage": "@desert-ant-labs/redact",
+    "npmSubpath": "/native",
+    "requiresRuntime": [],
+    "cliVerb": "redact",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/redact/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/redact",
+    "tool": {
+      "name": "redact_pii",
+      "description": "Replace personal data (names, emails, phone numbers, addresses, card numbers and more) in text with stable placeholders, on device, before the text reaches any remote service.",
+      "params": {
+        "text": "The text to redact.",
+        "labels": { "description": "Optional list of entity labels to restrict redaction to, for example [\"EMAIL\", \"PHONE\"].", "type": "string[]" },
+        "minimum_confidence": { "description": "Optional confidence floor between 0 and 1 (default 0.6).", "type": "number" }
+      },
+      "returns": "The redacted text plus the placeholder map, so originals can be restored after a remote round trip."
+    },
+    "skill": {
+      "name": "desert-ant-redact",
+      "description": "Strip personal data from text on device with the Desert Ant Redact model before sending it to any remote service.",
+      "whenToUse": "Use before sending logs, transcripts, tickets or documents containing names, emails or numbers to a remote model or API."
+    }
+  },
+  {
+    "id": "schemer",
+    "name": "Schemer",
+    "summary": "Extract typed fields from any text against your own schema, on device, with empty fields left empty.",
+    "capability": "text.structured-extraction",
+    "input": "text",
+    "output": "An object matching the caller-supplied schema",
+    "languages": null,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": true,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "no-sdk",
+    "npmPackage": null,
+    "npmSubpath": null,
+    "requiresRuntime": [],
+    "cliVerb": null,
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/schemer/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/schemer",
+    "tool": {
+      "name": "extract_fields",
+      "description": "Extract typed fields from text against a caller-supplied JSON schema, on device, leaving a field empty where the text says nothing.",
+      "params": {
+        "text": "The text to extract from.",
+        "schema": "A JSON Schema object describing the fields to extract."
+      },
+      "returns": "An object matching the supplied schema."
+    },
+    "skill": {
+      "name": "desert-ant-schemer",
+      "description": "Extract schema-constrained structured fields from text with the Desert Ant Schemer model.",
+      "whenToUse": "Use when text must become typed JSON against a known schema without a round trip to a hosted model."
+    }
+  },
+  {
+    "id": "shapes",
+    "name": "Shapes",
+    "summary": "On-device shape recognition that turns one hand-drawn stroke into a rectangle, ellipse, triangle, star or line in under 10ms.",
+    "capability": "stroke.shape-recognition",
+    "input": "stroke",
+    "output": "{ shape, confidence, candidates: [...] }",
+    "languages": null,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "browser-only",
+    "npmPackage": "@desert-ant-labs/shapes",
+    "npmSubpath": "/native",
+    "requiresRuntime": [],
+    "cliVerb": "shapes",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/shapes/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/shapes",
+    "tool": {
+      "name": "recognize_shape",
+      "description": "Turn a single hand-drawn stroke into a clean shape: rectangle, ellipse, triangle, star or line.",
+      "params": {
+        "points": "The stroke as an array of [x, y] points in drawing order.",
+        "closed": "Whether the stroke is a closed shape."
+      },
+      "returns": "The recognized shape with a confidence and runner-up candidates."
+    },
+    "skill": {
+      "name": "desert-ant-shapes",
+      "description": "Recognize hand-drawn strokes as clean shapes with the Desert Ant Shapes model.",
+      "whenToUse": "Use in drawing or diagram tooling to snap an ink stroke to a geometric shape."
+    }
+  },
+  {
+    "id": "title",
+    "name": "Title",
+    "summary": "On-device titles and descriptions: a short factual title and a one- or two-sentence description for any passage.",
+    "capability": "text.title-generation",
+    "input": "text",
+    "output": "{ title, description, isEmpty }",
+    "languages": null,
+    "modelSizeMB": null,
+    "appleOnly": true,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "apple-only",
+    "npmPackage": null,
+    "npmSubpath": null,
+    "requiresRuntime": [],
+    "cliVerb": "title",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/title/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/title",
+    "tool": {
+      "name": "suggest_title",
+      "description": "Write a short factual title and a one- or two-sentence description for a passage of text: a landing-page section, a documentation page or an article.",
+      "params": {
+        "text": "The passage to title.",
+        "max_tokens": { "description": "Optional generation cap in tokens (default 96).", "type": "integer" }
+      },
+      "returns": "A title and a description, or an empty card when the model returned neither."
+    },
+    "skill": {
+      "name": "desert-ant-title",
+      "description": "Generate short factual titles and descriptions for passages with the Desert Ant Title model.",
+      "whenToUse": "Use when page sections, docs headings or article summaries need a title and one-line description."
+    }
+  },
+  {
+    "id": "tongue",
+    "name": "Tongue",
+    "summary": "On-device language identification for short text across 84 languages, from just a few words.",
+    "capability": "text.language-identification",
+    "input": "text",
+    "output": "{ language, reliability, candidates: [{ language, probability }], isTooCloseToCall }",
+    "languages": 84,
+    "modelSizeMB": 2,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": true,
+    "windowsSupport": "native-node",
+    "npmPackage": "@desert-ant-labs/tongue",
+    "npmSubpath": null,
+    "requiresRuntime": [],
+    "cliVerb": "tongue",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/tongue/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/tongue",
+    "tool": {
+      "name": "lang_detect",
+      "description": "Identify the language of a short piece of text across 84 languages, on device, in microseconds. Works from as little as three words.",
+      "params": {
+        "text": "The text whose language to identify.",
+        "top": { "description": "How many runner-up language candidates to include (default 3).", "type": "integer" }
+      },
+      "returns": "The detected language code, a reliability verdict, and the top scoring candidates with probabilities."
+    },
+    "skill": {
+      "name": "desert-ant-tongue",
+      "description": "Detect the language of short text on device with the Desert Ant Tongue model.",
+      "whenToUse": "Use before translating, routing to a locale-specific template, or checking that generated copy is in the expected language."
+    }
+  },
+  {
+    "id": "toxic",
+    "name": "Toxic",
+    "summary": "On-device moderation that flags hateful, abusive and threatening text in 23 European languages.",
+    "capability": "text.toxicity-detection",
+    "input": "text",
+    "output": "{ toxic, score, labels: [...] }",
+    "languages": 23,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": true,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "no-sdk",
+    "npmPackage": null,
+    "npmSubpath": null,
+    "requiresRuntime": [],
+    "cliVerb": null,
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/toxic/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/toxic",
+    "tool": {
+      "name": "moderate_text",
+      "description": "Flag hateful, abusive and threatening text in 23 European languages, on device, before the message is sent.",
+      "params": {
+        "text": "The text to check.",
+        "minimum_confidence": { "description": "Optional confidence floor between 0 and 1.", "type": "number" }
+      },
+      "returns": "A toxicity verdict with score and the matched labels."
+    },
+    "skill": {
+      "name": "desert-ant-toxic",
+      "description": "Screen text for hate speech and abuse on device with the Desert Ant Toxic model.",
+      "whenToUse": "Use to pre-screen user-generated text before publishing or forwarding it."
+    }
+  },
+  {
+    "id": "uhm",
+    "name": "Uhm",
+    "summary": "On-device filler detection that marks every um, uh and hmm to within 20ms, an hour of audio in 12s.",
+    "capability": "audio.filler-detection",
+    "input": "audio",
+    "output": "[{ start, end, word }] filler spans to cut",
+    "languages": null,
+    "modelSizeMB": null,
+    "appleOnly": true,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "apple-only",
+    "npmPackage": null,
+    "npmSubpath": null,
+    "requiresRuntime": [],
+    "cliVerb": "uhm",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/uhm/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/uhm",
+    "tool": {
+      "name": "detect_fillers",
+      "description": "Find every um, uh and hmm in a recording with the exact span to cut.",
+      "params": {
+        "audio_path": "Absolute path to the audio or video file."
+      },
+      "returns": "Filler spans with start and end times in seconds, ready to cut."
+    },
+    "skill": {
+      "name": "desert-ant-uhm",
+      "description": "Detect filler words in speech on device with the Desert Ant Uhm model.",
+      "whenToUse": "Use when editing spoken audio to remove hesitations and tighten a transcript."
+    }
+  },
+  {
+    "id": "voz",
+    "name": "Voz",
+    "summary": "Transcribe 10 minutes of audio in 2s on an iPhone, 14x faster than Whisper, with word timestamps.",
+    "capability": "audio.speech-recognition",
+    "input": "audio",
+    "output": "{ text, words: [{ text, start, end }], realtimeFactor }",
+    "languages": 25,
+    "modelSizeMB": 349,
+    "appleOnly": false,
+    "closedBeta": false,
+    "verifiedRunnableOnWindows": true,
+    "windowsSupport": "onnxruntime-node",
+    "npmPackage": "@desert-ant-labs/voz",
+    "npmSubpath": null,
+    "requiresRuntime": ["onnxruntime-node"],
+    "cliVerb": "voz",
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/voz/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/voz",
+    "tool": {
+      "name": "transcribe_audio",
+      "description": "Transcribe an audio or video file on device with word-level timestamps across 25 languages. Nothing is uploaded and no API key is needed.",
+      "params": {
+        "audio_path": "Absolute path to the audio or video file, or a 16 kHz mono WAV.",
+        "include_words": { "description": "Whether to include the per-word timestamps (default true).", "type": "boolean" }
+      },
+      "returns": "The transcript text, optional per-word start and end times, and the measured realtime factor."
+    },
+    "skill": {
+      "name": "desert-ant-voz",
+      "description": "Transcribe audio on device with word timestamps using the Desert Ant Voz model.",
+      "whenToUse": "Use to get a transcript or captions from a recording locally, without uploading audio to a hosted API."
+    }
+  },
+  {
+    "id": "who",
+    "name": "Who",
+    "summary": "On-device speaker labeling that turns a recording into per-person turns with face boxes and timestamps.",
+    "capability": "audio.speaker-labeling",
+    "input": "audio",
+    "output": "[{ speaker, start, end, face_box }] turns",
+    "languages": null,
+    "modelSizeMB": null,
+    "appleOnly": false,
+    "closedBeta": true,
+    "verifiedRunnableOnWindows": false,
+    "windowsSupport": "no-sdk",
+    "npmPackage": null,
+    "npmSubpath": null,
+    "requiresRuntime": [],
+    "cliVerb": null,
+    "license": "source-available",
+    "docsUrl": "https://desertant.com/models/who/",
+    "hfRepo": "https://huggingface.co/desert-ant-labs/who",
+    "tool": {
+      "name": "detect_speakers",
+      "description": "Split a recording into per-person speaking turns with timestamps and face boxes, ready to cut or caption.",
+      "params": {
+        "audio_path": "Absolute path to the audio or video file."
+      },
+      "returns": "Speaking turns labelled by speaker, with start and end times."
+    },
+    "skill": {
+      "name": "desert-ant-who",
+      "description": "Label speaker turns in a recording on device with the Desert Ant Who model.",
+      "whenToUse": "Use when a transcript or edit needs to know who spoke when."
+    }
+  }
+]
