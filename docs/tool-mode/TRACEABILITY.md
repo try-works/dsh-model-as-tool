@@ -19,7 +19,7 @@ is the honest default rather than an omission.
 - Acceptance tests: **90**
 - Requirements DONE: **3** / 227 (1%)
 - Requirements BLOCKED: **3**
-- Requirements NOT_RUN: **148**
+- Requirements NOT_RUN: **143**
 - Acceptance tests DONE: **0** / 90 (0%)
 
 ## Requirements by family
@@ -27,7 +27,7 @@ is the honest default rather than an omission.
 | Family | Total | DONE | PARTIAL | NOT_RUN | BLOCKED |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | BASE | 14 | 2 | 4 | 8 | 0 |
-| ARCH | 6 | 0 | 0 | 6 | 0 |
+| ARCH | 6 | 0 | 5 | 1 | 0 |
 | RUN | 8 | 0 | 0 | 8 | 0 |
 | MCP | 13 | 0 | 11 | 2 | 0 |
 | SEC | 10 | 0 | 4 | 6 | 0 |
@@ -70,12 +70,12 @@ is the honest default rather than an omission.
 
 | ID | Requirement | Section | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| ARCH-01 |  | 3. Architecture and ownership | NOT_RUN | — |
-| ARCH-02 |  | 3. Architecture and ownership | NOT_RUN | — |
-| ARCH-03 |  | 3. Architecture and ownership | NOT_RUN | — |
-| ARCH-04 |  | 3. Architecture and ownership | NOT_RUN | — |
-| ARCH-05 |  | 3. Architecture and ownership | NOT_RUN | — |
-| ARCH-06 |  | 3. Architecture and ownership | NOT_RUN | — |
+| ARCH-01 |  | 3. Architecture and ownership | PARTIAL | DISPATCH AUTHORITY IS NOW ENFORCED BY A GATE rather than asserted. The architecture check fails the build when the MCP or dispatch layers call a tool DEFINITION execute - including a ctx.tools.get() whose execute would bypass the pipeline - and the rule distinguishes the receiver, because that is what separates an authority from a bypass. The existing path was already correct: the MCP binding dispatches through an INJECTED executor, which index.ts supplies as ctx.tools.execute. A test asserts both directions - that definition.execute is flagged and that an injected surface.execute is accepted, since treating dependency injection as a bypass produced a false positive. Remaining: Code Mode does not exist, so the rule is enforced over the MCP layer only and its application to a future Code Mode path is unproven. |
+| ARCH-02 |  | 3. Architecture and ownership | PARTIAL | One installable host bundle exists (packages/dsh-model-as-tool with its cordis patch), and every model/tool extension is a SEPARATE package with its own version. RELEASE INDEPENDENCE IS NOW CHECKED: a gate fails the build if any extension declares the host package in dependencies, peerDependencies or optionalDependencies, because that would couple the extension to a host release and make "installing one extension must not require rebuilding the host" false. A test asserts the property holds today and that the check fires on a fixture that violates it. Remaining: no single bundle TARBALL is built that installs the host plus its declared peers, and the bundles are not versioned as one artefact, so "one installable bundle" is satisfied structurally rather than as a shipped artifact. The extensions are not published to npm either. |
+| ARCH-03 |  | 3. Architecture and ownership | PARTIAL | The responsibility partition holds in the code: the host owns the MCP listener lifecycle, the export policy, external caller contexts, extension installation and activation, deployment coordination and contribution projection; the extensions own their adapters, assets, recipes and skills, and the architecture gate proves no model-specific implementation lives in the host. Reuse of DSH contracts is real where it fits: dispatch goes through ctx.tools.execute, skills through the DSH skill registry, and the tools themselves are registered through the DSH tool registry rather than a parallel one. Remaining: there is no MODEL PREPARATION surface on the host (plans are computed but never produced), no managed-process usage because there is no worker runtime, and no PTC runtime integration because Code Mode does not exist. The partition is therefore correct in what it assigns and incomplete in what it operates. |
+| ARCH-04 |  | 3. Architecture and ownership | NOT_RUN | NOT IMPLEMENTED, and the parts that exist are worth distinguishing from it. The SAFELY KEYED POOL mechanism the requirement asks for does exist: DeploymentCoordinator keys a deployment by extension, model, revision, engine version, quantization, tokenizer and preprocessing recipe, so a Voz extension running headlessly would share one instance rather than starting a second merely because an MCP client connected - and single-flight is asserted by counting loader invocations. The headless requirement is also satisfied: the Voz extension takes a FILE PATH and performs path authorization before opening anything, so no microphone or browser UI is required for headless transcription. What does NOT exist is the documented public bridge for REUSING a registered DSH speechToText provider. Nothing discovers a provider DSH already has, so a host that already holds a Voz instance would start its own. |
+| ARCH-05 |  | 3. Architecture and ownership | PARTIAL | There is ONE execution path. The MCP surface does not implement its own executor: the host binding resolves a tool and dispatches through ctx.tools.execute, so validation, grants, receipts and result policy are applied by the same pipeline a native call uses, and a gate now fails the build if a second path appears. The shared metadata and catalog layer the requirement permits does exist: contracts carry the canonical schemas, the publication surface decides what may be advertised, and the MCP descriptor is derived from the contract rather than restated. Remaining: no worker transport exists, which the requirement explicitly permits as an alternative to a parallel dispatch path, so the permitted option is simply absent rather than chosen. |
+| ARCH-06 |  | 3. Architecture and ownership | PARTIAL | NO EXTENSION RECEIVES RAW DSH CONTEXT, by construction rather than by convention: ExtensionContextV1 carries host-issued identity, private storage, a bounded logger and a teardown signal, and has NO DSH ctx member, no registry mutation, no global credentials and no unfiltered environment. The architecture gate separately proves no extension imports DSH or the host. NO HARDCODED MODEL-SPECIFIC PROMPT, now checked by a gate. The rule needed REFINING and the refinement is the interesting part: the first version flagged three things that were not prompts - an error message mentioning transcription, a parameter description naming example model ids, and a warning template - because it tested for length rather than for instruction phrasing. It now requires imperative phrasing naming a model, and tests assert it catches "You are a transcription assistant..." while accepting all three false positives. A gate with false positives is worse than a narrow one, because it teaches its reader to skip it. The host validating declarations and creating its own registry wrappers is real: registration goes through defineTool and the host owns the wrapper, so an extension never registers into DSH directly. Remaining: declarative extensions have no interpreter, so the generic host-owned recipe path described here does not exist; and there is no managed runtime for a wrapper to dispatch into. |
 
 ## RUN — 8 requirement(s)
 

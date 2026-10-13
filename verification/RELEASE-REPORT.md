@@ -1,6 +1,6 @@
 # Tool Mode release report
 
-Generated 2026-10-13T19:34:49.532Z from commit `6a55d5b92e90ce59ac4a517badc39549a65ee1e7` (working tree DIRTY, so this describes a state that exists in no commit).
+Generated 2026-10-13T19:40:26.283Z from commit `f114c74791f68a964089a9426dffb7cfa45ce3a3` (working tree DIRTY, so this describes a state that exists in no commit).
 
 ## How to reproduce
 
@@ -23,9 +23,9 @@ requirements needing either are recorded as BLOCKED or NOT_RUN rather than PASS.
 | Status | Count |
 |---|---|
 | PASS | 3 |
-| FAIL | 73 |
+| FAIL | 78 |
 | BLOCKED | 3 |
-| NOT_RUN | 238 |
+| NOT_RUN | 233 |
 | NOT_APPLICABLE | 0 |
 
 Total: 317 requirements, of which 3 PASS.
@@ -51,7 +51,7 @@ Total: 317 requirements, of which 3 PASS.
 ## Known limitations and unresolved gates
 
 314 requirement(s) are not PASS.
-235 requirement(s) have no status written for them, and are reported as NOT_RUN.
+229 requirement(s) have no status written for them, and are reported as NOT_RUN.
 No status key names something that is not a requirement.
 
 The first 40 unresolved requirements:
@@ -68,12 +68,12 @@ The first 40 unresolved requirements:
 - BASE-12 is NOT_RUN
 - BASE-13 is NOT_RUN
 - BASE-14 is NOT_RUN
-- ARCH-01 is NOT_RUN
-- ARCH-02 is NOT_RUN
-- ARCH-03 is NOT_RUN
+- ARCH-01 is FAIL
+- ARCH-02 is FAIL
+- ARCH-03 is FAIL
 - ARCH-04 is NOT_RUN
-- ARCH-05 is NOT_RUN
-- ARCH-06 is NOT_RUN
+- ARCH-05 is FAIL
+- ARCH-06 is FAIL
 - RUN-01 is NOT_RUN
 - RUN-02 is NOT_RUN
 - RUN-03 is NOT_RUN

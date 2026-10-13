@@ -13,7 +13,7 @@
  * @module scripts/check-architecture
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -191,16 +191,124 @@ export function checkExtensionIsolation(files) {
 }
 
 /**
+ * ARCH-01 and ARCH-05: one dispatch authority, and no second executor.
+ *
+ * ARCH-01 forbids the MCP adapter or Code Mode from calling a tool's raw `execute`
+ * callback to avoid the registry pipeline, and ARCH-05 forbids a parallel dispatch
+ * path with different validation or permissions. Both are the same defect seen from
+ * two sides: a second way to run a tool that skips the grant, the receipt and the
+ * result policy.
+ *
+ * The rule is about the RECEIVER rather than the method: `ctx.tools.execute(...)` is
+ * the authority, while any other `.execute(` in the MCP or Code Mode layers is a
+ * bypass.
+ * @param {{path: string, text: string}[]} files - the dispatch-layer sources.
+ * @returns {ArchitectureViolation[]} every violation.
+ */
+export function checkSingleDispatchAuthority(files) {
+  const violations = []
+  for (const file of files) {
+    violations.push(...matchLines(
+      file,
+      /**
+       * A call on a TOOL DEFINITION rather than on the executor.
+       *
+       * The distinction that matters is the receiver. `ctx.tools.execute(...)` is the
+       * authority, and an INJECTED executor (`surface.execute(...)`) is how the MCP
+       * binding is handed that authority without importing it — that is dependency
+       * injection, not a bypass, and treating it as one produced a false positive that
+       * would have taught a reader to ignore this rule.
+       */
+      /\b(?!ctx\.tools\b)(definition|tool|resolved|adapter)\.execute\s*\(/,
+      'ARCH-01/second-dispatch-path',
+      match => `${match[1]}.execute() runs a tool without the registry pipeline; dispatch through ctx.tools.execute()`,
+    ))
+    // `ctx.tools.get(name)` hands back a definition whose `execute` would bypass the
+    // pipeline, so reaching for it at all is the shape ARCH-01 names.
+    violations.push(...matchLines(
+      file,
+      /\.tools\.get\s*\(/,
+      'ARCH-01/registry-bypass',
+      () => 'ctx.tools.get() hands back a definition whose execute bypasses the registry pipeline; use ctx.tools.execute()',
+    ))
+  }
+  return violations
+}
+
+/**
+ * ARCH-06: the host must not hardcode a model- or tool-specific prompt.
+ *
+ * The test is IMPERATIVE PHRASING naming a model, not merely a long literal: an error
+ * message, a parameter description or a warning template mentioning a tool is
+ * documentation, and flagging those made this rule report three things that were not
+ * prompts. A rule with false positives is worse than a narrow one, because it teaches
+ * its reader to skip it.
+ * @param {{path: string, text: string}} - the host source file.
+ * @returns {ArchitectureViolation[]} every violation.
+ */
+export function checkNoHardcodedPrompt(file) {
+  return matchLines(
+    file,
+    /['"`][^'"`]{60,}['"`]/,
+    'ARCH-06/hardcoded-prompt',
+    match => `the host carries a prompt-like literal (${match[0].length} chars); prompts belong to an extension, not the host`,
+  ).filter(violation => {
+    const line = file.text.split('\n')[violation.line - 1] ?? ''
+    // Instruction phrasing is what makes a literal a prompt rather than a message.
+    const instructive = /\b(you are|your task|respond with|act as|do not|must not|please (?:analy[sz]e|transcribe|detect))\b/i.test(line)
+    const namesAModel = /tongue|voz|lang_detect|transcri(?:be|ption)/i.test(line)
+    return instructive && namesAModel
+  })
+}
+
+/**
  * Check every rule across the repository.
  * @param {string} [root] - repository root.
  * @returns {ArchitectureViolation[]} every violation.
  */
 export function checkRepository(root = process.cwd()) {
+  const hostSources = collectSources(join(root, 'packages/dsh-model-as-tool/src'))
   const violations = [
-    ...checkHostPurity(collectSources(join(root, 'packages/dsh-model-as-tool/src'))),
+    ...checkHostPurity(hostSources),
+    // ARCH-01/ARCH-05 apply to the DISPATCH layers specifically: the MCP server and
+    // binding, plus the host's own contract path.
+    ...checkSingleDispatchAuthority(hostSources.filter(file => /\/mcp\//.test(file.path))),
+    ...hostSources.flatMap(checkNoHardcodedPrompt),
   ]
   for (const extension of ['extension-desert-ant-tongue', 'extension-desert-ant-voz']) {
     violations.push(...checkExtensionIsolation(collectSources(join(root, 'packages', extension, 'src'))))
+  }
+  // ARCH-02: installing an extension must not require rebuilding the host, which is
+  // only true while no extension depends on the host package.
+  violations.push(...checkExtensionReleaseIndependence(root))
+  return violations
+}
+
+/**
+ * ARCH-02: no extension may depend on the host package.
+ *
+ * "Installing one extension must not require rebuilding or releasing the host." A
+ * declared dependency on the host would make that false, and a workspace protocol
+ * reference would make it false in a way a publish would not catch.
+ * @param {string} root - repository root.
+ * @returns {ArchitectureViolation[]} every violation.
+ */
+export function checkExtensionReleaseIndependence(root) {
+  const violations = []
+  for (const extension of ['extension-desert-ant-tongue', 'extension-desert-ant-voz']) {
+    const path = join(root, 'packages', extension, 'package.json')
+    if (!existsSync(path)) continue
+    const pkg = JSON.parse(readFileSync(path, 'utf8'))
+    for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
+      if (pkg[field] !== undefined && pkg[field]['@try-works/dsh-model-as-tool'] !== undefined) {
+        violations.push(new ArchitectureViolation(
+          'ARCH-02/extension-depends-on-host',
+          `packages/${extension}/package.json`,
+          1,
+          `the extension declares the host in ${field}; installing it would then require the host release it was built against`,
+        ))
+      }
+    }
   }
   return violations
 }

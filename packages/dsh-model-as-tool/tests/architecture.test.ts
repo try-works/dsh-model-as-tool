@@ -9,13 +9,22 @@
  * Requirement links: BASE-09, EXT-02.
  */
 
-import { describe, it } from 'node:test'
+import { after, describe, it } from 'node:test'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
+const dirs: string[] = []
+after(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }) })
 import assert from 'node:assert/strict'
 
 import {
   checkExtensionIsolation,
   checkHostPurity,
+  checkExtensionReleaseIndependence,
+  checkNoHardcodedPrompt,
   checkRepository,
+  checkSingleDispatchAuthority,
 } from '../../../scripts/check-architecture.mjs'
 
 /** Build a synthetic source file. */
@@ -155,5 +164,99 @@ describe('the gates pass on the repository as it stands', () => {
     // The real check, over the real sources. If the host ever regains a built-in,
     // this test and `npm run verify` both fail.
     assert.deepEqual(checkRepository(), [])
+  })
+})
+
+describe('ARCH-01 / ARCH-05 — one dispatch authority', () => {
+  it('catches a definition being executed directly', () => {
+    // The shape the requirement names: running a tool without the registry pipeline.
+    for (const call of [
+      'const r = await definition.execute(args)',
+      'const r = await tool.execute(args)',
+      'const r = await resolved.execute(args)',
+    ]) {
+      const violations = checkSingleDispatchAuthority([source(call, 'packages/dsh-model-as-tool/src/mcp/server.ts')])
+      assert.equal(violations[0]?.rule, 'ARCH-01/second-dispatch-path', `${call} must be flagged`)
+    }
+  })
+
+  it('catches ctx.tools.get(), whose execute would bypass the pipeline', () => {
+    const violations = checkSingleDispatchAuthority([
+      source("const def = ctx.tools.get('lang_detect')", 'packages/dsh-model-as-tool/src/mcp/server.ts'),
+    ])
+    assert.equal(violations[0]?.rule, 'ARCH-01/registry-bypass')
+  })
+
+  it('ACCEPTS ctx.tools.execute, which IS the authority', () => {
+    assert.deepEqual(checkSingleDispatchAuthority([
+      source('const r = await ctx.tools.execute({ name, arguments: args })', 'packages/dsh-model-as-tool/src/mcp/server.ts'),
+    ]), [])
+  })
+
+  it('ACCEPTS an INJECTED executor, which is dependency injection not a bypass', () => {
+    // The MCP binding is handed the authority through `surface` rather than importing
+    // it. Flagging this produced a false positive that would have taught a reader to
+    // ignore the rule.
+    assert.deepEqual(checkSingleDispatchAuthority([
+      source('const outcome = await options.surface.execute({ name, arguments: args })', 'packages/dsh-model-as-tool/src/mcp/host-binding.ts'),
+    ]), [])
+  })
+})
+
+describe('ARCH-06 — no hardcoded model-specific prompt', () => {
+  it('catches an instruction literal naming a model', () => {
+    const violations = checkNoHardcodedPrompt(source(
+      "const prompt = 'You are a transcription assistant. Transcribe the audio with Voz and return the text.'",
+      'packages/dsh-model-as-tool/src/bindings.ts',
+    ))
+    assert.equal(violations[0]?.rule, 'ARCH-06/hardcoded-prompt')
+  })
+
+  it('ACCEPTS an error message that merely mentions a tool', () => {
+    // Documentation is not a prompt, and flagging it made this rule report three things
+    // that were not prompts.
+    assert.deepEqual(checkNoHardcodedPrompt(source(
+      "throw new Error('the transcription contract requires a non-empty audio path for the tool')",
+      'packages/dsh-model-as-tool/src/bindings.ts',
+    )), [])
+  })
+
+  it('ACCEPTS a parameter description naming example models', () => {
+    assert.deepEqual(checkNoHardcodedPrompt(source(
+      "description: 'Model id, required for describe and enable (for example \"tongue\" or \"title\").',",
+      'packages/dsh-model-as-tool/src/index.ts',
+    )), [])
+  })
+
+  it('ACCEPTS a warning template naming a transcript', () => {
+    assert.deepEqual(checkNoHardcodedPrompt(source(
+      "const partial = `\\n[warnings] partial transcript: ${covered}s covered\\n`",
+      'packages/dsh-model-as-tool/src/bindings.ts',
+    )), [])
+  })
+})
+describe('ARCH-02 — installing an extension must not require releasing the host', () => {
+  it('reports no violation for the packages as they stand', () => {
+    // The property holds today: no extension depends on the host package, which is what
+    // makes an extension installable without rebuilding it.
+    assert.deepEqual(checkExtensionReleaseIndependence(process.cwd()), [])
+  })
+
+  it('catches an extension that declares the host as a dependency', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'arch-arch02-'))
+    dirs.push(dir)
+    mkdirSync(join(dir, 'packages', 'extension-desert-ant-tongue'), { recursive: true })
+    writeFileSync(
+      join(dir, 'packages', 'extension-desert-ant-tongue', 'package.json'),
+      JSON.stringify({
+        name: '@try-works/extension-desert-ant-tongue',
+        version: '0.1.0',
+        dependencies: { '@try-works/dsh-model-as-tool': '^0.1.0' },
+      }),
+    )
+    const violations = checkExtensionReleaseIndependence(dir)
+    // Declaring the host would couple the extension to a host release, making
+    // "installing one extension must not require rebuilding the host" false.
+    assert.equal(violations[0]?.rule, 'ARCH-02/extension-depends-on-host')
   })
 })
