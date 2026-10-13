@@ -1,0 +1,37 @@
+{
+  "name": "cancellation",
+  "describes": "a notifications/cancelled for an in-flight request, alongside the request it cancels",
+  "expectation": "the notification carries no id and the cancelled request keeps its own identity",
+  "request": [
+    {
+      "jsonrpc": "2.0",
+      "id": "cancel-me",
+      "method": "tools/call",
+      "params": {
+        "name": "lang_detect",
+        "arguments": {
+          "text": "cancel me"
+        },
+        "_meta": {
+          "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+          "io.modelcontextprotocol/clientInfo": {
+            "name": "tool-mode-conformance",
+            "version": "1.0.0"
+          },
+          "io.modelcontextprotocol/clientCapabilities": {}
+        }
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "notifications/cancelled",
+      "params": {
+        "requestId": "cancel-me",
+        "_meta": {
+          "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+        }
+      }
+    }
+  ],
+  "response": null
+}

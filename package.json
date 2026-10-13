@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit -p packages/dsh-model-as-tool/tsconfig.json && tsc --noEmit -p packages/tool-mode-contracts/tsconfig.json && tsc --noEmit -p packages/tool-mode-extension-sdk/tsconfig.json && tsc --noEmit -p packages/extension-desert-ant-tongue/tsconfig.json && tsc --noEmit -p packages/extension-desert-ant-voz/tsconfig.json",
     "test": "tsx --test packages/dsh-model-as-tool/tests/*.test.ts packages/tool-mode-contracts/tests/*.test.ts packages/tool-mode-extension-sdk/tests/*.test.ts packages/extension-desert-ant-tongue/tests/*.test.ts packages/extension-desert-ant-voz/tests/*.test.ts",
     "verify:built": "node scripts/verify-built.mjs",
-    "verify": "npm run typecheck && npm run build && npm test && npm run verify:built && npm run verify:architecture && npm run verify:traceability",
+    "verify": "npm run typecheck && npm run build && npm test && npm run verify:built && npm run verify:architecture && npm run verify:mcp && npm run verify:traceability",
     "gating": "tsx scripts/gating-report.ts",
     "gen-docs": "node scripts/gen-docs.mjs",
     "traceability": "node scripts/gen-traceability.mjs",
@@ -23,7 +23,8 @@
     "bridge": "node scripts/desert-ant-bridge.mjs",
     "build:ext-tongue": "tsc -p packages/extension-desert-ant-tongue/tsconfig.build.json",
     "build:ext-voz": "tsc -p packages/extension-desert-ant-voz/tsconfig.build.json",
-    "verify:architecture": "node scripts/check-architecture.mjs"
+    "verify:architecture": "node scripts/check-architecture.mjs",
+    "verify:mcp": "node scripts/probe-mcp-conformance.mjs"
   },
   "devDependencies": {
     "@desert-ant-labs/tongue": "^3.6.0",

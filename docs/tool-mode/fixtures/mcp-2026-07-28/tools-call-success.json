@@ -1,0 +1,46 @@
+{
+  "name": "tools-call-success",
+  "describes": "a successful tools/call",
+  "expectation": "the canonical value is in structuredContent and resultType is complete",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "call-1",
+    "method": "tools/call",
+    "params": {
+      "name": "lang_detect",
+      "arguments": {
+        "text": "hallo wereld"
+      },
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "call-1",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Detected language: de"
+        }
+      ],
+      "structuredContent": {
+        "language": "de"
+      },
+      "resultType": "complete",
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "@try-works/dsh-model-as-tool",
+          "version": "0.1.0"
+        }
+      }
+    }
+  }
+}

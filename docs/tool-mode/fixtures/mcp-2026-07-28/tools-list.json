@@ -1,0 +1,80 @@
+{
+  "name": "tools-list",
+  "describes": "tools/list as the first application request",
+  "expectation": "every tool declares both an input and an output schema, and the result is cacheable-private",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "catalog-1",
+    "method": "tools/list",
+    "params": {
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "catalog-1",
+    "result": {
+      "tools": [
+        {
+          "name": "explodes",
+          "description": "A tool whose model deployment is unprepared.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {}
+          },
+          "outputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {}
+          }
+        },
+        {
+          "name": "lang_detect",
+          "description": "Identify the language of the supplied text.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "outputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "language"
+            ],
+            "properties": {
+              "language": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "cacheScope": "private",
+      "ttlMs": 0,
+      "resultType": "complete",
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "@try-works/dsh-model-as-tool",
+          "version": "0.1.0"
+        }
+      }
+    }
+  }
+}

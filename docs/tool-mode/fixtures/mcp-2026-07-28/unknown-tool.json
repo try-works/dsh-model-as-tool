@@ -1,0 +1,30 @@
+{
+  "name": "unknown-tool",
+  "describes": "a tools/call naming a tool that is not published",
+  "expectation": "error -32602, because nothing was invoked and a domain failure would be a fabrication",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "call-3",
+    "method": "tools/call",
+    "params": {
+      "name": "not_a_tool",
+      "arguments": {},
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "call-3",
+    "error": {
+      "code": -32602,
+      "message": "unknown tool \"not_a_tool\""
+    }
+  }
+}

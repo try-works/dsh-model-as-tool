@@ -1,0 +1,30 @@
+{
+  "name": "unsupported-version",
+  "describes": "a request declaring a revision this server does not speak",
+  "expectation": "error -32022 carrying the supported list and the requested version",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "ver-1",
+    "method": "tools/list",
+    "params": {
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2025-11-25",
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "ver-1",
+    "error": {
+      "code": -32022,
+      "message": "unsupported protocol version 2025-11-25",
+      "data": {
+        "supported": [
+          "2026-07-28"
+        ],
+        "requested": "2025-11-25"
+      }
+    }
+  }
+}

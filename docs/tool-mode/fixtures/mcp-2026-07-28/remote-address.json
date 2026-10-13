@@ -1,0 +1,29 @@
+{
+  "name": "remote-address",
+  "describes": "a request that did not arrive over the loopback interface",
+  "expectation": "HTTP 403; the check reads the socket address, never a header",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "net-1",
+    "method": "tools/list",
+    "params": {
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "error": "this endpoint serves loopback clients only"
+  },
+  "http": {
+    "status": 403,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  }
+}

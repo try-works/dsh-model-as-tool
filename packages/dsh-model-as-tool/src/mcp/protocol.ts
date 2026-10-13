@@ -304,6 +304,14 @@ export function toolErrorResult(message: string): ToolErrorPayload {
 
 /**
  * Build a JSON-RPC error response.
+ *
+ * When the request id is UNKNOWN the `id` member is omitted rather than set to
+ * `null`. JSON-RPC 2.0 conventionally allows `id: null` for an undeterminable id,
+ * but the pinned revision schema types `RequestId` as `string | integer` and does
+ * not admit null — while `id` itself is optional. Omitting it is therefore the
+ * conformant way to say "unknown", and the independent probe caught this by
+ * rejecting a captured 401 whose id was null.
+ *
  * @param id - the request id, or null when it could not be determined.
  * @param error - the failure.
  * @returns the response envelope.
@@ -315,7 +323,7 @@ export function errorResponse(
   const data = 'data' in error ? error.data : undefined
   return {
     jsonrpc: '2.0',
-    id,
+    ...id === null ? {} : { id },
     error: {
       code: error.code,
       message: error.message,

@@ -1,0 +1,12 @@
+{
+  "capturedAt": "2026-10-13T17:58:22.474Z",
+  "revision": "2026-07-28",
+  "pinnedSchemaCommit": "5f5440bb26a62e2cf3440b92da5a667efa03b267",
+  "pinnedSchemaPath": "docs/tool-mode/specs/mcp-2026-07-28/schema.json",
+  "officialSdkVersion": "not-installed",
+  "officialSdkSupportsRevision": false,
+  "officialSdkNote": "@modelcontextprotocol/sdk does not list 2026-07-28 in SUPPORTED_PROTOCOL_VERSIONS, so this server is the schema-conformant adaptation MCP-01 permits rather than an SDK configuration.",
+  "fixtureCount": 15,
+  "credentialPlaceholder": "PLACEHOLDER-NOT-A-REAL-TOKEN",
+  "probe": "scripts/probe-mcp-conformance.mjs"
+}

@@ -1,0 +1,28 @@
+{
+  "name": "unsupported-method",
+  "describes": "a method this server does not implement",
+  "expectation": "error -32601; a method is never silently pretended to be served",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "meth-1",
+    "method": "resources/list",
+    "params": {
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "meth-1",
+    "error": {
+      "code": -32601,
+      "message": "unknown method \"resources/list\""
+    }
+  }
+}

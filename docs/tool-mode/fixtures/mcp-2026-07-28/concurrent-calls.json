@@ -1,0 +1,46 @@
+{
+  "name": "concurrent-calls",
+  "describes": "two tools/call requests issued together",
+  "expectation": "each response echoes ITS OWN id, so a client can match them",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "conc-1",
+    "method": "tools/call",
+    "params": {
+      "name": "lang_detect",
+      "arguments": {
+        "text": "concurrent"
+      },
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "conc-1",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Detected language: de"
+        }
+      ],
+      "structuredContent": {
+        "language": "de"
+      },
+      "resultType": "complete",
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "@try-works/dsh-model-as-tool",
+          "version": "0.1.0"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "discover",
+  "describes": "server/discover as the first application request, with no initialize handshake",
+  "expectation": "the result carries supportedVersions, capabilities and the cacheable fields the revision requires",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "discover-1",
+    "method": "server/discover",
+    "params": {
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "discover-1",
+    "result": {
+      "supportedVersions": [
+        "2026-07-28"
+      ],
+      "capabilities": {
+        "tools": {}
+      },
+      "cacheScope": "private",
+      "ttlMs": 0,
+      "resultType": "complete",
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "@try-works/dsh-model-as-tool",
+          "version": "0.1.0"
+        }
+      }
+    }
+  }
+}

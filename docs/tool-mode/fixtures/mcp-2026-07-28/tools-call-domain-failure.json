@@ -1,0 +1,42 @@
+{
+  "name": "tools-call-domain-failure",
+  "describes": "a tools/call where the TOOL failed",
+  "expectation": "a successful protocol response carrying isError, NOT a JSON-RPC error",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "call-2",
+    "method": "tools/call",
+    "params": {
+      "name": "explodes",
+      "arguments": {},
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "call-2",
+    "result": {
+      "isError": true,
+      "content": [
+        {
+          "type": "text",
+          "text": "the model deployment is unprepared"
+        }
+      ],
+      "resultType": "complete",
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "@try-works/dsh-model-as-tool",
+          "version": "0.1.0"
+        }
+      }
+    }
+  }
+}

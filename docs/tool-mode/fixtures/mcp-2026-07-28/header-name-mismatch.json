@@ -1,0 +1,38 @@
+{
+  "name": "header-name-mismatch",
+  "describes": "a tools/call whose Mcp-Name header disagrees with the body",
+  "expectation": "HTTP 400 with HeaderMismatch (-32020), because the header is checked against the body",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "hdr-2",
+    "method": "tools/call",
+    "params": {
+      "name": "lang_detect",
+      "arguments": {
+        "text": "x"
+      },
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tool-mode-conformance",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": "hdr-2",
+    "error": {
+      "code": -32020,
+      "message": "the Mcp-Name header (other_tool) does not match the request name (lang_detect)"
+    }
+  },
+  "http": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  }
+}

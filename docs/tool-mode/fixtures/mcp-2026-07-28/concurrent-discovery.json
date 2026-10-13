@@ -1,0 +1,192 @@
+{
+  "name": "concurrent-discovery",
+  "describes": "three tools/list requests in flight together",
+  "expectation": "three independent responses, each echoing its own id",
+  "request": [
+    "par-1",
+    "par-2",
+    "par-3"
+  ],
+  "response": [
+    {
+      "jsonrpc": "2.0",
+      "id": "par-1",
+      "result": {
+        "tools": [
+          {
+            "name": "explodes",
+            "description": "A tool whose model deployment is unprepared.",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {}
+            },
+            "outputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {}
+            }
+          },
+          {
+            "name": "lang_detect",
+            "description": "Identify the language of the supplied text.",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "text"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "outputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "language"
+              ],
+              "properties": {
+                "language": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "cacheScope": "private",
+        "ttlMs": 0,
+        "resultType": "complete",
+        "_meta": {
+          "io.modelcontextprotocol/serverInfo": {
+            "name": "@try-works/dsh-model-as-tool",
+            "version": "0.1.0"
+          }
+        }
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "par-2",
+      "result": {
+        "tools": [
+          {
+            "name": "explodes",
+            "description": "A tool whose model deployment is unprepared.",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {}
+            },
+            "outputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {}
+            }
+          },
+          {
+            "name": "lang_detect",
+            "description": "Identify the language of the supplied text.",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "text"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "outputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "language"
+              ],
+              "properties": {
+                "language": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "cacheScope": "private",
+        "ttlMs": 0,
+        "resultType": "complete",
+        "_meta": {
+          "io.modelcontextprotocol/serverInfo": {
+            "name": "@try-works/dsh-model-as-tool",
+            "version": "0.1.0"
+          }
+        }
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "par-3",
+      "result": {
+        "tools": [
+          {
+            "name": "explodes",
+            "description": "A tool whose model deployment is unprepared.",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {}
+            },
+            "outputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {}
+            }
+          },
+          {
+            "name": "lang_detect",
+            "description": "Identify the language of the supplied text.",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "text"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "outputSchema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "language"
+              ],
+              "properties": {
+                "language": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "cacheScope": "private",
+        "ttlMs": 0,
+        "resultType": "complete",
+        "_meta": {
+          "io.modelcontextprotocol/serverInfo": {
+            "name": "@try-works/dsh-model-as-tool",
+            "version": "0.1.0"
+          }
+        }
+      }
+    }
+  ]
+}
