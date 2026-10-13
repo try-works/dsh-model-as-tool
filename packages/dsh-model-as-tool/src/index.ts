@@ -28,6 +28,8 @@ import { createGrant } from './authority.ts'
 import { ProviderBridge } from './provider-bridge.ts'
 import { buildSurface } from './publication.ts'
 import type { InvocationReceipt } from './receipt.ts'
+import { createMcpHost, type PublishedTool } from './mcp/host-binding.ts'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { STANDARD_CONTRACTS, type ToolContract } from '@try-works/tool-mode-contracts'
 import { renderSkillBody } from './skills.ts'
 import { loadPlaybooks } from './playbook.ts'
@@ -366,6 +368,46 @@ export function apply(ctx: Context, config: Config = {}): void {
   const registeredContracts = new Map<string, { toolName: string; dispose: () => void }>()
 
   /**
+   * The MCP surface over the tools this activation actually published (MCP-08/09).
+   *
+   * It reads `registeredContracts`, so a tool appears over MCP only if it was
+   * REGISTERED here — the publication surface already decided that, and re-deriving
+   * it would let MCP advertise something the host had withheld.
+   */
+  const mcpHost = createMcpHost({
+    serverInfo: { name: '@try-works/dsh-model-as-tool', version: HOST_VERSION },
+    surface: {
+      get published() {
+        const out: PublishedTool[] = []
+        for (const [contractId, registered] of registeredContracts) {
+          const contract = contractById.get(contractId)
+          if (contract === undefined) continue
+          out.push({ toolName: registered.toolName, contract })
+        }
+        return out
+      },
+      async execute({ name, arguments: args, signal, callId }) {
+        // MCP-08: routed through the DSH tool runtime with a SERVER-ISSUED call
+        // identity and the CALLER's signal, never by resolving a definition and
+        // calling it directly — that path would bypass the grant, the receipt and
+        // the result policy the runtime applies.
+        const result = await ctx.tools.execute({
+          signal,
+          callId: ToolCallId(callId),
+          name,
+          arguments: args,
+        })
+        return result.isError
+          ? { isError: true, message: result.error.message }
+          : { isError: false, value: result.value }
+      },
+    },
+    onWithheld: tool => ctx.logger.info(
+      `model-tools: ${tool.toolName} is not exported over MCP: ${tool.notExportableReason ?? 'no reason given'}`,
+    ),
+  })
+
+  /**
    * The publication decision for one catalog entry (EXT-24, EXT-32).
    *
    * ONE function decides what may be published, used by the installer and by the
@@ -611,7 +653,7 @@ export function apply(ctx: Context, config: Config = {}): void {
         action: {
           type: 'string',
           required: true,
-          enum: ['list', 'installed', 'describe', 'enable', 'disable', 'reset', 'receipts'],
+          enum: ['list', 'installed', 'describe', 'enable', 'disable', 'reset', 'receipts', 'mcp'],
           description:
             'list: every catalogued model and whether it runs here. installed: only the models whose tools are '
             + 'registered. describe: full detail for one model. enable: install a model\'s tool and remember it. '
@@ -707,6 +749,22 @@ export function apply(ctx: Context, config: Config = {}): void {
             },
             installed: { type: 'integer', required: true },
             runnable: { type: 'integer', required: true },
+            /** Set by the mcp action: what this host would export over MCP (MCP-09). */
+            mcp: {
+              type: 'array',
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  name: { type: 'string', required: true },
+                  hasOutputSchema: { type: 'boolean', required: true },
+                  title: {
+                    required: true,
+                    oneOf: [{ type: 'string' }, { type: 'null' }],
+                  },
+                },
+              },
+            },
             /** Set by the receipts action: recent invocation provenance (EXT-35). */
             receipts: {
               type: 'array',
@@ -836,6 +894,17 @@ export function apply(ctx: Context, config: Config = {}): void {
           runnable: resolved.filter(item => item.verdict.runnable).length,
           ...persist ? { stateFile: config.stateFile ?? defaultStateFile() } : {},
         })
+
+        if (action === 'mcp') {
+          return { models: [], ...counts(), mcp: mcpHost.listTools().map(tool => ({
+            name: tool.name,
+            // Presence of the OUTPUT schema is the MCP-09 fact worth exposing: DSH
+            // model-facing projection omits it, so this is the evidence that the
+            // export is built from the contract instead.
+            hasOutputSchema: tool.outputSchema !== undefined,
+            title: tool.title ?? null,
+          })) } as never
+        }
 
         if (action === 'receipts') {
           return { models: [], ...counts(), receipts: receipts() } as never

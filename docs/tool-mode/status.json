@@ -195,7 +195,7 @@
     },
     "MCP-09": {
       "status": "PARTIAL",
-      "evidence": "toMcpTool requires and exports the canonical OUTPUT schema, and a test asserts an exported tool carries outputSchema alongside inputSchema, because DSH schemas() intentionally omits output and a schema-only export built from it would be missing the field entirely. A tools/list response including it validates against the pinned ListToolsResultResponse. Remaining: McpHost is an interface the host must supply, so the projection is correct while its input is not yet built from a resolved DSH definition."
+      "evidence": "The canonical OUTPUT schema is exported, and the provenance is asserted rather than assumed: derivePayloadSchema removes ONLY the reserved root meta property and its required entry, per the section 16.4 derivation, and tests prove every other property and constraint survives verbatim and that the derivation does not mutate the shared contract. Both schemas come from the CONTRACTS, never from DSH model-facing schemas() projection, which intentionally omits output. The fact is observable through the control tool: a new read-only mcp action reports each exported tool and whether it has an output schema, with a test asserting every one does, and another asserting the exported set EQUALS the registered set, so MCP cannot advertise something the host withheld. Remaining: the schemas are exported but no client has been driven against them end to end, and a tool that is registered but whose model is unprepared still appears, because the publication surface treats a runnable model as ready in the absence of a preparation lifecycle."
     },
     "MCP-10": {
       "status": "PARTIAL",
@@ -240,6 +240,14 @@
     "P26-06": {
       "status": "PARTIAL",
       "evidence": "Stdio cancellation uses notifications/cancelled and aborts EXACTLY the referenced request: a test holds two requests in flight, cancels one, and asserts the first signal is aborted while the second is NOT, which is the property that stops one cancellation tearing down a shared worker. A cancellation for a request the bridge does not own is reported rather than ignored, because that usually means the client and bridge disagree about what is in flight. A JSON response channel is implemented. Remaining: no request-scoped SSE response channel, so closing an HTTP SSE response cannot cancel its request; cancellation is not translated into an HTTP abort of a request sharing a bridge or model worker in the network direction, because there is no SSE stream to close."
+    },
+    "MCP-08": {
+      "status": "PARTIAL",
+      "evidence": "The MCP surface is now bound to the real registry: a new mcp/host-binding.ts builds the surface over the contracts the activation actually REGISTERED, so it cannot advertise a tool the publication surface withheld, and invocation is routed through the DSH tool runtime ctx.tools.execute(). A test asserts the SERVER-ISSUED call identity reaches the executor and that a distinct one is issued per invocation, because a caller-supplied identity would let a caller forge a receipt, and it asserts the executor receives the CALLER OWN signal so cancellation reaches the actual work. A host failure is reported as a tool error rather than a fabricated success. Remaining: no test drives a full tools/call through dispatch into a real inference call, because the models this host can run are not prepared; the caller-permitted set is not computed per grant at the MCP boundary; and native input validation is the contract validation already applied by the registered tool body rather than a separate MCP-side check."
+    },
+    "MCP-12": {
+      "status": "PARTIAL",
+      "evidence": "A tool that cannot be exported faithfully is withheld ENTIRELY with a recorded reason rather than partly serialized, and onWithheld reports it so the reason is not lost. Writing the tests found a real bug in this: callTool looked for the tool in the published set, which INCLUDES withheld tools, so a client that guessed the name could invoke exactly the tool the export deliberately refused to promise - defeating the requirement through the back door. It now checks exportability as well as presence, and a test covers it. Remaining: nothing yet produces a notExportableReason, so the path is exercised against a fixture rather than by a real non-exportable host tool; TMX extension tools are not yet routed through this same mapping."
     }
   },
   "acceptance": {
