@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-14T01:31:30.488Z",
+  "generatedAt": "2026-10-14T01:40:57.352Z",
   "git": {
-    "commit": "36df6e0255ce3168de79b3d069ba4f8a8e232e77",
+    "commit": "f7a1011e1b06b0167d2e144db0e1e9f9b0fd78c7",
     "branch": "main",
     "dirty": true
   },
@@ -57,8 +57,8 @@
   ],
   "counts": {
     "PASS": 3,
-    "FAIL": 95,
-    "BLOCKED": 6,
+    "FAIL": 96,
+    "BLOCKED": 5,
     "NOT_RUN": 213,
     "NOT_APPLICABLE": 0
   },
@@ -409,7 +409,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "PARTIAL",
       "testStatus": "FAIL",
-      "evidence": "A schema-conformant adaptation of revision 2026-07-28 exists, and conformance is now VERIFIED AGAINST THE PINNED UPSTREAM SCHEMA rather than against a reading of the prose. The official schema.json, schema.ts and schema.mdx are pinned under docs/tool-mode/specs/mcp-2026-07-28/ at commit 5f5440bb26a62e2cf3440b92da5a667efa03b267 (resolved from the 2026-07-28 tag, so the pin is immutable rather than a moving ref), with SHA-256 digests asserted by test so a later edit to the pinned copy is detected. It is a self-contained 2020-12 schema with no remote $ref, checked by test. Pinning immediately found THREE REAL CONFORMANCE ERRORS in code that had passed every hand-written test: a DiscoverResult carrying three fields the definition does not declare and NONE of the five it requires; a ListToolsResult missing cacheScope and ttlMs, which the definition requires; and a metadata parser requiring clientInfo where the schema makes it optional, so it rejected requests the schema admits. All three are fixed and every message the server sends is now validated against the pinned definitions by Ajv (DiscoverResultResponse, ListToolsResultResponse, CallToolResultResponse for both success and tool-error, JSONRPCErrorResponse, HeaderMismatchError). Remaining: the HTTP transport, SSE response channel, subscriptions/listen, normalised cancellation and the stdio bridge executable do not exist; the protocol/client compatibility matrix is not yet recorded as a released artifact."
+      "evidence": "A schema-conformant adaptation of revision 2026-07-28 exists, and conformance is now VERIFIED AGAINST THE PINNED UPSTREAM SCHEMA rather than against a reading of the prose. The official schema.json, schema.ts and schema.mdx are pinned under docs/tool-mode/specs/mcp-2026-07-28/ at commit 5f5440bb26a62e2cf3440b92da5a667efa03b267 (resolved from the 2026-07-28 tag, so the pin is immutable rather than a moving ref), with SHA-256 digests asserted by test so a later edit to the pinned copy is detected. It is a self-contained 2020-12 schema with no remote $ref, checked by test. Pinning immediately found THREE REAL CONFORMANCE ERRORS in code that had passed every hand-written test: a DiscoverResult carrying three fields the definition does not declare and NONE of the five it requires; a ListToolsResult missing cacheScope and ttlMs, which the definition requires; and a metadata parser requiring clientInfo where the schema makes it optional, so it rejected requests the schema admits. All three are fixed and every message the server sends is now validated against the pinned definitions by Ajv (DiscoverResultResponse, ListToolsResultResponse, CallToolResultResponse for both success and tool-error, JSONRPCErrorResponse, HeaderMismatchError). Remaining: the HTTP transport, SSE response channel, subscriptions/listen, normalised cancellation and the stdio bridge executable do not exist; the protocol/client compatibility matrix is not yet recorded as a released artifact. ADDED AFTER ADVERSARIAL REVIEW: an earlier note in this repository claimed the published SDK \"cannot speak revision 2026-07-28\". That was true of the V1 LINE ONLY — @modelcontextprotocol/sdk 1.32.1 caps at 2025-11-25 — and it is corrected. The V2 line, @modelcontextprotocol/server and @modelcontextprotocol/client 2.3.1, DOES implement the revision: it exports DiscoverRequestSchema, DiscoverResultSchema and PROTOCOL_VERSION_META_KEY, and the server package source serves the 2026-07-28 protocol revision. The official client was then driven against THIS server over a real socket: with versionNegotiation mode \"auto\" it probes with server/discover, connects, lists tools, and runs REAL inference through tools/call (lang_detect on German returns de) and is refused without a credential — 6 tests, 0 skipped. A default-configured client still negotiates initialize at 2025-11-25 and never probes, which is why the modern era is OPT-IN and why this server answers -32601 to that handshake; both halves are asserted. STILL PARTIAL because the subscription acknowledgement is produced and read by no transport."
     },
     {
       "id": "MCP-02",
@@ -1967,9 +1967,9 @@
       "owningModule": "not implemented",
       "testLayer": "unit",
       "requiredPlatform": "any",
-      "requirementStatus": "BLOCKED",
-      "testStatus": "BLOCKED",
-      "evidence": "No distribution channel: npm `laya-ts` returns 404 and no published Node entry point for Laya was found. Needs an operator decision (see note)."
+      "requirementStatus": "PARTIAL",
+      "testStatus": "FAIL",
+      "evidence": "CORRECTED. This was recorded as BLOCKED on the reasoning that \"npm `laya-ts` returns 404 and no published Node entry point for Laya was found\". The 404 is real; the CONCLUSION did not follow from it, and the recovery directive named this as an unsupported blocker claim. The SOURCE exists and was built here: github.com/NandhaKishorM/laya, pinned at c73908d96ff73c0062c340a11bf7c54ec7d8bc4d (tag v0.4.6), Apache-2.0. `npm ci` installs 115 packages with 0 vulnerabilities, `npm run build` exits 0 producing 26 files in dist/, and `npm test` passes 886 tests with 0 failures; `npm run test:package` packs and installs into an external ESM TypeScript consumer. The ONNX export RUNS after diagnosing a real defect in the documented command: torch.onnx prints a check-mark glyph that this console (code page 437, Python stdout mapped to cp1252) cannot encode, so the export aborted inside a print() before writing anything. Re-running the SAME command with only PYTHONIOENCODING=utf-8 exits 0 and writes the artifacts; --no-verify was never used. Parity passed five independent checks, worst torch-vs-ONNX logits 1.0e-06. WHAT REMAINS OPEN IS NOT AVAILABILITY: the export is 1.29 GB across SIX files because encoder/head ship external .data tensors, so packaging only the two .onnx files would not load; the HF checkpoint repo carries no licence file of its own and rests on a model-card line; and DEC-08 (quality) is NOT_RUN and is untouched by any of this work. See docs/tool-mode/LAYA-INTEGRATION-FINDINGS.md."
     },
     {
       "id": "DEC-02",
@@ -2545,7 +2545,7 @@
       "requiredPlatform": "any",
       "requirementStatus": "DONE",
       "testStatus": "PASS",
-      "evidence": "No resumability is implemented, and the absence is asserted rather than assumed: sending Last-Event-ID changes neither the status nor the body, because there is no replay path to enter, and the response advertises no event-stream channel it does not serve. A retry is therefore a new request with fresh authorization, which is what the requirement asks for. This is a small requirement satisfied by not building the thing it forbids."
+      "evidence": "No resumability is implemented, and the absence is now FALSIFIABLY asserted. The evidence THIS ENTRY USED TO CITE COULD NOT FAIL: it sent Last-Event-ID and the same request without it, then compared the two bodies, but the handler never reads that header at all, so it was comparing a value WITH ITSELF and deleting the ban entirely would not have turned it red. An adversarial review found this, and the test was rebuilt with three checks, the third of which is the only kind that can prove an ABSENT feature: (1) the header changes no observable byte; (2) the response is application/json and carries no SSE `id:` field, because replay requires an event stream; (3) the header is not consulted ANYWHERE in the transport, asserted against the SOURCE with comment lines excluded, so reading-and-ignoring would fail it. The rewrite was MUTATION-TESTED: adding one line reading the header to src/mcp/http.ts turns it RED (33 pass, 1 fail) and reverting turns it green (34/34), so it now catches precisely the mutation it names. A retry remains a new request with fresh authorization."
     },
     {
       "id": "P26-08",
@@ -4025,7 +4025,7 @@
     "MOD-18 is NOT_RUN",
     "MOD-19 is NOT_RUN",
     "MOD-20 is NOT_RUN",
-    "DEC-01 is BLOCKED",
+    "DEC-01 is FAIL",
     "DEC-02 is BLOCKED",
     "DEC-03 is NOT_RUN",
     "DEC-04 is NOT_RUN",

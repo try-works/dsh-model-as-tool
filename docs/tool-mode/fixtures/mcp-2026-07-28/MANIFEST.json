@@ -3,10 +3,13 @@
   "revision": "2026-07-28",
   "pinnedSchemaCommit": "5f5440bb26a62e2cf3440b92da5a667efa03b267",
   "pinnedSchemaPath": "docs/tool-mode/specs/mcp-2026-07-28/schema.json",
-  "officialSdkVersion": "not-installed",
-  "officialSdkSupportsRevision": false,
-  "officialSdkNote": "@modelcontextprotocol/sdk does not list 2026-07-28 in SUPPORTED_PROTOCOL_VERSIONS, so this server is the schema-conformant adaptation MCP-01 permits rather than an SDK configuration.",
+  "officialSdkVersion": "2.3.1",
+  "officialSdkPackages": ["@modelcontextprotocol/server", "@modelcontextprotocol/client", "@modelcontextprotocol/core"],
+  "officialSdkSupportsRevision": true,
+  "officialSdkNote": "SUPERSEDES the earlier record here, which said 'not-installed' and false. That reading was true of the V1 line ONLY: @modelcontextprotocol/sdk 1.32.1 declares LATEST_PROTOCOL_VERSION=2025-11-25 and cannot speak revision 2026-07-28. The V2 line DOES implement it - the server and client packages export DiscoverRequestSchema, DiscoverResultSchema and PROTOCOL_VERSION_META_KEY, and the server package's own source serves the 2026-07-28 protocol revision. What remains true is subtler and is NOT a gap in this repository: v2's LATEST_PROTOCOL_VERSION is STILL 2025-11-25 because that constant describes the LEGACY handshake, so the modern era is OPT-IN. A default-configured client negotiates initialize at 2025-11-25 and never probes, which is why this server - where discovery REPLACED the handshake - answers -32601 to it. Setting versionNegotiation mode 'auto' makes the official client probe with server/discover, and it then CONNECTS to this server, lists its tools and runs real inference through tools/call.",
+  "officialSdkInteropEvidence": "packages/dsh-model-as-tool/tests/mcp-v2-interop.test.ts (6 tests, 0 skipped)",
   "fixtureCount": 17,
+  "probeCheckCount": 39,
   "credentialPlaceholder": "PLACEHOLDER-NOT-A-REAL-TOKEN",
   "probe": "scripts/probe-mcp-conformance.mjs"
 }

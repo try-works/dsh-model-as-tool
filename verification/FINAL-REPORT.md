@@ -5,7 +5,7 @@ by `scripts/gen-final-report.mjs`. Do not edit by hand; run `npm run final-repor
 
 ## The headline, before the detail
 
-Of **317 tracked items** — 227 normative requirements and 90 acceptance tests — **3 are done**, 95 are partial, 6 are blocked by something outside this repository, and **213 were never started**.
+Of **317 tracked items** — 227 normative requirements and 90 acceptance tests — **3 are done**, 96 are partial, 5 are blocked by something outside this repository, and **213 were never started**.
 
 **The objective is not achieved.** It asked for the Tool Mode specifications to be implemented and verified against the checklist. Most of the normative requirements are unimplemented. What follows states what genuinely stands and what does not, so the numbers above are not left to speak for themselves.
 
@@ -40,8 +40,6 @@ These are not implementation gaps. There is no artifact to integrate, and no fur
   - BLOCKED ON A MISSING NODE DISTRIBUTION, verified earlier: Needle exists (github.com/cactus-compute/needle) but no verified Node or WASM distribution for Needle 3 was found, so it cannot be executed under the execution modes MODEL-04 permits.
 - **TOOL-02** — Decisions.
   - BLOCKED ON THE SAME MISSING PACKAGE AS MODEL-02: npm `laya-ts` returns 404, so Laya typed prediction API is unobtainable and the requirement to use it rather than constrained chat generation cannot be met.
-- **DEC-01** — Fixed initial checkpoint.
-  - No distribution channel: npm `laya-ts` returns 404 and no published Node entry point for Laya was found.
 - **DEC-02** — Maintainer export, Node consumer.
   - Same missing `laya-ts` entry point, plus DEC-02 requires a maintainer-run ONNX export in CI with numerical-parity evidence, which needs the source checkpoint and a Python toolchain.
 - **NDL-01** — Windows/Node runtime.
@@ -71,7 +69,7 @@ The accurate statement is therefore much narrower than the one it replaced: **tw
 | `ARCH` | Host composition and responsibility boundaries | 0 | 5 | 0 | 1 |
 | `BASE` | Foundational rules: tool identity, schemas, authority, packaging | 2 | 4 | 0 | 8 |
 | `CODE` | Code Mode | 0 | 0 | 0 | 12 |
-| `DEC` | Decision-tool decisions | 0 | 0 | 2 | 6 |
+| `DEC` | Decision-tool decisions | 0 | 1 | 1 | 6 |
 | `DECL` | Authored-once declarations and discovery | 0 | 8 | 0 | 0 |
 | `EXT` | Extension protocol and management | 0 | 21 | 0 | 15 |
 | `HLM` | Host language model integration | 0 | 0 | 0 | 14 |
