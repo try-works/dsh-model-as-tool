@@ -13,6 +13,7 @@
  * Requirement links: MCP-02, MCP-03, SEC-02, P26-05, P26-06, P26-07, P26-15, P26-16.
  */
 
+import { readFile } from 'node:fs/promises'
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
@@ -303,16 +304,61 @@ describe('P26-06 / P26-07 — response channels and cancellation', () => {
   })
 
   it('does not implement resumability', async () => {
-    // P26-07 forbids legacy Last-Event-ID replay. Sending the header must change
-    // nothing, because there is no replay path to enter.
+    /**
+     * P26-07 forbids legacy Last-Event-ID replay.
+     *
+     * THE ORIGINAL VERSION OF THIS TEST COULD NOT FAIL. It sent the header and the same
+     * request without it, then asserted the two responses were equal — but the handler never
+     * reads `last-event-id` at all, so it was comparing a value WITH ITSELF. Deleting the
+     * resumability ban entirely would not have turned it red. Since this was the ONLY
+     * evidence for the only `P26` requirement marked DONE, the requirement rested on an
+     * assertion with no power.
+     *
+     * Three checks now, each able to fail for a different reason.
+     */
     const withResume = await handler(httpRequest({
       headers: { ...httpRequest().headers, 'last-event-id': 'abc123' },
     }))
     const withoutResume = await handler(httpRequest())
+
+    // 1. The header changes no observable byte.
     assert.equal(withResume.status, withoutResume.status)
     assert.deepEqual(JSON.parse(withResume.body), JSON.parse(withoutResume.body))
-    // And the response advertises no event-stream channel it does not serve.
     assert.equal('last-event-id' in withResume.headers, false)
+
+    /**
+     * 2. THE STRUCTURAL CHECK, and the only one that can prove an ABSENT feature.
+     *
+     * Replay requires an EVENT STREAM: a resumed response must be `text/event-stream` and
+     * must carry SSE `id:` fields a client could resume from. This handler answers JSON, so
+     * a resumability implementation would have to change that — which means asserting the
+     * content type is asserting the ban.
+     */
+    assert.match(
+      withResume.headers['content-type'] ?? '',
+      /application\/json/,
+      'a replayable response would have to be an event stream, not JSON',
+    )
+    // No SSE framing in the body: an `id:` line is what a client resumes FROM.
+    assert.doesNotMatch(withResume.body, /^id:/m, 'an SSE id field is what resumption depends on')
+
+    /**
+     * 3. And the header is not consulted ANYWHERE in the transport, asserted against the
+     *    source. This is what makes the claim falsifiable: adding a `last-event-id` read
+     *    turns this red immediately, whereas checks 1 and 2 could be satisfied by reading the
+     *    header and ignoring it.
+     */
+    const source = await readFile(new URL('../src/mcp/http.ts', import.meta.url), 'utf8')
+    // The header name may appear only in comments and in this test's own header literal.
+    const codeLines = source
+      .split('\n')
+      .filter(line => !/^\s*(\*|\/\/|\/\*)/.test(line))
+      .filter(line => /last-event-id/i.test(line))
+    assert.deepEqual(
+      codeLines,
+      [],
+      `the transport must not read the resumability header, found:\n${codeLines.join('\n')}`,
+    )
   })
 
   it('acknowledges a notification without a response body', async () => {

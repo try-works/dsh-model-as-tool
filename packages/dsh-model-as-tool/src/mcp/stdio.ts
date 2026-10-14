@@ -116,9 +116,17 @@ export function createStdioBridge(endpoint: BridgeEndpoint, io: BridgeIo): Stdio
       } catch {
         // A malformed frame is answered on the PROTOCOL channel, because the client
         // is waiting for a response and a diagnostic would not reach it.
+        /**
+         * The `id` is OMITTED rather than set to `null`, which is the rule `protocol.ts`
+         * documents three hundred lines away and this site contradicted.
+         *
+         * JSON-RPC 2.0 conventionally allows `id: null` for an undeterminable id, but the
+         * pinned revision types `RequestId` as `string | integer` and does not admit null,
+         * while `id` itself is OPTIONAL. A frame that failed to parse has no id to echo, so
+         * omitting it is the conformant way to say "unknown".
+         */
         return frame({
           jsonrpc: '2.0',
-          id: null,
           error: { code: -32700, message: 'the frame is not valid JSON' },
         })
       }
