@@ -1329,13 +1329,46 @@ export function apply(ctx: Context, config: Config = {}): void {
                 + `but they cannot be served: ${served.detail}`,
               )
             }
+            /**
+             * THE DISPATCH PROVIDER SHAPE, and the previous version of this branch did not have it.
+             *
+             * It returned `{ async createProvider() { return { async invoke() {} } } }` — an
+             * INSTANCE, where `createDispatch` requires a `DispatchProvider`. Adversarial review
+             * reproduced the consequence exactly: `dispatch.ok = true` and then
+             * `TypeError: provider.load is not a function`. The module branch below has the right
+             * shape and this one did not, so the two differed in a way no test could see because
+             * `harnessProvider` appeared in no test at all.
+             *
+             * The contract is:
+             *   load({ assets, signal })                        -> Promise<void>
+             *   invoke({ implementationId, input, context })    -> Promise<Record<string, unknown>>
+             *
+             * AND `implementationId` IS USED. The previous version called `served.served[0]`
+             * unconditionally, so the SECOND recipe of a two-recipe package could never be served
+             * — it would silently answer with the first one's output. A package declaring two
+             * implementations is the normal case, not an edge case.
+             */
             return {
-              async createProvider() {
-                return {
-                  async invoke(args: Record<string, unknown>) {
-                    return served.served[0]?.invoke(args)
-                  },
+              async load() {
+                // Recipes are already parsed, validated and authorized by `prepareDeclarative`.
+                // There is no module to import and no asset to fetch, so loading is complete.
+              },
+              async invoke(request: {
+                readonly implementationId: string
+                readonly input: Readonly<Record<string, unknown>>
+              }): Promise<Record<string, unknown>> {
+                const recipe = served.served.find(entry => entry.implementationId === request.implementationId)
+                // An unknown id is REFUSED rather than defaulted to the first recipe, which is the
+                // silent-wrong-answer failure the previous version would have produced.
+                if (recipe === undefined) {
+                  throw new Error(
+                    `${extensionId} declares no implementation ${JSON.stringify(request.implementationId)}`
+                    + `; it serves: ${served.served.map(entry => entry.implementationId).join(', ')}`,
+                  )
                 }
+                const text = await recipe.invoke(request.input)
+                // The dispatch contract returns a RECORD, not a bare value.
+                return { text } as Record<string, unknown>
               },
             } as never
           }

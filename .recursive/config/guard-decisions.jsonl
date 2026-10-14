@@ -1,13 +1,3 @@
-{"at":"2026-10-14T01:50:07.772Z","runId":"","tool":"write","kind":"allow","rule":"none"}
-{"at":"2026-10-14T01:50:11.708Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
-{"at":"2026-10-14T01:50:27.999Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
-{"at":"2026-10-14T01:50:34.559Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
-{"at":"2026-10-14T01:50:53.047Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
-{"at":"2026-10-14T01:51:03.249Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
-{"at":"2026-10-14T01:51:14.114Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
-{"at":"2026-10-14T01:51:29.825Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
-{"at":"2026-10-14T01:51:36.234Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
-{"at":"2026-10-14T01:51:41.769Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
 {"at":"2026-10-14T01:51:47.075Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
 {"at":"2026-10-14T01:53:36.578Z","runId":"","tool":"write","kind":"allow","rule":"none"}
 {"at":"2026-10-14T01:53:39.426Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
@@ -498,3 +488,13 @@
 {"at":"2026-10-14T04:22:08.416Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
 {"at":"2026-10-14T04:24:14.504Z","runId":"","tool":"write","kind":"allow","rule":"none"}
 {"at":"2026-10-14T04:24:18.643Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:24:36.965Z","runId":"","tool":"memory_working","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:25:41.421Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:25:56.936Z","runId":"","tool":"read","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:26:02.301Z","runId":"","tool":"read","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:26:09.419Z","runId":"","tool":"edit","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:26:15.047Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:26:36.007Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:26:59.528Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:29:11.173Z","runId":"","tool":"write","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:29:15.003Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}

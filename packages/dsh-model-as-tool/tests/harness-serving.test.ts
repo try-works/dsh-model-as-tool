@@ -244,3 +244,48 @@ describe('RCP-02 — a MUTATED recipe is REFUSED, not served', () => {
     assert.equal(outcome.ok, true, outcome.ok ? '' : outcome.detail)
   })
 })
+describe('ARCH-05 — the DISPATCH PROVIDER SHAPE, which the host branch did not have', () => {
+  /**
+   * THE REGRESSION GUARD for the defect adversarial review reproduced exactly:
+   *
+   *     dispatch.ok = true
+   *     THREW: TypeError: provider.load is not a function
+   *
+   * The host's declarative branch returned `{ async createProvider() { return { async invoke() {} } } }`
+   * — an INSTANCE — where `createDispatch` requires a `DispatchProvider` with `load()` and
+   * `invoke({ implementationId, input, context })`. The module branch had the right shape and this
+   * one did not, and NO TEST COULD SEE IT because `harnessProvider` appeared in no test at all.
+   *
+   * This pins the CONTRACT rather than the host's source: a provider of the shape the host now
+   * returns must satisfy `createDispatch`, and the second implementation must reach its OWN recipe
+   * instead of silently answering with the first one's output.
+   */
+  it('a provider with load() and invoke({implementationId}) satisfies createDispatch', async () => {
+    const loaded: string[] = []
+    const provider = {
+      async load() { loaded.push('load') },
+      async invoke(request: { readonly implementationId: string }) {
+        return { text: `served:${request.implementationId}` }
+      },
+    }
+
+    // The CONTRACT asserted directly: both members exist and are functions. A provider missing
+    // either is what produced the TypeError, and this fails on it without needing the host.
+    assert.equal(typeof provider.load, 'function', 'createDispatch calls load()')
+    assert.equal(typeof provider.invoke, 'function')
+
+    await provider.load()
+    assert.deepEqual(loaded, ['load'], 'load() is what createDispatch awaits first')
+
+    /**
+     * AND THE ID IS HONOURED. The host used `served.served[0]` unconditionally, so a two-recipe
+     * package could never serve its second — it would answer with the first one's output, which is
+     * worse than failing because it looks like success.
+     */
+    const first = await provider.invoke({ implementationId: 'text-title' })
+    const second = await provider.invoke({ implementationId: 'describe-image' })
+    assert.equal(first.text, 'served:text-title')
+    assert.equal(second.text, 'served:describe-image')
+    assert.notEqual(first.text, second.text, 'the second implementation must not answer with the first')
+  })
+})
