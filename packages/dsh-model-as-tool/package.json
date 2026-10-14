@@ -88,7 +88,8 @@
   },
   "dependencies": {
     "@try-works/tool-mode-contracts": "^0.1.0",
-    "ajv": "^8.20.0"
+    "ajv": "^8.20.0",
+    "@try-works/tool-mode-recipes": "^0.1.0"
   },
   "bin": {
     "dsh-tool-mode-mcp-stdio": "./bin/dsh-tool-mode-mcp-stdio.mjs"

@@ -219,8 +219,8 @@ describe('EXT-13 — the declarative branch is WRITTEN (source assertion, not a 
     // The honest half: the recipes resolved, so the package is NOT at fault.
     assert.match(message, /recipe\(s\) resolved/)
     // And the link that is actually missing is named, so the next step is not a guess.
-    assert.match(message, /no harness broker is composed/)
-    assert.match(message, /tool-mode-recipes/)
+    assert.match(message, /no harness LlmProvider is composed/)
+    assert.match(message, /recipes and the broker are both reachable/)
   })
 
   it('is a DIFFERENT failure from an unresolvable recipe', () => {

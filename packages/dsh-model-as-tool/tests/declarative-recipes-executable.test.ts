@@ -23,18 +23,12 @@ import { join } from 'node:path'
 import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-/**
- * Imported by RELATIVE PATH on purpose. The host does not depend on this package — that is
- * the structural finding this file documents — and adding the dependency did not link it
- * in this workspace, so reaching it directly is both the honest route and a reminder of the
- * gap: a host that cannot import the broker cannot execute a declarative package.
- */
 import {
   inputSchemaFor,
   parseRecipe,
   renderPrompt,
   validateRecipeInputs,
-} from '../../tool-mode-recipes/src/index.ts'
+} from '@try-works/tool-mode-recipes'
 
 import { cleanup, tempDir } from './helpers.ts'
 

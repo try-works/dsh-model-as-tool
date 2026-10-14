@@ -109,11 +109,24 @@ for (const [specifier, relative] of Object.entries(PEERS)) {
  * monorepo and fail once published. These are linked even though they live here,
  * because the point is to exercise the same resolution path a consumer uses.
  */
+/**
+ * Every workspace package, because the map must be COMPLETE.
+ *
+ * It listed four of eight, and the omission was not cosmetic: `@try-works/tool-mode-recipes`
+ * could not be imported by anything, which is why a package with 132 passing tests had zero
+ * consumers. A reachability defect that looks like an architectural choice is the hardest kind
+ * to notice — the import simply fails, and the failure is attributed to the dependency spec
+ * rather than to this list.
+ */
 const WORKSPACE = {
   '@try-works/tool-mode-contracts': 'packages/tool-mode-contracts',
   '@try-works/tool-mode-extension-sdk': 'packages/tool-mode-extension-sdk',
+  '@try-works/tool-mode-recipes': 'packages/tool-mode-recipes',
   '@try-works/extension-desert-ant-tongue': 'packages/extension-desert-ant-tongue',
   '@try-works/extension-desert-ant-voz': 'packages/extension-desert-ant-voz',
+  '@try-works/extension-embeddinggemma': 'packages/extension-embeddinggemma',
+  '@try-works/extension-needle': 'packages/extension-needle',
+  '@try-works/extension-declarative-recipes': 'packages/extension-declarative-recipes',
 }
 let workspaceLinked = 0
 for (const [specifier, relative] of Object.entries(WORKSPACE)) {

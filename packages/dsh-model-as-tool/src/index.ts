@@ -1200,15 +1200,24 @@ export function apply(ctx: Context, config: Config = {}): void {
               )
             }
             /**
-             * The recipes RESOLVE, and execution is refused honestly rather than faked. A
-             * declarative package's behaviour is executed by a harness broker, and this
-             * deployment composes none — so the chain is joined as far as it genuinely goes
-             * and the remaining link is named.
+             * The recipes RESOLVE, and execution is refused honestly rather than faked.
+             *
+             * THIS MESSAGE WAS CORRECTED, and the correction matters. It used to say "the link
+             * from the host to @try-works/tool-mode-recipes is not wired" — which was true when
+             * written and is NO LONGER: `scripts/link-dsh.mjs` listed only four of eight
+             * workspace packages, so the broker could not be imported by anything, and
+             * completing that map made the bare specifier resolve. Leaving the old text would
+             * have pointed the next reader at a link that now exists.
+             *
+             * What is genuinely missing is narrower, and it is a COMPOSITION rather than a
+             * connection: a declarative package's behaviour is executed by a harness broker
+             * fed by an `LlmProvider`, and this deployment supplies none. The recipes are real,
+             * the broker is importable, and nothing can call a model.
              */
             throw new Error(
               `${extensionId} is declarative and its ${resolved.resolved.length} recipe(s) resolved, `
-              + 'but no harness broker is composed in this deployment, so nothing can execute them. '
-              + 'The link from the host to @try-works/tool-mode-recipes is not wired.',
+              + 'but no harness LlmProvider is composed in this deployment, so no model can be '
+              + 'called. The recipes and the broker are both reachable; what is absent is a provider.',
             )
           }
 
