@@ -108,3 +108,20 @@ if (unused.length > 20) console.log(`  ... and ${unused.length - 20} more`)
 console.log('')
 console.log(`${flagged.length} flagged. A flagged symbol is a QUESTION, not a defect.`)
 console.log('Entry-point files (index.ts, bin/*) are excluded: an SDK export legitimately has no in-repo caller.')
+console.log('')
+/**
+ * CALIBRATION, from checking two of the flags by hand — because a number like this invites
+ * over-reading, and the honest thing is to say how much of it is signal.
+ *
+ *   `acquireAsset` (src/asset-acquisition.ts) — SIGNIFICANT. Nothing imports the MODULE at all,
+ *   and the host has no preparation path to replace it: 14 passing tests over code that cannot
+ *   refuse a real request.
+ *
+ *   `indexCatalog` (src/catalog.ts) — MINOR. `catalog.ts` IS imported by index.ts; only this
+ *   helper is unused, because index.ts builds its own map inline. That is mild duplication.
+ *
+ * So the list is MIXED and the ratio matters. The sweep's value is in finding the first kind, and
+ * the second kind is the cost of looking. Removing the minor flags would take reachability
+ * analysis proper — following imports from each package's entry point — which is a larger tool
+ * and would hide the judgement calls that make this one useful.
+ */
