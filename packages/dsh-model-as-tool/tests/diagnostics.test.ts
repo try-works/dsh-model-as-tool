@@ -203,3 +203,38 @@ describe('OBS-04 — the surface is REACHABLE through the control tool', () => {
     }
   })
 })
+describe('OBS-03 — the capture path is ON the diagnostic surface', () => {
+  it('reports the profile and the surfaces, INCLUDING the ones this plugin does not control', async () => {
+    /**
+     * Wiring matters here for the reason it has mattered all session: a documented capture path
+     * nobody can read from the running system is a document, and this repository has produced
+     * fully-tested components with zero callers three times. The surface an operator actually
+     * queries is the one that has to carry it.
+     */
+    const ctx = await mountPlugin({})
+    const result = await callTool(ctx, 'model_tools', { action: 'diagnostics' })
+    assert.equal(result.isError, false, `capture must be reachable, saw ${JSON.stringify(result).slice(0, 200)}`)
+
+    const capture = (result.value as { capture?: { profile: string; surfaces: { surface: string; writtenByThisPlugin: boolean }[] } }).capture
+    assert.ok(capture !== undefined, 'the diagnostics action must report the capture path')
+    if (capture === undefined) return
+
+    assert.equal(capture.profile, 'standard')
+    // The sibling-plugin surface is the one OBS-03 names, and it must be visible to an operator
+    // rather than living only in a document.
+    assert.ok(
+      capture.surfaces.some(entry => /logging plugin/i.test(entry.surface) && entry.writtenByThisPlugin === false),
+      `the sibling-plugin surface must be reported, saw ${capture.surfaces.map(e => e.surface).join(' | ')}`,
+    )
+    assert.ok(capture.surfaces.some(entry => /LLM service/i.test(entry.surface)))
+  })
+
+  it('an operator can SELECT the metadata-only profile', async () => {
+    const ctx = await mountPlugin({ captureProfile: 'metadata-only' })
+    const result = await callTool(ctx, 'model_tools', { action: 'diagnostics' })
+    const capture = (result.value as { capture?: { profile: string } }).capture
+    // The profile is a deployment choice, and the surface confirms which one is in force rather
+    // than leaving an operator to infer it from behaviour.
+    assert.equal(capture?.profile, 'metadata-only')
+  })
+})

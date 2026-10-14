@@ -28,6 +28,7 @@ import { join } from 'node:path'
 import { createContributionRegistrar } from './extension-registrar.ts'
 import { createProgramRunner, externalRefusal } from './tool-mode-run.ts'
 import { buildDiagnostics } from './diagnostics.ts'
+import { CAPTURE_PATH } from './capture-path.ts'
 import { createDispatch, describeDispatchFailure, type DispatchEnvironment, type DispatchManifest } from './extension-dispatch.ts'
 import {
   discoverExtension,
@@ -177,6 +178,15 @@ export interface Config {
   grantId?: string
   /** Whether receipts may be recorded (SEC-03); default true. */
   recordReceipts?: boolean
+  /**
+   * Which capture profile this deployment runs under (OBS-03).
+   *
+   * `standard` is the default. `metadata-only` is for a headless local-specialist deployment: it
+   * REFUSES harness-backed execution where a no-retention policy cannot be honoured alongside
+   * DSH's requirement that model-visible inputs be reconstructable — rather than logging bodies
+   * against the policy or bypassing DSH, both of which are forbidden.
+   */
+  captureProfile?: 'standard' | 'metadata-only'
   /** Hard resource limits overriding the conservative defaults. */
   limits?: { maxInputBytes?: number; maxAudioSeconds?: number; maxResultBytes?: number }
 }
@@ -814,6 +824,10 @@ export function apply(ctx: Context, config: Config = {}): void {
              * nested report faithfully, and a wrong declaration is worse than a permissive one.
              * See the note on unrepresentable keywords for the same reasoning.
              */
+            capture: {
+              type: 'object',
+              additionalProperties: true,
+            },
             diagnostics: {
               type: 'object',
               additionalProperties: true,
@@ -979,6 +993,22 @@ export function apply(ctx: Context, config: Config = {}): void {
                 nodeVersion: process.version,
               },
             }),
+            /**
+             * THE CAPTURE PATH, on the surface an operator actually reads (OBS-03).
+             *
+             * Reported here rather than in a document because a reader asking "what is recorded"
+             * must see the surfaces this plugin does NOT control — a sibling logging plugin and
+             * the DSH LLM service — not only its own writes. A list of our own writes would be
+             * taken as complete, which is the misreading OBS-03 exists to prevent.
+             */
+            capture: {
+              profile: (config.captureProfile ?? 'standard') as string,
+              surfaces: CAPTURE_PATH.map(surface => ({
+                surface: surface.surface,
+                writtenByThisPlugin: surface.writtenByThisPlugin,
+                control: surface.control,
+              })),
+            },
           } as never
         }
 
