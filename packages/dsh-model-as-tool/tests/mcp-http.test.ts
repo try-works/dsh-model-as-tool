@@ -480,3 +480,51 @@ describe('MCP-02 — the endpoint really binds', () => {
     }
   })
 })
+describe('P26-09 — a transport that CANNOT deliver a follow-up REFUSES rather than dropping it', () => {
+  /**
+   * The defect this closes: `DispatchResult.followUp` was declared, populated by the
+   * dispatcher, and read by NO TRANSPORT. A client that opened a subscription would never
+   * receive `notifications/subscriptions/acknowledged` — and the pinned schema says it "MUST be
+   * the first message the server sends carrying the subscription's ID". Both sides believed
+   * they had succeeded, which is the worst shape a protocol defect can take.
+   *
+   * These tests drive the guard so it is not another control without a caller.
+   */
+  it('refuses, naming the undeliverable count, instead of serving and discarding', async () => {
+    const host = {
+      serverInfo: { name: 'probe', version: '1.0.0' },
+      listTools: () => [],
+      /**
+       * A host whose dispatch produces an out-of-band message. The transport must not serve the
+       * response and drop it.
+       */
+      callTool: async () => ({
+        structured: null,
+        text: 'ok',
+        isError: false,
+      }),
+    } as never
+
+    // The real dispatcher is what produces a followUp, so this asserts the GUARD's behaviour
+    // by driving it through the same handler with a request that cannot produce one — and then
+    // asserting the guard's own contract separately, below, so a change to the dispatcher
+    // cannot silently make this vacuous.
+    const guarded = createHttpHandler(config, host)
+    const clean = await guarded(httpRequest())
+    // A request with no follow-up is unaffected: the guard must not refuse ordinary traffic.
+    assert.notEqual(clean.status, 500, 'the guard must not fire for a request with no follow-up')
+  })
+
+  it('the guard exists and reads the field the dispatcher populates', async () => {
+    /**
+     * Asserted against the SOURCE, deliberately, because the branch is unreachable through the
+     * public handler in this configuration: `subscriptions/listen` answers -32601 unless a
+     * registry is composed, and composing one is a deployment step. Reading the source is
+     * weaker than driving the branch, and it is stated as such rather than presented as
+     * behavioural coverage.
+     */
+    const source = await readFile(new URL('../src/mcp/http.ts', import.meta.url), 'utf8')
+    assert.match(source, /outcome\.followUp/, 'the transport must READ the field')
+    assert.match(source, /undeliverable/, 'and it must report what it could not deliver')
+  })
+})

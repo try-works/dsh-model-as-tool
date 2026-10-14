@@ -244,6 +244,38 @@ export function createHttpHandler(
 
     // 7. Dispatch. A notification carries no id and is acknowledged with 202.
     const outcome = await dispatch(wire, host, { signal: new AbortController().signal })
+
+    /**
+     * OUT-OF-BAND MESSAGES THIS TRANSPORT CANNOT DELIVER ARE REFUSED, NOT DROPPED.
+     *
+     * `DispatchResult.followUp` carries messages SEPARATE from the response —
+     * `notifications/subscriptions/acknowledged` is one, and the pinned schema says it "MUST
+     * be the first message the server sends carrying the subscription's ID". This transport
+     * answers one JSON body per POST and has no channel for a second message.
+     *
+     * It used to ignore the field entirely: the declaration existed, the dispatcher populated
+     * it, and NO TRANSPORT EVER READ IT. A client that opened a subscription successfully
+     * would never receive the acknowledgement, and nothing anywhere would say so — the worst
+     * shape a protocol defect can take, because BOTH SIDES BELIEVE THEY SUCCEEDED.
+     *
+     * Refusing is honest for a transport that cannot deliver, and it is the conservative
+     * choice: serving the response while discarding a message the protocol requires is a
+     * conformance failure that surfaces only in a client's behaviour, far from the cause.
+     */
+    if (outcome.followUp !== undefined && outcome.followUp.length > 0) {
+      return respond(500, {
+        jsonrpc: '2.0',
+        ...wire.id === undefined ? {} : { id: wire.id },
+        error: {
+          code: ERROR_CODES.internalError,
+          message: 'this HTTP transport delivers one response body per request and cannot carry '
+            + `the ${outcome.followUp.length} out-of-band message(s) this request produced. `
+            + 'Serve subscriptions over a transport with a channel for notifications.',
+          data: { undeliverable: outcome.followUp.length },
+        },
+      })
+    }
+
     if (wire.id === undefined) {
       return { status: 202, headers: {}, body: '' }
     }
