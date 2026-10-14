@@ -10,12 +10,16 @@
  * Requirement links: EXT-13, RCP-01, RCP-02, DECL-01.
  */
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, it } from 'node:test'
+import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { resolveDeclarativeImplementations, validateManifest } from '@try-works/tool-mode-extension-sdk'
+import { discoverExtension, resolveDeclarativeImplementations, validateManifest } from '@try-works/tool-mode-extension-sdk'
+
+const scratch: string[] = []
+after(() => { for (const dir of scratch) rmSync(dir, { recursive: true, force: true }) })
 
 const DIR = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
 
@@ -121,5 +125,74 @@ describe('slice 3 — the shipped package resolves through the CONVENTION', () =
     for (const entry of outcome.resolved) {
       assert.ok(entry.recipe !== null && typeof entry.recipe === 'object', `${entry.id} must parse to an object`)
     }
+  })
+})
+describe('EXT-13 — the package is DISCOVERABLE without an exports map', () => {
+  it('discovers, and reports no module entry', () => {
+    /**
+     * THE BLOCKER THIS CLOSES. Discovery required `package.json` to declare an explicit
+     * "exports" map — for a package that SHIPS NO CODE, which has no entry points to export.
+     * Every declarative package was therefore rejected before its execution kind could be
+     * read, with the advice "Declare the public entry points": a message such a package
+     * cannot act on. The requirement now applies to module packages, where the host actually
+     * resolves an entry to load.
+     */
+    const discovery = discoverExtension(DIR) as unknown as {
+      packageName: string
+      moduleEntry?: string
+      manifest: { execution: { kind: string } }
+    }
+    assert.equal(discovery.packageName, '@try-works/extension-declarative-recipes')
+    assert.equal(discovery.manifest.execution.kind, 'declarative')
+    // No module to load — which is the package's defining property, not an omission.
+    assert.equal(discovery.moduleEntry, undefined)
+  })
+
+  it('still REFUSES a module package with no exports map', () => {
+    /**
+     * The negative half, and the reason the requirement was not simply deleted: a MODULE
+     * package must still declare its entry points, because the host resolves one in order to
+     * load it. Loosening the rule for declarative packages must not loosen it for these.
+     */
+    const dir = mkdtempSync(join(tmpdir(), 'decl-modexports-'))
+    scratch.push(dir)
+    mkdirSync(join(dir, 'lib'), { recursive: true })
+    // The module it declares must EXIST, or the existence check fires before the exports
+    // requirement and the test would assert the wrong failure.
+    writeFileSync(join(dir, 'lib', 'index.js'), 'export function createExtension() {}')
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({
+      name: '@try-works/no-exports',
+      version: '0.1.0',
+      type: 'module',
+      toolMode: { manifest: './tool-mode.extension.json' },
+    }))
+    writeFileSync(join(dir, 'tool-mode.extension.json'), JSON.stringify({
+      protocolVersion: '1.1.0',
+      id: '@try-works/no-exports',
+      version: '0.1.0',
+      displayName: 'No exports',
+      description: 'A module package with no exports map.',
+      license: 'MIT',
+      activation: { policy: 'operator', deactivatable: true },
+      runtimeApi: 1,
+      compatibility: { hostApi: '^1.1.0', requiredFeatures: [] },
+      execution: { kind: 'module', entry: './lib/index.js' },
+      permissions: { networkOrigins: [], inputFiles: false, storage: 'none', secrets: [], nativeCode: false },
+      models: [],
+      tools: [],
+      implementations: [],
+      skills: [],
+      licenses: [],
+      network: { requiredTelemetry: false, otherNetworkUse: false },
+    }))
+
+    assert.throws(
+      () => discoverExtension(dir),
+      (error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error)
+        assert.match(message, /exports/)
+        return true
+      },
+    )
   })
 })

@@ -11,5 +11,8 @@
   ],
   "scripts": {
     "test": "tsx --test tests/*.test.ts"
+  },
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
   }
 }

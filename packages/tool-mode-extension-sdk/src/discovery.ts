@@ -182,15 +182,19 @@ export function discoverExtension(packageDir: string): ExtensionDiscovery {
       'Publish the extension as an ES module.',
     )
   }
+  /**
+   * The `exports` map is required of a MODULE package and NOT of a declarative one.
+   *
+   * This check used to run here, unconditionally, and it made a declarative package
+   * UNDISCOVERABLE: such a package ships no code, so it has no entry points to export, and
+   * demanding an `exports` map asked it to declare something it does not have. The failure
+   * read "package.json must declare an explicit \"exports\" map" — advice a package with no
+   * module cannot act on.
+   *
+   * The requirement is now applied AFTER the manifest is read, where the execution kind is
+   * known. `exportsField` is still read here so the shape check happens in one place.
+   */
   const exportsField = pkg.exports
-  if (typeof exportsField !== 'object' || exportsField === null || Object.keys(exportsField).length === 0) {
-    throw new ManagementError(
-      'INVALID_EXTENSION',
-      'discover',
-      'package.json must declare an explicit "exports" map',
-      'Declare the public entry points; implicit resolution is not admitted.',
-    )
-  }
   const toolMode = pkg.toolMode
   if (typeof toolMode !== 'object' || toolMode === null || typeof (toolMode as { manifest?: unknown }).manifest !== 'string') {
     throw new ManagementError(
@@ -212,7 +216,10 @@ export function discoverExtension(packageDir: string): ExtensionDiscovery {
   }
 
   const raw = readBoundedJson(manifestPath, MAX_MANIFEST_BYTES, 'the extension manifest')
-  const entry = exportTarget((exportsField as Record<string, unknown>)['./tool-mode'])
+  /** A declarative package has no exports map at all, so there is no entry to look for. */
+  const entry = typeof exportsField === 'object' && exportsField !== null
+    ? exportTarget((exportsField as Record<string, unknown>)['./tool-mode'])
+    : undefined
   const entryPath = entry === undefined ? undefined : resolve(root, entry)
   if (entryPath !== undefined && !entryPath.startsWith(root + sep)) {
     throw new ManagementError(
@@ -225,6 +232,27 @@ export function discoverExtension(packageDir: string): ExtensionDiscovery {
 
   // Named alidated because manifest already holds the parsed package.json above.
   const validated = validateManifest(raw, { packageName, packageVersion, packageDir: root })
+
+  /**
+   * The `exports` requirement, applied where the execution KIND is known.
+   *
+   * A module package must declare its public entry points, because the host resolves one in
+   * order to load it, and implicit resolution is not admitted. A DECLARATIVE package has no
+   * module to load: its behaviour is a set of recipe files resolved by the
+   * `recipes/<implementation-id>.json` convention instead. Requiring an `exports` map of it
+   * demanded a declaration it cannot meaningfully make, and rejected every declarative
+   * package before its kind could even be read.
+   */
+  const declarative = (validated as unknown as { execution: { kind: string } }).execution.kind === 'declarative'
+  if (!declarative
+    && (typeof exportsField !== 'object' || exportsField === null || Object.keys(exportsField as object).length === 0)) {
+    throw new ManagementError(
+      'INVALID_EXTENSION',
+      'discover',
+      'package.json must declare an explicit "exports" map',
+      'Declare the public entry points; implicit resolution is not admitted.',
+    )
+  }
 
   /**
    * Licence resolution happens HERE rather than being left to each consumer.
@@ -267,7 +295,7 @@ export function discoverExtension(packageDir: string): ExtensionDiscovery {
     manifestPath,
     ...entryPath === undefined ? {} : { entryPath },
     manifest: validated,
-    exports: Object.keys(exportsField),
+    exports: typeof exportsField === 'object' && exportsField !== null ? Object.keys(exportsField) : [],
     licenses,
     licenseGaps,
     noNetwork: noNetworkEligibility(networkBehaviour),
