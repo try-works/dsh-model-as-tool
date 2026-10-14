@@ -45,6 +45,33 @@ export interface HarnessComposition {
   readonly journal: (record: BrokerRecord) => void
 }
 
+/**
+ * A harness call the caller CANCELLED.
+ *
+ * Distinct from `HarnessFailedError` on purpose: a caller who walked away is not a malfunction,
+ * and conflating the two makes every cancellation look like a fault. The same discipline the
+ * invocation accounting applies to `cancelled`.
+ */
+export class HarnessCancelledError extends Error {
+  override readonly name = 'HarnessCancelledError'
+  constructor(readonly toolName: string, readonly reason: string) {
+    super(`the harness recipe ${toolName} was cancelled: ${reason}`)
+  }
+}
+
+/**
+ * A harness call that FAILED, carrying the broker's machine-readable code.
+ *
+ * The code is preserved rather than flattened into a message, so a caller branches on the CAUSE
+ * instead of matching prose.
+ */
+export class HarnessFailedError extends Error {
+  override readonly name = 'HarnessFailedError'
+  constructor(readonly toolName: string, readonly code: string, readonly reason: string) {
+    super(`the harness recipe ${toolName} failed (${code}): ${reason}`)
+  }
+}
+
 /** A recipe made callable. */
 export interface ServedRecipe {
   readonly implementationId: string
@@ -114,13 +141,27 @@ export function prepareDeclarative(
       toolName,
       async invoke(args, signal) {
         const outcome = await broker.run(recipe, args, signal === undefined ? {} : { signal })
-        if (outcome.kind === 'completed') return (outcome as { text?: unknown }).text
+        if (outcome.kind === 'completed') return outcome.text
         /**
-         * A non-completed outcome is THROWN rather than returned, because a refusal, a
-         * truncation or a tool call is an ERROR — returning an empty value would look like a
-         * successful empty result and reach a caller as one.
+         * THE BROKER'S NON-COMPLETED VARIANTS ARE `failed` AND `cancelled` — and an earlier
+         * version of this comment named `refused`, `truncated` and `tool_call` instead.
+         *
+         * Those are variants of `LlmCompletion`, the PROVIDER's reply, not of `BrokerOutcome`,
+         * what `run` returns. They were plausible and wrong, and the difference is not academic:
+         * a reader trusting the comment would handle cases that cannot occur here and miss the
+         * one that can.
+         *
+         * CANCELLATION IS NOT A FAILURE, and it used to be thrown as an indistinguishable Error.
+         * The same discipline applies here as in the invocation accounting: a caller who walked
+         * away must be able to tell that from a malfunction, or every cancellation inflates the
+         * error rate. `HarnessCancelledError` exists so it can.
          */
-        throw new Error(`the harness recipe ${toolName} did not complete: ${JSON.stringify(outcome).slice(0, 300)}`)
+        if (outcome.kind === 'cancelled') {
+          throw new HarnessCancelledError(toolName, outcome.reason)
+        }
+        // `failed` carries the broker's own machine-readable code, so a caller can branch on the
+        // CAUSE rather than matching on a message.
+        throw new HarnessFailedError(toolName, outcome.code, outcome.reason)
       },
     })
   }

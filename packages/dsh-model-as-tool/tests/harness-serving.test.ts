@@ -16,7 +16,7 @@ import assert from 'node:assert/strict'
 
 import { parseRecipe, type BrokerRecord, type LlmCompletion, type LlmProvider } from '@try-works/tool-mode-recipes'
 
-import { prepareDeclarative, type HarnessComposition } from '../src/harness-serving.ts'
+import { HarnessCancelledError, HarnessFailedError, prepareDeclarative, type HarnessComposition } from '../src/harness-serving.ts'
 import { cleanup } from './helpers.ts'
 
 after(async () => { await cleanup() })
@@ -137,8 +137,52 @@ describe('slice 3 — REFUSING is the default, and the refusal names the right t
     await assert.rejects(
       outcome.served[0]?.invoke({ text: 'x', kind: 'section' }) ?? Promise.resolve(),
       (error: unknown) => {
-        const message = error instanceof Error ? error.message : String(error)
-        assert.match(message, /did not complete/)
+        /**
+         * A provider REFUSAL becomes a broker `failed` outcome, which carries the machine-readable
+         * code — so the assertion is on the TYPE and the CODE rather than on prose. Matching a
+         * message would break on any rewording while proving nothing about the distinction.
+         */
+        assert.ok(error instanceof HarnessFailedError, `expected a failure, saw ${String(error)}`)
+        assert.equal(error instanceof HarnessCancelledError, false, 'a refusal is not a cancellation')
+        assert.equal(typeof error.code, 'string')
+        return true
+      },
+    )
+  })
+})
+describe('slice 3 — CANCELLATION is not a failure, and the two are distinguishable', () => {
+  /**
+   * Found by SELF-review against the broker's actual outcome type, after a commissioned review
+   * failed to deliver. The comment here had named `refused`, `truncated` and `tool_call` — which
+   * are variants of `LlmCompletion`, the PROVIDER's reply, not of `BrokerOutcome`, what `run`
+   * returns. A reader trusting that comment would handle cases that cannot occur and miss the one
+   * that can. Worse, `cancelled` was thrown as an indistinguishable `Error`, so every
+   * cancellation a caller made would look like a malfunction.
+   */
+  it('throws HarnessCancelledError for a cancelled run, NOT a generic failure', async () => {
+    const controller = new AbortController()
+    const provider: LlmProvider = {
+      id: 'cancelling-provider',
+      generation: 1,
+      destination: 'local',
+      capabilities: () => ({ images: false, maxOutputTokens: 4096 }),
+      async complete(): Promise<LlmCompletion> {
+        // The caller walks away mid-call.
+        controller.abort()
+        return { kind: 'text', text: 'unused' }
+      },
+    }
+    const journal: BrokerRecord[] = []
+    const outcome = prepareDeclarative({ provider, journal: record => journal.push(record) }, resolvedRecipes())
+    assert.equal(outcome.ok, true)
+    if (!outcome.ok) return
+
+    await assert.rejects(
+      outcome.served[0]?.invoke({ text: 'x', kind: 'section' }, controller.signal) ?? Promise.resolve(),
+      (error: unknown) => {
+        // The distinction a caller needs in order not to inflate its error rate.
+        assert.ok(error instanceof HarnessCancelledError, `expected a cancellation, saw ${String(error)}`)
+        assert.equal(error instanceof HarnessFailedError, false)
         return true
       },
     )
