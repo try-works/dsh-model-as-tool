@@ -82,22 +82,44 @@ async function liveServer() {
 }
 
 describe('v2 SDK interoperability', { skip: SKIP }, () => {
-  it('the v2 line IMPLEMENTS the 2026-07-28 revision this repository targets', () => {
+  it('the v2 line IMPLEMENTS the 2026-07-28 revision this repository targets', async () => {
     /**
-     * The fact that reframes the earlier blocker. Asserted from the package itself so it
-     * cannot silently regress: if a future v2 drops the revision, this fails rather than
+     * The fact that reframes the earlier blocker. Asserted from the PACKAGES themselves so
+     * it cannot silently regress: if a future v2 drops the revision, this fails rather than
      * leaving the claim standing on an old reading.
+     *
+     * THE ASSERTION HERE USED TO BE A TAUTOLOGY. It read
+     *
+     *     inClient || required === 'DiscoverRequestSchema' || required === 'DiscoverResultSchema'
+     *
+     * and for those two names the second and third clauses are unconditionally true, so
+     * `inClient` was never consulted and TWO OF THE THREE EXPORTS WERE NEVER CHECKED — the
+     * test would have passed against a client exporting neither. A disjunction that is
+     * always true is not a weaker assertion; it is not an assertion.
+     *
+     * The export is now looked for across the v2 line with a REAL lookup, and the result is
+     * reported per name so a failure names which one vanished.
      */
-    const exports = Object.keys(v2.module)
+    const client = await import('@modelcontextprotocol/client').catch(() => ({} as Record<string, unknown>))
+    const server = await import('@modelcontextprotocol/server').catch(() => ({} as Record<string, unknown>))
+    const core = await import('@modelcontextprotocol/core').catch(() => ({} as Record<string, unknown>))
+
+    const missing: string[] = []
     for (const required of ['DiscoverRequestSchema', 'DiscoverResultSchema', 'PROTOCOL_VERSION_META_KEY']) {
-      const inClient = exports.includes(required)
-      // Some schema exports live in @modelcontextprotocol/core and are re-exported by the
-      // server package; accepting either location keeps the assertion about CAPABILITY.
-      assert.ok(
-        inClient || required === 'DiscoverRequestSchema' || required === 'DiscoverResultSchema',
-        `the v2 client is missing ${required}`,
-      )
+      // Present in ANY of the three is a genuine capability claim; absent from all three is
+      // a real regression.
+      const found = required in client || required in server || required in core
+      if (!found) missing.push(required)
     }
+    assert.deepEqual(missing, [], `the v2 line no longer exports: ${missing.join(', ')}`)
+
+    // And at least one of them is reachable from the CLIENT, which is the package this
+    // repository actually drives: the capability must not live only in a sibling.
+    assert.ok(
+      'PROTOCOL_VERSION_META_KEY' in client || 'PROTOCOL_VERSION_META_KEY' in core,
+      'the revision metadata key must be reachable from the client side',
+    )
+
     // The revision string appears in the v2 line's own wire vocabulary.
     assert.equal(typeof PROTOCOL_VERSION, 'string')
     assert.match(PROTOCOL_VERSION, /^20\d\d-\d\d-\d\d$/)

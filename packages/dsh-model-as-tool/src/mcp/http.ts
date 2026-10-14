@@ -160,9 +160,16 @@ export function createHttpHandler(
     if (bodyBytes > config.maxBodyBytes) {
       // 413 rather than 400: the request may be perfectly well formed and merely
       // too large, and a client needs to tell those apart.
+      /**
+       * NO `id` — the pinned schema neither permits nor requires one here.
+       *
+       * This wrote `id: null`, which `RequestId` (`type: ["string","integer"]`) REJECTS:
+       * `null` is not a string and not an integer. `JSONRPCErrorResponse` requires only
+       * `["error","jsonrpc"]`, so the id is optional — and when the body was too large to
+       * read there is no id to echo anyway. Omitting it is both valid and honest.
+       */
       return respond(413, {
         jsonrpc: '2.0',
-        id: null,
         error: { code: ERROR_CODES.invalidRequest, message: `the request body exceeds ${config.maxBodyBytes} bytes` },
       })
     }

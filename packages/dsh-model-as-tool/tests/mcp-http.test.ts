@@ -238,6 +238,27 @@ describe('SEC-02 / P26-05 — method, path, size and headers', () => {
     assert.equal(response.status, 413)
   })
 
+  it('the 413 body carries NO id, because the pinned schema rejects null', async () => {
+    /**
+     * The body used to write `id: null`. The pinned `RequestId` is
+     * `type: ["string","integer"]`, so `null` is NEITHER, and `JSONRPCErrorResponse` requires
+     * only `["error","jsonrpc"]` — the id is optional. When the body was too large to read
+     * there is no id to echo, so omitting it is both valid and honest.
+     *
+     * Asserted by PRESENCE rather than by truthiness: `id: undefined` would serialize away
+     * and pass a `!== null` check while `id: null` would also satisfy `!('id' in body)` only
+     * after serialization. This reads the parsed body's own keys.
+     */
+    const small = createHttpHandler({ ...config, maxBodyBytes: 64 }, host)
+    const response = await small(httpRequest())
+    const body = JSON.parse(response.body) as Record<string, unknown>
+    assert.equal('id' in body, false, `the 413 body must omit id, saw: ${JSON.stringify(body)}`)
+    // And it is still a well-formed JSON-RPC error, which is the half the omission must not
+    // break: the schema requires exactly these two members.
+    assert.equal(body.jsonrpc, '2.0')
+    assert.ok(body.error, 'the error member is required')
+  })
+
   it('returns HTTP 400 with HeaderMismatch when a header disagrees', async () => {
     const response = await handler(httpRequest({
       headers: { ...httpRequest().headers, 'mcp-protocol-version': '2025-11-25' },
