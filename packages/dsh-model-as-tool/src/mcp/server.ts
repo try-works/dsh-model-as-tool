@@ -172,7 +172,21 @@ export async function dispatch(
          * conformance suite validated a shape the specific error definition forbids.
          * P26-03 requires `-32021` "and the schema-defined data"; this is that shape.
          */
-        { requiredCapabilities: unsupported },
+        /**
+         * A `ClientCapabilities` OBJECT, not an array of names — and this was STILL wrong.
+         *
+         * The previous correction fixed the FIELD NAME (`unsupported` -> `requiredCapabilities`)
+         * and left the VALUE as an array of strings. The pinned definition is precise:
+         *
+         *     requiredCapabilities -> $ref ClientCapabilities  (type: object)
+         *
+         * so the shape is `{ sampling: {} }`, a capabilities object keyed by capability name.
+         * Both defects are the same kind — a plausible shape that no fixture covered — and this
+         * one survived the first fix because only a LIVE response validated against the pinned
+         * definition could distinguish an array from an object. The fixture probe never saw it,
+         * and no test asserted the value's TYPE.
+         */
+        { requiredCapabilities: Object.fromEntries(unsupported.map(name => [name, {}])) },
       )
     }
 

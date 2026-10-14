@@ -416,9 +416,18 @@ describe('P26-03 — the pinned schema REQUIRES HTTP 400, and the status is now 
        * `data.requiredCapabilities`; the generic error definition accepted either, so only
        * the SPECIFIC one catches it.
        */
+      /**
+       * AN OBJECT, NOT AN ARRAY — and this assertion previously demanded the array.
+       *
+       * The pinned definition is `requiredCapabilities -> $ref ClientCapabilities` (type:
+       * object), so the shape is `{ sampling: {} }`. My round-12 fix corrected the FIELD NAME
+       * and this test then locked in the wrong VALUE TYPE, which is how a defect survives its
+       * own repair: the test agreed with the code, and both were wrong together.
+       */
+      const required = response.json.error?.data?.requiredCapabilities
       assert.ok(
-        Array.isArray(response.json.error?.data?.requiredCapabilities),
-        `data.requiredCapabilities is required: ${JSON.stringify(response.json.error?.data)}`,
+        required !== null && typeof required === 'object' && !Array.isArray(required),
+        `data.requiredCapabilities must be a capabilities OBJECT: ${JSON.stringify(response.json.error?.data)}`,
       )
     } finally {
       await endpoint.close()
