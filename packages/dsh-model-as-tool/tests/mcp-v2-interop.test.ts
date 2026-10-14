@@ -147,7 +147,19 @@ describe('v2 SDK interoperability', { skip: SKIP }, () => {
     const transport = new v2.module.StreamableHTTPClientTransport(new URL(endpoint.url), {
       requestInit: { headers: { authorization: `Bearer ${TOKEN}` } },
     })
-    const client = new v2.module.Client({ name: 'interop-probe', version: '1.0.0' }, { capabilities: {} })
+    const client = new v2.module.Client({ name: 'interop-probe', version: '1.0.0' }, {
+      capabilities: {},
+      /**
+       * THE MISSING PIECE, and the reason the earlier attempt failed.
+       *
+       * The v2 client defaults to 'legacy': it opens with initialize at 2025-11-25 and
+       * never probes. 'auto' makes it PROBE with server/discover at connect, which is
+       * the method revision 2026-07-28 introduced in place of the handshake — and which
+       * this server implements. Once a modern era is negotiated the client also attaches
+       * the reserved _meta envelope to every request automatically.
+       */
+      // No versionNegotiation: this test is about the DEFAULT, which never probes.
+    })
     try {
       // Asserted as a REJECTION with a protocol reason: the server is not broken, it is
       // answering a 2025-era method that revision 2026-07-28 replaced.
@@ -162,16 +174,24 @@ describe('v2 SDK interoperability', { skip: SKIP }, () => {
     }
   })
 
-  it('connects and sees tools ONCE the client is configured for the modern era', {
-    skip: 'BLOCKED: the v2 client must be configured to opt into the 2026-07-28 era; '
-      + 'by default it negotiates 2025-11-25 via `initialize`, which this revision replaced '
-      + 'with `server/discover`. The era selector was located in the client types but not yet wired.',
-  }, async () => {
+  it('connects and sees tools ONCE the client is configured for the modern era', async () => {
     const { endpoint } = await liveServer()
     const transport = new v2.module.StreamableHTTPClientTransport(new URL(endpoint.url), {
       requestInit: { headers: { authorization: `Bearer ${TOKEN}` } },
     })
-    const client = new v2.module.Client({ name: 'interop-probe', version: '1.0.0' }, { capabilities: {} })
+    const client = new v2.module.Client({ name: 'interop-probe', version: '1.0.0' }, {
+      capabilities: {},
+      /**
+       * THE MISSING PIECE, and the reason the earlier attempt failed.
+       *
+       * The v2 client defaults to 'legacy': it opens with initialize at 2025-11-25 and
+       * never probes. 'auto' makes it PROBE with server/discover at connect, which is
+       * the method revision 2026-07-28 introduced in place of the handshake — and which
+       * this server implements. Once a modern era is negotiated the client also attaches
+       * the reserved _meta envelope to every request automatically.
+       */
+      versionNegotiation: { mode: 'auto' },
+    })
 
     try {
       /**
@@ -191,14 +211,24 @@ describe('v2 SDK interoperability', { skip: SKIP }, () => {
     }
   })
 
-  it('the official v2 client runs a REAL inference through tools/call', {
-    skip: 'blocked by the same era-selection gap as the connect test above',
-  }, async () => {
+  it('the official v2 client runs a REAL inference through tools/call', async () => {
     const { endpoint } = await liveServer()
     const transport = new v2.module.StreamableHTTPClientTransport(new URL(endpoint.url), {
       requestInit: { headers: { authorization: `Bearer ${TOKEN}` } },
     })
-    const client = new v2.module.Client({ name: 'interop-probe', version: '1.0.0' }, { capabilities: {} })
+    const client = new v2.module.Client({ name: 'interop-probe', version: '1.0.0' }, {
+      capabilities: {},
+      /**
+       * THE MISSING PIECE, and the reason the earlier attempt failed.
+       *
+       * The v2 client defaults to 'legacy': it opens with initialize at 2025-11-25 and
+       * never probes. 'auto' makes it PROBE with server/discover at connect, which is
+       * the method revision 2026-07-28 introduced in place of the handshake — and which
+       * this server implements. Once a modern era is negotiated the client also attaches
+       * the reserved _meta envelope to every request automatically.
+       */
+      versionNegotiation: { mode: 'auto' },
+    })
 
     try {
       await client.connect(transport)
@@ -215,16 +245,26 @@ describe('v2 SDK interoperability', { skip: SKIP }, () => {
     }
   })
 
-  it('the official v2 client is REJECTED without a credential', {
-    skip: 'blocked by the same era-selection gap; a legacy client is refused before the credential is examined',
-  }, async () => {
+  it('the official v2 client is REJECTED without a credential', async () => {
     const { endpoint } = await liveServer()
     const transport = new v2.module.StreamableHTTPClientTransport(new URL(endpoint.url), {
       // No authorization header: the negative case must fail for a third-party client too,
       // not only for the hand-written one.
       requestInit: { headers: {} },
     })
-    const client = new v2.module.Client({ name: 'interop-probe', version: '1.0.0' }, { capabilities: {} })
+    const client = new v2.module.Client({ name: 'interop-probe', version: '1.0.0' }, {
+      capabilities: {},
+      /**
+       * THE MISSING PIECE, and the reason the earlier attempt failed.
+       *
+       * The v2 client defaults to 'legacy': it opens with initialize at 2025-11-25 and
+       * never probes. 'auto' makes it PROBE with server/discover at connect, which is
+       * the method revision 2026-07-28 introduced in place of the handshake — and which
+       * this server implements. Once a modern era is negotiated the client also attaches
+       * the reserved _meta envelope to every request automatically.
+       */
+      versionNegotiation: { mode: 'auto' },
+    })
 
     try {
       await assert.rejects(client.connect(transport), (error: unknown) => {
