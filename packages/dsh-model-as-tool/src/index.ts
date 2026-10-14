@@ -29,6 +29,8 @@ import { createContributionRegistrar } from './extension-registrar.ts'
 import { createProgramRunner, externalRefusal } from './tool-mode-run.ts'
 import { buildDiagnostics } from './diagnostics.ts'
 import { CAPTURE_PATH } from './capture-path.ts'
+import { prepareDeclarative } from './harness-serving.ts'
+import type { LlmProvider } from '@try-works/tool-mode-recipes'
 import { createDispatch, describeDispatchFailure, type DispatchEnvironment, type DispatchManifest } from './extension-dispatch.ts'
 import {
   discoverExtension,
@@ -187,6 +189,15 @@ export interface Config {
    * against the policy or bypassing DSH, both of which are forbidden.
    */
   captureProfile?: 'standard' | 'metadata-only'
+  /**
+   * The deployment's harness provider, for executing DECLARATIVE packages (HLM-01).
+   *
+   * Supplied by the DEPLOYMENT rather than constructed here, because which model answers a
+   * harness call is not this plugin's business — and the architecture gate forbids
+   * model-specific code in the host. Absent means a declarative package resolves but is not
+   * served, and the refusal says so at preparation rather than at the first invocation.
+   */
+  harnessProvider?: LlmProvider
   /** Hard resource limits overriding the conservative defaults. */
   limits?: { maxInputBytes?: number; maxAudioSeconds?: number; maxResultBytes?: number }
 }
@@ -1299,11 +1310,34 @@ export function apply(ctx: Context, config: Config = {}): void {
              * fed by an `LlmProvider`, and this deployment supplies none. The recipes are real,
              * the broker is importable, and nothing can call a model.
              */
-            throw new Error(
-              `${extensionId} is declarative and its ${resolved.resolved.length} recipe(s) resolved, `
-              + 'but no harness LlmProvider is composed in this deployment, so no model can be '
-              + 'called. The recipes and the broker are both reachable; what is absent is a provider.',
-            )
+            /**
+             * SERVED WHEN THE DEPLOYMENT SUPPLIES A PROVIDER, refused when it does not.
+             *
+             * The joining lives in `prepareDeclarative` so the host holds no model-specific code:
+             * this branch hands over the deployment's provider and a journal sink, and receives
+             * callable tools or an honest refusal. The journal is required by the BROKER itself,
+             * which will not construct one that reports nothing (HLM-09).
+             */
+            const served = prepareDeclarative({
+              ...config.harnessProvider === undefined ? {} : { provider: config.harnessProvider },
+              journal: record => ctx.logger?.debug?.('harness invocation', record as never),
+            }, resolved.resolved)
+
+            if (!served.ok) {
+              throw new Error(
+                `${extensionId} is declarative and its ${resolved.resolved.length} recipe(s) resolved, `
+                + `but they cannot be served: ${served.detail}`,
+              )
+            }
+            return {
+              async createProvider() {
+                return {
+                  async invoke(args: Record<string, unknown>) {
+                    return served.served[0]?.invoke(args)
+                  },
+                }
+              },
+            } as never
           }
 
           let pending = extensionInstances.get(extensionId)

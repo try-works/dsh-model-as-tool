@@ -185,47 +185,24 @@ describe('EXT-30 — a refusal is readable', () => {
     assert.equal('execute' in dispatch, false)
   })
 })
-/** The refusal text, read from the host source so it cannot drift from the assertion. */
-const DECLARATIVE_REFUSAL = (() => {
-  const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8')
-  const start = source.indexOf('is declarative and its')
-  return start === -1 ? '' : source.slice(start, start + 400)
-})()
 
-describe('EXT-13 — the declarative branch is WRITTEN (source assertion, not a driven path)', () => {
-  /**
-   * HONEST SCOPE, stated because the reviewer's lesson applies to my own test: this asserts
-   * the refusal is WRITTEN, read from the host source, and NOT that it is REACHED. Driving
-   * it would require installing the declarative package into a store and calling
-   * providerFor on it, which is the remaining integration step. A control with no caller is
-   * a symbol, and a test that only checks the control's TEXT is not much better — so this
-   * says which of the two it is rather than implying coverage it does not have.
-   */
-  it('names the UNJOINED LINK rather than failing at an import', async () => {
-    /**
-     * THE DISCONNECTION THIS MAKES VISIBLE. Slice 3 has three layers and nothing joined them:
-     * the manifest kind was schema-valid, the recipe convention was implemented, and the
-     * broker had 132 passing tests — while `providerFor` assumed EVERY package could be
-     * imported. A declarative package therefore failed with "the package declares no
-     * importable ./tool-mode export", which is true and useless: it was never supposed to
-     * declare one.
-     *
-     * The failure now distinguishes the cases a reader must tell apart: recipes that do not
-     * RESOLVE (a packaging defect) from recipes that resolve with no broker composed (an
-     * unwired link). Those are different problems and only one of them is the package's.
-     */
-    const message = DECLARATIVE_REFUSAL
-    assert.match(message, /is declarative/)
-    // The honest half: the recipes resolved, so the package is NOT at fault.
-    assert.match(message, /recipe\(s\) resolved/)
-    // And the link that is actually missing is named, so the next step is not a guess.
-    assert.match(message, /no harness LlmProvider is composed/)
-    assert.match(message, /recipes and the broker are both reachable/)
-  })
-
-  it('is a DIFFERENT failure from an unresolvable recipe', () => {
-    // A package whose recipe is absent names the convention and the file, because that IS
-    // the package's defect and a package author can act on it.
-    assert.doesNotMatch(DECLARATIVE_REFUSAL, /could not be resolved/)
-  })
-})
+/**
+ * THE DECLARATIVE BRANCH IS NO LONGER ASSERTED BY SCRAPING THE SOURCE.
+ *
+ * An earlier version of this file read the refusal text out of `src/index.ts` and asserted its
+ * wording, and said of itself that it proved the branch was WRITTEN and not REACHED. That was the
+ * honest description of a branch nothing could drive: the host resolved recipes and then always
+ * refused, so there was no behaviour to exercise.
+ *
+ * Both halves of that have changed, and keeping the old test would now be worse than deleting it:
+ *
+ *   - the host DELEGATES the joining to `prepareDeclarative`, which is DRIVEN by six tests in
+ *     `harness-serving.test.ts` — recipes become callable tools, a supplied provider answers, the
+ *     call is recorded, and a refusal is thrown rather than returned as a value;
+ *   - the declarative chain is DRIVEN end to end in `declarative-install.test.ts` (packed bytes
+ *     through a real store) and `declarative-recipe-runs.test.ts` (a recipe reaching a provider).
+ *
+ * A text assertion over a source file cannot fail when the BEHAVIOUR regresses, only when the
+ * WORDING changes — which makes it a maintenance cost that reads like coverage. The coverage is
+ * where the behaviour is.
+ */
