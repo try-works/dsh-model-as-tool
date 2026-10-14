@@ -100,7 +100,13 @@ describe('P26-09 — no event before the acknowledgement', () => {
     })
     const result = outcome.response?.result as { _meta: Record<string, unknown>; resultType: string }
     assert.equal(result.resultType, 'complete')
-    assert.match(String(result._meta[SUBSCRIPTION_ID_KEY]), /^sub_/)
+    /**
+     * The meta key carries the REQUEST's own id, because that is the type the schema gives
+     * it (`RequestId`) and what lets a client correlate the result with the call it made.
+     * Asserted as an IDENTITY rather than by pattern: the earlier `/^sub_/` check required
+     * an invented format the client had never seen.
+     */
+    assert.equal(result._meta[SUBSCRIPTION_ID_KEY], 'l1')
     // A notification is a SEPARATE message, not a member of the result: embedding it
     // would produce a frame that is neither a valid result nor a valid notification.
     assert.equal(outcome.followUp?.length, 1)
@@ -151,13 +157,45 @@ describe('P26-09 — events carry the subscription id and reach only their subsc
     }
   })
 
-  it('issues server-side subscription ids a caller cannot choose', () => {
+  it('identifies the subscription BY the listen request that opened it', () => {
     const registry = new SubscriptionRegistry()
     const first = registry.listen(listen('l1', { toolsListChanged: true }), 'a').subscriptionId
     const second = registry.listen(listen('l2', { toolsListChanged: true }), 'b').subscriptionId
-    // A caller-chosen id would let one client address another's subscription.
-    assert.notEqual(first, second)
-    assert.match(first, /^sub_/)
+
+    /**
+     * THE SUBSCRIPTION ID *IS* THE LISTEN REQUEST ID, and this test used to assert the
+     * opposite.
+     *
+     * It required `/^sub_/` — a server-INVENTED format — while the pinned schema identifies
+     * the subscription by the request that opened it. `CancelledNotification` states that
+     * the stream-terminating cancellation "references the ID of the `subscriptions/listen`
+     * request that opened the stream", and `SubscriptionsListenResultMetaObject` types its
+     * required `subscriptionId` as a `RequestId`, "so the client can correlate it with the
+     * originating subscription". An invented id the client never saw correlates with
+     * nothing.
+     *
+     * A test that goes RED when the code is made CORRECT is worse than no test, because it
+     * turns a divergence into a defended position. This one did exactly that.
+     */
+    assert.equal(first, 'l1')
+    assert.equal(second, 'l2')
+  })
+
+  it('keeps two clients apart by BINDING, not by inventing an id', () => {
+    /**
+     * The concern the old assertion was reaching for is real; the fix is the binding rather
+     * than an invented identifier. Each subscription records its owning client, and
+     * revocation is filtered on it — so client-chosen ids are safe.
+     */
+    const registry = new SubscriptionRegistry()
+    registry.listen(listen('l1', { toolsListChanged: true }), 'a')
+    registry.listen(listen('l2', { toolsListChanged: true }), 'b')
+
+    // Each client's revocation reaches its OWN subscription and no other.
+    assert.equal(registry.revoke('a').length, 1)
+    assert.equal(registry.revoke('b').length, 1)
+    // And a second revocation for the same client finds nothing left to close.
+    assert.equal(registry.revoke('a').length, 0)
   })
 })
 

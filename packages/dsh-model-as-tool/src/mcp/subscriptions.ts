@@ -101,7 +101,6 @@ export function acknowledgeFilter(requested: SubscriptionFilter): SubscriptionFi
 export class SubscriptionRegistry {
   readonly #subscriptions = new Map<string, Subscription>()
   /** Counter for ids this server issues, so an id is never caller-chosen. */
-  #issued = 0
 
   /** Active subscriptions, for diagnostics. */
   get active(): readonly Subscription[] {
@@ -141,12 +140,36 @@ export class SubscriptionRegistry {
     }
     const filter = requested as SubscriptionFilter
     const acknowledged = acknowledgeFilter(filter)
-    // Server-issued. A caller-chosen id would let one client address another
-    // client's subscription in a later cancellation.
-    const subscriptionId = `sub_${Date.now().toString(36)}_${(++this.#issued).toString(36)}`
 
-    const subscription: Subscription = { subscriptionId, clientId, acknowledged, announced: true }
-    this.#subscriptions.set(subscriptionId, subscription)
+    /**
+     * THE SUBSCRIPTION IS IDENTIFIED BY THE LISTEN REQUEST'S OWN ID.
+     *
+     * This used to invent `sub_<time>_<n>`, which was WRONG, and the pinned schema says so
+     * in as many words. `CancelledNotification` states that the server's stream-terminating
+     * cancellation "references the ID of the `subscriptions/listen` request that opened the
+     * stream", and `SubscriptionsListenResultMetaObject` types its required
+     * `io.modelcontextprotocol/subscriptionId` as a **`RequestId`** — the same type as a
+     * request id — "so the client can correlate it with the originating subscription".
+     *
+     * A server-invented id that the client never saw cannot be correlated with anything, so
+     * a client could neither match the acknowledgement to its request nor recognise the
+     * cancellation that ends the stream.
+     *
+     * The original comment claimed a caller-chosen id would let one client address
+     * another's subscription. That concern is real but it is NOT addressed by inventing an
+     * id: subscriptions are keyed by this id and BOUND to `clientId`, and the binding is
+     * what prevents cross-client addressing.
+     */
+    const subscriptionId = request.id
+    if (typeof subscriptionId !== 'string' && typeof subscriptionId !== 'number') {
+      throw new WireError(
+        ERROR_CODES.invalidParams,
+        'subscriptions/listen requires a string or integer request id, which IS the subscription id',
+      )
+    }
+
+    const subscription: Subscription = { subscriptionId: String(subscriptionId), clientId, acknowledged, announced: true }
+    this.#subscriptions.set(String(subscriptionId), subscription)
 
     return {
       result: {
@@ -165,7 +188,7 @@ export class SubscriptionRegistry {
           _meta: { [SUBSCRIPTION_ID_KEY]: subscriptionId },
         },
       },
-      subscriptionId,
+      subscriptionId: String(subscriptionId),
     }
   }
 
