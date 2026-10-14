@@ -10,8 +10,8 @@ them is a binding decision, not something the schema changes.
 ## Implementation status — read this first
 
 **The specifications are not fully implemented.** The normative specification has 227
-requirements and the verification checklist adds 90 acceptance tests; **3 are done, 96 are
-partial, 5 are blocked and 213 were never started.**
+requirements and the verification checklist adds 90 acceptance tests; **6 are done, 100 are
+partial, 5 are blocked and 206 were never started.**
 
 > **[`verification/FINAL-REPORT.md`](verification/FINAL-REPORT.md) is the honest summary**
 > — generated from the recorded evidence, it states what genuinely stands with the

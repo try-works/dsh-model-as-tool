@@ -5,7 +5,7 @@ by `scripts/gen-final-report.mjs`. Do not edit by hand; run `npm run final-repor
 
 ## The headline, before the detail
 
-Of **317 tracked items** — 227 normative requirements and 90 acceptance tests — **3 are done**, 96 are partial, 5 are blocked by something outside this repository, and **213 were never started**.
+Of **317 tracked items** — 227 normative requirements and 90 acceptance tests — **6 are done**, 100 are partial, 5 are blocked by something outside this repository, and **206 were never started**.
 
 **The objective is not achieved.** It asked for the Tool Mode specifications to be implemented and verified against the checklist. Most of the normative requirements are unimplemented. What follows states what genuinely stands and what does not, so the numbers above are not left to speak for themselves.
 
@@ -28,7 +28,10 @@ Each claim below is verified by an artifact or an automated check, not by assert
 
 - **BASE-01** — (no summary recorded)
 - **BASE-09** — (no summary recorded)
+- **P26-02** — Required metadata.
+- **P26-04** — Result shape.
 - **P26-07** — No resumable/replayed effects.
+- **P26-12** — Optional extensions.
 
 ## Blocked, with the concrete condition
 
@@ -79,7 +82,7 @@ The accurate statement is therefore much narrower than the one it replaced: **tw
 | `MODEL` | Model identity, qualification and capability | 0 | 4 | 2 | 0 |
 | `NDL` | Needle integration decisions | 0 | 0 | 1 | 7 |
 | `OBS` | Observability and diagnostics | 0 | 0 | 0 | 5 |
-| `P26` | MCP revision 2026-07-28, section 20 | 1 | 8 | 0 | 8 |
+| `P26` | MCP revision 2026-07-28, section 20 | 4 | 12 | 0 | 1 |
 | `RCP` | Recipe runtime | 0 | 0 | 0 | 12 |
 | `RES` | Resources, budgets, preparation and loading | 0 | 10 | 0 | 0 |
 | `RUN` | Listener, plugin and process lifecycle | 0 | 6 | 0 | 2 |

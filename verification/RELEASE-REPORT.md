@@ -1,6 +1,6 @@
 # Tool Mode release report
 
-Generated 2026-10-14T02:47:15.357Z from commit `c62716efcfc621ae1ea1c5baa311c83e00107ffa` (working tree DIRTY, so this describes a state that exists in no commit).
+Generated 2026-10-14T02:54:16.081Z from commit `69f44cef4873dfeb4dc34ea8e9ce6c52cacac01a` (working tree DIRTY, so this describes a state that exists in no commit).
 
 ## How to reproduce
 
@@ -22,13 +22,13 @@ requirements needing either are recorded as BLOCKED or NOT_RUN rather than PASS.
 
 | Status | Count |
 |---|---|
-| PASS | 3 |
-| FAIL | 96 |
+| PASS | 6 |
+| FAIL | 100 |
 | BLOCKED | 5 |
-| NOT_RUN | 213 |
+| NOT_RUN | 206 |
 | NOT_APPLICABLE | 0 |
 
-Total: 317 requirements, of which 3 PASS.
+Total: 317 requirements, of which 6 PASS.
 
 ## MCP conformance matrix
 
@@ -50,8 +50,8 @@ Total: 317 requirements, of which 3 PASS.
 
 ## Known limitations and unresolved gates
 
-314 requirement(s) are not PASS.
-208 requirement(s) have no status written for them, and are reported as NOT_RUN.
+311 requirement(s) are not PASS.
+200 requirement(s) have no status written for them, and are reported as NOT_RUN.
 No status key names something that is not a requirement.
 
 The first 40 unresolved requirements:
@@ -96,7 +96,7 @@ The first 40 unresolved requirements:
 - MCP-12 is FAIL
 - MCP-13 is FAIL
 - SEC-01 is NOT_RUN
-- …and 274 more, in `verification/evidence.json`
+- …and 271 more, in `verification/evidence.json`
 
 ## What this report does NOT claim
 
