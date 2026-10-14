@@ -15,6 +15,7 @@ import assert from 'node:assert/strict'
 
 import {
   ADVERTISED_FEATURES,
+  advertisedFeatures,
   assertHeadersMatch,
   decodeHeaderValue,
   ERROR_CODES,
@@ -350,10 +351,41 @@ describe('P26-12 — the advertised-feature matrix', () => {
   })
 
   it('keeps the matrix and the advertised capabilities consistent', () => {
-    // Derived rather than written twice, so they cannot disagree.
+    /**
+     * The derived set is the declared matrix FILTERED BY THE WIRING, not the matrix alone.
+     *
+     * The original assertion compared against the raw `ADVERTISED_FEATURES`, which is what
+     * allowed `subscriptions/listen` to be advertised while no transport served it. The
+     * relationship it should have encoded is: what is advertised = what is declared
+     * implemented AND actually composed.
+     */
     assert.deepEqual(
       implementedCapabilities(),
-      ADVERTISED_FEATURES.filter(entry => entry.implemented).map(entry => entry.feature),
+      advertisedFeatures().filter(entry => entry.implemented).map(entry => entry.feature),
     )
+  })
+
+  it('does NOT advertise subscriptions/listen unless a registry is actually composed', () => {
+    /**
+     * The measured finding this encodes: `subscriptions/listen` was declared
+     * `implemented: true` unconditionally, while the ONLY production transport never
+     * received a registry and therefore answered `-32601` for it. An advertised feature no
+     * client can obtain is worse than an absent one, because a client plans around it and
+     * fails later.
+     */
+    assert.equal(implementedCapabilities().includes('subscriptions/listen'), false)
+    // And the claim follows the WIRING: a deployment that composed a registry makes it
+    // true, and only then.
+    assert.equal(
+      implementedCapabilities({ subscriptions: true }).includes('subscriptions/listen'),
+      true,
+    )
+  })
+
+  it('re-decides ONLY the composed feature, so nothing else is dropped', () => {
+    const derived = advertisedFeatures().map(entry => entry.feature)
+    for (const entry of ADVERTISED_FEATURES) {
+      assert.ok(derived.includes(entry.feature), `${entry.feature} must survive the re-decision`)
+    }
   })
 })

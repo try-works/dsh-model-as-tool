@@ -28,7 +28,7 @@
  * @module @try-works/dsh-model-as-tool/mcp/subscriptions
  */
 
-import type { WireRequest } from './protocol.ts'
+import { ERROR_CODES, WireError, type WireRequest } from './protocol.ts'
 
 /** The notification types the revision defines for catalog changes. */
 export type SubscriptionFilterKey =
@@ -122,8 +122,25 @@ export class SubscriptionRegistry {
     readonly acknowledgement: Record<string, unknown>
     readonly subscriptionId: string
   } {
-    const requested = (request.params?.notifications ?? {}) as SubscriptionFilter
-    const acknowledged = acknowledgeFilter(requested)
+    /**
+     * `notifications` IS REQUIRED, and this used to default it.
+     *
+     * The pinned schema's `SubscriptionsListenRequestParams` declares
+     * `required: ["_meta","notifications"]`. Defaulting an absent filter to `{}` and
+     * returning SUCCESS contradicted that AND contradicted this module's own rule that a
+     * missing required field is `invalidParams` rather than a defaulted value — a client
+     * would receive an acknowledgement for a subscription it never described, and the
+     * filter it believed it had sent would be silently empty.
+     */
+    const requested = request.params?.notifications
+    if (requested === undefined || requested === null || typeof requested !== 'object' || Array.isArray(requested)) {
+      throw new WireError(
+        ERROR_CODES.invalidParams,
+        'subscriptions/listen requires params.notifications; a missing filter is invalid rather than defaulted',
+      )
+    }
+    const filter = requested as SubscriptionFilter
+    const acknowledged = acknowledgeFilter(filter)
     // Server-issued. A caller-chosen id would let one client address another
     // client's subscription in a later cancellation.
     const subscriptionId = `sub_${Date.now().toString(36)}_${(++this.#issued).toString(36)}`

@@ -211,10 +211,14 @@ export interface FeatureDeclaration {
 export const ADVERTISED_FEATURES: readonly FeatureDeclaration[] = [
   { feature: 'tools', implemented: true },
   { feature: 'server/discover', implemented: true },
-  // Now implemented, for TOOL-catalog changes only. P26-12 forbids advertising a
-  // feature that is not implemented, and permits advertising one that is: the
-  // acknowledgement reports the supported subset, so the narrower reality is stated
-  // on the wire rather than implied here.
+  /**
+   * Implemented for TOOL-catalog changes only, and ONLY when a registry is composed.
+   *
+   * This row is re-decided by dvertisedFeatures(), which defaults it to alse:
+   * the production transport passes no registry, so the row as written here is the
+   * capability's SHAPE rather than a claim about the deployment. Declaring it true
+   * statically is what let an unservable feature be advertised.
+   */
   { feature: 'subscriptions/listen', implemented: true },
   { feature: 'tasks', implemented: false },
   { feature: 'sampling', implemented: false },
@@ -226,14 +230,37 @@ export const ADVERTISED_FEATURES: readonly FeatureDeclaration[] = [
 ]
 
 /**
+ * What the server may advertise, given what is ACTUALLY WIRED (P26-12).
+ *
+ * The static matrix declared `subscriptions/listen` as implemented unconditionally — while
+ * the only production transport never received a registry and therefore answered `-32601`
+ * for it. An advertised feature that no client can obtain is worse than an absent one: a
+ * client plans around it and fails later.
+ *
+ * The feature is now conditional on the wiring, and the DEFAULT is `false` because that is
+ * the production reality. A caller that has genuinely composed a subscription registry says
+ * so; nothing else can make the claim true by declaring it.
+ *
+ * @param wiring - which optional surfaces are composed.
+ * @returns the advertised-feature matrix for this deployment.
+ */
+export function advertisedFeatures(wiring: { readonly subscriptions?: boolean } = {}): readonly FeatureDeclaration[] {
+  return ADVERTISED_FEATURES.map(entry =>
+    // Only the composed feature is re-decided; everything else keeps its declared truth.
+    entry.feature === 'subscriptions/listen'
+      ? { feature: entry.feature, implemented: wiring.subscriptions === true }
+      : entry)
+}
+
+/**
  * The capabilities object this server may advertise.
  *
- * Derived from {@link ADVERTISED_FEATURES} rather than written twice, so the
- * matrix and the advertised capabilities cannot disagree.
- * @returns the capability names that are genuinely implemented.
+ * Derived from the matrix rather than written twice, so the two cannot disagree.
+ * @param wiring - which optional surfaces are composed.
+ * @returns the capability names that are genuinely implemented HERE.
  */
-export function implementedCapabilities(): string[] {
-  return ADVERTISED_FEATURES.filter(entry => entry.implemented).map(entry => entry.feature)
+export function implementedCapabilities(wiring: { readonly subscriptions?: boolean } = {}): string[] {
+  return advertisedFeatures(wiring).filter(entry => entry.implemented).map(entry => entry.feature)
 }
 
 /**
