@@ -16,6 +16,7 @@
  * Requirement links: EXT-19, EXT-21, EXT-22, EXT-30, ARCH-05.
  */
 
+import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
@@ -182,5 +183,49 @@ describe('EXT-30 — a refusal is readable', () => {
     // Not a function that throws — no function, so a caller cannot accidentally invoke a
     // tool the host could not bind.
     assert.equal('execute' in dispatch, false)
+  })
+})
+/** The refusal text, read from the host source so it cannot drift from the assertion. */
+const DECLARATIVE_REFUSAL = (() => {
+  const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8')
+  const start = source.indexOf('is declarative and its')
+  return start === -1 ? '' : source.slice(start, start + 400)
+})()
+
+describe('EXT-13 — the declarative branch is WRITTEN (source assertion, not a driven path)', () => {
+  /**
+   * HONEST SCOPE, stated because the reviewer's lesson applies to my own test: this asserts
+   * the refusal is WRITTEN, read from the host source, and NOT that it is REACHED. Driving
+   * it would require installing the declarative package into a store and calling
+   * providerFor on it, which is the remaining integration step. A control with no caller is
+   * a symbol, and a test that only checks the control's TEXT is not much better — so this
+   * says which of the two it is rather than implying coverage it does not have.
+   */
+  it('names the UNJOINED LINK rather than failing at an import', async () => {
+    /**
+     * THE DISCONNECTION THIS MAKES VISIBLE. Slice 3 has three layers and nothing joined them:
+     * the manifest kind was schema-valid, the recipe convention was implemented, and the
+     * broker had 132 passing tests — while `providerFor` assumed EVERY package could be
+     * imported. A declarative package therefore failed with "the package declares no
+     * importable ./tool-mode export", which is true and useless: it was never supposed to
+     * declare one.
+     *
+     * The failure now distinguishes the cases a reader must tell apart: recipes that do not
+     * RESOLVE (a packaging defect) from recipes that resolve with no broker composed (an
+     * unwired link). Those are different problems and only one of them is the package's.
+     */
+    const message = DECLARATIVE_REFUSAL
+    assert.match(message, /is declarative/)
+    // The honest half: the recipes resolved, so the package is NOT at fault.
+    assert.match(message, /recipe\(s\) resolved/)
+    // And the link that is actually missing is named, so the next step is not a guess.
+    assert.match(message, /no harness broker is composed/)
+    assert.match(message, /tool-mode-recipes/)
+  })
+
+  it('is a DIFFERENT failure from an unresolvable recipe', () => {
+    // A package whose recipe is absent names the convention and the file, because that IS
+    // the package's defect and a package author can act on it.
+    assert.doesNotMatch(DECLARATIVE_REFUSAL, /could not be resolved/)
   })
 })

@@ -28,7 +28,12 @@ import { join } from 'node:path'
 import { createContributionRegistrar } from './extension-registrar.ts'
 import { createProgramRunner, externalRefusal } from './tool-mode-run.ts'
 import { createDispatch, describeDispatchFailure, type DispatchEnvironment, type DispatchManifest } from './extension-dispatch.ts'
-import { discoverExtension, loadExtensionModule, resolveExtensionEntry, type ExtensionContextV1 } from '@try-works/tool-mode-extension-sdk'
+import {
+  discoverExtension,
+  loadExtensionModule,
+  resolveDeclarativeImplementations,
+  resolveExtensionEntry,
+  type ExtensionContextV1 } from '@try-works/tool-mode-extension-sdk'
 import type { JsonValue } from './adapters/types.ts'
 import { ExtensionStore, ExtensionLifecycle } from '@try-works/tool-mode-extension-sdk'
 import { createGrant } from './authority.ts'
@@ -1140,6 +1145,14 @@ export function apply(ctx: Context, config: Config = {}): void {
       }
     }
     function environmentFor(extensionId: string): DispatchEnvironment {
+      /** The installed package root, which a declarative package's recipes resolve against. */
+      const installPathFor = (id: string): string => {
+        const installed = store.listInstalled().value.find(record => record.extensionId === id)
+        if (installed === undefined) {
+          throw new Error(`${id} is not installed, so its recipes cannot be resolved`)
+        }
+        return installed.installPath
+      }
       const discoveryFor = () => {
         const installed = store.listInstalled().value.find(record => record.extensionId === extensionId)
         if (installed === undefined) {
@@ -1150,10 +1163,52 @@ export function apply(ctx: Context, config: Config = {}): void {
       return {
         getManifest: () => discoveryFor().manifest as unknown as DispatchManifest,
         async providerFor(modelId) {
+          const discovery = discoveryFor()
+          /**
+           * A DECLARATIVE PACKAGE HAS NO MODULE, so it never reaches the import path.
+           *
+           * This branch did not exist, and its absence is why `PTCAuthority`-style
+           * disconnection went unnoticed here for so long: a declarative manifest was
+           * schema-valid, its recipe convention was implemented, and its broker had 132
+           * passing tests — and NOTHING joined them, because this function assumed every
+           * package could be imported. Resolving an entry for a no-code package fails with
+           * "the package declares no importable ./tool-mode export", which is true and
+           * useless: the package was never supposed to declare one.
+           *
+           * Recipes are resolved through the published convention instead, and a package
+           * whose recipes do not resolve is refused BY NAME rather than by import failure.
+           */
+          const kind = (discovery.manifest as unknown as { execution?: { kind?: string } })
+            .execution?.kind
+          if (kind === 'declarative') {
+            const resolved = resolveDeclarativeImplementations(
+              installPathFor(extensionId),
+              (discovery.manifest as unknown as {
+                implementations: readonly { id: string; contractId: string; recipeVersion: string }[]
+              }).implementations ?? [],
+            )
+            if (!resolved.ok) {
+              throw new Error(
+                `${extensionId} is declarative but its recipe could not be resolved: `
+                + `${resolved.id} — ${resolved.detail}`,
+              )
+            }
+            /**
+             * The recipes RESOLVE, and execution is refused honestly rather than faked. A
+             * declarative package's behaviour is executed by a harness broker, and this
+             * deployment composes none — so the chain is joined as far as it genuinely goes
+             * and the remaining link is named.
+             */
+            throw new Error(
+              `${extensionId} is declarative and its ${resolved.resolved.length} recipe(s) resolved, `
+              + 'but no harness broker is composed in this deployment, so nothing can execute them. '
+              + 'The link from the host to @try-works/tool-mode-recipes is not wired.',
+            )
+          }
+
           let pending = extensionInstances.get(extensionId)
           if (pending === undefined) {
             pending = (async () => {
-              const discovery = discoveryFor()
               const module = await loadExtensionModule(resolveExtensionEntry(discovery))
               return module.create(contextForExtension(extensionId)) as never
             })()
