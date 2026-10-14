@@ -27,6 +27,7 @@ import { registerContractTool, type ContractBinding, type HostIdentity } from '.
 import { join } from 'node:path'
 import { createContributionRegistrar } from './extension-registrar.ts'
 import { createProgramRunner, externalRefusal } from './tool-mode-run.ts'
+import { buildDiagnostics } from './diagnostics.ts'
 import { createDispatch, describeDispatchFailure, type DispatchEnvironment, type DispatchManifest } from './extension-dispatch.ts'
 import {
   discoverExtension,
@@ -674,7 +675,7 @@ export function apply(ctx: Context, config: Config = {}): void {
         action: {
           type: 'string',
           required: true,
-          enum: ['list', 'installed', 'describe', 'enable', 'disable', 'reset', 'receipts', 'mcp'],
+          enum: ['list', 'installed', 'describe', 'enable', 'disable', 'reset', 'receipts', 'mcp', 'diagnostics'],
           description:
             'list: every catalogued model and whether it runs here. installed: only the models whose tools are '
             + 'registered. describe: full detail for one model. enable: install a model\'s tool and remember it. '
@@ -803,6 +804,23 @@ export function apply(ctx: Context, config: Config = {}): void {
                 },
               },
             },
+            /**
+             * Set by the diagnostics action: the OBS-04 surface.
+             *
+             * Declared here because DSH refuses an undeclared output property — which is a
+             * useful constraint rather than an obstacle: it means a new action cannot quietly
+             * return a shape no caller was told about. The declaration is deliberately SHALLOW
+             * (`additionalProperties: true`) because the value schema DSL cannot express the
+             * nested report faithfully, and a wrong declaration is worse than a permissive one.
+             * See the note on unrepresentable keywords for the same reasoning.
+             */
+            diagnostics: {
+              type: 'object',
+              additionalProperties: true,
+              // NOT required: only the diagnostics action returns it, and marking it
+              // required would demand the property from every other action's result — which
+              // is what the type checker refused, correctly.
+            },
             /** Set by enable/disable/reset: whether the requested change took effect. */
             changed: { type: 'boolean' },
             /** Set by enable/disable/reset: what the call did to the tool surface. */
@@ -925,6 +943,43 @@ export function apply(ctx: Context, config: Config = {}): void {
             hasOutputSchema: tool.outputSchema !== undefined,
             title: tool.title ?? null,
           })) } as never
+        }
+
+        if (action === 'diagnostics') {
+          /**
+           * THE OBS-04 SURFACE, WIRED RATHER THAN MERELY BUILT.
+           *
+           * `buildDiagnostics` is only worth having if something calls it, and this repository
+           * has produced fully-tested components with zero callers three times already
+           * (`ptc-authority.ts`, `ptc-runtime.ts`, and the recipes broker). Reporting through
+           * the control tool the agent already has keeps the surface reachable without adding a
+           * second way in.
+           */
+          const registered = ctx.tools.schemas().map(schema => schema.name).sort()
+          const exported = mcpHost.listTools().map(tool => tool.name).sort()
+          const exportedSet = new Set(exported)
+          return {
+            models: [],
+            ...counts(),
+            diagnostics: buildDiagnostics({
+              mcpMounted: true,
+              /**
+               * The endpoint is OMITTED rather than set to `undefined`, because the input type
+               * is exact-optional. The host serves its own agent and the endpoint is a
+               * deployment decision this plugin does not own, so it is reported as ABSENT —
+               * which the surface distinguishes from "MCP is off".
+               */
+              exportedTools: exported,
+              // The withheld half is the security-relevant half, and it is derivable: anything
+              // registered that is NOT exported was withheld deliberately.
+              withheldTools: registered.filter(name => !exportedSet.has(name)),
+              platform: {
+                os: process.platform,
+                arch: process.arch,
+                nodeVersion: process.version,
+              },
+            }),
+          } as never
         }
 
         if (action === 'receipts') {
