@@ -31,13 +31,13 @@
   "implementations": [
     {
       "id": "text-title",
-      "contractId": "tool-mode/text_title",
+      "contractId": "text.title",
       "contractVersion": "1.0.0",
       "recipeVersion": "1.0.0"
     },
     {
       "id": "describe-image",
-      "contractId": "tool-mode/describe_image",
+      "contractId": "image.describe",
       "contractVersion": "1.0.0",
       "recipeVersion": "1.0.0"
     }

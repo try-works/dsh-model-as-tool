@@ -120,7 +120,7 @@ describe('slice 3 — the shipped package resolves through the CONVENTION', () =
     // recipe cannot silently serve a different contract than the manifest advertises.
     assert.deepEqual(
       outcome.resolved.map(entry => entry.contractId).sort(),
-      ['tool-mode/describe_image', 'tool-mode/text_title'],
+      ['image.describe', 'text.title'],
     )
     for (const entry of outcome.resolved) {
       assert.ok(entry.recipe !== null && typeof entry.recipe === 'object', `${entry.id} must parse to an object`)
@@ -194,5 +194,54 @@ describe('EXT-13 — the package is DISCOVERABLE without an exports map', () => 
         return true
       },
     )
+  })
+})
+describe('DECL-01 — the manifest and its recipes name the SAME contracts', () => {
+  it('every declared contractId is the one its recipe declares', () => {
+    /**
+     * THE MISMATCH THIS CATCHES, which nothing did until it was looked for by hand.
+     *
+     * The manifest declared `tool-mode/text_title` while its recipe declared `text.title`. Both
+     * installed cleanly, both resolved, and NOTHING compared them — so the package would have
+     * served a contract under an id the rest of the repository does not use. The canonical id
+     * space is the one `STANDARD_CONTRACTS` publishes, and it is dot-separated:
+     * `stt.transcribe`, `text.language_detect`. `tool-mode/…` was invented by me, and the
+     * recipes — copied from the real recipes package — were right all along.
+     *
+     * Linkage is by IDENTITY here, not by shape: a manifest that names a different contract
+     * than its recipe serves would otherwise be accepted by every check in this repository.
+     */
+    const { name, version } = identity()
+    const raw = JSON.parse(readFileSync(join(DIR, 'tool-mode.extension.json'), 'utf8'))
+    const manifest = validateManifest(raw, {
+      packageName: name,
+      packageVersion: version,
+      packageDir: DIR,
+    }) as unknown as { implementations: readonly { id: string; contractId: string }[] }
+
+    for (const implementation of manifest.implementations) {
+      const recipe = JSON.parse(
+        readFileSync(join(DIR, 'recipes', `${implementation.id}.json`), 'utf8'),
+      ) as { tool: { name: string; contractId: string } }
+      assert.equal(
+        recipe.tool.contractId,
+        implementation.contractId,
+        `${implementation.id}: the manifest declares ${implementation.contractId} but its recipe serves ${recipe.tool.contractId}`,
+      )
+    }
+  })
+
+  it('uses the DOT-separated namespace the repository actually publishes', () => {
+    /**
+     * Asserted as a SHAPE so the invented prefix cannot come back. The canonical ids in
+     * `STANDARD_CONTRACTS` are `stt.transcribe` and `text.language_detect` — a dot, not a
+     * `tool-mode/` prefix. A slash-namespaced id is not merely unusual here; it matches no
+     * contract this repository defines.
+     */
+    const raw = JSON.parse(readFileSync(join(DIR, 'tool-mode.extension.json'), 'utf8'))
+    for (const implementation of raw.implementations as { id: string; contractId: string }[]) {
+      assert.match(implementation.contractId, /^[a-z]+\.[a-z_]+$/, `${implementation.id} has a non-canonical contract id`)
+      assert.doesNotMatch(implementation.contractId, /\//, 'contract ids are dot-namespaced, not slash-namespaced')
+    }
   })
 })

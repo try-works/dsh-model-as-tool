@@ -125,7 +125,7 @@ describe('slice 3 — a declarative package INSTALLS with no code in it', () => 
     assert.equal(resolved.resolved.length, 2)
     assert.deepEqual(
       resolved.resolved.map(entry => entry.contractId).sort(),
-      ['tool-mode/describe_image', 'tool-mode/text_title'],
+      ['image.describe', 'text.title'],
     )
     // Every recipe really parsed to an object, and each came from inside the store.
     for (const entry of resolved.resolved) {
