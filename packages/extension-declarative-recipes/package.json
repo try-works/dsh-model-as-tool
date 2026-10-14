@@ -1,0 +1,15 @@
+{
+  "name": "@try-works/extension-declarative-recipes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A declarative Tool Mode package: ships no code, contributes tools as static recipe files interpreted by the host broker.",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "tool-mode.extension.json",
+    "recipes"
+  ],
+  "scripts": {
+    "test": "tsx --test tests/*.test.ts"
+  }
+}

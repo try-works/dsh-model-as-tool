@@ -1,0 +1,103 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/extension-declarative-recipes",
+  "version": "0.1.0",
+  "displayName": "Declarative harness recipes",
+  "description": "Ships NO CODE. Every tool it contributes is a static recipe file interpreted by the host broker, so the package's behaviour is auditable as data rather than as a module.",
+  "license": "MIT",
+  "activation": {
+    "policy": "operator",
+    "deactivatable": true
+  },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": [
+      "declarative-recipes-v1"
+    ]
+  },
+  "execution": {
+    "kind": "declarative"
+  },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "none",
+    "secrets": [],
+    "nativeCode": false
+  },
+  "models": [],
+  "tools": [],
+  "implementations": [
+    {
+      "id": "declare-title",
+      "contractId": "tool-mode/text_title",
+      "contractVersion": "1.0.0",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "declare-describe-image",
+      "contractId": "tool-mode/describe_image",
+      "contractVersion": "1.0.0",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": [],
+  "licenses": [
+    {
+      "layer": "code",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "weights",
+      "name": "none: the package carries no weights",
+      "url": "https://example.invalid/none",
+      "openSource": false,
+      "redistribution": "not-permitted",
+      "attributionRequired": false,
+      "obligations": [
+        "the recipes reference a harness model supplied by the deployment, so no weights are distributed here"
+      ]
+    },
+    {
+      "layer": "engine",
+      "name": "none: the host broker is the engine",
+      "url": "https://example.invalid/none",
+      "openSource": false,
+      "redistribution": "not-permitted",
+      "attributionRequired": false,
+      "obligations": [
+        "execution happens in the host's broker, which is the point of a declarative package"
+      ]
+    },
+    {
+      "layer": "sdk",
+      "name": "none: a declarative package links no SDK at runtime",
+      "url": "https://example.invalid/none",
+      "openSource": false,
+      "redistribution": "not-permitted",
+      "attributionRequired": false,
+      "obligations": [
+        "the host needs no runtime link for a package that ships no module; the installer records this rather than failing"
+      ]
+    },
+    {
+      "layer": "conversion-artifacts",
+      "name": "none: no conversion is performed",
+      "url": "https://example.invalid/none",
+      "openSource": false,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    }
+  ],
+  "network": {
+    "requiredTelemetry": false,
+    "otherNetworkUse": false
+  }
+}
