@@ -275,7 +275,7 @@ export function checkRepository(root = process.cwd()) {
     ...checkSingleDispatchAuthority(hostSources.filter(file => /\/mcp\//.test(file.path))),
     ...hostSources.flatMap(checkNoHardcodedPrompt),
   ]
-  for (const extension of ['extension-desert-ant-tongue', 'extension-desert-ant-voz', 'extension-embeddinggemma']) {
+  for (const extension of ['extension-desert-ant-tongue', 'extension-desert-ant-voz', 'extension-embeddinggemma', 'extension-needle']) {
     violations.push(...checkExtensionIsolation(collectSources(join(root, 'packages', extension, 'src'))))
   }
   // ARCH-02: installing an extension must not require rebuilding the host, which is

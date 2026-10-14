@@ -81,6 +81,8 @@
     "postpack": "node scripts/stage-bundle.mjs --clean"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "^2.3.1",
+    "@modelcontextprotocol/server": "^2.3.1",
     "@types/node": "^24.0.0",
     "typescript": "^5.9.0"
   },
@@ -92,6 +94,9 @@
     "dsh-tool-mode-mcp-stdio": "./bin/dsh-tool-mode-mcp-stdio.mjs"
   },
   "bundledDependencies": [
+    "@try-works/tool-mode-contracts"
+  ],
+  "bundleDependencies": [
     "@try-works/tool-mode-contracts"
   ]
 }

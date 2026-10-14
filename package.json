@@ -7,12 +7,12 @@
   "license": "MIT",
   "scripts": {
     "link:dsh": "node scripts/link-dsh.mjs",
-    "build": "npm run build:contracts && npm run build:sdk && npm run build:ext-tongue && npm run build:ext-voz && npm run build:ext-embeddinggemma && npm run build:host && npm run build:recipes",
+    "build": "npm run build:contracts && npm run build:sdk && npm run build:ext-tongue && npm run build:ext-voz && npm run build:ext-embeddinggemma && npm run build:host && npm run build:recipes && npm run build:ext-needle",
     "build:host": "tsc -p packages/dsh-model-as-tool/tsconfig.build.json",
     "build:contracts": "tsc -p packages/tool-mode-contracts/tsconfig.build.json",
     "build:sdk": "tsc -p packages/tool-mode-extension-sdk/tsconfig.build.json",
-    "typecheck": "tsc --noEmit -p packages/dsh-model-as-tool/tsconfig.json && tsc --noEmit -p packages/tool-mode-contracts/tsconfig.json && tsc --noEmit -p packages/tool-mode-extension-sdk/tsconfig.json && tsc --noEmit -p packages/extension-desert-ant-tongue/tsconfig.json && tsc --noEmit -p packages/extension-desert-ant-voz/tsconfig.json && tsc --noEmit -p packages/extension-embeddinggemma/tsconfig.json && tsc --noEmit -p packages/tool-mode-recipes/tsconfig.json",
-    "test": "tsx --test packages/dsh-model-as-tool/tests/*.test.ts packages/tool-mode-contracts/tests/*.test.ts packages/tool-mode-extension-sdk/tests/*.test.ts packages/extension-desert-ant-tongue/tests/*.test.ts packages/extension-desert-ant-voz/tests/*.test.ts packages/extension-embeddinggemma/tests/*.test.ts packages/tool-mode-recipes/tests/*.test.ts",
+    "typecheck": "tsc --noEmit -p packages/dsh-model-as-tool/tsconfig.json && tsc --noEmit -p packages/tool-mode-contracts/tsconfig.json && tsc --noEmit -p packages/tool-mode-extension-sdk/tsconfig.json && tsc --noEmit -p packages/extension-desert-ant-tongue/tsconfig.json && tsc --noEmit -p packages/extension-desert-ant-voz/tsconfig.json && tsc --noEmit -p packages/extension-embeddinggemma/tsconfig.json && tsc --noEmit -p packages/tool-mode-recipes/tsconfig.json && tsc --noEmit -p packages/extension-needle/tsconfig.json",
+    "test": "tsx --test packages/dsh-model-as-tool/tests/*.test.ts packages/tool-mode-contracts/tests/*.test.ts packages/tool-mode-extension-sdk/tests/*.test.ts packages/extension-desert-ant-tongue/tests/*.test.ts packages/extension-desert-ant-voz/tests/*.test.ts packages/extension-embeddinggemma/tests/*.test.ts packages/tool-mode-recipes/tests/*.test.ts packages/extension-needle/tests/*.test.ts",
     "verify:built": "node scripts/verify-built.mjs",
     "verify": "npm run typecheck && npm run build && npm test && npm run verify:built && npm run verify:architecture && npm run verify:mcp && npm run verify:verification && npm run verify:traceability",
     "gating": "tsx scripts/gating-report.ts",
@@ -30,7 +30,10 @@
     "release:gate": "node scripts/gen-verification.mjs --release-gate",
     "final-report": "node scripts/gen-final-report.mjs",
     "build:ext-embeddinggemma": "tsc -p packages/extension-embeddinggemma/tsconfig.build.json",
-    "build:recipes": "tsc -p packages/tool-mode-recipes/tsconfig.build.json"
+    "build:recipes": "tsc -p packages/tool-mode-recipes/tsconfig.build.json",
+    "build:ext-needle": "tsc -p packages/extension-needle/tsconfig.build.json",
+    "typecheck:ext-needle": "tsc --noEmit -p packages/extension-needle/tsconfig.json",
+    "test:ext-needle": "tsx --test packages/extension-needle/tests/*.test.ts"
   },
   "devDependencies": {
     "@desert-ant-labs/tongue": "^3.6.0",
