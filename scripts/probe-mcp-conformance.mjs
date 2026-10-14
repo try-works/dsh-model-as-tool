@@ -185,6 +185,17 @@ if (process.argv.includes('--json')) {
     // does not say so invites exactly that misreading.
     console.log(`probe OK — ${totalChecks} checks against the pinned schema over SAVED FIXTURES, 0 failures.`)
     console.log('           This is schema conformance of recorded messages, NOT live server conformance.')
+    /**
+     * The OTHER half, named here because this output is what a reader sees first and the two
+     * checks are halves of one claim. `verify:mcp` runs both; leaving this probe to speak alone
+     * would suggest the conformance story is fixture-only — the belief that let three real
+     * defects survive: `-32021`'s value type, a 413 body that was not a JSON-RPC error at all,
+     * and the pinned schema's own non-uniform error definitions. None was reachable from a
+     * saved fixture.
+     */
+    console.log('           LIVE conformance is the other half, under the same gate:')
+    console.log('           npm run verify:mcp:live — the real server over a real socket, 12 response')
+    console.log('           shapes Ajv-validated against their SPECIFIC pinned definitions.')
   } else {
     console.error(`probe FAILED — ${failures.length} of ${totalChecks} checks failed.`)
   }
