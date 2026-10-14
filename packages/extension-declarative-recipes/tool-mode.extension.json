@@ -30,13 +30,13 @@
   "tools": [],
   "implementations": [
     {
-      "id": "declare-title",
+      "id": "text-title",
       "contractId": "tool-mode/text_title",
       "contractVersion": "1.0.0",
       "recipeVersion": "1.0.0"
     },
     {
-      "id": "declare-describe-image",
+      "id": "describe-image",
       "contractId": "tool-mode/describe_image",
       "contractVersion": "1.0.0",
       "recipeVersion": "1.0.0"

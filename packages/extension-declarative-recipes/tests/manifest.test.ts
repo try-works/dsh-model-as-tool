@@ -15,7 +15,7 @@ import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { validateManifest } from '@try-works/tool-mode-extension-sdk'
+import { resolveDeclarativeImplementations, validateManifest } from '@try-works/tool-mode-extension-sdk'
 
 const DIR = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
 
@@ -90,5 +90,36 @@ describe('EXT-13 — a declarative package is accepted', () => {
     )) as { execution: { kind: string; entry?: string } }
     assert.equal(moduleManifest.execution.kind, 'module')
     assert.equal(typeof moduleManifest.execution.entry, 'string')
+  })
+})
+describe('slice 3 — the shipped package resolves through the CONVENTION', () => {
+  it('resolves BOTH of its declared recipes from the real package directory', () => {
+    /**
+     * The end of the chain the manifest alone cannot express. The manifest declares ids and
+     * versions; the convention turns those ids into paths; this asserts the two halves meet
+     * on the package as it actually ships, rather than on a fixture built to match.
+     */
+    const { name, version } = identity()
+    const raw = JSON.parse(readFileSync(join(DIR, 'tool-mode.extension.json'), 'utf8'))
+    const manifest = validateManifest(raw, {
+      packageName: name,
+      packageVersion: version,
+      packageDir: DIR,
+    }) as unknown as { implementations: readonly { id: string; contractId: string; recipeVersion: string }[] }
+
+    const outcome = resolveDeclarativeImplementations(DIR, manifest.implementations)
+    assert.equal(outcome.ok, true, outcome.ok ? '' : `unresolved: ${outcome.id} — ${outcome.detail}`)
+    if (!outcome.ok) return
+
+    assert.equal(outcome.resolved.length, 2)
+    // The contracts the manifest CLAIMS are the ones the resolved recipes belong to, so a
+    // recipe cannot silently serve a different contract than the manifest advertises.
+    assert.deepEqual(
+      outcome.resolved.map(entry => entry.contractId).sort(),
+      ['tool-mode/describe_image', 'tool-mode/text_title'],
+    )
+    for (const entry of outcome.resolved) {
+      assert.ok(entry.recipe !== null && typeof entry.recipe === 'object', `${entry.id} must parse to an object`)
+    }
   })
 })

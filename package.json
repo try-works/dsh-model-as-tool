@@ -33,6 +33,7 @@
     "build:recipes": "tsc -p packages/tool-mode-recipes/tsconfig.build.json",
     "build:ext-needle": "tsc -p packages/extension-needle/tsconfig.build.json",
     "typecheck:ext-needle": "tsc --noEmit -p packages/extension-needle/tsconfig.json",
+    "test:sdk": "tsx --test packages/tool-mode-extension-sdk/tests/*.test.ts",
     "test:ext-needle": "tsx --test packages/extension-needle/tests/*.test.ts packages/extension-declarative-recipes/tests/*.test.ts"
   },
   "devDependencies": {

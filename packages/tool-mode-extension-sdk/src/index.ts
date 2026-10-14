@@ -147,3 +147,10 @@ export {
   type Redistribution,
   type ResolvedLicenseRecord,
 } from './licensing.ts'
+export {
+  RECIPE_DIRECTORY,
+  declaredRecipeNames,
+  resolveDeclarativeImplementations,
+  resolveDeclarativeRecipe,
+  type RecipeResolution,
+} from './declarative-recipes.ts'
