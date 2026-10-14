@@ -23,7 +23,7 @@
  * @module @try-works/tool-mode-extension-sdk/install/runtime-link
  */
 
-import { existsSync, mkdirSync, rmSync, symlinkSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 
@@ -52,7 +52,7 @@ export function runtimeSdkRoot(): string | undefined {
 export interface RuntimeLinkOutcome {
   readonly linked: boolean
   /** Why it did not link, when it did not. */
-  readonly reason?: 'already-present' | 'sdk-not-locatable' | 'link-failed'
+  readonly reason?: 'already-present' | 'sdk-not-locatable' | 'link-failed' | 'sdk-shadowed'
   /** The path the link was made at. */
   readonly path?: string
   /** A failure detail worth reporting rather than swallowing. */
@@ -78,7 +78,40 @@ export function linkRuntimeSdk(installPath: string, sdkRoot = runtimeSdkRoot()):
 
   const scopeDirectory = join(installPath, 'node_modules', '@try-works')
   const linkPath = join(scopeDirectory, 'tool-mode-extension-sdk')
-  if (existsSync(linkPath)) return { linked: false, reason: 'already-present', path: linkPath }
+
+  /**
+   * A PRE-EXISTING ENTRY IS NOT ASSUMED TO BE OURS.
+   *
+   * This was a real, reproduced escape. The first version returned `already-present` if
+   * ANYTHING existed at the link path — and an archive may legitimately SHIP that
+   * directory, because nothing about it is a traversal or an illegal name. The installer
+   * then never made the host link, and Node resolved the extension's bare
+   * `import '@try-works/tool-mode-extension-sdk'` to the PACKAGE-SUPPLIED module. The
+   * package was executing against its own copy of the runtime, and the operator was told
+   * the link was "already-present", which reads as success.
+   *
+   * The check is now on the CONTENT, not the existence: the entry must be the same package
+   * at the same version as the runtime the installer is running from. Anything else is
+   * refused, and refusal is the right answer rather than replacement — silently deleting
+   * files an archive shipped would make the installed bytes differ from the verified
+   * digest the operator approved.
+   */
+  if (existsSync(linkPath)) {
+    const shipped = readPackageIdentity(linkPath)
+    const ours = readPackageIdentity(sdkRoot)
+    if (shipped === undefined || ours === undefined || shipped.name !== ours.name || shipped.version !== ours.version) {
+      return {
+        linked: false,
+        reason: 'sdk-shadowed',
+        path: linkPath,
+        detail: `the package ships its own ${RUNTIME_SDK_NAME}`
+          + `${shipped === undefined ? ' (unreadable)' : `@${shipped.version}`}, `
+          + `but the host provides ${ours === undefined ? 'an unreadable runtime' : `@${ours.version}`}. `
+          + 'An extension must run against the host runtime, so this install is refused.',
+      }
+    }
+    return { linked: false, reason: 'already-present', path: linkPath, detail: `the host runtime @${ours.version} is already linked` }
+  }
 
   try {
     mkdirSync(scopeDirectory, { recursive: true })
@@ -97,6 +130,22 @@ export function linkRuntimeSdk(installPath: string, sdkRoot = runtimeSdkRoot()):
       path: linkPath,
       detail: error instanceof Error ? error.message : String(error),
     }
+  }
+}
+
+/** Read a package's name and version, or undefined when it cannot be read. */
+function readPackageIdentity(packageRoot: string): { readonly name: string; readonly version: string } | undefined {
+  try {
+    const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as {
+      name?: unknown
+      version?: unknown
+    }
+    if (typeof manifest.name !== 'string' || typeof manifest.version !== 'string') return undefined
+    return { name: manifest.name, version: manifest.version }
+  } catch {
+    // An unreadable or absent manifest is NOT an identity match. A planted directory with
+    // a broken manifest must not be treated as the host runtime.
+    return undefined
   }
 }
 

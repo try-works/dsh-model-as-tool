@@ -25,6 +25,12 @@
 
 import type { ToolContract } from '@try-works/tool-mode-contracts'
 import type { McpHost, McpToolDefinition, ToolInvocationOutcome } from './server.ts'
+import {
+  accountInvocation,
+  classifyOutcome,
+  PhaseTimer,
+  type InvocationAccounting,
+} from '../invocation-accounting.ts'
 
 /** The reserved root field the host authors, never the implementation. */
 const RESERVED_META = 'meta'
@@ -103,6 +109,21 @@ export function createMcpHost(options: {
   readonly serverInfo: { readonly name: string; readonly version: string }
   /** Called for each tool withheld, so a reason is recorded rather than lost. */
   readonly onWithheld?: (tool: PublishedTool) => void
+  /**
+   * Called once per EXTERNAL invocation, with its accounting (OBS-02).
+   *
+   * Wired EXPLICITLY because an external call is not automatically an agent-loop
+   * transcript: DSH observes `ctx.tools.execute`, and an MCP caller reaches the same
+   * pipeline through a different door. Without this the external half of the traffic has
+   * no receipt at all.
+   *
+   * It receives TIMINGS, A CLASS and SIZES — never the payload. The result is deliberately
+   * NOT passed in, so an implementation of this hook cannot duplicate a large result into a
+   * second log, which is the other half of what OBS-02 forbids.
+   */
+  readonly onAccounted?: (accounting: InvocationAccounting) => void
+  /** The engine that served the call, recorded WITH the measurement (OBS-05). */
+  readonly engineVersion?: string
 }): McpHost {
   let counter = 0
   return {
@@ -147,14 +168,53 @@ export function createMcpHost(options: {
           isError: true,
         }
       }
-      const outcome = await options.surface.execute({
-        name,
-        arguments: args,
-        signal,
-        // Server-issued, monotonically increasing. A caller-supplied identity would
-        // let a caller forge a receipt (BASE-05).
-        callId: `mcp_${Date.now().toString(36)}_${(++counter).toString(36)}`,
-      })
+      /**
+       * ACCOUNTING, wrapped around the dispatch (OBS-02).
+       *
+       * The timer measures the external call's own phases and the outcome is classified
+       * from what was OBSERVED, not assumed — a cancelled external call must not be
+       * recorded as a failure, so the abort state is read from the caller's own signal.
+       */
+      const callId = `mcp_${Date.now().toString(36)}_${(++counter).toString(36)}`
+      const timer = new PhaseTimer()
+      timer.begin('inference')
+      let outcome: Awaited<ReturnType<HostSurface['execute']>>
+      try {
+        outcome = await options.surface.execute({
+          name,
+          arguments: args,
+          signal,
+          // Server-issued, monotonically increasing. A caller-supplied identity would
+          // let a caller forge a receipt (BASE-05).
+          callId,
+        })
+      } catch (error) {
+        options.onAccounted?.(accountInvocation({
+          receiptId: callId,
+          timings: timer.finish(),
+          failureClass: classifyOutcome({ ok: false, aborted: signal.aborted }),
+          reason: error instanceof Error ? error.message : String(error),
+          input: args,
+          engineVersion: options.engineVersion ?? 'unknown',
+        }))
+        throw error
+      }
+
+      options.onAccounted?.(accountInvocation({
+        receiptId: callId,
+        timings: timer.finish(),
+        failureClass: classifyOutcome({
+          ok: outcome.isError !== true,
+          aborted: signal.aborted,
+          refused: outcome.isError === true,
+        }),
+        ...outcome.isError === true && outcome.message !== undefined ? { reason: outcome.message } : {},
+        input: args,
+        // An error carries no result, so nothing crossed the boundary as output.
+        output: outcome.isError === true ? undefined : outcome.value,
+        engineVersion: options.engineVersion ?? 'unknown',
+      }))
+
       if (outcome.isError) {
         return {
           structured: null,

@@ -124,3 +124,59 @@ describe('EXT-24 — uninstall removes the link', () => {
     assert.equal(existsSync(join(dir, 'node_modules', 'some-other-package')), true)
   })
 })
+
+describe('EXT-02 — a package cannot SUPPLY its own copy of the host runtime', () => {
+  /**
+   * THE REPRODUCED ESCAPE THIS CLOSES.
+   *
+   * The first version returned `already-present` if ANYTHING existed at the link path. An
+   * archive may legitimately SHIP that directory — it is not a traversal and the name is
+   * legal — so the installer never made the host link, and Node resolved the extension's
+   * bare `import '@try-works/tool-mode-extension-sdk'` to the PACKAGE-SUPPLIED module. The
+   * extension ran against its own runtime while the operator was told the link was
+   * "already-present", which reads as success.
+   */
+  it('REFUSES a planted runtime rather than reporting it as already-present', () => {
+    const dir = fakeInstall()
+    const planted = join(dir, 'node_modules', '@try-works', 'tool-mode-extension-sdk')
+    mkdirSync(planted, { recursive: true })
+    writeFileSync(join(planted, 'package.json'), JSON.stringify({
+      name: RUNTIME_SDK_NAME,
+      version: '99.0.0',
+      type: 'module',
+    }))
+
+    const outcome = linkRuntimeSdk(dir)
+    // The package must not be extended the benefit of the doubt.
+    assert.equal(outcome.linked, false)
+    assert.equal(outcome.reason, 'sdk-shadowed', JSON.stringify(outcome))
+    assert.match(String(outcome.detail), /ships its own/)
+    assert.match(String(outcome.detail), /99\.0\.0/)
+  })
+
+  it('REFUSES a planted runtime at the RIGHT version but with a broken manifest', () => {
+    const dir = fakeInstall()
+    const planted = join(dir, 'node_modules', '@try-works', 'tool-mode-extension-sdk')
+    mkdirSync(planted, { recursive: true })
+    // Unreadable content is NOT an identity match: a planted directory with a corrupt
+    // manifest must not be mistaken for the host runtime.
+    writeFileSync(join(planted, 'package.json'), '{ not json')
+    assert.equal(linkRuntimeSdk(dir).reason, 'sdk-shadowed')
+  })
+
+  it('REFUSES a planted runtime with NO manifest at all', () => {
+    const dir = fakeInstall()
+    mkdirSync(join(dir, 'node_modules', '@try-works', 'tool-mode-extension-sdk'), { recursive: true })
+    assert.equal(linkRuntimeSdk(dir).reason, 'sdk-shadowed')
+  })
+
+  it('still reports already-present when the entry IS this runtime', () => {
+    const dir = fakeInstall()
+    // The genuine case: the host made the link itself, at the matching version.
+    linkRuntimeSdk(dir)
+    const second = linkRuntimeSdk(dir)
+    assert.equal(second.linked, false)
+    assert.equal(second.reason, 'already-present')
+    assert.match(String(second.detail), /host runtime/)
+  })
+})

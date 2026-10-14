@@ -144,9 +144,15 @@ describe('the dispatch chain resolves against a REAL shipped extension', () => {
          */
         assert.match(
           message,
-          /ONNX|inference|not wired|unprepared|missing|Cannot find package/i,
+          /ONNX|inference|not wired|unprepared|not prepared|needs-preparation|missing|Cannot find package/i,
           `uninformative refusal: ${message}`,
         )
+        /**
+         * And it must name WHAT is missing, not merely that something is. The extension
+         * reports the unresolvable runtime AND each unprepared asset group, so a caller
+         * learns what to fix rather than only that the call failed.
+         */
+        assert.match(message, /asset group|does not resolve/, `the refusal must name the gap: ${message}`)
         return true
       },
     )

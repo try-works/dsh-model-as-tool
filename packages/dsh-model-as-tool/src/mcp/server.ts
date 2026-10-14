@@ -159,7 +159,20 @@ export async function dispatch(
       throw new WireError(
         ERROR_CODES.unsupportedClientCapability,
         `the client requires unsupported capability: ${unsupported.join(', ')}`,
-        { unsupported },
+        /**
+         * THE PINNED SCHEMA'S OWN FIELD NAME, and this was WRONG.
+         *
+         * `MissingRequiredClientCapabilityError` REQUIRES `data.requiredCapabilities`. This
+         * sent `{ unsupported: [...] }`, which Ajv rejects against the pinned definition:
+         *
+         *   INVALID -> /error/data must have required property 'requiredCapabilities'
+         *
+         * It went unnoticed because the GENERIC `JSONRPCErrorResponse` accepts ANY `data`,
+         * every fixture took that path, and no fixture covered `-32021` at all — so the
+         * conformance suite validated a shape the specific error definition forbids.
+         * P26-03 requires `-32021` "and the schema-defined data"; this is that shape.
+         */
+        { requiredCapabilities: unsupported },
       )
     }
 

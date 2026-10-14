@@ -15,7 +15,7 @@
  */
 
 import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
-import { linkRuntimeSdk, type RuntimeLinkOutcome } from './runtime-link.ts'
+import { linkRuntimeSdk, RUNTIME_SDK_NAME, type RuntimeLinkOutcome } from './runtime-link.ts'
 import { join, resolve, sep } from 'node:path'
 import { ManagementError } from './../errors.ts'
 import { discoverExtension, type ExtensionDiscovery } from './../discovery.ts'
@@ -199,6 +199,26 @@ export async function stagedInstall(options: {
      * install would break working packages to fix a problem they do not have.
      */
     runtimeLinkDiagnostic = linkRuntimeSdk(destination)
+
+    /**
+     * A SHADOWED RUNTIME FAILS THE INSTALL.
+     *
+     * If the package shipped its own copy of the host SDK, the extension would execute
+     * against THAT copy while the operator was told the link was merely already present.
+     * Installing it is worse than refusing, because the receipt would then describe a
+     * containment the installation does not have. This is the one link outcome that is
+     * fatal rather than reported.
+     */
+    if (runtimeLinkDiagnostic.reason === 'sdk-shadowed') {
+      rmSync(destination, { recursive: true, force: true })
+      throw new ManagementError(
+        'INVALID_EXTENSION',
+        'install',
+        runtimeLinkDiagnostic.detail ?? 'the package ships its own copy of the host runtime SDK',
+        'Remove node_modules/' + RUNTIME_SDK_NAME
+          + ' from the package; an extension must run against the host runtime.',
+      )
+    }
 
     writeFileSync(join(destination, '.tool-mode-install.json'), `${JSON.stringify({
       extensionId: discovery.packageName,
