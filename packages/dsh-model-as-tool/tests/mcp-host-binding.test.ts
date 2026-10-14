@@ -225,13 +225,28 @@ describe('MCP-08 / MCP-09 — end to end through the plugin', () => {
     })
     if (listed.isError) throw new Error('expected success')
     const exported = (listed.value as { mcp: { name: string }[] }).mcp.map(tool => tool.name).sort()
+    /**
+     * HOST CONTROL TOOLS ARE NAMED, not filtered by an ad-hoc string comparison.
+     *
+     * `model_tools` is the control surface and `tool_mode_run` is program execution, which
+     * CODE-08 WITHHOLDS from production clients until the confinement tests pass. Neither
+     * is a model tool, so neither belongs on the MCP surface.
+     *
+     * Naming them means ADDING a tool now forces a decision: a registration that is neither
+     * a contract tool nor a listed control tool fails this assertion, instead of silently
+     * appearing on — or vanishing from — the external surface.
+     */
+    const HOST_CONTROL_TOOLS = new Set(['model_tools', 'tool_mode_run'])
     const registered = ctx.tools.schemas()
       .map(schema => schema.name)
-      .filter(name => name !== 'model_tools')
+      .filter(name => !HOST_CONTROL_TOOLS.has(name))
       .sort()
     // The MCP surface is built from `registeredContracts`, so it cannot advertise a
     // tool the publication surface withheld.
     assert.deepEqual(exported, registered)
+    // And the withheld control tool really is absent from the external surface, which is
+    // the half CODE-08 depends on.
+    assert.equal(exported.includes('tool_mode_run'), false, 'program execution must not be exported')
   })
 
   it('a tools/list over the binding returns contract-derived schemas', async () => {

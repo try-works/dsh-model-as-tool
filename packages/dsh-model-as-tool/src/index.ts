@@ -26,6 +26,7 @@ import { registerModelTool } from './registrar.ts'
 import { registerContractTool, type ContractBinding, type HostIdentity } from './bindings.ts'
 import { join } from 'node:path'
 import { createContributionRegistrar } from './extension-registrar.ts'
+import { createProgramRunner, externalRefusal } from './tool-mode-run.ts'
 import { createDispatch, describeDispatchFailure, type DispatchEnvironment, type DispatchManifest } from './extension-dispatch.ts'
 import { discoverExtension, loadExtensionModule, resolveExtensionEntry, type ExtensionContextV1 } from '@try-works/tool-mode-extension-sdk'
 import type { JsonValue } from './adapters/types.ts'
@@ -1002,6 +1003,70 @@ export function apply(ctx: Context, config: Config = {}): void {
     }
     installed.clear()
   }, 'model-tools teardown')
+
+  /**
+   * THE AUTHORIZED PROGRAM PIPELINE, wired so its controls have a CALLER (CODE-02/03/08).
+   *
+   * Adversarial review found `ptc-authority.ts` and `ptc-runtime.ts` with zero callers
+   * outside tests: every control in them was correct, thoroughly covered, and never ran.
+   * `tool_mode_run` did not exist, so the mount guard never executed and the exposure gate
+   * guarded nothing — there was no caller to refuse. A control with no callers is a symbol.
+   *
+   * The runner reaches tools through `buildToolBindings`, the SAME pipeline an external
+   * surface would use, so authorization cannot differ between the two doors.
+   */
+  const programRunner = createProgramRunner({
+    context: ctx as never,
+    /**
+     * Resolved lazily and may be ABSENT: a deployment without the Node PTC backend still
+     * runs every other tool, and failing the plugin load because an optional capability is
+     * missing would remove working functionality. `prepare()` reports the absence.
+     */
+    backend: undefined,
+    /**
+     * THE HOST'S OWN GRANT, never a caller's claim about what it may use.
+     */
+    grant: grant.allowedTools,
+    visible: ctx.tools.schemas().map(schema => schema.name),
+    resolve: name => async (args: Record<string, unknown>) => {
+      // A binding dispatches through the SAME registry pipeline a native call uses
+      // (ARCH-01), so a program cannot reach a tool the registry would refuse.
+      const result = await ctx.tools.execute({
+        signal: new AbortController().signal,
+        callId: `ptc_${name}_${Date.now().toString(36)}` as never,
+        name,
+        arguments: args,
+      })
+      if (result.isError) throw new Error(result.error?.message ?? `${name} failed`)
+      return result.value
+    },
+    runtime: () => undefined,
+  })
+
+  if (config.registerControlTool ?? true) {
+    ctx.tools.register(defineTool({
+      name: 'tool_mode_run',
+      description:
+        'Run a program that calls Tool Mode tools. WITHHELD: this build mounts the runtime '
+        + 'and enforces the authorized pipeline, and refuses to serve generated-code '
+        + 'execution to callers until the confinement tests pass. The refusal names why.',
+      parameters: {},
+      output: {
+        schema: { type: 'object', additionalProperties: true },
+        render: (_args: unknown, value: unknown) => [{ type: 'text', text: JSON.stringify(value, null, 2) }],
+      },
+      async execute() {
+        /**
+         * THE GATE, ENFORCED — the caller `mayExposeToClients()` never had, so the refusal
+         * is now REACHABLE rather than a boolean nothing consults.
+         */
+        const refusal = externalRefusal(programRunner)
+        if (refusal !== undefined) throw new Error(refusal.message)
+        await programRunner.prepare()
+        throw new Error('tool_mode_run reached the served path, which is not yet implemented')
+      },
+    }))
+  }
 
   /**
    * Mount the EXTENSION LIFECYCLE, which is what lets an extension's tools reach the
