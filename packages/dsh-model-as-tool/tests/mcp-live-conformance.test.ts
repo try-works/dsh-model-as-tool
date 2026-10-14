@@ -382,3 +382,74 @@ describe('P26-05 — the header contract, discovered by driving the LIVE server'
     }
   })
 })
+describe('P26-03 — the pinned schema REQUIRES HTTP 400, and the status is now asserted', () => {
+  /**
+   * The reviewer's finding: `-32021` and `-32022` returned HTTP 200 while the pinned schema
+   * says, verbatim, "For HTTP, the response status code MUST be `400 Bad Request`" — and
+   * mutating the mapping either way left the whole suite GREEN, so the status was untested
+   * in BOTH directions. These tests close that.
+   */
+  it('answers an UNSUPPORTED REQUIRED CAPABILITY with 400 and the schema field name', async () => {
+    const { endpoint } = await liveServer()
+    try {
+      const response = await rpc(endpoint.url, {
+        jsonrpc: '2.0', id: 20, method: 'tools/list',
+        params: {
+          _meta: {
+            ...meta(),
+            /**
+             * `clientCapabilities.required` is an ARRAY of names a client NEEDS. A
+             * capability simply being present is not a requirement — the server must not
+             * reject a client for declaring more than it needs — which is why the first
+             * version of this test got a 200 and was wrong about the mechanism.
+             */
+            'io.modelcontextprotocol/clientCapabilities': { required: ['sampling'] },
+          },
+        },
+      })
+      // The status is the half that was missing.
+      assert.equal(response.status, 400, `expected 400, got ${response.status}: ${JSON.stringify(response.json)}`)
+      assert.equal(response.json.error?.code, -32021)
+      /**
+       * And the DATA shape is the schema's own. The first version sent
+       * `data.unsupported` where `MissingRequiredClientCapabilityError` REQUIRES
+       * `data.requiredCapabilities`; the generic error definition accepted either, so only
+       * the SPECIFIC one catches it.
+       */
+      assert.ok(
+        Array.isArray(response.json.error?.data?.requiredCapabilities),
+        `data.requiredCapabilities is required: ${JSON.stringify(response.json.error?.data)}`,
+      )
+    } finally {
+      await endpoint.close()
+    }
+  })
+
+  it('answers a HEADER MISMATCH with 400', async () => {
+    const { endpoint } = await liveServer()
+    try {
+      const response = await rpc(endpoint.url, {
+        jsonrpc: '2.0', id: 21, method: 'tools/list', params: { _meta: meta() },
+      }, { versionHeader: false })
+      // `HeaderMismatchError` carries the same MUST.
+      assert.equal(response.status, 400)
+      assert.equal(response.json.error?.code, -32020)
+    } finally {
+      await endpoint.close()
+    }
+  })
+
+  it('answers a SUCCESSFUL request with 200, so the rule is not "always 400"', async () => {
+    const { endpoint } = await liveServer()
+    try {
+      const response = await rpc(endpoint.url, {
+        jsonrpc: '2.0', id: 22, method: 'tools/list', params: { _meta: meta() },
+      })
+      // Asserted in the other direction on purpose: a mapping that returned 400 for
+      // everything would satisfy the two tests above and break every client.
+      assert.equal(response.status, 200)
+    } finally {
+      await endpoint.close()
+    }
+  })
+})

@@ -237,11 +237,42 @@ export async function dispatch(
     // payload (MCP-10), so it leaves as a JSON-RPC error.
     return {
       response: errorResponse(id, wire),
-      // Header problems are a transport-level rejection as well as a JSON-RPC error.
-      httpStatus: wire.code === ERROR_CODES.headerMismatch || wire.code === ERROR_CODES.invalidParams ? 400 : 200,
+      /**
+       * THE PINNED SCHEMA'S OWN `MUST`, read from the schema rather than inferred.
+       *
+       * Three error definitions state it in as many words — "For HTTP, the response status
+       * code MUST be `400 Bad Request`":
+       *
+       *   HeaderMismatchError                  -> -32020
+       *   MissingRequiredClientCapabilityError -> -32021
+       *   UnsupportedProtocolVersionError      -> -32022
+       *
+       * Only the FIRST and `invalidParams` were mapped to 400, so a client requiring an
+       * unsupported capability — or presenting an unsupported protocol version — received an
+       * error body under a 200 status. The suite stayed green either way, so the status was
+       * untested in BOTH directions.
+       *
+       * Kept as a named SET so the next transport-level rejection is a one-line addition
+       * rather than another condition somebody can forget.
+       */
+      httpStatus: TRANSPORT_LEVEL_REJECTIONS.has(wire.code) ? 400 : 200,
     }
   }
 }
+
+/**
+ * The JSON-RPC codes the pinned schema requires be answered with HTTP 400 as well.
+ *
+ * Every one of these definitions says, verbatim: "For HTTP, the response status code MUST
+ * be `400 Bad Request`." Kept as a named set so the rule lives in ONE place and the next
+ * transport-level rejection is an addition rather than another forgotten condition.
+ */
+const TRANSPORT_LEVEL_REJECTIONS = new Set<number>([
+  ERROR_CODES.headerMismatch,              // -32020
+  ERROR_CODES.unsupportedClientCapability, // -32021
+  ERROR_CODES.unsupportedProtocolVersion,  // -32022
+  ERROR_CODES.invalidParams,               // -32602, a malformed request shape
+])
 
 /** Handle `tools/call`. */
 async function callTool(
