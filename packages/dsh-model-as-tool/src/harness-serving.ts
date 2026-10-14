@@ -21,6 +21,7 @@
 
 import {
   HarnessBroker,
+  parseRecipe,
   type BrokerRecord,
   type LlmProvider,
   type RecipeManifest,
@@ -117,7 +118,31 @@ export function prepareDeclarative(
   const served: ServedRecipe[] = []
 
   for (const entry of resolved) {
-    const recipe = entry.recipe as RecipeManifest
+    /**
+     * THE RECIPE IS VALIDATED HERE, and it previously was not — a HIGH-severity gap found by
+     * adversarial review.
+     *
+     * This line used to be a bare cast: `entry.recipe as RecipeManifest`. The production resolver
+     * hands over raw `JSON.parse` output, so NOTHING validated the file between disk and
+     * execution. The review took `text-title.json` and applied one mutation at a time — an
+     * unexpected `tools` array, a `systemPrompt`, a `${process.env.SECRET_KEY}` interpolation, an
+     * uppercase or path-like tool name, `__proto__`, an absurd `maxOutputTokens`, a missing
+     * `policy`, a missing `inputs`. `parseRecipe` REFUSED ALL TEN; `prepareDeclarative` SERVED ALL
+     * TEN, and they executed. The validator was available and imported by the test that was
+     * supposed to cover this path — and bypassed by the only path that runs a recipe.
+     *
+     * A cast is a claim about a value the compiler cannot check, and here the claim was false for
+     * exactly the inputs an untrusted package would supply.
+     */
+    const parsed = parseRecipe(entry.recipe)
+    if (!parsed.ok) {
+      return {
+        ok: false,
+        code: 'recipe-rejected',
+        detail: `${entry.id}: the recipe did not validate: ${JSON.stringify(parsed).slice(0, 300)}`,
+      }
+    }
+    const recipe = parsed.recipe as RecipeManifest
     /**
      * AUTHORIZATION IS PER TOOL NAME, and it happens BEFORE anything is served. A recipe whose
      * name was never authorized must not become callable, or the broker would refuse at

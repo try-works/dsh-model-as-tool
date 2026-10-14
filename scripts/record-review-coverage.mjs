@@ -29,10 +29,12 @@ const COVERAGE =
   + 'feature, and the `ptc-authority`/`ptc-runtime` zero-caller discovery. WHAT IS NOT REVIEWED: '
   + 'everything built afterwards — the declarative slice end to end, the OBS-01/03/04 work, the '
   + 'live schema validation, the workspace link map, and the record reconciliation — has NOT been '
-  + 'independently reviewed. A first attempt at reviewing it was commissioned with a brief covering '
-  + 'four large areas and DELIVERED NO REPORT; a second, deliberately narrow attempt was '
-  + 'commissioned afterwards. Until that lands, treat the post-round-10 work as VERIFIED BY ITS '
-  + 'AUTHOR, which is a weaker claim than the earlier work carries.'
+  + 'independently reviewed. TWO REVIEW ATTEMPTS WERE COMMISSIONED AND NEITHER DELIVERED: the first covered four large '
+  + 'areas, the second was narrowed to a single file with a 200-line report cap and an explicit '
+  + 'instruction to finish. Both were given the environment traps that cost their predecessors '
+  + 'time. NO REPORT EXISTS from either, so the post-round-10 work stands as VERIFIED BY ITS '
+  + 'AUTHOR — a weaker claim than the earlier work carries, and the honest reason the goal is '
+  + 'left open rather than marked done.'
 
 const OWNER = 'MCP-01'
 const owner = requirements[OWNER]

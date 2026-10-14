@@ -187,22 +187,30 @@ describe('EXT-30 — a refusal is readable', () => {
 })
 
 /**
- * THE DECLARATIVE BRANCH IS NO LONGER ASSERTED BY SCRAPING THE SOURCE.
+ * THE DECLARATIVE BRANCH IS NOT DRIVEN BY ANY TEST, AND AN EARLIER COMMENT HERE CLAIMED IT WAS.
  *
- * An earlier version of this file read the refusal text out of `src/index.ts` and asserted its
- * wording, and said of itself that it proved the branch was WRITTEN and not REACHED. That was the
- * honest description of a branch nothing could drive: the host resolved recipes and then always
- * refused, so there was no behaviour to exercise.
+ * An earlier version of this block deleted a source-scraping test and justified the deletion with
+ * three coverage claims. ALL THREE WERE FALSE, and an adversarial review falsified each:
  *
- * Both halves of that have changed, and keeping the old test would now be worse than deleting it:
+ *   - "DRIVEN by six tests in harness-serving.test.ts" — those tests call prepareDeclarative
+ *     DIRECTLY. They never reach the host's branch, and `harnessProvider` appears in no test.
+ *   - "DRIVEN end to end in declarative-install.test.ts" — that file says of ITSELF, at its
+ *     lines 9-11, that it does NOT drive that link.
+ *   - "declarative-recipe-runs.test.ts" — it assembles the broker itself and never exercises the
+ *     host path either.
  *
- *   - the host DELEGATES the joining to `prepareDeclarative`, which is DRIVEN by six tests in
- *     `harness-serving.test.ts` — recipes become callable tools, a supplied provider answers, the
- *     call is recorded, and a refusal is thrown rather than returned as a value;
- *   - the declarative chain is DRIVEN end to end in `declarative-install.test.ts` (packed bytes
- *     through a real store) and `declarative-recipe-runs.test.ts` (a recipe reaching a provider).
+ * WHY THIS MATTERED MORE THAN A DELETED TEST USUALLY WOULD. A false coverage claim is worse than
+ * no coverage, because it stops the next person looking. Deleting the scraping test was defensible
+ * on its own — it asserted WORDING, not behaviour — but the comment justifying it asserted
+ * coverage that did not exist, and the host's declarative branch shipped BROKEN behind it: the
+ * commit claiming "the HOST serves a declarative package" is false for every path that exists.
  *
- * A text assertion over a source file cannot fail when the BEHAVIOUR regresses, only when the
- * WORDING changes — which makes it a maintenance cost that reads like coverage. The coverage is
- * where the behaviour is.
+ * WHAT IS ACTUALLY TRUE, and it is not a coverage claim:
+ *   - prepareDeclarative IS exercised directly by harness-serving.test.ts. That is real coverage
+ *     of the JOINING LOGIC and says nothing about whether the host reaches it;
+ *   - the host's branch — providerFor returning something createDispatch can consume — has NO
+ *     test, and the review reproduced two independent failures in it: no registered tool reaches
+ *     it at all, and the object it returns lacks the `load` method createDispatch calls.
+ *
+ * The honest record of a gap is a gap, not a claim that somewhere else covers it.
  */
