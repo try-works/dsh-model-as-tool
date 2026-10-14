@@ -1145,8 +1145,14 @@ export function apply(ctx: Context, config: Config = {}): void {
       }
     }
     function environmentFor(extensionId: string): DispatchEnvironment {
-      /** The installed package root, which a declarative package's recipes resolve against. */
-      const installPathFor = (id: string): string => {
+      /**
+       * The installed package ROOT for an extension, from the store.
+       *
+       * Deliberately NOT named installPathFor: the SDK exports a function of that name
+       * which returns the path SEGMENT a package occupies, not a resolved store lookup. Two
+       * different meanings under one name is how a caller ends up with the wrong one.
+       */
+      const installedRootFor = (id: string): string => {
         const installed = store.listInstalled().value.find(record => record.extensionId === id)
         if (installed === undefined) {
           throw new Error(`${id} is not installed, so its recipes cannot be resolved`)
@@ -1182,7 +1188,7 @@ export function apply(ctx: Context, config: Config = {}): void {
             .execution?.kind
           if (kind === 'declarative') {
             const resolved = resolveDeclarativeImplementations(
-              installPathFor(extensionId),
+              installedRootFor(extensionId),
               (discovery.manifest as unknown as {
                 implementations: readonly { id: string; contractId: string; recipeVersion: string }[]
               }).implementations ?? [],
