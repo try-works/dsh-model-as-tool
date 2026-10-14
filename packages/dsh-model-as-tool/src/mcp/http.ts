@@ -369,7 +369,29 @@ export async function startHttpServer(
       // unbounded body in order to measure it defeats the limit.
       if (received > config.maxBodyBytes) {
         outgoing.writeHead(413, { 'content-type': 'application/json' })
-        outgoing.end(JSON.stringify({ error: 'request body too large' }))
+        /**
+         * A JSON-RPC ERROR ENVELOPE, and this used to be neither.
+         *
+         * It wrote `{"error":"request body too large"}` — a bare object whose `error` is a
+         * STRING. That is not a JSON-RPC error, and no pinned definition accepts it: validated
+         * against `InvalidRequestError` it fails on `type` at the root, because the definition
+         * describes `{code, message, data}`.
+         *
+         * Nothing caught it because there are TWO size guards and the earlier correction
+         * reached only the other one. THIS guard exists so the limit is enforced DURING the
+         * read — buffering an unbounded body in order to measure it would defeat the limit —
+         * and that design is right; only its response was wrong.
+         *
+         * The `id` is OMITTED: the body was never read, so there is no id to echo, and the
+         * pinned `RequestId` (`string | integer`) does not admit `null`.
+         */
+        outgoing.end(JSON.stringify({
+          jsonrpc: '2.0',
+          error: {
+            code: ERROR_CODES.invalidRequest,
+            message: `the request body exceeds ${config.maxBodyBytes} bytes`,
+          },
+        }))
         incoming.destroy()
         return
       }

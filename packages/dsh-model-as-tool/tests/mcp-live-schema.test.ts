@@ -53,27 +53,66 @@ function pinnedValidators() {
       // the ones that matter for responses are asserted to exist below.
     }
   }
-  return validators
+  return { validators, definitions: defs }
 }
 
-const validators = pinnedValidators()
+const { validators, definitions } = pinnedValidators()
+
+/**
+ * THE PINNED ERROR DEFINITIONS ARE NOT UNIFORM, and validating the wrong half is silently wrong.
+ *
+ * Four of them are BARE ERROR OBJECTS (`{code, message, data}`):
+ *   MethodNotFoundError, InvalidParamsError, ParseError, InvalidRequestError
+ * and three are FULL ENVELOPES (`{error, id, jsonrpc}`):
+ *   HeaderMismatchError, MissingRequiredClientCapabilityError, UnsupportedProtocolVersionError
+ *
+ * Handing a response envelope to `MethodNotFoundError` fails on `required: [code]` at the TOP
+ * level — which says nothing about the server and everything about the check. A conformance
+ * harness has to know which half each definition describes, so this one does it by inspection
+ * rather than by a hard-coded list that would rot.
+ */
+/**
+ * Which definitions describe a BARE ERROR OBJECT rather than a full envelope.
+ *
+ * Derived from the SCHEMA rather than hard-coded, so a definition that changes shape is
+ * followed instead of silently mis-validated.
+ */
+const ERROR_OBJECT_DEFINITIONS = new Set(
+  Object.entries(definitions)
+    .filter(([, definition]) => {
+      const properties = (definition as { properties?: Record<string, unknown> }).properties ?? {}
+      return 'code' in properties && !('jsonrpc' in properties)
+    })
+    .map(([name]) => name),
+)
 
 /** Validate a live response body against a pinned definition, reporting Ajv's own errors. */
 function assertConforms(definition: string, body: unknown, label: string): void {
   const validate = validators.get(definition)
   assert.ok(validate !== undefined, `the pinned schema must define ${definition}`)
   if (validate === undefined) return
-  const ok = validate(body)
+  /**
+   * The half that definition describes. An error-object definition is checked against the
+   * response's `error` member; an envelope definition against the whole body.
+   */
+  const subject = ERROR_OBJECT_DEFINITIONS.has(definition)
+    ? (body as { error?: unknown }).error
+    : body
+  assert.ok(
+    subject !== undefined,
+    `${label}: ${definition} describes ${ERROR_OBJECT_DEFINITIONS.has(definition) ? 'the error member' : 'the envelope'}, which the response does not carry`,
+  )
+  const ok = validate(subject)
   assert.ok(
     ok,
     `${label}: the live response does not conform to ${definition}:\n`
     + `${JSON.stringify(validate.errors, null, 2)}\n`
-    + `body: ${JSON.stringify(body).slice(0, 400)}`,
+    + `subject: ${JSON.stringify(subject).slice(0, 400)}`,
   )
 }
 
 /** Start the real server backed by the real registry. */
-async function liveServer() {
+async function liveServer(options: { readonly maxBodyBytes?: number } = {}) {
   const ctx = await mountPlugin({})
   const registered = new Set(ctx.tools.schemas().map(schema => schema.name))
   const published: PublishedTool[] = STANDARD_CONTRACTS
@@ -97,7 +136,7 @@ async function liveServer() {
     path: '/mcp',
     host: '127.0.0.1',
     port: 0,
-    maxBodyBytes: 1024 * 1024,
+    maxBodyBytes: options.maxBodyBytes ?? 1024 * 1024,
     allowedOrigins: [],
     auth: { kind: 'static-token', token: TOKEN },
   } as HttpTransportConfig
@@ -265,6 +304,134 @@ describe('P26-13 — the server\'s LIVE responses conform to the pinned schema',
         response.json,
         'an unsupported version',
       )
+    } finally {
+      await endpoint.close()
+    }
+  })
+
+  /**
+   * THE ERROR PATHS, which is where shapes are least likely to be fixture-covered — and where
+   * the one live defect found so far actually lived. Each is validated against its SPECIFIC
+   * definition, because the generic `JSONRPCErrorResponse` accepts any `data` and proves almost
+   * nothing.
+   */
+  it('an unknown method conforms to MethodNotFoundError', async () => {
+    const { endpoint } = await liveServer()
+    try {
+      const response = await rpc(endpoint.url, {
+        jsonrpc: '2.0', id: 10, method: 'tools/nonexistent', params: { _meta: meta() },
+      })
+      const error = response.json.error as { code?: number } | undefined
+      assert.equal(error?.code, -32601)
+      assertConforms('MethodNotFoundError', response.json, 'an unknown method')
+    } finally {
+      await endpoint.close()
+    }
+  })
+
+  it('MISSING REQUIRED METADATA conforms to InvalidParamsError (P26-02)', async () => {
+    const { endpoint } = await liveServer()
+    try {
+      // No `_meta` at all: P26-02 requires the protocol version and client capabilities there.
+      const response = await rpc(endpoint.url, {
+        jsonrpc: '2.0', id: 11, method: 'tools/list', params: {},
+      })
+      const error = response.json.error as { code?: number } | undefined
+      assert.equal(error?.code, -32602, `expected invalid params, saw ${JSON.stringify(response.json).slice(0, 200)}`)
+      assertConforms('InvalidParamsError', response.json, 'missing required metadata')
+    } finally {
+      await endpoint.close()
+    }
+  })
+
+  it('malformed JSON conforms to ParseError', async () => {
+    const { endpoint } = await liveServer()
+    try {
+      const response = await fetch(endpoint.url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream',
+          authorization: `Bearer ${TOKEN}`,
+          'mcp-protocol-version': PROTOCOL_VERSION,
+        },
+        body: '{ not json',
+      })
+      const json = JSON.parse(await response.text()) as Record<string, unknown>
+      const error = json.error as { code?: number } | undefined
+      assert.equal(error?.code, -32700)
+      assertConforms('ParseError', json, 'malformed JSON')
+    } finally {
+      await endpoint.close()
+    }
+  })
+
+  it('an OVERSIZED body conforms to InvalidRequestError, with no id (413)', async () => {
+    const { endpoint } = await liveServer({ maxBodyBytes: 256 })
+    try {
+      const response = await fetch(endpoint.url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream',
+          authorization: `Bearer ${TOKEN}`,
+          'mcp-protocol-version': PROTOCOL_VERSION,
+          'mcp-method': 'tools/list',
+        },
+        // Comfortably over the 256-byte limit this server was started with, so the refusal is
+        // reached without pushing megabytes through a socket for no additional evidence.
+        body: JSON.stringify({ jsonrpc: '2.0', id: 12, method: 'tools/list', params: { _meta: meta(), pad: 'x'.repeat(600) } }),
+      })
+      assert.equal(response.status, 413)
+      const json = JSON.parse(await response.text()) as Record<string, unknown>
+      /**
+       * AND THE `id` IS ABSENT, which the pinned `RequestId` (`string | integer`) requires: the
+       * body was too large to read, so there is no id to echo. `id: null` would be rejected.
+       */
+      assert.equal('id' in json, false, `the 413 body must omit id, saw ${JSON.stringify(json)}`)
+      assertConforms('InvalidRequestError', json, 'an oversized body')
+    } finally {
+      await endpoint.close()
+    }
+  })
+
+  it('a TOOL-ERROR result conforms to CallToolResultResponse', async () => {
+    const { endpoint } = await liveServer()
+    try {
+      const response = await rpc(endpoint.url, {
+        jsonrpc: '2.0',
+        id: 13,
+        method: 'tools/call',
+        // An argument the contract rejects: the tool runs and FAILS, which is a tool-error
+        // RESULT rather than a JSON-RPC error (P26-04).
+        params: { name: 'lang_detect', arguments: { text: 12345 }, _meta: meta() },
+      }, { nameHeader: 'lang_detect' })
+      assert.equal(response.status, 200, 'a domain failure is still a successful response')
+      assertConforms('CallToolResultResponse', response.json, 'a tool-error result')
+    } finally {
+      await endpoint.close()
+    }
+  })
+
+  it('a NOTIFICATION is acknowledged with no body (202)', async () => {
+    const { endpoint } = await liveServer()
+    try {
+      const response = await fetch(endpoint.url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream',
+          authorization: `Bearer ${TOKEN}`,
+          'mcp-protocol-version': PROTOCOL_VERSION,
+          'mcp-method': 'notifications/cancelled',
+        },
+        // No id: a notification carries none and expects no response.
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/cancelled', params: { requestId: 99 } }),
+      })
+      assert.equal(response.status, 202)
+      // An accepted notification has nothing to say, so there is no body to validate — and
+      // asserting the emptiness is the whole check.
+      assert.equal((await response.text()).length, 0)
     } finally {
       await endpoint.close()
     }
