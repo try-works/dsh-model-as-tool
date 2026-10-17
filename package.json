@@ -67,7 +67,10 @@
     "qualify:voz:smoke": "node scripts/qualify-voz.mjs --smoke",
     "qualify:embeddinggemma": "node scripts/qualify-embeddinggemma.mjs",
     "qualify:embeddinggemma:smoke": "node scripts/qualify-embeddinggemma.mjs --smoke",
-    "qualify:minilm": "node scripts/qualify-minilm.mjs"
+    "qualify:minilm": "node scripts/qualify-minilm.mjs",
+    "plugin:check": "node packages/dsh-model-as-tool/scripts/check-package.mjs",
+    "plugin:install": "node scripts/install-dsh-plugin.mjs",
+    "plugin:pack": "npm pack --json --workspace @try-works/dsh-model-as-tool"
   },
   "devDependencies": {
     "@desert-ant-labs/tongue": "^3.6.0",

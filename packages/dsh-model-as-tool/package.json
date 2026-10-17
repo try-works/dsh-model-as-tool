@@ -55,11 +55,13 @@
       "patch": "./cordis.patch.yml"
     }
   },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": ">=0.2.0-rc.2 || >=0.2.1-rc.1",
     "@deepseek-ai/dsh-skill": ">=0.2.0-rc.2 || >=0.2.1-rc.1",
-    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.2 || >=0.2.1-rc.1",
-    "@deepseek-ai/schemastery": ">=0.2.0-rc.2 || >=0.2.1-rc.1"
+    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.2 || >=0.2.1-rc.1"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-skill": {
@@ -80,11 +82,13 @@
     "typescript": "^5.9.0"
   },
   "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.4",
     "@modelcontextprotocol/node": "2.1.1",
     "@modelcontextprotocol/server": "2.3.1",
     "@try-works/tool-mode-contracts": "^0.1.0",
     "@try-works/tool-mode-extension-sdk": "^0.1.0",
     "ajv": "^8.20.0",
+    "adm-zip": "^0.5.18",
     "@try-works/tool-mode-recipes": "^0.1.0"
   },
   "bin": {

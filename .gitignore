@@ -22,3 +22,4 @@ research/text/
 /.tmp-real-corpus/
 /launch-video/
 docs/tool-mode/qualification/.voz-wavs-*/
+/.install-plugin.log

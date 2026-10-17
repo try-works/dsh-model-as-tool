@@ -32,7 +32,8 @@
     "README.md"
   ],
   "dependencies": {
-    "ajv": "^8.20.0"
+    "ajv": "^8.20.0",
+    "adm-zip": "^0.5.18"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -43,7 +44,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "@types/adm-zip": "^0.5.8"
   },
   "bin": {
     "dsh-tool-mode": "./bin/dsh-tool-mode.mjs"
