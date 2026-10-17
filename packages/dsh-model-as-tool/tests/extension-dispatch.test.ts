@@ -34,7 +34,7 @@ const MANIFEST: DispatchManifest = {
     { name: 'multimodal_embed', contractId: 'embeddinggemma.embed', contractVersion: '1.0.0' },
   ],
   implementations: [
-    { id: 'embeddinggemma2-similarity', contractId: 'embeddinggemma.similarity', modelId: 'embeddinggemma-2' },
+    { id: 'embeddinggemma2-similarity', contractId: 'embeddinggemma.similarity', contractVersion: '1.0.0', modelId: 'embeddinggemma-2' },
   ],
 }
 
@@ -71,6 +71,24 @@ describe('EXT-21 — a declared tool resolves through contract to implementation
     if (!resolved.ok) return
     assert.equal(resolved.implementation.modelId, 'embeddinggemma-2')
     assert.equal(resolved.tool.contractId, 'embeddinggemma.similarity')
+  })
+
+  it('refuses an implementation of a different contract version', () => {
+    const manifest = { ...MANIFEST, implementations: MANIFEST.implementations.map(entry => ({ ...entry, contractVersion: '2.0.0' })) }
+    const result = resolveImplementation(manifest, 'semantic_similarity')
+    assert.equal(result.ok, false)
+    if (result.ok) return
+    assert.equal(result.failure.code, 'no-implementation')
+  })
+
+  it('selects the exact version even when an incompatible implementation appears first', () => {
+    const exact = MANIFEST.implementations[0]!
+    const manifest = { ...MANIFEST, implementations: [
+      { ...exact, id: 'incompatible-first', contractVersion: '2.0.0' }, exact,
+    ] }
+    const result = resolveImplementation(manifest, 'semantic_similarity')
+    assert.ok(result.ok)
+    assert.equal(result.implementation.id, exact.id)
   })
 
   it('reports NOT-DECLARED for a name the manifest does not carry', () => {

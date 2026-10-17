@@ -10,10 +10,13 @@
  * The manifest's licences, its tools, its implementations and its declared limits are checked
  * that way, and the shipped schema documents are compiled and exercised.
  *
- * The second kind runs the extension and asserts it is HONEST. This build wires no ONNX
- * session, so the provider must report `unprepared`, must name what is missing, and must FAIL
- * an invocation rather than returning a plausible-looking vector. Those tests are the ones that
- * would catch the worst possible regression here: a provider that starts reporting `ready`.
+ * The second kind runs the extension and asserts it is HONEST. The text inference path is
+ * wired (see inference.ts): the provider must report `prepared-cold` until the host supplies
+ * the verified text-backbone assets, must load ONLY that group (MOD-02), must FAIL an
+ * invocation before a load rather than inventing a vector, and must refuse media parts by
+ * name. Those tests are the ones that would catch the worst possible regression here: a
+ * provider that starts reporting `ready` without a load, or one that silently demands the
+ * vision/audio weights for a text call.
  *
  * Requirement links: EXT-13, EXT-14, EXT-18, EXT-19, EXT-21, EXT-26, DECL-01, DECL-02,
  * DECL-03, LIC-01, LIC-04, MOD-01, MOD-02, MOD-05, MOD-09, MOD-10, MOD-20.
@@ -23,6 +26,7 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { homedir } from 'node:os'
 import { Ajv2020 } from 'ajv/dist/2020.js'
 import {
   activateExtension,
@@ -44,6 +48,18 @@ const PACKAGE_DIR = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z
 
 /** The built entry, which exists only after `tsc -p tsconfig.build.json`. */
 const BUILT_ENTRY = join(PACKAGE_DIR, 'lib', 'index.js')
+
+/** Whether the two optional runtime packages resolve from this package's context. */
+function runtimeResolves(): boolean {
+  for (const specifier of ['@huggingface/transformers', 'onnxruntime-node']) {
+    try {
+      if (typeof import.meta.resolve?.(specifier) !== 'string') return false
+    } catch {
+      return false
+    }
+  }
+  return true
+}
 
 /** A host-issued context, with nothing but what EXT-18 allows. */
 function context(): ExtensionContextV1 {
@@ -183,16 +199,34 @@ describe('EXT-13/EXT-14 — the package is discoverable as data, before any of i
     }
   })
 
-  it('does not claim an artifact it has not measured', () => {
-    // MOD-01 requires the lock to name the exact conversion and quantization. Nothing has been
-    // downloaded or hashed here, so the lock records that state instead of a plausible value:
-    // a fabricated digest is indistinguishable from a verified one to every later reader.
+  it('records exactly what it measured, and refuses to pretend beyond it', () => {
+    // MOD-01 requires the lock to name the exact conversion and quantization. All THREE groups
+    // have been downloaded, hashed and run on this host, so the lock records real digests for
+    // the eleven pinned files — and a fabricated digest is indistinguishable from a verified
+    // one to every later reader, so only measured bytes may be recorded.
     const lock = readJson('models.lock.json')
-    assert.equal(at(lock, 'assetSets', 'embeddinggemma-2-onnx', 'pinning', 'state'), 'unmeasured')
-    assert.deepEqual(at(lock, 'assetSets', 'embeddinggemma-2-onnx', 'assets'), [])
-    assert.match(
-      String(at(lock, 'assetSets', 'embeddinggemma-2-onnx', 'conversion', 'quantizationProfile')),
-      /UNRECORDED/,
+    assert.equal(at(lock, 'assetSets', 'embeddinggemma-2-onnx', 'pinning', 'state'), 'measured')
+    const assets = at(lock, 'assetSets', 'embeddinggemma-2-onnx', 'assets') as { digest: string; bytes: number }[]
+    assert.equal(assets.length, 11, 'the eleven pinned files (text + vision + audio + configs) must be recorded')
+    for (const asset of assets) {
+      assert.match(asset.digest, /^[0-9a-f]{64}$/, 'every recorded digest must be a real SHA-256')
+      assert.ok(asset.bytes > 0)
+    }
+    // Each media group records exactly its own measured files; the video half of the vision
+    // group stays the honest third-slice remainder (no video decoder artifact is listed).
+    const groups = at(lock, 'assetSets', 'embeddinggemma-2-onnx', 'groups') as { id: string; assets: unknown[] }[]
+    const vision = groups.find(group => group.id === 'vision-encoder')
+    const audio = groups.find(group => group.id === 'audio-encoder')
+    assert.ok((vision?.assets.length ?? 0) >= 3, 'the vision group must record its measured files')
+    assert.ok((audio?.assets.length ?? 0) >= 3, 'the audio group must record its measured files')
+    assert.ok(
+      !(vision?.assets as { file: string }[]).some(entry => entry.file.includes('video')),
+      'no video artifact may be listed before the third slice is implemented',
+    )
+    assert.equal(
+      at(lock, 'assetSets', 'embeddinggemma-2-onnx', 'conversion', 'quantizationProfile'),
+      'unquantized',
+      'the measured profile must name what was actually run',
     )
   })
 })
@@ -241,13 +275,13 @@ describe('LIC-01/LIC-04 — every licence layer and the network behaviour are de
 })
 
 describe('EXT-21/DECL-01 — the package declares the contracts it OWNS', () => {
-  it('declares exactly the three tools this build implements', () => {
+  it('declares exactly the six tools this build implements', () => {
     const discovery = discoverExtension(PACKAGE_DIR)
-    // semantic_classify, semantic_deduplicate and media_find_moments belong to the same
-    // requirement family but are NOT declared: a caller-facing tool name that nothing serves
-    // would advertise a capability this build does not have (MOD-15, MOD-20).
     assert.deepEqual(discovery.manifest.tools.map(tool => tool.name).sort(), [
+      'media_find_moments',
       'multimodal_embed',
+      'semantic_classify',
+      'semantic_deduplicate',
       'semantic_rank',
       'semantic_similarity',
     ])
@@ -290,10 +324,14 @@ describe('EXT-21/DECL-01 — the package declares the contracts it OWNS', () => 
     for (const contract of OWNED_TOOL_CONTRACTS) {
       assert.match(
         contract.description,
-        /does not describe an image in words|not the cross-encoder text_rerank tool|refused by name/,
+        /does not describe an image in words|not the cross-encoder text_rerank tool|refused by name|not the dedicated decision model|never deletes, moves or rewrites source files|not speech recognition/,
         `${contract.toolName} must say what it does not do`,
       )
-      assert.match(contract.description, /text and code parts only|embedding ranking/)
+      assert.match(
+        contract.description,
+        /reads text, code, image and audio parts|embedding ranking|MOD-11|MOD-12|MOD-13/,
+        `${contract.toolName} must state its build limits`,
+      )
     }
   })
 })
@@ -412,34 +450,38 @@ describe('EXT-18/EXT-19 — the provider is a handle, and it is honest about wha
     )
   })
 
-  it('reports unprepared, names the missing runtime, and claims NO feature', async () => {
+  it('reports the honest runtime state: prepared-cold when the packages resolve, needs-preparation naming them when not', async () => {
     const inspection = await (await provider()).inspect(new AbortController().signal)
-    // `unprepared` is the provider-level form of the lifecycle's `needs-preparation`: the
-    // package is valid and its tools are describable, and nothing can run yet (EXT-26).
-    assert.equal(inspection.readiness, 'unprepared')
-    // An EMPTY feature list is the honest answer, not an omission. `features` is what this build
-    // can actually run; listing a similarity feature before an ONNX session exists would be the
-    // fabrication EXT-18 exists to forbid.
-    assert.deepEqual([...inspection.features], [])
-    assert.ok(inspection.missing.length > 0, 'an unprepared deployment must name what is missing')
-    assert.ok(
-      inspection.missing.some(entry => entry.name.includes('onnx')),
-      'the unwired inference path must be named',
-    )
-    assert.ok(
-      inspection.missing.some(entry => entry.name === '@huggingface/transformers'),
-      'the absent ONNX client library must be named on this host',
-    )
-    assert.match(String(inspection.reason), /needs preparation/)
+    // The text path is wired; the honest states are exactly two (EXT-26).
+    if (runtimeResolves()) {
+      assert.equal(inspection.readiness, 'prepared-cold')
+      assert.ok(
+        inspection.features.includes('text-embeddings'),
+        `features must name the wired text path, saw: ${inspection.features.join(', ')}`,
+      )
+      assert.equal(inspection.missing.length, 0)
+      assert.match(String(inspection.reason), /prepared but cold/)
+    } else {
+      assert.equal(inspection.readiness, 'needs-preparation')
+      // An EMPTY feature list is the honest answer, not an omission.
+      assert.deepEqual([...inspection.features], [])
+      assert.ok(inspection.missing.length > 0, 'an unprepared deployment must name what is missing')
+      assert.ok(
+        inspection.missing.some(entry => entry.name === '@huggingface/transformers'),
+        'the absent ONNX client library must be named on this host',
+      )
+      assert.match(String(inspection.reason), /needs preparation/)
+    }
   })
 
   it('never reports ready before a load', async () => {
     // EXT-18: inspection reads approved local state only. Reporting "ready" here would be a
-    // claim the provider has not earned — and in this build it cannot be earned at all, so the
-    // answer must be the same on every call rather than converging as state accumulates.
+    // claim the provider has not earned — the host-verified assets have not been supplied.
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const instance = await provider()
-      assert.notEqual((await instance.inspect(new AbortController().signal)).readiness, 'ready')
+      const readiness = (await instance.inspect(new AbortController().signal)).readiness
+      assert.notEqual(readiness, 'ready')
+      if (runtimeResolves()) assert.equal(readiness, 'prepared-cold')
     }
   })
 
@@ -451,23 +493,31 @@ describe('EXT-18/EXT-19 — the provider is a handle, and it is honest about wha
     )
   })
 
-  it('never reports a successful load, even when every declared group is present', async () => {
-    // The decisive honesty test. A host that prepared everything the manifest declares must not
-    // be told the deployment is loaded, because this build creates no session — reporting a
-    // successful load would make an unusable deployment look callable. On this host the ONNX
-    // client library is also genuinely absent, so the failure may legitimately be either; what
-    // it must NEVER be is a complaint about the assets that were just supplied.
+  it('MOD-02: a text-only load requires ONLY the text-backbone group, never the vision or audio weights', async () => {
+    // The decisive MOD-02 pin: a host that prepared the text backbone ALONE must be able to
+    // load, and the absence of the vision/audio groups must not be blamed. The fake path
+    // fails later with the REAL session error (the directory does not exist), which is exactly
+    // the distinction the test guards: the complaint must never be about assets that were
+    // deliberately not supplied for a TEXT deployment.
     const assets = {
-      get: (assetId: string) => ({ path: `/prepared/${assetId}`, digest: 'sha256-verified' }),
-      assetIds: [...ASSET_GROUPS],
+      get: (assetId: string) => (
+        assetId === 'text-backbone' ? { path: '/prepared/text-backbone', digest: 'sha256-verified' } : undefined
+      ),
+      assetIds: ['text-backbone'],
     }
-    const instance = await provider()
+    if (!runtimeResolves()) {
+      await assert.rejects(
+        (await provider()).load({ assets, signal: new AbortController().signal }),
+        /does not resolve on this host/,
+      )
+      return
+    }
     await assert.rejects(
-      instance.load({ assets, signal: new AbortController().signal }),
+      (await provider()).load({ assets, signal: new AbortController().signal }),
       (error: unknown) => {
         const message = error instanceof Error ? error.message : String(error)
-        assert.doesNotMatch(message, /asset group/, 'a fully prepared asset map must not be blamed')
-        assert.match(message, /not wired in this build|does not resolve on this host/)
+        assert.doesNotMatch(message, /vision|audio/, 'a text-only load must never demand the vision or audio groups')
+        assert.doesNotMatch(message, /asset group/, 'a prepared text backbone must not be blamed')
         return true
       },
     )
@@ -491,28 +541,81 @@ describe('MOD-05/MOD-10/MOD-20 — a call fails for its own reason, never with a
     assert.match(error.message, /this extension implements "embeddinggemma2-onnx"/)
   })
 
-  it('fails a well-formed call with the reason, and says nothing was computed', async () => {
+  it('fails a well-formed call for the honest unprepared reason, and says nothing was computed', async () => {
     const error = await invoke('embeddinggemma2-onnx', {
       items: [TEXT_ITEM],
       purpose: 'retrieval',
       role: 'document',
     })
-    // Not "unavailable" alone: the message names the build so an operator can tell an
-    // unimplemented path from a broken one.
-    assert.match(error.message, /ONNX inference path is not wired in this build/)
-    assert.match(error.message, /No vector was computed and no result is reported/)
+    // Not "unavailable" alone: the message names exactly what is missing — the verified
+    // text-backbone load — so an operator can tell an unloaded deployment from a broken one.
+    assert.match(error.message, /the EmbeddingGemma 2 deployment is not prepared: load\(\) must be called/)
   })
 
-  it('refuses a media part BY NAME rather than embedding the remaining text', async () => {
+  it('a VIDEO part VALIDATES now (the fused path exists); the unloaded provider refuses NOT_PREPARED', async () => {
     const error = await invoke('embeddinggemma2-onnx', {
-      items: [{ id: 'with-image', parts: [{ kind: 'text', text: 'caption' }, { kind: 'image', path: 'C:/photo.jpg' }] }],
+      items: [{ id: 'with-video', parts: [{ kind: 'text', text: 'caption' }, { kind: 'video', path: 'C:/clip.mp4', sampling: { mode: 'uniform', maxFrames: 8 } }] }],
       purpose: 'retrieval',
       role: 'document',
     })
-    // The failure mode this prevents: silently embedding the text and returning a vector the
-    // caller believes includes the image. That answer is plausible, so the caller cannot notice.
-    assert.match(error.message, /this build reads text and code parts only/)
-    assert.match(error.message, /"image" part is refused/)
+    // The part shape passes validation (the fused video path is reconstructed:
+    // sampler → per-frame video grid → fused scatter), so the honest refusal for
+    // a provider that was never loaded is the deployment-not-prepared one — the
+    // call fails for its own reason, never with an invented text-only vector.
+    assert.match(error.message, /the EmbeddingGemma 2 deployment is not prepared/)
+  })
+
+  it('refuses an IMAGE part when the vision group was not prepared, naming the group (MOD-02)', async (t) => {
+    // A LOADED provider is needed for the group refusal to be reachable (validation admits
+    // image parts now). The text session must therefore be real: the pinned backbone cache.
+    const cache = process.env.EMBEDDINGGEMMA_CACHE_DIR
+      ?? join(homedir(), '.cache', 'embeddinggemma-2', 'onnx-community', 'daa72c51243991dfcaf9f9137d2c573d8f7790c0')
+    if (!existsSync(join(cache, 'onnx', 'model.onnx_data'))) {
+      t.skip('the pinned text backbone cache is absent; the group-refusal test needs a real text session')
+      return
+    }
+    if (!runtimeResolves()) {
+      t.skip('the ONNX runtime packages do not resolve on this host')
+      return
+    }
+    const instance = await provider()
+    const assets = {
+      get: (id: string) => id === 'text-backbone' ? { path: cache, digest: 'sha256:test' } : undefined,
+      assetIds: ['text-backbone'] as readonly string[],
+    }
+    await instance.load({ assets, signal: new AbortController().signal })
+    try {
+      await assert.rejects(
+        instance.invoke({
+          implementationId: 'embeddinggemma2-onnx',
+          input: {
+            items: [{ id: 'with-image', parts: [{ kind: 'image', path: 'C:/photo.png' }] }],
+            purpose: 'retrieval',
+            role: 'document',
+          },
+          context: invocation(),
+        }),
+        /"vision-encoder" asset group was not prepared/,
+      )
+    } finally {
+      await instance.dispose('test end')
+    }
+  })
+
+  it('validates a media part structurally: bounded path and an audio range that is not inverted', async () => {
+    const noPath = await invoke('embeddinggemma2-onnx', {
+      items: [{ id: 'x', parts: [{ kind: 'image' }] }],
+      purpose: 'retrieval',
+      role: 'document',
+    })
+    assert.match(noPath.message, /"path"/)
+
+    const inverted = await invoke('embeddinggemma2-onnx', {
+      items: [{ id: 'x', parts: [{ kind: 'audio', path: 'C:/a.wav', range: { startSeconds: 5, endSeconds: 2 } }] }],
+      purpose: 'retrieval',
+      role: 'document',
+    })
+    assert.match(inverted.message, /endSeconds > startSeconds/)
   })
 
   it('rejects duplicate item ids and an unknown purpose/role pair before any model work', async () => {
@@ -561,6 +664,18 @@ describe('MOD-05/MOD-10/MOD-20 — a call fails for its own reason, never with a
     })
     // MOD-08: an over-context input is refused, not silently shortened.
     assert.match(longText.message, /over the 4096-character limit/)
+
+    // The part-count bound is behavioral too, not only a schema figure (the
+    // round-51 review's evidence nit: this path was previously untested).
+    const tooManyParts = await invoke('embeddinggemma2-onnx', {
+      items: [{
+        id: 'many-parts',
+        parts: Array.from({ length: CALL_LIMITS.maxPartsPerItem + 1 }, () => ({ kind: 'text', text: 'x' })),
+      }],
+      purpose: 'retrieval',
+      role: 'document',
+    })
+    assert.match(tooManyParts.message, /over the 16-part limit/)
   })
 
   it('bounds semantic_rank top_k by the candidate count', async () => {
@@ -572,17 +687,17 @@ describe('MOD-05/MOD-10/MOD-20 — a call fails for its own reason, never with a
     assert.match(error.message, /"top_k" 5 exceeds the 1 candidate\(s\) supplied/)
   })
 
-  it('accepts a well-formed similarity and rank call, and then refuses for the honest reason', async () => {
-    // Both shapes pass validation, so the failure that follows is the model, not the arguments —
-    // which is exactly the distinction the messages have to preserve.
+  it('accepts a well-formed similarity and rank call, and then refuses for the honest unprepared reason', async () => {
+    // Both shapes pass validation, so the failure that follows is the missing load, not the
+    // arguments — which is exactly the distinction the messages have to preserve.
     const similarity = await invoke('embeddinggemma2-similarity', { left: TEXT_ITEM, right: TEXT_ITEM })
-    assert.match(similarity.message, /semantic_similarity cannot run on this deployment/)
+    assert.match(similarity.message, /the EmbeddingGemma 2 deployment is not prepared/)
     const rank = await invoke('embeddinggemma2-rank', {
       query: TEXT_ITEM,
       candidates: [{ id: 'candidate-1', parts: [{ kind: 'text', text: 'other' }] }],
       top_k: 1,
     })
-    assert.match(rank.message, /semantic_rank cannot run on this deployment/)
+    assert.match(rank.message, /the EmbeddingGemma 2 deployment is not prepared/)
   })
 
   it('unloads and disposes without claiming work it never did', async () => {
@@ -625,9 +740,12 @@ describe('EXT-17 — the published entry behaves like the source it was built fr
       assert.equal(loaded.apiVersion, EXTENSION_API_VERSION)
       const instance = await activateExtension(loaded, context())
       const created = await instance.createProvider({ modelId: 'embeddinggemma-2', configuration: {} })
-      // The built artifact must be exactly as honest as the source: a stale or differently
-      // configured build that reported `ready` would be the one a user actually runs.
-      assert.equal((await created.inspect(new AbortController().signal)).readiness, 'unprepared')
+      // The built artifact must be exactly as honest as the source: a stale build that reported
+      // `ready` without a load, or `needs-preparation` on a host whose packages resolve, would
+      // be the one a user actually runs.
+      const readiness = (await created.inspect(new AbortController().signal)).readiness
+      if (runtimeResolves()) assert.equal(readiness, 'prepared-cold')
+      else assert.equal(readiness, 'needs-preparation')
       await instance.dispose('deactivate')
     },
   )

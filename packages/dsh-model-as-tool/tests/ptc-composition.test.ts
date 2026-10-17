@@ -26,7 +26,8 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { buildToolBindings, mountPtcRuntimeIfAbsent, PTC_SERVICE } from '../src/ptc-runtime.ts'
+import { buildToolBindings, mountPtcRuntimeIfAbsent, PTC_SERVICE, type PtcHostContext } from '../src/ptc-runtime.ts'
+import { createProgramRunner, serveProgram, type ProgramRuntime } from '../src/tool-mode-run.ts'
 import type { ToolBinding } from '../src/ptc-authority.ts'
 
 /** Resolve the DSH packages, or report that this checkout cannot run the slice. */
@@ -233,4 +234,59 @@ describe('slice 2 — REAL PTC composition', { skip: SKIP }, () => {
     assert.equal(result.value?.reached, true)
     assert.match(String(result.value?.message), /refused/)
   })
+
+  it('serves a REAL program through serveProgram, the tool_mode_run path (CODE-02)', async () => {
+    const { ctx, runtime } = await liveRuntime()
+    const { bindings, calls } = fixtureTools()
+    const runner = createProgramRunner({
+      context: ctx as unknown as PtcHostContext,
+      backend: loaded.backend,
+      grant: () => ['double_it', 'label_it'],
+      visible: () => ['double_it', 'label_it'],
+      resolve: name => bindings[name],
+      runtime: () => runtime as unknown as ProgramRuntime,
+      operatorGranted: () => true,
+    })
+
+    const report = await serveProgram({
+      description: 'compose two deterministic tools',
+      code: `
+        const first = await tools.double_it({ n: 21 });
+        const second = await tools.label_it({ value: first.value });
+        return { doubled: first.value, label: second.label };
+      `,
+      tools: ['double_it', 'label_it'],
+    }, runner, { receiptId: 'rcpt_composition', catalogRevision: '1' })
+
+    // THE SERVED PATH END TO END: the real backend ran the program, the two bindings
+    // were called through the authorized namespace, and the report carries the
+    // canonical value plus the real call count.
+    assert.deepEqual(report.result, { doubled: 42, label: 'large' })
+    assert.deepEqual(calls, ['double_it', 'label_it'])
+    assert.equal(report.meta.toolCalls, 2, 'the served path must count real binding calls')
+    assert.equal(report.meta.receiptId, 'rcpt_composition')
+    assert.equal(report.meta.catalogRevision, '1')
+    assert.ok(report.meta.elapsedMs >= 0)
+  })
+
+  it('refuses an input-bearing program through serveProgram (CODE-04)', async () => {
+    const { ctx, runtime } = await liveRuntime()
+    const { bindings } = fixtureTools()
+    const runner = createProgramRunner({
+      context: ctx as unknown as PtcHostContext,
+      backend: loaded.backend,
+      grant: () => ['double_it'],
+      visible: () => ['double_it'],
+      resolve: name => bindings[name],
+      runtime: () => runtime as unknown as ProgramRuntime,
+      operatorGranted: () => true,
+    })
+    await assert.rejects(
+      serveProgram({ description: 'probe', code: 'return input.n;', input: { n: 1 }, tools: ['double_it'] }, runner, {
+        receiptId: 'rcpt_input', catalogRevision: '1',
+      }),
+      /no structured-data path/,
+    )
+  })
 })
+

@@ -83,6 +83,35 @@ describe('CODE-03 — the bindable set is the INTERSECTION of grant and visibili
   })
 })
 
+describe('CODE-07 — composition and management bindings are never exposed to a program', () => {
+  for (const excluded of ['tool_mode_run', 'model_tools', 'tool_mode_list', 'tool_mode_describe']) {
+    it(`refuses ${excluded} even when granted and visible`, () => {
+      const { resolve } = resolverFor([excluded])
+      const decision = authorizeProgramTools(
+        { requested: [excluded] },
+        { granted: [excluded], visible: [excluded] },
+        resolve,
+      )
+      assert.equal(decision.ok, false, `${excluded} must never be a program binding`)
+      if (decision.ok) return
+      assert.equal(decision.rejections[0]?.reason, 'excluded')
+      assert.match(decision.rejections[0]?.remedy ?? '', /CODE-07/)
+    })
+  }
+
+  it('refuses the whole request when an excluded name is mixed with valid ones', () => {
+    const { resolve } = resolverFor(['fixture_echo', 'tool_mode_run'])
+    const decision = authorizeProgramTools(
+      { requested: ['fixture_echo', 'tool_mode_run'] },
+      { granted: ['fixture_echo', 'tool_mode_run'], visible: ['fixture_echo', 'tool_mode_run'] },
+      resolve,
+    )
+    assert.equal(decision.ok, false)
+    if (decision.ok) return
+    assert.equal(decision.rejections[0]?.reason, 'excluded')
+  })
+})
+
 describe('CODE-03 — a refusal is ALL OR NOTHING', () => {
   it('binds NOTHING when one requested name is refused', () => {
     const { resolve } = resolverFor(['fixture_echo'])

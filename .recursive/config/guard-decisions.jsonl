@@ -1,4 +1,3 @@
-{"at":"2026-10-14T01:51:47.075Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
 {"at":"2026-10-14T01:53:36.578Z","runId":"","tool":"write","kind":"allow","rule":"none"}
 {"at":"2026-10-14T01:53:39.426Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
 {"at":"2026-10-14T01:53:54.588Z","runId":"","tool":"memory_working","kind":"allow","rule":"none"}
@@ -498,3 +497,4 @@
 {"at":"2026-10-14T04:26:59.528Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
 {"at":"2026-10-14T04:29:11.173Z","runId":"","tool":"write","kind":"allow","rule":"none"}
 {"at":"2026-10-14T04:29:15.003Z","runId":"","tool":"pwsh","kind":"allow","rule":"none"}
+{"at":"2026-10-14T04:29:30.898Z","runId":"","tool":"memory_working","kind":"allow","rule":"none"}

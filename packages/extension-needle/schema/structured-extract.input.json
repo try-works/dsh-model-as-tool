@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://try-works.dev/tool-mode/extension-needle/structured-extract.input.schema.json",
   "title": "structured_extract input",
-  "description": "Input for structured_extract: the source text (inline or a host-authorized file) and the shape to extract into. Exactly one of `text` and `path` must be supplied; the two-source form exists so a caller can read a document the host already granted without this package ever opening a caller-supplied string itself.",
+  "description": "Input for structured_extract: the source text (inline or a host-authorized file) and the shape to extract into. Exactly one of `text` and `path` must be supplied; the two-source form exists so a caller can read a document the host already granted without this package ever opening a caller-supplied string itself. The exactly-one rule is a `oneOf` over the two required-key branches: a document carrying both satisfies BOTH branches and fails the `oneOf`, which is the same refusal the previous anyOf-plus-not formulation produced. Each branch restates its key as an empty property declaration so strict-mode compilers can see the required name is defined within the branch (no constraint is added).",
   "type": "object",
   "additionalProperties": false,
   "required": ["instruction", "schema"],
-  "anyOf": [
-    { "required": ["text"], "not": { "required": ["path"] } },
-    { "required": ["path"], "not": { "required": ["text"] } }
+  "oneOf": [
+    { "required": ["text"], "properties": { "text": {} } },
+    { "required": ["path"], "properties": { "path": {} } }
   ],
   "properties": {
     "text": {

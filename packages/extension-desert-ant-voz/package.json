@@ -9,11 +9,14 @@
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./tool-mode.extension.json": "./tool-mode.extension.json",
     "./package.json": "./package.json"
   },
   "files": [
     "lib",
     "tool-mode.extension.json",
+    "schemas",
+    "models.lock.json",
     "README.md"
   ],
   "toolMode": {

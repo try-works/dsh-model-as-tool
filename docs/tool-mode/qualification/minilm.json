@@ -1,0 +1,60 @@
+{
+  "schema": "tool-mode/qualification/1",
+  "generatedAt": "2026-10-17T16:45:59.717Z",
+  "host": {
+    "os": "win32",
+    "arch": "x64",
+    "node": "v24.11.0"
+  },
+  "note": "Real ONNX inference over the DIGEST-VERIFIED public artifacts: sentence-transformers/all-MiniLM-L6-v2 (text.embed, 384-d) and cross-encoder/ms-marco-MiniLM-L-6-v2 (text.rerank, ranking_logit). The tokenizer is the pure-TS WordPiece implementation, pinned against the HF reference ids by the package suites.",
+  "embed": {
+    "set": "minilm-l6-onnx",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "assets": [
+      {
+        "file": "onnx/model.onnx",
+        "bytes": 90405214,
+        "digest": "6fd5d72fe4589f189f8ebc006442dbb529bb7ce38f8082112682524616046452"
+      },
+      {
+        "file": "vocab.txt",
+        "bytes": 231508,
+        "digest": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
+      }
+    ],
+    "dimensions": 384,
+    "coldLoadMs": 1543,
+    "callMs": 125,
+    "identicalCosine": 1,
+    "unrelatedCosine": 0.07116609894023401
+  },
+  "rerank": {
+    "set": "minilm-rerank-onnx",
+    "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+    "assets": [
+      {
+        "file": "onnx/model.onnx",
+        "bytes": 91011230,
+        "digest": "5d3e70fd0c9ff14b9b5169a51e957b7a9c74897afd0a35ce4bd318150c1d4d4a"
+      },
+      {
+        "file": "vocab.txt",
+        "bytes": 231508,
+        "digest": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
+      }
+    ],
+    "coldLoadMs": 1111,
+    "callMs": 105,
+    "ranked": [
+      {
+        "id": "relevant",
+        "score": 8.50070571899414
+      },
+      {
+        "id": "unrelated",
+        "score": -11.024877548217773
+      }
+    ],
+    "scoreKind": "ranking_logit"
+  }
+}

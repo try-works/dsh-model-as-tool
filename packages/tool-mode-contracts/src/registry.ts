@@ -15,7 +15,11 @@
  * @module @try-works/tool-mode-contracts/registry
  */
 
-import { Ajv, type ValidateFunction } from 'ajv'
+// The explicit `.js` suffix is REQUIRED for packed installs: plain Node ESM does
+// not apply extension resolution to package subpaths, and the workspace's tsx
+// loader masks that (the round-67 packed-orchestration run caught exactly this
+// failure). extension-needle's validation.ts uses the same spelling.
+import Ajv2020, { type ValidateFunction } from 'ajv/dist/2020.js'
 import { TOOL_META_SCHEMA } from './meta.ts'
 
 /** One tool contract: the authored-once public identity (DECL-01). */
@@ -51,28 +55,72 @@ export class ContractError extends Error {
   }
 }
 
-/** A result that did not satisfy its contract's output schema. */
+/** A value that did not satisfy a declared schema. */
 export class ContractViolationError extends Error {
   override readonly name = 'ContractViolationError'
   readonly violations: readonly string[]
-  constructor(contract: string, violations: readonly string[]) {
-    super(`result violates the ${contract} contract: ${violations.join('; ')}`)
+  constructor(subject: string, violations: readonly string[]) {
+    super(`value violates the ${subject} schema: ${violations.join('; ')}`)
     this.violations = violations
   }
 }
 
 /**
- * The validator. `strict: false` because contract schemas use JSON Schema
- * keywords that Ajv's strict mode rejects when they are merely annotated, and
- * `allErrors` so a violation report lists every problem rather than the first.
+ * The validator, on the 2020-12 dialect.
+ *
+ * 2020-12 rather than draft-07 because extension-declared schemas ship as
+ * 2020-12 documents (`$schema`, `$id`, `$defs` — the extension-needle package's
+ * tools-plan/structured-extract schemas are the concrete case): a draft-07
+ * compiler cannot resolve `#/$defs/...` references, so those real packages
+ * could not be activated in the host. `strict: false` for the same reason as
+ * before — contract schemas annotate keywords Ajv's strict mode rejects when
+ * they are merely descriptive, and a strict-mode THROW on an annotation would
+ * refuse a schema that validates fine. A schema that does not COMPILE (an
+ * unresolvable `$ref`, a structurally broken keyword) still throws at
+ * registration, so a bad schema refuses loudly rather than being accepted.
+ * `allowUnionTypes` admits `type: ["number", "null"]`-style unions, which the
+ * shipped needle schemas use for nullable fields. `allErrors` keeps the
+ * violation report listing every problem rather than the first.
  */
-function createAjv(): Ajv {
-  return new Ajv({ allErrors: true, strict: false, allowUnionTypes: true })
+function createAjv(): Ajv2020 {
+  return new Ajv2020({ allErrors: true, strict: false, allowUnionTypes: true })
 }
 
 const ajv = createAjv()
 const outputValidators = new Map<string, ValidateFunction>()
 const inputValidators = new Map<string, ValidateFunction>()
+
+/**
+ * Validators for $id-bearing schemas, keyed by the id itself.
+ *
+ * Ajv registers a compiled schema under its `$id`, and compiling the same id a
+ * second time THROWS "already exists" — which would make re-activating an
+ * extension (or two tools sharing one declared schema file) fail on the second
+ * compile. Identical content re-compiles to the same validator; DIFFERENT
+ * content under one id is a refusal, because two schemas sharing an id is
+ * exactly the drift a caller must never silently inherit.
+ */
+const compiledById = new Map<string, { serialized: string; validate: ValidateFunction }>()
+
+/** Compile a schema, tolerating a repeat compile of identical $id content. */
+function compileTracked(schema: Record<string, unknown>): ValidateFunction {
+  const id = typeof schema.$id === 'string' ? schema.$id : undefined
+  if (id === undefined) return ajv.compile(schema)
+  const serialized = JSON.stringify(schema)
+  const cached = compiledById.get(id)
+  if (cached !== undefined) {
+    if (cached.serialized !== serialized) {
+      throw new ContractError(
+        'declared-schema',
+        [`a schema with $id ${JSON.stringify(id)} was already compiled from different content; two different schemas must not share an id`],
+      )
+    }
+    return cached.validate
+  }
+  const validate = ajv.compile(schema)
+  compiledById.set(id, { serialized, validate })
+  return validate
+}
 
 /** Render Ajv errors as stable, deduplicated strings. */
 function renderErrors(errors: ValidateFunction['errors']): string[] {
@@ -140,12 +188,12 @@ export function assertValidContract(contract: ToolContract): void {
 
   // Schemas must be compilable, or the contract is unenforceable.
   try {
-    inputValidators.set(contract.contract, ajv.compile(contract.inputSchema))
+    inputValidators.set(contract.contract, compileTracked(contract.inputSchema))
   } catch (error) {
     throw new ContractError(contract.contract, [`inputSchema does not compile: ${message(error)}`])
   }
   try {
-    outputValidators.set(contract.contract, ajv.compile(contract.outputSchema))
+    outputValidators.set(contract.contract, compileTracked(contract.outputSchema))
   } catch (error) {
     throw new ContractError(contract.contract, [`outputSchema does not compile: ${message(error)}`])
   }
@@ -184,6 +232,49 @@ export function assertValidOutput(contract: ToolContract, value: unknown): void 
 
 /** The meta envelope's own schema, exported for contract authors. */
 export { TOOL_META_SCHEMA }
+
+/**
+ * Compile an arbitrary JSON Schema once, for a host that serves manifest-declared
+ * tool schemas rather than registered contracts.
+ *
+ * Compiling at REGISTRATION (in the host's try/catch) means a malformed schema
+ * fails when the tool is registered, not on the first caller's event-loop tick —
+ * and it is never re-compiled per call, which a per-call text-keyed cache could
+ * not guarantee.
+ * @param schema - the JSON Schema to compile.
+ * @throws ContractError when the schema does not compile.
+ * @returns a validator whose violations are rendered by {@link assertAgainstSchema}.
+ */
+export function compileSchema(schema: Readonly<Record<string, unknown>>): (value: unknown) => readonly string[] {
+  let validate: ValidateFunction
+  try {
+    validate = compileTracked(schema as Record<string, unknown>)
+  } catch (error) {
+    throw new ContractError('declared-schema', [`schema does not compile: ${message(error)}`])
+  }
+  return value => (validate(value) ? [] : renderErrors(validate.errors))
+}
+
+/**
+ * Validate an arbitrary value against a compiled declared schema.
+ *
+ * The full-schema counterpart of {@link assertValidInput}/{@link assertValidOutput}:
+ * the projected advertisement the DSH registry validates is deliberately LOOSER
+ * (union members become `json`, unsupported keywords are dropped), so without this
+ * the dropped keywords are enforced nowhere for manifest-declared tools.
+ * @param subject - the tool or schema name used in the violation message.
+ * @param validate - the compiled validator, from {@link compileSchema}.
+ * @param value - the candidate value.
+ * @throws ContractViolationError listing every violation.
+ */
+export function assertAgainstSchema(
+  subject: string,
+  validate: (value: unknown) => readonly string[],
+  value: unknown,
+): void {
+  const violations = validate(value)
+  if (violations.length > 0) throw new ContractViolationError(subject, violations)
+}
 
 /** Best-effort message from an arbitrary thrown value. */
 function message(error: unknown): string {

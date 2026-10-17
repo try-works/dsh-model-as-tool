@@ -1,0 +1,37 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/extension-minilm-embed",
+  "version": "1.0.0",
+  "displayName": "MiniLM text_embed",
+  "description": "The legacy 384-dimensional MiniLM-L6 text embedding space (TOOL-04, BASE-12): mean pooling, L2 normalization, input order preserved. Stored 384-d vectors and indexes remain pinned to this space; the EmbeddingGemma 2 768-d space is a separate contract and the two are never mixed.",
+  "activation": { "policy": "operator", "deactivatable": true },
+  "runtimeApi": 1,
+  "compatibility": { "hostApi": "^1.1.0", "requiredFeatures": ["verified-assets-v1"] },
+  "execution": { "kind": "module", "entry": "./lib/index.js", "isolation": "managed-process" },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": false
+  },
+  "models": [
+    {
+      "id": "minilm-l6",
+      "assetSet": "minilm-l6-onnx",
+      "assetLock": "./models.lock.json",
+      "platforms": [{ "os": "win32", "arch": "x64", "accelerator": "cpu" }]
+    }
+  ],
+  "tools": [],
+  "implementations": [
+    {
+      "id": "minilm-l6-onnx",
+      "contractId": "text.embed",
+      "contractVersion": "1.0.0",
+      "modelId": "minilm-l6",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": []
+}

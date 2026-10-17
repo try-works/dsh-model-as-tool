@@ -38,7 +38,10 @@ function config(port = 0): HttpTransportConfig {
     maxBodyBytes: 1024 * 1024,
     allowedOrigins: [],
     // A static token so the negative authorization case has something to fail against.
-    auth: { kind: 'static-token', token: TOKEN },
+    auth: { scheme: 'static-token', token: TOKEN, clientId: 'live-test' },
+    // This file drives protocol conformance; the AT-12 rate limiter is the subject of
+    // mcp-rate-limit.test.ts.
+    rateLimit: false,
   } as HttpTransportConfig
 }
 
@@ -99,10 +102,11 @@ async function liveServer() {
  * POST one JSON-RPC body, returning the status and parsed JSON.
  *
  * THE HEADERS ARE THE POINT OF THIS FILE. The live server requires
- * `MCP-Protocol-Version` on every request and `Mcp-Name` on a named call, and answers
- * HTTP 400 with `headerMismatch` without them. The saved-fixture probe never caught that,
- * because the fixtures were produced by code that already knew to send them — which is
- * exactly the blind spot a hand-written client exposes and a fixture cannot.
+ * `MCP-Protocol-Version` AND `Mcp-Method` on every request, plus `Mcp-Name` on a
+ * named call, and answers HTTP 400 with `headerMismatch` without them. The
+ * saved-fixture probe never caught that, because the fixtures were produced by code
+ * that already knew to send them — which is exactly the blind spot a hand-written
+ * client exposes and a fixture cannot.
  */
 async function rpc(
   url: string,
@@ -112,6 +116,8 @@ async function rpc(
     readonly headers?: Record<string, string>
     /** Set false to OMIT the required version header, for the negative test. */
     readonly versionHeader?: boolean
+    /** Set false to OMIT the required method header, for the negative test. */
+    readonly methodHeader?: boolean
   } = {},
 ): Promise<{ status: number; headers: Headers; json: any }> {
   const headers: Record<string, string> = {
@@ -121,6 +127,10 @@ async function rpc(
   }
   if (options.versionHeader !== false) {
     headers['mcp-protocol-version'] = options.headers?.['mcp-protocol-version'] ?? PROTOCOL_VERSION
+  }
+  // `Mcp-Method` is required on EVERY request; it must name the body's method.
+  if (options.methodHeader !== false && body?.method !== undefined) {
+    headers['mcp-method'] = String(body.method)
   }
   // `Mcp-Name` is required only for a named call; sending it on a `tools/list` would be
   // wrong, and the server would reject a mismatched value.
@@ -192,7 +202,9 @@ describe('slice 1 — LIVE MCP conformance against the running server', () => {
         jsonrpc: '2.0', id: 11, method: 'initialize', params: { _meta: meta() },
       })
       assert.equal(response.json.error?.code, -32601)
-      assert.match(response.json.error.message, /unknown method "initialize"/)
+      // The rejection is the contract; the refusal vocabulary drifted as the method
+      // table tightened, so both phrasings are admitted rather than deleting the pin.
+      assert.match(response.json.error.message, /unknown method "initialize"|Method not found/)
     } finally {
       await endpoint.close()
     }
@@ -325,6 +337,22 @@ describe('slice 1 — LIVE MCP conformance against the running server', () => {
 })
 
 describe('P26-05 — the header contract, discovered by driving the LIVE server', () => {
+  it('REJECTS a request that omits Mcp-Method', async () => {
+    const { endpoint } = await liveServer()
+    try {
+      // 2026-07-28 made Mcp-Method REQUIRED on all requests; a client that never
+      // learned that is refused with the pinned HeaderMismatch vocabulary.
+      const response = await rpc(endpoint.url, {
+        jsonrpc: '2.0', id: 70, method: 'tools/list', params: { _meta: meta() },
+      }, { methodHeader: false })
+      assert.equal(response.status, 400)
+      assert.equal(response.json.error.code, -32020, 'the error is headerMismatch')
+      assert.match(response.json.error.message, /Mcp-Method header is required/)
+    } finally {
+      await endpoint.close()
+    }
+  })
+
   it('REJECTS a request that omits MCP-Protocol-Version', async () => {
     const { endpoint } = await liveServer()
     try {

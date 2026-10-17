@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "media_find_moments output",
+  "description": "Output for media_find_moments (MOD-13): window-level matches with honest source timestamps. `windowsEvaluated` names the exact number of windows scored; `sampledFrameTimestampsSeconds` is empty for audio and names the sampled frames for video (once the fused video path lands). No transcription happened: these are embedding-retrieval windows, not recognized speech.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["matches", "scoreKind", "localization", "embeddingSpaceId", "windowsEvaluated", "sampledFrameTimestampsSeconds"],
+  "properties": {
+    "matches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["startSeconds", "endSeconds", "score"],
+        "properties": {
+          "startSeconds": { "type": "number", "minimum": 0 },
+          "endSeconds": { "type": "number", "minimum": 0 },
+          "score": { "type": "number", "minimum": -1, "maximum": 1 }
+        }
+      }
+    },
+    "scoreKind": { "const": "cosine_similarity" },
+    "localization": { "const": "window_level" },
+    "embeddingSpaceId": { "type": "string" },
+    "windowsEvaluated": { "type": "integer", "minimum": 1 },
+    "sampledFrameTimestampsSeconds": { "type": "array", "items": { "type": "number" } },
+    "processing": { "type": "array", "items": { "type": "object" } },
+    "meta": { "type": "object" }
+  }
+}

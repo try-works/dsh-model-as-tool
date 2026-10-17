@@ -10,7 +10,8 @@
  */
 
 import { createRequire } from 'node:module'
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { Context } from '@deepseek-ai/cordis'
@@ -45,7 +46,12 @@ const ctx = new Context()
 await ctx.plugin(SystemPrompt)
 await ctx.plugin(ToolRuntime)
 await ctx.plugin(SkillRegistry)
-await ctx.plugin(plugin, {})
+// THE DURABLE STATE IS ISOLATED: a verification harness must never read or
+// write the developer's real ~/.dsh/model-as-tool/state.json — a persistent
+// "disabled" choice there would silently remove lang_detect from this boot,
+// exactly as it did for the packed harness (the round-67 regression).
+const stateDir = mkdtempSync(join(tmpdir(), 'verify-built-state-'))
+await ctx.plugin(plugin, { stateFile: join(stateDir, 'state.json') })
 
 const names = ctx.tools.schemas().map(schema => schema.name)
 console.log(`tools:      ${names.join(', ')}`)
@@ -82,4 +88,5 @@ console.log(`skills:     ${skills.map(skill => skill.name).join(', ')}`)
 if (!skills.some(skill => skill.name === 'desert-ant-tongue')) throw new Error('skill missing')
 
 await ctx.fiber.dispose()
+rmSync(stateDir, { recursive: true, force: true })
 console.log('\nOK — the built artifact loads through package main and works under plain Node.')

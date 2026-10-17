@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "text_title output",
+  "description": "The bounded title and one-sentence description (RCP-12). A refusal is a failure outcome, not a payload.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "description"],
+  "properties": {
+    "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 240 }
+  }
+}

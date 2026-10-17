@@ -228,8 +228,13 @@ describe('plugin — persistence across restarts', () => {
 
   it('applies a persisted enable even when it cannot run yet, without registering it', async () => {
     const stateFile = tempStateFile()
-    // A hand-written state naming a model this host cannot run.
-    writeFileSync(stateFile, JSON.stringify({ enabled: ['title'], disabled: [] }), 'utf8')
+    // Bootstrap the current era through the real startup hook. An unmarked
+    // hand-written file is legacy state whose enables require staging (BASE-10).
+    await mount({ stateFile })
+    // A current-era operator preference can predate an available route. The
+    // management enable action correctly refuses an unrunnable tool; the state
+    // store's remembered preference must nevertheless survive a later restart.
+    createFileStateStore(stateFile).write({ enabled: ['title'], disabled: [] })
     const ctx = await mount({ stateFile })
     assert.equal(hasTool(ctx, 'suggest_title'), false, 'an unrunnable model must not register a tool')
 

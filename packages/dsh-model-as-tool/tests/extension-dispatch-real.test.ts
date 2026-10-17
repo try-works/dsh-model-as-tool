@@ -17,7 +17,7 @@
 import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import AdmZip from 'adm-zip'
 
@@ -48,6 +48,17 @@ function packPackage(): { bytes: Uint8Array; sha512: string } {
   for (const relativePath of filesUnder(PACKAGE_DIR)) {
     zip.addFile(relativePath, readFileSync(join(PACKAGE_DIR, relativePath)))
   }
+  // EXT-09 (H1): an extension must run against the HOST-provided runtime SDK —
+  // the real package's dependency entry for the SDK is host-side concern, so the
+  // packed fixture ships the package with the SDK moved out of `dependencies`
+  // (the host runtime link replaces it). This mirrors the published artifact.
+  const packaged = JSON.parse(readFileSync(join(PACKAGE_DIR, 'package.json'), 'utf8')) as {
+    dependencies?: Record<string, unknown>
+    optionalDependencies?: Record<string, unknown>
+  }
+  delete packaged.dependencies?.['@try-works/tool-mode-extension-sdk']
+  if (Object.keys(packaged.dependencies ?? {}).length === 0) delete packaged.dependencies
+  zip.updateFile('package.json', Buffer.from(`${JSON.stringify(packaged, null, 2)}\n`))
   const bytes = new Uint8Array(zip.toBuffer())
   return { bytes, sha512: createHash('sha512').update(bytes).digest('hex') }
 }
@@ -61,8 +72,62 @@ async function installReal() {
     storeDir,
     expectedSha512: sha512,
     archive: createZipArchiveSource(() => bytes),
+    // EXT-09 (H1): the real package declares runtime dependencies, so the
+    // installer demands a graph. The suite performs NO network, so the resolver
+    // serves a stub tarball per declared name/range — the materialized graph is
+    // real (integrity-verified), only its CONTENT is a stub the tests never
+    // import.
+    dependencies: stubDependencyInstaller(),
   })
   return { storeDir, installed }
+}
+
+/** A no-network dependency installer: one stub tarball per declared dependency. */
+function stubDependencyInstaller() {
+  const stubs = new Map<string, { bytes: Uint8Array; sha512: string }>()
+  const stubFor = (name: string, range: string) => {
+    const key = `${name}@${range}`
+    const existing = stubs.get(key)
+    if (existing !== undefined) return existing
+    const zip = new AdmZip()
+    zip.addFile('package.json', JSON.stringify({ name, version: '1.0.0', main: 'index.js' }))
+    zip.addFile('index.js', 'module.exports = {}\n')
+    const bytes = new Uint8Array(zip.toBuffer())
+    const stub = { bytes, sha512: createHash('sha512').update(bytes).digest('hex') }
+    stubs.set(key, stub)
+    return stub
+  }
+  const archive = {
+    list: () => [] as unknown as ReturnType<ReturnType<typeof createZipArchiveSource>['list']>,
+    fetch: async (source: { kind: string; requested: string }) => {
+      const name = source.requested.split('--').slice(0, -1).join('--') || source.requested
+      const range = source.requested.split('--').pop() ?? '*'
+      return stubFor(name, range).bytes
+    },
+    extract: (_bytes: Uint8Array, destination: string, root: string) => {
+      const zip = new AdmZip(Buffer.from(_bytes))
+      for (const entry of zip.getEntries()) {
+        if (entry.isDirectory) continue
+        const target = join(destination, root.length > 0 && entry.entryName.startsWith(root) ? entry.entryName.slice(root.length + 1) : entry.entryName)
+        mkdirSync(join(target, '..'), { recursive: true })
+        writeFileSync(target, entry.getData())
+      }
+    },
+  }
+  return {
+    resolver: {
+      async resolve(name: string, range: string) {
+        const stub = stubFor(name, range)
+        return {
+          name,
+          version: '1.0.0',
+          tarball: { kind: 'local', requested: `${name}--${range}` },
+          integrity: stub.sha512,
+        }
+      },
+    },
+    archive,
+  }
 }
 
 describe('the dispatch chain resolves against a REAL shipped extension', () => {
@@ -73,8 +138,9 @@ describe('the dispatch chain resolves against a REAL shipped extension', () => {
     const discovery = discoverExtension(installed.installPath)
     // A shipped package must declare every licence layer; a gap here is a package defect.
     assert.deepEqual([...discovery.licenseGaps], [])
-    assert.equal(discovery.manifest.tools.length, 3)
-    assert.equal(discovery.manifest.implementations.length, 3)
+    // Six tools since H3/H4: the three core tools plus classify/deduplicate/moments.
+    assert.equal(discovery.manifest.tools.length, 6)
+    assert.equal(discovery.manifest.implementations.length, 6)
   })
 
   it('resolves ALL THREE tools through contract to implementation', async () => {

@@ -106,6 +106,15 @@ export interface InvocationAccounting {
   readonly timingSource: 'measured' | 'reported-by-implementation'
   /** The runtime the measurement belongs to. */
   readonly measuredOn: MeasurementContext
+  /**
+   * The CALLER'S grant identity, present only for external MCP calls (SEC-04).
+   *
+   * Identity, never payload: the operator can tell WHICH client called, while the
+   * record still has no field that can hold request or response content.
+   */
+  readonly grantId?: string
+  /** The authenticated client identity, present with {@link grantId}. */
+  readonly clientId?: string
 }
 
 /**
@@ -211,6 +220,9 @@ export function accountInvocation(request: {
   readonly output?: unknown
   readonly assetBytes?: number
   readonly engineVersion: string
+  /** The external caller's grant identity, when the call was external (SEC-04). */
+  readonly grantId?: string
+  readonly clientId?: string
 }): InvocationAccounting {
   return {
     receiptId: request.receiptId,
@@ -226,6 +238,9 @@ export function accountInvocation(request: {
     reason: request.reason ?? null,
     timingSource: 'measured',
     measuredOn: measurementContext(request.engineVersion),
+    ...request.grantId === undefined
+      ? {}
+      : { grantId: request.grantId, ...request.clientId === undefined ? {} : { clientId: request.clientId } },
   }
 }
 

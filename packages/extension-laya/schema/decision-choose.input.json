@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["prompt", "options"],
+  "properties": {
+    "prompt": { "type": "string", "minLength": 1, "maxLength": 4096, "description": "The decision prompt." },
+    "options": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 32,
+      "items": { "type": "string", "minLength": 1, "maxLength": 512 },
+      "uniqueItems": true,
+      "description": "The mutually exclusive options to choose from; duplicate labels are refused."
+    },
+    "allow_abstain": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the model's act/no-act gate may abstain instead of forcing a choice."
+    }
+  }
+}

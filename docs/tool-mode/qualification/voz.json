@@ -1,0 +1,357 @@
+{
+  "model": {
+    "id": "voz",
+    "package": "@desert-ant-labs/voz",
+    "version": "3.6.0",
+    "engine": "ONNX Runtime (onnxruntime-node 1.30.0)",
+    "platform": {
+      "os": "win32",
+      "arch": "x64",
+      "accelerator": "cpu"
+    },
+    "extension": "@try-works/extension-desert-ant-voz",
+    "extensionVersion": "0.1.0",
+    "extensionEntry": "D:\\DEV\\dsh-model-as-tool\\packages\\extension-desert-ant-voz\\lib\\index.js",
+    "cache": "C:\\Users\\erikb\\.cache\\desert-ant-models",
+    "cacheRevision": "main"
+  },
+  "weights": {
+    "note": "The files the vendor package actually loaded, DISCOVERED and hashed at qualification time from its legacy vendor-managed cache. These hashes record what ran — they are NOT an immutable pin: the cache is written by @desert-ant-labs/voz itself and may change between runs, and the extension's models.lock.json declares no asset list for it. A re-run re-measures; nothing here is trusted across runs.",
+    "files": [
+      {
+        "file": "encoder.onnx.data",
+        "bytes": 348981248,
+        "sha256": "323282eb1c182d24af086e3818029b763d001bf18b31c8e4b2542e8d553b8eab"
+      },
+      {
+        "file": "decoder.webgpu.onnx",
+        "bytes": 24472430,
+        "sha256": "c07e489aac6f5623ef418ede8bcee2bad14c59fd74f746d26ffa0fde3cadc2cb"
+      },
+      {
+        "file": "embedding.f16",
+        "bytes": 10487040,
+        "sha256": "3173388aaf6b5b4ae292d8777940bb8fb5c7c02e30adf708b9dde4d909c2000f"
+      },
+      {
+        "file": "encoder.onnx",
+        "bytes": 813056,
+        "sha256": "6c0df35dea7cb88617f81412ebb752a0c5864c5421c97a250733a8f5e0453252"
+      },
+      {
+        "file": "vocab.json",
+        "bytes": 78654,
+        "sha256": "3eb2f73e8853dce5156c2ed97c0b1bb84eb4ebd201eb1761d15977fc1ea31490"
+      },
+      {
+        "file": "meta.json",
+        "bytes": 539,
+        "sha256": "2fb6b111dcf4f2477d7ff7699b2374c5f7194ae5fa20ef2a06f121c243119a37"
+      }
+    ]
+  },
+  "load": {
+    "freshProcessCachedLoadMs": 14932.603,
+    "firstInProcessLoadMs": 15983.2712,
+    "sameProcessReloadMs": 17596.9609,
+    "weightsState": "cached on disk (vendor-managed cache); no cold-disk figure is claimed — producing one would require deleting the cache"
+  },
+  "provenance": {
+    "recordings": "SYNTHESIZED SPEECH (Windows System.Speech), not a real-speaker corpus",
+    "engine": "System.Speech (Windows SAPI)",
+    "synthesizer": {
+      "script": "scripts/synthesize-voz-utterances.ps1",
+      "sha256": "27f02892c39be31a8f5856acb97d09f16960f281e23cf369643131fd50b0489f"
+    },
+    "note": "The real-speaker corpus clause of the STT qualification remains an honest recorded remainder; this run proves the real-engine smoke qualification only."
+  },
+  "voices": {
+    "english": {
+      "culture": "en-US",
+      "voice": "Microsoft David Desktop",
+      "utterance": "The quick brown fox jumps over the lazy dog.",
+      "substituted": false,
+      "note": ""
+    },
+    "engine": "System.Speech (Windows SAPI)",
+    "german": {
+      "culture": "en-US",
+      "voice": "Microsoft David Desktop",
+      "utterance": "Das ist ein Test.",
+      "substituted": true,
+      "note": "no German voice is installed; the German utterance was synthesized with the default voice, so its transcript assertion is recorded, not judged"
+    }
+  },
+  "utterances": [
+    {
+      "id": "english",
+      "utterance": "The quick brown fox jumps over the lazy dog.",
+      "wavBytes": 148836,
+      "wavSha256": "4d86a12c1cc8542061574feba6bbbe10be9c11e2a465538903e0293a6ba27c1d",
+      "audioSeconds": 3.373922902494331,
+      "transcript": "The quick brown fox jumps over the lazy dog.",
+      "wordCount": 9,
+      "words": [
+        {
+          "text": "The",
+          "start": 0,
+          "end": 0.16
+        },
+        {
+          "text": "quick",
+          "start": 0.16,
+          "end": 0.42
+        },
+        {
+          "text": "brown",
+          "start": 0.48,
+          "end": 0.83
+        },
+        {
+          "text": "fox",
+          "start": 0.88,
+          "end": 1.15
+        },
+        {
+          "text": "jumps",
+          "start": 1.2,
+          "end": 1.52
+        },
+        {
+          "text": "over",
+          "start": 1.52,
+          "end": 1.68
+        },
+        {
+          "text": "the",
+          "start": 1.68,
+          "end": 1.92
+        },
+        {
+          "text": "lazy",
+          "start": 1.92,
+          "end": 2.47
+        },
+        {
+          "text": "dog.",
+          "start": 2.48,
+          "end": 3.373922902494331
+        }
+      ],
+      "transcribeMs": 6032.7861,
+      "vendorRealtimeFactor": {
+        "value": 0.5607317364317148,
+        "source": "reported by @desert-ant-labs/voz"
+      },
+      "scriptMeasured": {
+        "audioSeconds": 3.373922902494331,
+        "wallSeconds": 6.0327861,
+        "ratioAudioToWall": 0.5592644669590277,
+        "ratioWallToAudio": 1.7880628201492035
+      },
+      "assertion": {
+        "expected": "the transcript contains \"quick brown fox\"",
+        "pass": true,
+        "judged": true,
+        "note": ""
+      }
+    },
+    {
+      "id": "german",
+      "utterance": "Das ist ein Test.",
+      "wavBytes": 90638,
+      "wavSha256": "407642d5276021ff63870bdf56a3469f127d88cb534211ca5e2ab127692264f8",
+      "audioSeconds": 2.0542403628117913,
+      "transcript": "Das ist ein Test.",
+      "wordCount": 4,
+      "words": [
+        {
+          "text": "Das",
+          "start": 0,
+          "end": 0.32
+        },
+        {
+          "text": "ist",
+          "start": 0.48,
+          "end": 0.8
+        },
+        {
+          "text": "ein",
+          "start": 0.8,
+          "end": 1.03
+        },
+        {
+          "text": "Test.",
+          "start": 1.04,
+          "end": 1.18
+        }
+      ],
+      "transcribeMs": 5764.1096,
+      "vendorRealtimeFactor": {
+        "value": 0.3574456882393075,
+        "source": "reported by @desert-ant-labs/voz"
+      },
+      "scriptMeasured": {
+        "audioSeconds": 2.0542403628117913,
+        "wallSeconds": 5.764109599999999,
+        "ratioAudioToWall": 0.3563846813065094,
+        "ratioWallToAudio": 2.8059567440833626
+      },
+      "assertion": {
+        "expected": "the transcript contains \"Das ist ein Test\"",
+        "pass": null,
+        "judged": false,
+        "note": "not judged: no German voice is installed; the German utterance was synthesized with the default voice, so its transcript assertion is recorded, not judged"
+      }
+    },
+    {
+      "id": "silence",
+      "utterance": "(synthesized silence)",
+      "wavBytes": 38444,
+      "wavSha256": "7ba33e43781d9c8216ef89e004f4c275af2b0e74970b8e69377921ec5e5321f1",
+      "audioSeconds": 1.2,
+      "transcript": "",
+      "wordCount": 0,
+      "words": [],
+      "transcribeMs": 5345.9339,
+      "vendorRealtimeFactor": {
+        "value": 0.22501406571277477,
+        "source": "reported by @desert-ant-labs/voz"
+      },
+      "scriptMeasured": {
+        "audioSeconds": 1.2,
+        "wallSeconds": 5.3459339,
+        "ratioAudioToWall": 0.2244696665628432,
+        "ratioWallToAudio": 4.454944916666667
+      },
+      "assertion": {
+        "expected": "the transcript is empty (silence)",
+        "pass": true,
+        "judged": true,
+        "note": ""
+      }
+    }
+  ],
+  "judged": {
+    "judgedCount": 2,
+    "unjudgedCount": 1
+  },
+  "verdict": "smoke-partial",
+  "verdictNote": "A SMOKE qualification over SYSTEM-SYNTHESIZED speech, never full conformance: it proves the real engine runs and the assertions pass on a deterministic corpus. The real-speaker-corpus clause remains a recorded remainder, and \"smoke-pass\"/\"smoke-partial\" is deliberately weaker than any conformance claim.",
+  "recordedAt": "2026-10-16T12:41:20.306Z",
+  "realCorpus": {
+    "corpus": {
+      "identity": "Wikimedia Commons spoken-word recordings (CC0)",
+      "note": "A bounded five-clip real-speaker sample. The PREFERRED clip<->sentence corpus (Mozilla Common Voice, CC0) is recorded as unavailable: the datasets-server rows API answers HTTP 401 to anonymous callers (mozilla-foundation/common_voice_16_1, 17_0, 18_0, 19_0 all probed), and no bounded anonymous mirror was reachable from this machine. This section is real-speaker evidence, not the clip<->sentence corpus the STT clause prefers.",
+      "commonVoiceProbe": {
+        "status": "blocked",
+        "reason": "HTTP 401 Unauthorized for anonymous callers on the HF datasets-server rows API",
+        "probedAt": "2026-10-17T19:23:21.610Z"
+      }
+    },
+    "clips": [
+      {
+        "id": "imf-spoken-word",
+        "page": "https://commons.wikimedia.org/wiki/File:IMF_Spoken_Word.ogg",
+        "audioUrl": "https://upload.wikimedia.org/wikipedia/commons/5/54/IMF_Spoken_Word.ogg",
+        "licence": "CC0",
+        "sourceFileSha256": "e7a94b9e6431bb9a4575ff6bde47ba844faddaff270f250b6b0ae9f014257eb9",
+        "wavSha256": "cc687516a4b57c8c52f01d42177d6db9bf72692d7ba6d8fe1dfdbf6f11e472d7",
+        "wavBytes": 2336934,
+        "transcript": "The IMF and World Bank. Can you help us with your advice and power? Sure, but there's a cash free trade. But it's not a fair trade. Dollar dollar bills all. But look at those bodies fall. They aren't numbers on a spreadsheet. They're people made of blood and meat, denied clean water, and denied medical attention. These struggling countries are stuck in a global economic detention. That is the result of the IMF's bad intentions. Not to mention forty two percent of World Bank employees thought that the people they were helping thought vaccines were risky, but in reality only eleven percent of Nairobians thought that. Asians trapped in globalization, open your eyes, get the realization that we have to stop this exploitation. They are pushing for private industrialization, but the government can't afford the infrastructure to sustain its population. We can't give loans and we can't keep up this lending because it keeps hurting countries as they're spending to pay us back. Profiting off of the suffering is wrong, but a catch-free loan with no interest can help make the world's economy strong. Thank you",
+        "wordCount": 187,
+        "transcribeMs": 24198.4949
+      },
+      {
+        "id": "aids-prevention-s0",
+        "page": "https://commons.wikimedia.org/wiki/File:AIDS_English_Spoken_Word_Article_Section_5_Prevention.ogg",
+        "audioUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f9/AIDS_English_Spoken_Word_Article_Section_5_Prevention.ogg",
+        "licence": "CC0",
+        "sourceFileSha256": "55c70fdb029dde7d5ad6e49457db833eaa0dc746d99c1bae416054890f6c5cfe",
+        "wavSha256": "d6b25a6a328079bbfa30b35f9fe3e8f7ed91d7fb9a4067aab1e48cef8c5d8740",
+        "wavBytes": 384078,
+        "transcript": "Section 5. Prevention. The three main transmission routes of HIV are sexual contact, exposure to",
+        "wordCount": 15,
+        "transcribeMs": 6410.4128
+      },
+      {
+        "id": "aids-prevention-s60",
+        "page": "https://commons.wikimedia.org/wiki/File:AIDS_English_Spoken_Word_Article_Section_5_Prevention.ogg",
+        "audioUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f9/AIDS_English_Spoken_Word_Article_Section_5_Prevention.ogg",
+        "licence": "CC0",
+        "sourceFileSha256": "55c70fdb029dde7d5ad6e49457db833eaa0dc746d99c1bae416054890f6c5cfe",
+        "wavSha256": "0ebedb6843153339beeff278aa2a42fba659abb5e2c826e3f685379e1d29085c",
+        "wavBytes": 384078,
+        "transcript": "During a sexual act, only male or female condoms can reduce the risk of infection with HIV and other STDs. The best evidence to date indicates that typical condom use reduces the risk of heterosexual HIV",
+        "wordCount": 36,
+        "transcribeMs": 7252.5114
+      },
+      {
+        "id": "aids-prevention-s120",
+        "page": "https://commons.wikimedia.org/wiki/File:AIDS_English_Spoken_Word_Article_Section_5_Prevention.ogg",
+        "audioUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f9/AIDS_English_Spoken_Word_Article_Section_5_Prevention.ogg",
+        "licence": "CC0",
+        "sourceFileSha256": "55c70fdb029dde7d5ad6e49457db833eaa0dc746d99c1bae416054890f6c5cfe",
+        "wavSha256": "9713926336ec7c3a223b745c989c6165adb34e9ed43b822f41740e332d0f77d2",
+        "wavBytes": 384078,
+        "transcript": "Ring-shaped opening with an inner ring designed to be inserted into the vagina, keeping the condom in place. Inserting the female condom requires squeezing this ring. Female condoms have been shown to be an important HIV",
+        "wordCount": 36,
+        "transcribeMs": 7677.2187
+      },
+      {
+        "id": "aids-prevention-s180",
+        "page": "https://commons.wikimedia.org/wiki/File:AIDS_English_Spoken_Word_Article_Section_5_Prevention.ogg",
+        "audioUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f9/AIDS_English_Spoken_Word_Article_Section_5_Prevention.ogg",
+        "licence": "CC0",
+        "sourceFileSha256": "55c70fdb029dde7d5ad6e49457db833eaa0dc746d99c1bae416054890f6c5cfe",
+        "wavSha256": "0a0ca10e8e7442698bd40b14e6ac5c94a42aab48a7876964cf4d2bfc509c44db",
+        "wavBytes": 384078,
+        "transcript": "Male circumcision lowers the risk of HIV infection among heterosexual men by up to 60%. It is expected that this procedure will be actively promoted in many of the countries affected by HIV",
+        "wordCount": 33,
+        "transcribeMs": 7848.7559
+      }
+    ],
+    "judgements": [
+      {
+        "clip": "imf-spoken-word",
+        "judged": true,
+        "pass": true,
+        "ratio": 0.6666666666666666,
+        "note": "contains-check against the embedded transcript (2/3 content words)"
+      },
+      {
+        "clip": "aids-prevention-s0",
+        "judged": false,
+        "pass": null,
+        "ratio": 0,
+        "note": "fuzzy word-membership against the Wikipedia AIDS Prevention section lead (0/9); recorded, not judged — the slice has no per-clip transcript"
+      },
+      {
+        "clip": "aids-prevention-s60",
+        "judged": false,
+        "pass": null,
+        "ratio": 0.043478260869565216,
+        "note": "fuzzy word-membership against the Wikipedia AIDS Prevention section lead (1/23); recorded, not judged — the slice has no per-clip transcript"
+      },
+      {
+        "clip": "aids-prevention-s120",
+        "judged": false,
+        "pass": null,
+        "ratio": 0,
+        "note": "fuzzy word-membership against the Wikipedia AIDS Prevention section lead (0/25); recorded, not judged — the slice has no per-clip transcript"
+      },
+      {
+        "clip": "aids-prevention-s180",
+        "judged": false,
+        "pass": null,
+        "ratio": 0.05555555555555555,
+        "note": "fuzzy word-membership against the Wikipedia AIDS Prevention section lead (1/18); recorded, not judged — the slice has no per-clip transcript"
+      }
+    ],
+    "imfTranscript": "The IMF. and World Bank.",
+    "aidsPreventionLead": "The human immunodeficiency virus (HIV) is a retrovirus that attacks the immune system.",
+    "verdict": "real-speaker-partial",
+    "verdictNote": "Five real CC0 speaker clips ran through the REAL provider. Exactly one (IMF) is judged — against its own embedded transcript; the four AIDS slices are recorded with fuzzy word-membership, not judged, because no per-clip transcript exists. \"real-speaker-partial\" deliberately stops short of any conformance claim.",
+    "recordedAt": "2026-10-17T19:23:21.612Z"
+  }
+}

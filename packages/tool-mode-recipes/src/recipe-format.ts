@@ -133,6 +133,7 @@ const INPUT_KEYS: readonly string[] = [
   'default',
   'mediaTypes',
   'maxBytes',
+  'jsonSerialized',
 ]
 
 /** The input kinds a recipe may declare. */
@@ -171,6 +172,12 @@ export interface RecipeInputDeclaration {
   readonly mediaTypes?: readonly string[]
   /** Maximum bytes of one image, for `image`. */
   readonly maxBytes?: number
+  /**
+   * Set only by a CANONICAL RCP-02 `inputBindings` entry of kind `"json"`: the
+   * caller supplies a data-only object or array, which is JSON-serialized into
+   * the bound string (RCP-03's "JSON serialization" binding).
+   */
+  readonly jsonSerialized?: true
 }
 
 /** The recipe's declared input map, keyed by input name. */
@@ -218,6 +225,18 @@ export interface RecipeManifest {
   readonly imageInputs: { readonly max: number }
   /** Recording and destination declarations. */
   readonly policy: RecipePolicy
+  /**
+   * Present only when a CANONICAL recipe selects `approved-profile` (RCP-05):
+   * the logical profile name the operator binds; unresolved bindings keep the
+   * tool unavailable with `EXECUTOR_NOT_CONFIGURED`.
+   */
+  readonly modelSelection?: { readonly strategy: 'approved-profile'; readonly profile: string }
+  /**
+   * Present only when a CANONICAL recipe declares `response` (RCP-04). `json`
+   * mode is prompt-enforced and locally validated in this build — no provider
+   * structured-output negotiation — which the describe metadata discloses.
+   */
+  readonly response?: { readonly mode: 'text' | 'json'; readonly field: string }
 }
 
 /** Errors this format reports, using RCP-11's vocabulary where it has a code. */
@@ -464,7 +483,19 @@ function parseInputDeclaration(
     default?: string | number | boolean
     mediaTypes?: readonly string[]
     maxBytes?: number
+    jsonSerialized?: true
   } = { type, required }
+
+  // A canonical `inputBindings` kind "json" binding arrives as a string
+  // declaration carrying this marker; it is read through so the canonical
+  // round trip stays lossless.
+  if (raw['jsonSerialized'] !== undefined) {
+    if (raw['jsonSerialized'] !== true || type !== 'string') {
+      errors.push(formatRecipeError('INVALID_RECIPE', `${path}.jsonSerialized must be true and only applies to a string binding`))
+    } else {
+      declaration.jsonSerialized = true
+    }
+  }
 
   if (raw['description'] !== undefined) {
     const description = readNonEmptyString(raw['description'], `${path}.description`, errors)
@@ -586,6 +617,325 @@ function placeholdersIn(template: string): string[] {
 }
 
 /**
+ * Normalize a CANONICAL RCP-02 document into the legacy raw shape the parser
+ * below reads, collecting every canonical-key violation as a named error.
+ *
+ * The mapping is: `instructions`→`promptTemplate`; `inputBindings`→`inputs`
+ * (pointer→name, kind text|image|json, required, label→description);
+ * `limits.maxOutputTokens`→`maxOutputTokens`; `limits.maxImages`→
+ * `imageInputs.max`; `policy` defaults to `{record:true, allowRemote:true}`
+ * (recording defaults ON per HLM-09). `modelSelection.strategy:"caller-model"`
+ * is the default and is validated then dropped; `"approved-profile"` is kept.
+ * `context` must be `{inheritConversation:false, includeTools:false}` — the
+ * "take the entire conversation" flag is not supported in this release
+ * (HLM-05) and is refused. `response` is validated and kept. `schemaVersion`
+ * and `kind:"harness-model"` are constants. `limits.timeoutMs`,
+ * `maxInputTextBytes`, `maxAttempts`, `repairAttempts` are validated and
+ * dropped: the broker enforces the RES-10 ceilings and the caller owns the
+ * wall-clock deadline (RES-10's 60 s figure is the caller's to pass).
+ *
+ * @param raw - the decoded recipe document.
+ * @param errors - the error sink.
+ * @returns the legacy-shaped document plus the canonical-only extras, or
+ * @param raw - the decoded recipe document.
+ * @param errors - the error sink.
+ * @returns the legacy-shaped document plus the canonical-only extras.
+ */
+function normalizeRecipeDocument(
+  raw: Record<string, unknown>,
+  errors: string[],
+): { normalized: Record<string, unknown>; extras: {
+  readonly modelSelection?: { readonly strategy: 'approved-profile'; readonly profile: string }
+  readonly response?: { readonly mode: 'text' | 'json'; readonly field: string }
+} } {
+  const normalized: Record<string, unknown> = {}
+  const extras: {
+    modelSelection?: { readonly strategy: 'approved-profile'; readonly profile: string }
+    response?: { readonly mode: 'text' | 'json'; readonly field: string }
+  } = {}
+
+  // Every canonical sub-object is CLOSED: unknown keys are refused, and the
+  // forbidden/reserved names are refused by name — nothing is silently dropped.
+  const refuseUnsafeKeys = (container: Record<string, unknown>, path: string, allowed: readonly string[]): void => {
+    for (const key of Object.keys(container)) {
+      if (allowed.includes(key)) continue
+      if (FORBIDDEN_RECIPE_KEYS.includes(key)) {
+        errors.push(formatRecipeError(
+          'INVALID_RECIPE',
+          `${path}.${key} is refused by name. A recipe is DATA, not a program: it cannot supply tools, messages, `
+          + 'conversation history, attachments, memory or skills (HLM-05, HLM-06)',
+        ))
+      } else if (RESERVED_RECIPE_KEYS.includes(key)) {
+        errors.push(formatRecipeError('INVALID_RECIPE', `${path}.${key} is a reserved prototype member and is refused by name (RCP-03)`))
+      } else {
+        errors.push(unknownKeyError(path, key, allowed))
+      }
+    }
+  }
+
+  // Constants: schemaVersion is accepted and pinned; kind must be harness-model.
+  if (raw['schemaVersion'] !== undefined) {
+    if (typeof raw['schemaVersion'] !== 'string' || raw['schemaVersion'].length === 0) {
+      errors.push(formatRecipeError('INVALID_RECIPE', 'schemaVersion must be a version string (for example "1.0.0")'))
+    }
+  }
+  if (raw['kind'] !== undefined && raw['kind'] !== 'harness-model') {
+    errors.push(formatRecipeError('INVALID_RECIPE', `kind must be "harness-model" when declared; received ${describeKind(raw['kind'])}`))
+  }
+
+  for (const key of ['id', 'version', 'description', 'tool']) {
+    if (raw[key] !== undefined) normalized[key] = raw[key]
+  }
+
+  // --- instructions -----------------------------------------------------------
+  const instructions = raw['instructions']
+  if (typeof instructions !== 'string' || instructions.length === 0) {
+    errors.push(formatRecipeError('INVALID_RECIPE', `instructions must be a non-empty string; received ${describeKind(instructions)}`))
+  }
+
+  // --- modelSelection (RCP-05) ------------------------------------------------
+  const modelSelection = raw['modelSelection']
+  const requires: { inputModalities: string[]; outputModalities: string[] } = { inputModalities: [], outputModalities: [] }
+  let strategy: string | undefined
+  if (!isPlainObject(modelSelection)) {
+    errors.push(formatRecipeError('INVALID_RECIPE', `modelSelection must be an object carrying "strategy" and "requires"; received ${describeKind(modelSelection)}`))
+  } else {
+    refuseUnsafeKeys(modelSelection, 'modelSelection', ['strategy', 'requires', 'profile'])
+    strategy = typeof modelSelection['strategy'] === 'string' ? modelSelection['strategy'] : undefined
+    if (strategy !== 'caller-model' && strategy !== 'approved-profile') {
+      errors.push(formatRecipeError(
+        'INVALID_RECIPE',
+        `modelSelection.strategy must be "caller-model" or "approved-profile"; received ${describeKind(modelSelection['strategy'])}`,
+      ))
+    }
+    const rawRequires = modelSelection['requires']
+    if (!isPlainObject(rawRequires)) {
+      errors.push(formatRecipeError('INVALID_RECIPE', 'modelSelection.requires must carry inputModalities and outputModalities'))
+    } else {
+      refuseUnsafeKeys(rawRequires, 'modelSelection.requires', ['inputModalities', 'outputModalities'])
+      for (const [modalityKey, destination] of [['inputModalities', requires.inputModalities], ['outputModalities', requires.outputModalities]] as const) {
+        const value = rawRequires[modalityKey]
+        if (!Array.isArray(value) || value.length === 0 || !value.every(entry =>
+          entry === 'text' || entry === 'image' || entry === 'audio' || entry === 'video')) {
+          errors.push(formatRecipeError(
+            'INVALID_RECIPE',
+            `modelSelection.requires.${modalityKey} must be a non-empty array of the known modalities (text, image, audio, video); received ${describeKind(value)}`,
+          ))
+        } else {
+          for (const entry of value) destination.push(entry as string)
+        }
+      }
+    }
+    const profile = modelSelection['profile']
+    if (strategy === 'approved-profile') {
+      if (typeof profile !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(profile)) {
+        errors.push(formatRecipeError(
+          'INVALID_RECIPE',
+          'modelSelection.strategy "approved-profile" requires a profile name of letters, digits, dot, underscore or dash',
+        ))
+      } else {
+        extras.modelSelection = { strategy: 'approved-profile', profile }
+      }
+    } else if (profile !== undefined) {
+      errors.push(formatRecipeError('INVALID_RECIPE', 'modelSelection.profile is only valid with strategy "approved-profile"'))
+    }
+  }
+
+  // --- context (HLM-05's frozen invariants) ------------------------------------
+  const context = raw['context']
+  if (context !== undefined) {
+    if (!isPlainObject(context)) {
+      errors.push(formatRecipeError('INVALID_RECIPE', `context must be the object {inheritConversation:false, includeTools:false}; received ${describeKind(context)}`))
+    } else {
+      refuseUnsafeKeys(context, 'context', ['inheritConversation', 'includeTools'])
+      if (context['inheritConversation'] !== false
+        || context['includeTools'] !== false) {
+        errors.push(formatRecipeError(
+          'INVALID_RECIPE',
+          'context must be exactly {inheritConversation:false, includeTools:false}: a flag meaning "take the entire '
+          + 'conversation" is not supported in this release (HLM-05)',
+        ))
+      }
+    }
+  }
+
+  // --- response (RCP-04) -------------------------------------------------------
+  const response = raw['response']
+  if (response !== undefined) {
+    if (!isPlainObject(response)) {
+      errors.push(formatRecipeError('INVALID_RECIPE', `response must be an object carrying "mode" and "field"; received ${describeKind(response)}`))
+    } else {
+      refuseUnsafeKeys(response, 'response', ['mode', 'field'])
+      const mode = response['mode']
+      const field = response['field']
+      if (mode !== 'text' && mode !== 'json') {
+        errors.push(formatRecipeError('INVALID_RECIPE', `response.mode must be "text" or "json"; received ${describeKind(mode)}`))
+      }
+      if (typeof field !== 'string' || field.length === 0) {
+        errors.push(formatRecipeError('INVALID_RECIPE', 'response.field must be a non-empty payload field name'))
+      }
+      if (mode === 'text' || mode === 'json') {
+        if (typeof field === 'string' && field.length > 0) {
+          extras.response = { mode, field }
+        }
+      }
+    }
+  }
+
+  // --- limits ------------------------------------------------------------------
+  const limits = raw['limits']
+  let maxOutputTokens: number | undefined
+  let maxImages = 0
+  if (!isPlainObject(limits)) {
+    errors.push(formatRecipeError(
+      'INVALID_RECIPE',
+      'limits must be an object carrying at least maxOutputTokens and maxImages; received '
+      + `${describeKind(limits)}`,
+    ))
+  } else {
+    refuseUnsafeKeys(limits, 'limits', ['timeoutMs', 'maxInputTextBytes', 'maxImages', 'maxOutputTokens', 'maxAttempts', 'repairAttempts'])
+    maxOutputTokens = readInteger(limits['maxOutputTokens'], 'limits.maxOutputTokens', errors) ?? undefined
+    if (maxOutputTokens !== undefined && (maxOutputTokens < 1 || maxOutputTokens > INITIAL_MAX_OUTPUT_TOKENS)) {
+      errors.push(formatRecipeError(
+        'INVALID_RECIPE',
+        `limits.maxOutputTokens must be between 1 and ${INITIAL_MAX_OUTPUT_TOKENS} (RES-10)`,
+      ))
+    }
+    const rawMaxImages = readInteger(limits['maxImages'], 'limits.maxImages', errors)
+    if (rawMaxImages !== undefined && (rawMaxImages < 0 || rawMaxImages > INITIAL_MAX_IMAGE_INPUTS)) {
+      errors.push(formatRecipeError(
+        'INVALID_RECIPE',
+        `limits.maxImages must be between 0 and ${INITIAL_MAX_IMAGE_INPUTS} (RES-10)`,
+      ))
+    } else if (rawMaxImages !== undefined) {
+      maxImages = rawMaxImages
+    }
+    // Accepted, validated, dropped (see the docstring above): the caller owns
+    // the deadline and the broker enforces the RES-10 ceilings.
+    for (const key of ['timeoutMs', 'maxInputTextBytes', 'maxAttempts', 'repairAttempts']) {
+      if (limits[key] !== undefined) readInteger(limits[key], `limits.${key}`, errors)
+    }
+  }
+  normalized.maxOutputTokens = maxOutputTokens
+  normalized.imageInputs = { max: maxImages }
+  // Recording defaults ON; destinations default to the author's acceptance.
+  normalized.policy = { record: true, allowRemote: true }
+
+  // --- inputBindings ------------------------------------------------------------
+  const rawBindings = raw['inputBindings']
+  const inputs: Record<string, Record<string, unknown>> = Object.create(null) as Record<string, Record<string, unknown>>
+  const bindingNames = new Set<string>()
+  if (!Array.isArray(rawBindings) || rawBindings.length === 0) {
+    errors.push(formatRecipeError(
+      'INVALID_RECIPE',
+      `inputBindings must be a non-empty array of {kind, pointer, required, label}; received ${describeKind(rawBindings)}`,
+    ))
+  } else {
+    for (const entry of rawBindings) {
+      if (!isPlainObject(entry)) {
+        errors.push(formatRecipeError('INVALID_RECIPE', `inputBindings entries must be objects; received ${describeKind(entry)}`))
+        continue
+      }
+      refuseUnsafeKeys(entry, 'inputBindings[]', ['kind', 'pointer', 'required', 'label', 'minLength', 'maxLength', 'minimum', 'maximum', 'enum', 'default', 'mediaTypes', 'maxBytes'])
+      const kind = entry['kind']
+      const pointer = entry['pointer']
+      if (kind !== 'text' && kind !== 'image' && kind !== 'json') {
+        errors.push(formatRecipeError('INVALID_RECIPE', `inputBindings[].kind must be "text", "image" or "json"; received ${describeKind(kind)}`))
+        continue
+      }
+      if (typeof pointer !== 'string' || !/^(\/[A-Za-z0-9_-]+)+$/.test(pointer)) {
+        errors.push(formatRecipeError(
+          'INVALID_RECIPE',
+          `inputBindings[].pointer must be a validated JSON Pointer of simple name segments (for example "/focus"); `
+          + `received ${JSON.stringify(pointer)}. Reserved characters, prototype keys and escapes are refused (RCP-03)`,
+        ))
+        continue
+      }
+      const name = pointer.slice(1)
+      if (bindingNames.has(name)) {
+        errors.push(formatRecipeError('INVALID_RECIPE', `inputBindings declare the pointer ${pointer} twice`))
+        continue
+      }
+      bindingNames.add(name)
+      const required = entry['required'] === true
+      const label = typeof entry['label'] === 'string' && entry['label'].length > 0 ? entry['label'] : undefined
+      // The canonical serializer re-emits the richer constraint fields so the
+      // canonical round trip is LOSSLESS; the legacy parser below validates
+      // them with its own named refusals.
+      const constraints: Record<string, unknown> = {}
+      for (const key of ['minLength', 'maxLength', 'minimum', 'maximum', 'enum', 'default', 'mediaTypes', 'maxBytes']) {
+        if (entry[key] !== undefined) constraints[key] = entry[key]
+      }
+      if (kind === 'image') {
+        inputs[name] = {
+          type: 'image', required,
+          ...label === undefined ? {} : { description: label },
+          ...constraints,
+        }
+      } else {
+        // NOTE: no implicit minLength default — the canonical round trip must
+        // be LOSSLESS, and a legacy declaration without minLength parses to a
+        // frozen recipe without minLength, so the normalization must not invent
+        // one.
+        inputs[name] = {
+          type: 'string', required,
+          ...label === undefined ? {} : { description: label },
+          ...constraints,
+          ...kind === 'json' ? { jsonSerialized: true } : {},
+        }
+      }
+    }
+    if (Object.keys(inputs).length === 0 && errors.length === 0) {
+      errors.push(formatRecipeError('INVALID_RECIPE', 'inputBindings must declare at least one binding'))
+    }
+  }
+  normalized.inputs = inputs
+
+  // --- promptTemplate rendering (RCP-03) --------------------------------------
+  // The canonical `instructions` are static prose; bindings are rendered BY
+  // POINTER. When the instructions do NOT already bind an input with the
+  // legacy `{{name}}` placeholder (the spec's §19.3 example has none), the
+  // normalized template appends one rendered line per unbound input — label or
+  // name, in declaration order — so the legacy "never binds" rule never fires
+  // on the canonical path and the bound VALUES reach the provider request.
+  if (typeof instructions === 'string') {
+    const bound = new Set<string>()
+    for (const match of instructions.matchAll(/\{\{([^{}]*)\}\}/g)) {
+      bound.add((match[1] ?? '').trim())
+    }
+    const unboundLines: string[] = []
+    for (const [name, declaration] of Object.entries(inputs)) {
+      if (bound.has(name)) continue
+      const label = typeof declaration['description'] === 'string' && declaration['description'].length > 0
+        ? declaration['description'] : name
+      unboundLines.push(`- ${label}: {{${name}}}`)
+    }
+    normalized.promptTemplate = unboundLines.length === 0
+      ? instructions
+      : `${instructions}\n\nSupplied context: the recipe instructions and the validated bound inputs only — no parent `
+        + `conversation, system prompt, tools or memory (HLM-05)\n${unboundLines.join('\n')}`
+  }
+
+  // The declared requires must be consistent with the declared bindings:
+  // an image binding needs "image" in inputModalities, and nothing else is
+  // permitted to appear (HLM-04: unknown is not supported).
+  const declaredImage = Object.values(inputs).some(declaration => declaration['type'] === 'image')
+  if (requires.inputModalities.length > 0) {
+    if (declaredImage && !requires.inputModalities.includes('image')) {
+      errors.push(formatRecipeError('INVALID_RECIPE', 'the recipe declares an image binding but modelSelection.requires.inputModalities omits "image"'))
+    }
+    if (!declaredImage && requires.inputModalities.includes('image')) {
+      errors.push(formatRecipeError('INVALID_RECIPE', 'modelSelection.requires.inputModalities claims "image" but no image binding is declared'))
+    }
+  }
+  if (requires.outputModalities.length > 0 && !requires.outputModalities.includes('text')) {
+    errors.push(formatRecipeError('INVALID_RECIPE', 'this build only produces text output; modelSelection.requires.outputModalities must include "text"'))
+  }
+
+  return { normalized, extras }
+}
+
+/**
  * Parse and validate a raw recipe.
  *
  * Every violation is collected and reported — one error per problem — because fixing a
@@ -604,6 +954,60 @@ export function parseRecipe(raw: unknown, options: ParseRecipeOptions = {}): Rec
         `a recipe must be a JSON object; received ${describeKind(raw)}`,
       )],
     }
+  }
+
+  // A CANONICAL RCP-02 document is normalized into the legacy shape BEFORE the
+  // data-only gate below, because the canonical vocabulary's own `context`
+  // object carries the HLM-05 flag names (`inheritConversation`/`includeTools`)
+  // that the legacy gate refuses by name at any depth — the normalizer
+  // VALIDATES those flags are exactly false and then DROPS them, so the
+  // normalized document carries no forbidden keys and the legacy checks apply
+  // unchanged. The raw document is still name-gated: every top-level key that
+  // is not part of the canonical vocabulary is refused (unknown/forbidden/
+  // reserved) BEFORE any value is read.
+  const canonicalKeys = new Set([
+    'schemaVersion', 'kind', 'id', 'version', 'description', 'tool',
+    'modelSelection', 'instructions', 'inputBindings', 'response', 'limits', 'context',
+  ])
+  const isCanonical = canonicalKeys.has('instructions')
+    && (Object.prototype.hasOwnProperty.call(raw, 'instructions')
+      || Object.prototype.hasOwnProperty.call(raw, 'inputBindings')
+      || Object.prototype.hasOwnProperty.call(raw, 'modelSelection')
+      || Object.prototype.hasOwnProperty.call(raw, 'kind')
+      || Object.prototype.hasOwnProperty.call(raw, 'schemaVersion'))
+  if (isCanonical) {
+    for (const key of Object.keys(raw)) {
+      if (!canonicalKeys.has(key)) {
+        if (FORBIDDEN_RECIPE_KEYS.includes(key)) {
+          errors.push(formatRecipeError(
+            'INVALID_RECIPE',
+            `${key} is refused by name. A recipe is DATA, not a program: it cannot supply tools, messages, conversation `
+            + 'history, attachments, memory or skills, because the broker builds the provider request from the recipe '
+            + 'and the bound inputs alone (HLM-05, HLM-06). Remove the key; something that needs tools is a PTC '
+            + 'program, which is a different artifact',
+          ))
+        } else if (RESERVED_RECIPE_KEYS.includes(key)) {
+          errors.push(formatRecipeError(
+            'INVALID_RECIPE',
+            `${key} is a reserved prototype member and is refused by name (RCP-03)`,
+          ))
+        } else {
+          errors.push(unknownKeyError('', key, [...canonicalKeys]))
+        }
+      }
+    }
+    if (errors.length > 0) return { ok: false, errors }
+    const canonical = normalizeRecipeDocument(raw, errors)
+    if (errors.length > 0) return { ok: false, errors }
+    const parsed = parseRecipe(canonical.normalized, options)
+    if (!parsed.ok) return parsed
+    const recipe = parsed.recipe
+    const frozen = deepFreeze({
+      ...recipe,
+      ...canonical.extras.modelSelection === undefined ? {} : { modelSelection: canonical.extras.modelSelection },
+      ...canonical.extras.response === undefined ? {} : { response: canonical.extras.response },
+    } satisfies RecipeManifest)
+    return { ok: true, recipe: frozen }
   }
 
   // Data-only first: this is where a function, a class instance or a context key is
@@ -817,6 +1221,57 @@ export function parseRecipe(raw: unknown, options: ParseRecipeOptions = {}): Rec
   }
 }
 
+/**
+ * Serialize a frozen recipe as the CANONICAL RCP-02 document.
+ *
+ * The output is what pack/create emit and what the schema's canonical branch
+ * validates: `schemaVersion`/`kind`/`modelSelection`/`instructions`/
+ * `inputBindings`/`response`/`limits`/`context` plus the identity keys
+ * (id/version/description/tool). The richer legacy constraint fields are
+ * re-emitted on the bindings, so canonical → parse → canonical is LOSSLESS.
+ * `modelSelection.strategy` defaults to `caller-model` with the derived
+ * requires; an `approved-profile` selection is preserved verbatim.
+ *
+ * @param recipe - the frozen recipe.
+ * @returns the canonical document.
+ */
+export function toCanonicalRecipe(recipe: RecipeManifest): Record<string, unknown> {
+  const declaredImage = Object.values(recipe.inputs).some(declaration => declaration.type === 'image')
+  return {
+    schemaVersion: '1.0.0',
+    kind: 'harness-model',
+    id: recipe.id,
+    version: recipe.version,
+    description: recipe.description,
+    tool: { name: recipe.tool.name, contractId: recipe.tool.contractId },
+    modelSelection: recipe.modelSelection ?? {
+      strategy: 'caller-model',
+      requires: {
+        inputModalities: declaredImage ? ['text', 'image'] : ['text'],
+        outputModalities: ['text'],
+      },
+    },
+    instructions: recipe.promptTemplate,
+    inputBindings: Object.entries(recipe.inputs).map(([name, declaration]) => ({
+      kind: declaration.type === 'image' ? 'image' : declaration.jsonSerialized === true ? 'json' : 'text',
+      pointer: `/${name}`,
+      required: declaration.required,
+      ...declaration.description === undefined ? {} : { label: declaration.description },
+      ...declaration.minLength === undefined ? {} : { minLength: declaration.minLength },
+      ...declaration.maxLength === undefined ? {} : { maxLength: declaration.maxLength },
+      ...declaration.minimum === undefined ? {} : { minimum: declaration.minimum },
+      ...declaration.maximum === undefined ? {} : { maximum: declaration.maximum },
+      ...declaration.enum === undefined ? {} : { enum: declaration.enum },
+      ...declaration.default === undefined ? {} : { default: declaration.default },
+      ...declaration.mediaTypes === undefined ? {} : { mediaTypes: declaration.mediaTypes },
+      ...declaration.maxBytes === undefined ? {} : { maxBytes: declaration.maxBytes },
+    })),
+    ...recipe.response === undefined ? {} : { response: recipe.response },
+    limits: { maxOutputTokens: recipe.maxOutputTokens, maxImages: recipe.imageInputs.max },
+    context: { inheritConversation: false, includeTools: false },
+  }
+}
+
 /** Validate and read the tool identity, including the identity-claim refusal. */
 function parseToolIdentity(
   raw: unknown,
@@ -947,6 +1402,24 @@ function bindValue(
 ): RecipeValue | undefined {
   const path = `"${name}"`
   if (declaration.type === 'image') return bindImage(name, declaration, supplied, errors)
+
+  // A canonical `inputBindings` kind "json" binding (RCP-03): the caller
+  // supplies a data-only object or array, which is JSON-serialized into the
+  // bound string. Serialization is data-only — never evaluated as instructions
+  // or code.
+  if (declaration.jsonSerialized === true) {
+    if (!isPlainObject(supplied) && !Array.isArray(supplied)) {
+      errors.push(formatRecipeError(
+        'RECIPE_BINDING_ERROR',
+        `${path} must be a JSON-serializable object or array (the binding kind is "json"); received ${describeKind(supplied)}`,
+      ))
+      return undefined
+    }
+    const serializationErrors: string[] = []
+    checkDataOnly(supplied, path, serializationErrors)
+    for (const error of serializationErrors) errors.push(error)
+    return JSON.stringify(supplied)
+  }
 
   const scalar = typeof supplied === 'string' || typeof supplied === 'number' || typeof supplied === 'boolean'
   if (!scalar) {

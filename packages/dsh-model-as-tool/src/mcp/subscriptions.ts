@@ -295,3 +295,72 @@ export function cancelSubscription(subscriptionId: string): Record<string, unkno
     params: { requestId: subscriptionId },
   }
 }
+
+/**
+ * The DELIVERY half of P26-09 (task-73): what a streaming transport
+ * implements. The registry owns the subscriptions and the filtering; the sink
+ * owns the per-client open streams. A production SSE transport provides its
+ * writer here; the tests inject a collecting sink that exercises the SAME
+ * consumer path end to end.
+ */
+export interface SubscriptionDeliverySink {
+  /** Deliver one addressed notification to its client's open stream. */
+  deliver(message: SubscriptionMessage): void
+  /** Close every stream belonging to one client (teardown-cancelled first). */
+  closeClient(clientId: string, reason: string): void
+}
+
+/**
+ * Run one catalog-change publication through the delivery consumer: the
+ * registry's per-caller filtering decides WHO gets the event, and the sink
+ * carries it to each client's stream. Acknowledgement ordering is the
+ * registry's own guarantee — an acknowledgement is marked sent before any
+ * publish can run, so no event can precede it.
+ * @param registry - the subscription state.
+ * @param generation - the catalog generation that changed.
+ * @param sink - the delivery transport.
+ * @returns how many subscribers received the change.
+ */
+export function deliverCatalogChange(
+  registry: SubscriptionRegistry,
+  generation: number,
+  sink: SubscriptionDeliverySink,
+): number {
+  const messages = registry.publishToolListChanged(generation)
+  for (const message of messages) sink.deliver(message)
+  return messages.length
+}
+
+/**
+ * The memory sink: one per-client queue, used by the tests to exercise the
+ * consumer and by the host as the transport seam until a streaming endpoint
+ * injects its writer. It honours the same contract a real transport must:
+ * delivery only to the addressed client, and closeClient stops that client's
+ * queue entirely.
+ */
+export class MemoryDeliverySink implements SubscriptionDeliverySink {
+  readonly #queues = new Map<string, SubscriptionMessage[]>()
+  readonly #closed = new Map<string, string>()
+
+  /** The delivered messages for one client, in delivery order. */
+  forClient(clientId: string): readonly SubscriptionMessage[] {
+    return [...(this.#queues.get(clientId) ?? [])]
+  }
+
+  /** Whether the sink closed a client, and why. */
+  closeReason(clientId: string): string | undefined {
+    return this.#closed.get(clientId)
+  }
+
+  deliver(message: SubscriptionMessage): void {
+    if (this.#closed.has(message.clientId)) return
+    const queue = this.#queues.get(message.clientId) ?? []
+    queue.push(message)
+    this.#queues.set(message.clientId, queue)
+  }
+
+  closeClient(clientId: string, reason: string): void {
+    this.#closed.set(clientId, reason)
+    this.#queues.delete(clientId)
+  }
+}

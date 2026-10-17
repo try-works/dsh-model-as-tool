@@ -1,0 +1,31 @@
+{
+  "title": "tools_plan declared input (fixture)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request", "tools"],
+  "properties": {
+    "request": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The request the plan is derived from."
+    },
+    "tools": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "description": "The tool declarations the provider reads. The HOST replaces the caller's list with frozen snapshot entries; this declared shape only proves the contribution is a planner.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "description", "parameters"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "parameters": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "system": { "type": "string" },
+    "max_new_tokens": { "type": "integer" }
+  }
+}

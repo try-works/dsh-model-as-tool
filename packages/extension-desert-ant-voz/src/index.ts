@@ -137,13 +137,16 @@ function createVozProvider(context: ExtensionContextV1): ModelProviderV1 {
         }
       }
       if (missing.length > 0) {
-        return { readiness: 'unprepared', features: ['speech-to-text', 'word-timestamps'], missing }
+        return { readiness: 'needs-preparation', features: ['speech-to-text', 'word-timestamps'], missing }
       }
       return {
-        readiness: loaded === undefined ? 'unprepared' : 'ready',
+        // The runtime package and model package resolve, so the deployment is
+        // prepared and callable even when it is currently cold. Cold residency is
+        // handled by load/admission; it is prepared-cold rather than warm ready.
+        readiness: loaded === undefined ? 'prepared-cold' : 'ready',
         features: ['speech-to-text', 'word-timestamps'],
         missing: [],
-        ...loaded === undefined ? { reason: 'the model is not loaded yet; it loads on first use' } : {},
+        ...loaded === undefined ? { reason: 'the model is prepared but cold; it loads on first use' } : {},
       }
     },
 

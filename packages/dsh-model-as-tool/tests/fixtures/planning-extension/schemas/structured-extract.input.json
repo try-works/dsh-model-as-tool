@@ -1,0 +1,14 @@
+{
+  "title": "structured_extract input (fixture)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "text"],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "The caller-supplied extraction schema. The fixture ignores it; it exists so the declared input compiles and the host validates the call."
+    },
+    "text": { "type": "string" }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/harness-vision",
+  "version": "0.1.0",
+  "displayName": "Harness Vision",
+  "description": "The describe_image declarative harness-model tool: describes the visible content of an approved image through an authorized DSH harness model (HLM-12).",
+  "license": "MIT",
+  "activation": { "policy": "operator", "deactivatable": true },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": ["harness-model-recipes-v1", "typed-image-input-v1"]
+  },
+  "execution": { "kind": "declarative" },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": true,
+    "storage": "none",
+    "secrets": [],
+    "nativeCode": false,
+    "harnessModel": {
+      "inputModalities": ["text", "image"],
+      "outputModalities": ["text"]
+    }
+  },
+  "models": [],
+  "tools": [
+    {
+      "id": "describe-image",
+      "name": "describe_image",
+      "contractId": "image.describe",
+      "contractVersion": "1.0.0",
+      "description": "Describe the visible content of an approved image with honest uncertainty.",
+      "inputSchema": "./schemas/describe-image.input.json",
+      "outputSchema": "./schemas/describe-image.output.json"
+    }
+  ],
+  "implementations": [
+    {
+      "id": "describe-image-harness",
+      "kind": "harness-model",
+      "contractId": "image.describe",
+      "contractVersion": "1.0.0",
+      "recipeVersion": "1.0.0",
+      "recipe": "./recipes/describe-image.json"
+    }
+  ],
+  "skills": []
+}

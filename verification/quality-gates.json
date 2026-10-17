@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0.0",
+  "reviewedAt": "2026-10-17",
+  "note": "The quality gates the qualification scripts ACTUALLY ENFORCE — transcribed from scripts/qualify-embeddinggemma.mjs and scripts/qualify-voz.mjs assertions, nothing invented. Thresholds were set in the scripts before the recorded runs (TDD-08). This file is drift-checked by scripts/gen-models-index.mjs --check in the verify chain.",
+  "gates": {
+    "embeddinggemma": {
+      "script": "scripts/qualify-embeddinggemma.mjs",
+      "fixtures": {
+        "identicalSentence": "a fixed English sentence pair (IDENTICAL constant)",
+        "unrelatedSentence": "a fixed unrelated sentence (UNRELATED constant)",
+        "media": "GENERATED solid/checkerboard PNGs and sine WAVs with recorded digests; no real media or speaker corpus (honest provenance)"
+      },
+      "thresholds": [
+        { "id": "identical-pair", "metric": "cosine_similarity", "rule": "score > 0.99", "recorded": 1.0 },
+        { "id": "unrelated-pair-lower", "metric": "cosine_similarity", "rule": "unrelated < identical - 0.15", "recorded": "0.6173 vs 1.0000" },
+        { "id": "reduction-widths", "metric": "vector", "rule": "dimensions exactly 768/512/256/128, L2 norm == 1.0, values finite" },
+        { "id": "artifact-integrity", "metric": "sha256", "rule": "every fetched artifact byte-verified against the models.lock.json pin before use" },
+        { "id": "group-isolation", "metric": "file-open/fetch counters", "rule": "text-only preparation/load opens no vision/audio artifact (MOD-02 observed, not asserted)" },
+        { "id": "video-embedding-refused-named", "metric": "error contract", "rule": "a video part refuses by name with the precise recorded reason (fused video scatter not reconstructed)" }
+      ]
+    },
+    "voz": {
+      "script": "scripts/qualify-voz.mjs",
+      "fixtures": {
+        "utterances": "SYSTEM-SYNTHESIZED System.Speech WAVs (German 'Das ist ein Test.', English 'The quick brown fox jumps over the lazy dog.', silence) — NOT a real-speaker corpus"
+      },
+      "thresholds": [
+        { "id": "english-utterance", "metric": "transcript", "rule": "lowercased transcript includes 'quick brown fox'" },
+        { "id": "german-utterance", "metric": "transcript", "rule": "lowercased transcript includes 'das ist ein test'" },
+        { "id": "silence", "metric": "transcript", "rule": "silence yields an empty/graceful transcript" },
+        { "id": "artifact-integrity", "metric": "sha256", "rule": "loaded weights hashed and recorded against the lock" },
+        { "id": "honest-measurements", "metric": "report", "rule": "freshProcessCachedLoadMs/sameProcessReloadMs labels (no invented cold-disk claim); wall/audio ratio reported independently of the vendor realtimeFactor" }
+      ]
+    }
+  }
+}

@@ -49,6 +49,22 @@ export interface HostRegistrySurface {
   registerTool(tool: RegistrableTool): () => void
   /** Register one skill, returning a disposer. */
   registerSkill?(skill: { readonly name: string; readonly ownerExtension: string }): () => void
+  /**
+   * Register the CALLER-FACING tools of one declarative implementation (RCP-01).
+   *
+   * A declarative package declares implementations only — its manifest has no
+   * `tools` array — so the tool names and schemas come from the RESOLVED RECIPES,
+   * which only the host can turn into registry entries (the recipes need the
+   * deployment's harness provider to be served at all). The contribution arrives
+   * per implementation; the host resolves the package's recipes and registers the
+   * matching tool, returning its disposer. Absent (or a non-declarative package)
+   * keeps the earlier behavior: implementations publish nothing.
+   */
+  registerDeclarative?(contribution: {
+    readonly extensionId: string
+    readonly name: string
+    readonly contractId?: string
+  }): () => void
 }
 
 /** Raised when a contribution cannot be published. */
@@ -151,10 +167,17 @@ export function createContributionRegistrar(options: RegistrarOptions): Contribu
           name: contribution.name,
           ownerExtension: contribution.extensionId,
         })
+      } else if (contribution.kind === 'implementation' && options.registry.registerDeclarative !== undefined) {
+        // An `implementation` of a MODULE package is not a caller-facing tool: the model
+        // catalogue binds it. An implementation of a DECLARATIVE package, however, IS the
+        // whole package: the host turns its resolved recipe into the caller-facing tool
+        // here (RCP-01), and the returned disposer is tracked like any other handle.
+        dispose = options.registry.registerDeclarative({
+          extensionId: contribution.extensionId,
+          name: contribution.name,
+          ...contribution.contractId === undefined ? {} : { contractId: contribution.contractId },
+        })
       } else {
-        // An `implementation` is not a caller-facing tool: the model catalogue binds it,
-        // so there is nothing to register here and pretending otherwise would create a
-        // tool with no implementation behind it.
         dispose = () => {}
       }
 
@@ -179,9 +202,10 @@ export function createContributionRegistrar(options: RegistrarOptions): Contribu
       // The handle must be the SAME one that was issued, not merely an object with the
       // right id, so a reconstructed handle cannot withdraw someone else's tool.
       if (entry.handle !== handle) return
+      // Failed cleanup retains ownership and the handle for an explicit retry.
+      entry.dispose()
       published.delete(handle.id)
       takenNames.delete(handle.name)
-      entry.dispose()
     },
   }
 }

@@ -360,7 +360,7 @@ function createNeedleProvider(context: ExtensionContextV1): ModelProviderV1 {
       const weights = resolvedWeights(resolution)
       if (engine === undefined || weights === undefined) {
         return {
-          readiness: 'unprepared',
+          readiness: 'needs-preparation',
           // An EMPTY feature list while unprepared is the honest answer: `features` is what
           // this deployment can actually run, not what the model is documented to do.
           features: [],

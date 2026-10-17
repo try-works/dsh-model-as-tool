@@ -1,0 +1,5 @@
+{
+  "$comment": "The bounded JSON response the text_title recipe requires (RCP-12, TOOL-06): ONE object, a title of at most 80 characters and a description of at most 240, stating only what the supplied text supports. The refusal shape is the only permitted alternative.",
+  "title": "2.4 release fixes asset-cache leak and gates certificate pinning",
+  "description": "The release candidate notes a memory leak in the asset cache and moves certificate pinning behind a build flag enforced in packaged builds."
+}

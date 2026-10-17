@@ -165,13 +165,21 @@ describe('P26-03 — version and capability errors', () => {
   })
 
   it('never allocates a custom error in the reserved range', () => {
-    // P26-03 forbids it, so the guard exists and the declared codes are all
-    // protocol-defined values.
+    // P26-03 forbids minting codes in the MCP-reserved band (-32020..-32099); the guard
+    // exists and every declared code is either protocol-defined or — for `rateLimited`,
+    // AT-12 — a documented implementation allocation in the -32000..-32019 sub-range
+    // the specification will never define codes in.
     assert.equal(isReservedErrorCode(-32022), true)
     assert.equal(isReservedErrorCode(-32602), true)
     for (const code of Object.values(ERROR_CODES)) {
       assert.ok(isReservedErrorCode(code), `${code} must be a protocol-defined code`)
     }
+    // The AT-12 code must NEVER drift into the MCP-reserved band (-32020..-32099).
+    assert.equal(ERROR_CODES.rateLimited, -32001)
+    assert.ok(
+      ERROR_CODES.rateLimited > -32020,
+      'rateLimited must sit in the implementation-defined sub-range above the MCP-reserved band',
+    )
   })
 })
 

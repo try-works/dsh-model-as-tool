@@ -74,7 +74,14 @@
     "requiredTelemetry": false,
     "otherNetworkUse": false
   },
-  "models": [],
+  "models": [
+    {
+      "id": "fixture-echo-model",
+      "assetSet": "fixture-echo-bundled",
+      "assetLock": "./models.lock.json",
+      "platforms": [{ "os": "win32", "arch": "x64", "accelerator": "cpu" }]
+    }
+  ],
   "tools": [
     {
       "id": "fixture-echo",
@@ -86,6 +93,6 @@
       "outputSchema": "./schemas/output.json"
     }
   ],
-  "implementations": [],
+  "implementations": [{ "id": "fixture-echo", "contractId": "fixture.echo", "contractVersion": "1.0.0", "modelId": "fixture-echo-model", "recipeVersion": "1.0.0" }],
   "skills": []
 }

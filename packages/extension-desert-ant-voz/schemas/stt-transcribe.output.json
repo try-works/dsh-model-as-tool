@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "stt_transcribe output",
+  "description": "The standard tool-mode/stt_transcribe contract payload. The host attaches the reserved meta field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "coverage"],
+  "properties": {
+    "text": { "type": "string" },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["complete", "transcribedSeconds"],
+      "properties": {
+        "complete": { "type": "boolean" },
+        "transcribedSeconds": { "type": "number", "minimum": 0 },
+        "totalSeconds": { "type": ["number", "null"], "minimum": 0 },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "words": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "start", "end"],
+        "properties": {
+          "text": { "type": "string" },
+          "start": { "type": "number", "minimum": 0, "description": "Seconds from the start of the audio." },
+          "end": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "language": {
+      "type": ["string", "null"],
+      "description": "The language actually recognized, when the implementation reports it."
+    }
+  }
+}

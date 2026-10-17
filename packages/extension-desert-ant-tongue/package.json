@@ -9,11 +9,14 @@
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./tool-mode.extension.json": "./tool-mode.extension.json",
     "./package.json": "./package.json"
   },
   "files": [
     "lib",
     "tool-mode.extension.json",
+    "schemas",
+    "models.lock.json",
     "README.md"
   ],
   "toolMode": {
@@ -26,9 +29,11 @@
     "@try-works/tool-mode-extension-sdk": "^0.1.0"
   },
   "optionalDependencies": {
-    "@desert-ant-labs/tongue": "^1.0.0"
+    "@desert-ant-labs/tongue": "^3.6.0"
   },
   "devDependencies": {
-    "@try-works/tool-mode-extension-sdk": "^0.1.0"
+    "@try-works/tool-mode-extension-sdk": "^0.1.0",
+    "@types/semver": "^7.7.0",
+    "semver": "^7.7.0"
   }
 }

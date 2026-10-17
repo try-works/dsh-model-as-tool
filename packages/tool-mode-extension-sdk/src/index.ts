@@ -36,6 +36,7 @@ export {
 export {
   KNOWN_FEATURES,
   MAX_MANIFEST_BYTES,
+  QUALIFICATION_FIELDS,
   RUNTIME_API_MAJOR,
   TMX_PROTOCOL_VERSION,
   validateManifest,
@@ -82,7 +83,47 @@ export {
   type ProfileStateFile,
   type StateReadResult,
   type StoreLock,
+  type UpdateApprovalRecord,
 } from './install/store.ts'
+
+export {
+  commitUpdate,
+  recordApproval,
+  rollback,
+  stageUpdate,
+  type SchemaDelta,
+  type UpdateCommitResult,
+  type UpdateRollbackResult,
+  type UpdateStageResult,
+  type UpdateValidationReport,
+} from './install/update-flow.ts'
+
+export {
+  installDependencyGraph,
+  refuseInstallScripts,
+  type DependencyResolver,
+  type InstallDependencyGraph,
+  type LockedDependency,
+} from './install/dependencies.ts'
+
+export { stagedInstallFromDirectory } from './install/source-directory.ts'
+
+export {
+  LEGACY_MODEL_MIGRATIONS,
+  STATE_SCHEMA_VERSION,
+  STATE_VERSION,
+  applyLegacyChoices,
+  parseLegacyModelState,
+  type AppliedMigration,
+  type LegacyModelMigration,
+  type LegacyModelState,
+  type LegacyParseResult,
+  type MigratedAssetRecord,
+  type MigrationEntry,
+  type MigrationEntryKind,
+  type MigrationOutcome,
+  type MigrationReport,
+} from './install/migration.ts'
 
 export {
   assessReadiness,
@@ -154,3 +195,10 @@ export {
   resolveDeclarativeRecipe,
   type RecipeResolution,
 } from './declarative-recipes.ts'
+
+export {
+  ManagedExtensionWorker,
+  scrubbedEnv,
+  type ManagedWorkerOptions,
+  type WorkerLimits,
+} from './worker.ts'

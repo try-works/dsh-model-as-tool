@@ -1,0 +1,35 @@
+{
+  "requirement": "CODE-09",
+  "assertion": "the confinement release gate is closed without the operator marker and opens ONLY when the operator starts the process with the explicit acceptance-test marker; the packed artifact ships the same gate bytes.",
+  "marker": {
+    "env": "DSH_PTC_CONFINEMENT_SEAM",
+    "value": "open-for-acceptance-test",
+    "note": "the marker is the operator action that arms the test seam; production never sets it"
+  },
+  "steps": [
+    {
+      "step": "without-operator-marker",
+      "pass": true,
+      "detail": "evidence=false; setter=refused: the confinement evidence is a release gate; the acceptance-test seam is closed in this process because the operator marker is absent"
+    },
+    {
+      "step": "with-operator-marker",
+      "pass": true,
+      "detail": "evidence after the marked setter = true"
+    },
+    {
+      "step": "packed-artifact-bytes",
+      "pass": true,
+      "detail": "the packed tarball's ptc-runtime.js is byte-identical to the built lib (sha256 equal)"
+    },
+    {
+      "step": "packed-install-without-marker",
+      "pass": null,
+      "blocked": true,
+      "detail": "verify-packed-install could not complete in this environment: its clean-project npm install stalled three consecutive times (it packs and resolves 31 packages, then makes no progress past the install stage for 15+ minutes; the process tree was terminated each time). The packed-without-marker half is covered by the last successful verify:packed chain run; THIS acceptance records the step as blocked, never as passed."
+    }
+  ],
+  "verdict": "accepted-partial",
+  "verdictNote": "The in-repo pair and the packed-byte identity passed; the clean packed-install step is recorded BLOCKED (its exact reason is on the step) — the acceptance is partial until that step completes, and nothing here claims otherwise.",
+  "recordedAt": "2026-10-17T19:25:19.508Z"
+}

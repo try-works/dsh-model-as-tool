@@ -1,0 +1,52 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@your-scope/tool-mode-your-tool",
+  "version": "1.0.0",
+  "displayName": "Your Tool",
+  "description": "An example module extension contributing one typed tool through the Tool Mode runtime API.",
+  "license": "MIT",
+  "activation": { "policy": "operator", "deactivatable": true },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": ["provider-worker-v1"]
+  },
+  "execution": { "kind": "module", "entry": "./tool-mode", "isolation": "managed-process" },
+  "configurationSchema": "./schemas/config.json",
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": false
+  },
+  "models": [],
+  "tools": [
+    {
+      "id": "your-tool",
+      "name": "your_tool",
+      "contractId": "@your-scope/tool-mode-your-tool/your-tool",
+      "contractVersion": "1.0.0",
+      "description": "Performs a bounded, typed operation on the supplied text.",
+      "inputSchema": "./schemas/your-tool.input.json",
+      "outputSchema": "./schemas/your-tool.output.json"
+    }
+  ],
+  "implementations": [
+    {
+      "id": "your-tool-cpu",
+      "contractId": "@your-scope/tool-mode-your-tool/your-tool",
+      "contractVersion": "1.0.0",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": [
+    {
+      "id": "your-tool",
+      "name": "your-tool",
+      "description": "Use the your_tool tool directly or inside a Tool Mode composition.",
+      "path": "./skills/your-tool/SKILL.md",
+      "requiresTools": ["your-tool"]
+    }
+  ]
+}

@@ -101,6 +101,24 @@ export function resolveCapability(
   // for Apple-only models, which have neither a package nor (for some) a verb.
   const bridgeUsable = remoteEndpoint !== undefined && remoteEndpoint.length > 0 && !entry.closedBeta
 
+  if (entry.provider !== undefined && !entry.closedBeta) {
+    const extensionManifest = `${entry.provider.extension}/package.json`
+    if (resolve(extensionManifest)) {
+      return {
+        runnable: true,
+        route: 'extension',
+        reason: `${entry.name} is implemented by the Tool Mode extension ${entry.provider.extension}; provider readiness is checked through that extension before publication and again for discovery.`,
+        resolved: [extensionManifest],
+      }
+    }
+    return {
+      runnable: false,
+      route: 'unavailable',
+      reason: `${entry.name} declares the Tool Mode extension ${entry.provider.extension}, which is not installed or not resolvable from this host. Install and activate that extension, or correct the catalog binding.`,
+      missing: [extensionManifest],
+    }
+  }
+
   const pkg = entry.npmPackage
   // Why the in-process route did not pan out. Kept so the final verdict can name
   // the exact missing piece ("install onnxruntime-node") instead of falling back

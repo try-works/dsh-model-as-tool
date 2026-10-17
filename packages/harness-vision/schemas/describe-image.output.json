@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "describe_image output",
+  "description": "A plain description of the visible content (HLM-12). The host attaches the reserved meta field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["description"],
+  "properties": {
+    "description": { "type": "string", "minLength": 1 }
+  }
+}

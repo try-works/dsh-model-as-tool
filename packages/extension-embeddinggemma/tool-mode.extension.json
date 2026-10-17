@@ -46,7 +46,7 @@
       "name": "multimodal_embed",
       "contractId": "@try-works/extension-embeddinggemma/multimodal_embed",
       "contractVersion": "1.0.0",
-      "description": "Embed one or more items into a shared embedding space over EmbeddingGemma 2. Returns L2-normalized vectors of 768, 512, 256 or 128 dimensions plus a per-item processing record of the modality, source range and video sampling that produced each one. This build reads text and code parts only: image, audio and video parts are refused by name until the Node decoders are wired. It does not describe an image in words, transcribe speech, return OCR text or produce calibrated decisions.",
+      "description": "Embed one or more items into a shared embedding space over EmbeddingGemma 2. Returns L2-normalized vectors of 768, 512, 256 or 128 dimensions plus a per-item processing record of the modality, source range and video sampling that produced each one. This build reads text, code, image and audio parts; a video part is refused by name (the bounded frame sampler exists, but the model video grid and fused video scatter are not reconstructed). It does not describe an image in words, transcribe speech, return OCR text or produce calibrated decisions.",
       "inputSchema": "./schema/multimodal-embed.input.json",
       "outputSchema": "./schema/multimodal-embed.output.json"
     },
@@ -55,7 +55,7 @@
       "name": "semantic_similarity",
       "contractId": "@try-works/extension-embeddinggemma/semantic_similarity",
       "contractVersion": "1.0.0",
-      "description": "Cosine similarity between two items embedded in one space over EmbeddingGemma 2, supporting text-to-text, text-to-image, text-to-audio and image-to-image pairings on a qualified build. The score is a cosine similarity, not a probability that the two mean the same thing, and it is comparable only within one embedding space. This build reads text and code parts only, so any media part is refused by name rather than silently ignored.",
+      "description": "Cosine similarity between two items embedded in one space over EmbeddingGemma 2, supporting text-to-text, text-to-image, text-to-audio and image-to-image pairings on a qualified build. The score is a cosine similarity, not a probability that the two mean the same thing, and it is comparable only within one embedding space. This build reads text, code, image and audio parts; a video part is refused by name.",
       "inputSchema": "./schema/semantic-similarity.input.json",
       "outputSchema": "./schema/semantic-similarity.output.json"
     },
@@ -64,9 +64,36 @@
       "name": "semantic_rank",
       "contractId": "@try-works/extension-embeddinggemma/semantic_rank",
       "contractVersion": "1.0.0",
-      "description": "Rank candidate items against a query by embedding cosine similarity over EmbeddingGemma 2, returning the caller's own IDs in stable descending score order with exact ties broken by input order. This is embedding ranking, not the cross-encoder text_rerank tool: the two produce different score kinds and are not interchangeable. This build reads text and code parts only, so any media part is refused by name.",
+      "description": "Rank candidate items against a query by embedding cosine similarity over EmbeddingGemma 2, returning the caller's own IDs in stable descending score order with exact ties broken by input order. This is embedding ranking, not the cross-encoder text_rerank tool: the two produce different score kinds and are not interchangeable. This build reads text, code, image and audio parts; a video part is refused by name.",
       "inputSchema": "./schema/semantic-rank.input.json",
       "outputSchema": "./schema/semantic-rank.output.json"
+    },
+    {
+      "id": "semantic-classify",
+      "name": "semantic_classify",
+      "contractId": "@try-works/extension-embeddinggemma/semantic_classify",
+      "contractVersion": "1.0.0",
+      "description": "Classify one item against caller-supplied label descriptions by embedding cosine similarity over EmbeddingGemma 2 (MOD-11). Returns the best label with its raw cosine score plus every label score, or status \"abstained\" when the best score is below min_score or the margin to the runner-up is below min_margin. The scores are raw embedding cosines — calibrated is always false, and this is not the dedicated decision model: an embedding label scorer is not an equivalent implementation of a probabilistic decision contract. This build reads text, code, image and audio parts; a video part is refused by name.",
+      "inputSchema": "./schema/semantic-classify.input.json",
+      "outputSchema": "./schema/semantic-classify.output.json"
+    },
+    {
+      "id": "semantic-deduplicate",
+      "name": "semantic_deduplicate",
+      "contractId": "@try-works/extension-embeddinggemma/semantic_deduplicate",
+      "contractVersion": "1.0.0",
+      "description": "Group near-duplicate items by greedy representative clustering in input order over EmbeddingGemma 2 cosine similarity (MOD-12): each item joins the FIRST group whose representative scores at or above the threshold, otherwise it starts a new group. The result is deterministic for a fixed threshold, is not transitive (A may match B and B match C without A matching C), and never deletes, moves or rewrites source files. This build reads text, code, image and audio parts; a video part is refused by name.",
+      "inputSchema": "./schema/semantic-deduplicate.input.json",
+      "outputSchema": "./schema/semantic-deduplicate.output.json"
+    },
+    {
+      "id": "media-find-moments",
+      "name": "media_find_moments",
+      "contractId": "@try-works/extension-embeddinggemma/media_find_moments",
+      "contractVersion": "1.0.0",
+      "description": "Find the source-time windows of one audio item that best match a query by embedding each window and ranking by cosine similarity (MOD-13). Returns window-level matches with source timestamps, the score kind, the number of windows evaluated and the sampled-frame timestamps (empty for audio). The final window is clipped to the actual source range and included exactly once. No transcription happens: this is embedding retrieval, not speech recognition. VIDEO media is refused by name in this build (the fused video-grid reconstruction is the separate recorded remainder).",
+      "inputSchema": "./schema/media-find-moments.input.json",
+      "outputSchema": "./schema/media-find-moments.output.json"
     }
   ],
   "implementations": [
@@ -87,6 +114,27 @@
     {
       "id": "embeddinggemma2-rank",
       "contractId": "@try-works/extension-embeddinggemma/semantic_rank",
+      "contractVersion": "1.0.0",
+      "modelId": "embeddinggemma-2",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "embeddinggemma2-classify",
+      "contractId": "@try-works/extension-embeddinggemma/semantic_classify",
+      "contractVersion": "1.0.0",
+      "modelId": "embeddinggemma-2",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "embeddinggemma2-deduplicate",
+      "contractId": "@try-works/extension-embeddinggemma/semantic_deduplicate",
+      "contractVersion": "1.0.0",
+      "modelId": "embeddinggemma-2",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "embeddinggemma2-moments",
+      "contractId": "@try-works/extension-embeddinggemma/media_find_moments",
       "contractVersion": "1.0.0",
       "modelId": "embeddinggemma-2",
       "recipeVersion": "1.0.0"

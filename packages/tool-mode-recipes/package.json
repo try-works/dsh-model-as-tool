@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "description": "Declarative harness-model recipe format, a provider-neutral LLM broker and the built-in text_title and describe_image recipes",
   "license": "MIT",
-  "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/" },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/try-works/dsh-model-as-tool.git",
@@ -12,20 +15,35 @@
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "bin": {
+    "tool-mode-recipe": "./bin/tool-mode-recipe.mjs"
+  },
   "exports": {
-    ".": { "types": "./lib/index.d.ts", "default": "./lib/index.js" },
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
     "./recipes/text-title.json": "./recipes/text-title.json",
     "./recipes/describe-image.json": "./recipes/describe-image.json",
-    "./src/*": "./src/*",
-    "./package.json": "./package.json"
+    "./schema/harness-model-recipe.schema.json": "./schema/harness-model-recipe.schema.json",
+    "./package.json": "./package.json",
+    "./cli": {
+      "types": "./lib/cli.d.ts",
+      "default": "./lib/cli.js"
+    }
   },
   "files": [
     "lib/**/*.js",
     "lib/**/*.d.ts",
     "lib/**/*.d.ts.map",
     "recipes/*.json",
+    "schema/*.json",
+    "bin",
     "README.md"
   ],
+  "dependencies": {
+    "ajv": "^8.20.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",

@@ -20,6 +20,7 @@ import {
   mountPtcRuntimeIfAbsent,
   PTC_DEFAULT_BUDGETS,
   PTC_SERVICE,
+  setConfinementDemonstratedForTest,
   type PtcHostContext,
 } from '../src/ptc-runtime.ts'
 import type { ToolBinding } from '../src/ptc-authority.ts'
@@ -191,15 +192,53 @@ describe('RES-10 — the run budget cannot be widened by asking', () => {
 })
 
 describe('CODE-08 — generated-code execution is WITHHELD from clients', () => {
-  it('is not exposed, because the confinement tests have not passed', () => {
-    // The directive: "Do not expose generated-code execution to production clients before
-    // the specification's confinement tests pass." Asserted rather than left to a comment.
-    assert.equal(mayExposeToClients(), false)
+  it('is not exposed without the operator grant, regardless of confinement', () => {
+    // CODE-10: hosted code is a SEPARATE operator consent, off by default.
+    assert.equal(mayExposeToClients(false), false)
   })
 
-  it('states why, so a caller is not left guessing', () => {
-    const reason = exposureWithheldReason()
-    assert.match(reason, /withheld until the confinement tests pass/)
-    assert.match(reason, /no production client is served it/)
+  it('is STILL not exposed with the operator grant while confinement is undemonstrated', () => {
+    // The directive: "Do not expose generated-code execution to production clients before
+    // the specification's confinement tests pass." The grant alone cannot open it.
+    assert.equal(mayExposeToClients(true), false)
+  })
+
+  it('names which fact is missing, so a caller is not left guessing', () => {
+    const noGrant = exposureWithheldReason(false)
+    assert.match(noGrant, /operator has not granted hosted code execution/)
+    const noConfinement = exposureWithheldReason(true)
+    assert.match(noConfinement, /withheld until the confinement tests pass/)
+    assert.match(noConfinement, /no production client is served it/)
+  })
+
+  it('the test seam is INERT without the operator environment marker', () => {
+    // The setter ships in the built artifact, so it must refuse to move the gate
+    // in any normal process: without the operator marker it throws and the gate
+    // stays closed (mayExposeToClients still false).
+    const original = process.env.DSH_PTC_CONFINEMENT_SEAM
+    delete process.env.DSH_PTC_CONFINEMENT_SEAM
+    try {
+      assert.throws(
+        () => setConfinementDemonstratedForTest(true),
+        /seam is closed/,
+      )
+      assert.equal(mayExposeToClients(true), false, 'a failed seam attempt must not open the gate')
+    } finally {
+      if (original !== undefined) process.env.DSH_PTC_CONFINEMENT_SEAM = original
+    }
+  })
+
+  it('the test seam WORKS when the operator marker is present, and the gate responds', () => {
+    const original = process.env.DSH_PTC_CONFINEMENT_SEAM
+    process.env.DSH_PTC_CONFINEMENT_SEAM = 'open-for-acceptance-test'
+    try {
+      setConfinementDemonstratedForTest(true)
+      assert.equal(mayExposeToClients(true), true, 'both facts hold: the gate must open')
+      assert.equal(mayExposeToClients(false), false, 'the operator grant is still required')
+    } finally {
+      setConfinementDemonstratedForTest(false)
+      if (original === undefined) delete process.env.DSH_PTC_CONFINEMENT_SEAM
+      else process.env.DSH_PTC_CONFINEMENT_SEAM = original
+    }
   })
 })

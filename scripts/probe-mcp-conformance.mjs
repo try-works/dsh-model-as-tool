@@ -23,7 +23,7 @@
  * Usage: node scripts/probe-mcp-conformance.mjs [--json]
  */
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Ajv2020 } from 'ajv/dist/2020.js'
 
@@ -164,6 +164,22 @@ for (const file of fixtureFiles.sort()) {
 const failures = results.flatMap(result =>
   result.checks.filter(check => !check.ok).map(check => ({ fixture: result.name, ...check })))
 const totalChecks = results.reduce((sum, result) => sum + result.checks.length, 0)
+
+// Keep the MANIFEST's probeCheckCount mechanical: the capture script writes the
+// corpus, this probe measures it, and the manifest is the record a reader
+// checks first. Without this, a re-captured MANIFEST would silently drop the
+// count the round-57 evidence cites.
+try {
+  const manifestPath = 'docs/tool-mode/fixtures/mcp-2026-07-28/MANIFEST.json'
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  if (manifest.probeCheckCount !== totalChecks || manifest.fixtureCount !== results.length) {
+    manifest.probeCheckCount = totalChecks
+    manifest.fixtureCount = results.length
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+  }
+} catch {
+  // A missing manifest is not this probe's failure mode; capture writes it.
+}
 
 if (process.argv.includes('--json')) {
   process.stdout.write(`${JSON.stringify({ totalChecks, failures, results }, null, 2)}\n`)

@@ -12,14 +12,18 @@
 
 import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { Context } from '@deepseek-ai/cordis'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
+import Ajv2020 from 'ajv/dist/2020.js'
 
 import * as plugin from '../src/index.ts'
 import { createMcpHost, derivePayloadSchema, type HostSurface, type PublishedTool } from '../src/mcp/host-binding.ts'
 import { dispatch } from '../src/mcp/server.ts'
 import { META_KEYS, PROTOCOL_VERSION, type WireRequest } from '../src/mcp/protocol.ts'
 import { STANDARD_CONTRACTS } from '@try-works/tool-mode-contracts'
+import { setConfinementDemonstratedForTest } from '../src/ptc-runtime.ts'
+import { TOOL_MODE_RUN_CONTRACT } from '../src/tool-mode-run.ts'
 import { cleanup, mountPlugin } from './helpers.ts'
 
 after(async () => { await cleanup() })
@@ -82,7 +86,7 @@ describe('MCP-08 — invocation goes through the host path', () => {
         seen.name = name
         seen.callId = callId
         seen.signal = signal
-        return { isError: false, value: { language: 'de' } }
+        return { isError: false, value: { reliability: 'confident', tooCloseToCall: false, candidates: [{ language: 'de', probability: 1 }] } }
       },
     }
     const host = createMcpHost({ surface, serverInfo: { name: 'x', version: '1' } })
@@ -120,23 +124,57 @@ describe('MCP-08 — invocation goes through the host path', () => {
     assert.equal(outcome.structured, null)
   })
 
-  it('returns the canonical value unchanged (MCP-11)', async () => {
-    const value = { language: 'de', candidates: [{ language: 'nl', probability: 0.3 }] }
+  it('returns the schema-valid MCP payload, with only reserved meta removed', async () => {
+    const value = {
+      reliability: 'confident',
+      tooCloseToCall: false,
+      candidates: [{ language: 'de', probability: 0.98 }],
+      meta: { hostOnly: true },
+    }
     const surface: HostSurface = {
       published: [{ toolName: 't', contract: CONTRACT }],
       async execute() { return { isError: false, value } },
     }
     const host = createMcpHost({ surface, serverInfo: { name: 'x', version: '1' } })
     const outcome = await host.callTool('t', {}, new AbortController().signal)
-    // A redaction applied here would be content-only, and MCP-11 says that is not a
-    // confidentiality control: the canonical value would still be reachable.
-    assert.deepEqual(outcome.structured, value)
+    assert.equal(outcome.isError, undefined)
+    assert.deepEqual(outcome.structured, {
+      reliability: 'confident',
+      tooCloseToCall: false,
+      candidates: [{ language: 'de', probability: 0.98 }],
+    })
+  })
+
+  it('rejects a host success whose structured value violates the advertised output schema', async () => {
+    const surface: HostSurface = {
+      published: [{ toolName: 't', contract: CONTRACT }],
+      async execute() {
+        return {
+          isError: false,
+          value: {
+            reliability: 'not-a-contract-value',
+            tooCloseToCall: false,
+            candidates: [{ language: 'de', probability: 0.98 }],
+          },
+        }
+      },
+    }
+    const host = createMcpHost({ surface, serverInfo: { name: 'x', version: '1' } })
+    const outcome = await host.callTool('t', {}, new AbortController().signal)
+    assert.equal(outcome.isError, true)
+    assert.match(outcome.text, /advertised MCP output schema/)
+    assert.equal(outcome.structured, null)
   })
 
   it('bounds the model-readable rendering', async () => {
     const surface: HostSurface = {
       published: [{ toolName: 't', contract: CONTRACT }],
-      async execute() { return { isError: false, value: { text: 'x'.repeat(200_000) } } },
+      async execute() {
+        return {
+          isError: false,
+          value: { reliability: 'confident', tooCloseToCall: false, candidates: [{ language: 'x'.repeat(200_000), probability: 1 }] },
+        }
+      },
     }
     const host = createMcpHost({ surface, serverInfo: { name: 'x', version: '1' } })
     const outcome = await host.callTool('t', {}, new AbortController().signal)
@@ -228,15 +266,17 @@ describe('MCP-08 / MCP-09 — end to end through the plugin', () => {
     /**
      * HOST CONTROL TOOLS ARE NAMED, not filtered by an ad-hoc string comparison.
      *
-     * `model_tools` is the control surface and `tool_mode_run` is program execution, which
-     * CODE-08 WITHHOLDS from production clients until the confinement tests pass. Neither
-     * is a model tool, so neither belongs on the MCP surface.
+     * `model_tools` is the control surface, `tool_mode_run` is program execution (CODE-08
+     * withholds it until the confinement tests pass), and `tool_mode_list`/`tool_mode_describe`
+     * are the DECL-07 NATIVE discovery pair — read-only agent surfaces whose EXTERNAL half is
+     * the MCP tools/list + the exported schemas themselves, so they are withheld from the
+     * external surface rather than double-exported. None of the four is a model tool.
      *
      * Naming them means ADDING a tool now forces a decision: a registration that is neither
      * a contract tool nor a listed control tool fails this assertion, instead of silently
      * appearing on — or vanishing from — the external surface.
      */
-    const HOST_CONTROL_TOOLS = new Set(['model_tools', 'tool_mode_run'])
+    const HOST_CONTROL_TOOLS = new Set(['model_tools', 'tool_mode_run', 'tool_mode_list', 'tool_mode_describe'])
     const registered = ctx.tools.schemas()
       .map(schema => schema.name)
       .filter(name => !HOST_CONTROL_TOOLS.has(name))
@@ -247,6 +287,67 @@ describe('MCP-08 / MCP-09 — end to end through the plugin', () => {
     // And the withheld control tool really is absent from the external surface, which is
     // the half CODE-08 depends on.
     assert.equal(exported.includes('tool_mode_run'), false, 'program execution must not be exported')
+  })
+
+  it('EXPORTS tool_mode_run when the gate opens (confinement evidence AND operator consent)', async () => {
+    // The round-44 review named this the testability wall: the export branch had
+    // no seam to open, so its first execution would have been in production. The
+    // seam is the confinement-evidence setter, which requires the operator
+    // environment marker (the setter ships in the built artifact and must be
+    // inert without it). Set the marker, flip, and restore both in finally so no
+    // other test sees an open gate.
+    const originalMarker = process.env.DSH_PTC_CONFINEMENT_SEAM
+    process.env.DSH_PTC_CONFINEMENT_SEAM = 'open-for-acceptance-test'
+    setConfinementDemonstratedForTest(true)
+    try {
+      const ctx = await mountPlugin({ hostedCode: true })
+      const listed = await ctx.tools.execute({
+        signal: new AbortController().signal,
+        callId: ToolCallId('mcp-open-gate'),
+        name: 'model_tools',
+        arguments: { action: 'mcp' },
+      })
+      if (listed.isError) throw new Error('expected success')
+      const exported = (listed.value as { mcp: { name: string }[] }).mcp
+      const entry = exported.find(tool => tool.name === 'tool_mode_run')
+      assert.ok(entry, `tool_mode_run must be exported when both gate facts hold, saw: ${exported.map(tool => tool.name).join(', ')}`)
+    } finally {
+      setConfinementDemonstratedForTest(false)
+      if (originalMarker === undefined) delete process.env.DSH_PTC_CONFINEMENT_SEAM
+      else process.env.DSH_PTC_CONFINEMENT_SEAM = originalMarker
+    }
+  })
+
+  it('the tool_mode_run MCP projection conforms to the PINNED schema before it ever ships (P26-13)', () => {
+    // The round-44 review's deeper point: the hand-written contract must be
+    // schema-validated before its first live tools/list, not inspected. This
+    // builds the SAME projection the binding builds and validates it against the
+    // pinned $defs.Tool with Ajv 2020 — the exact validator the live suite uses.
+    const surface: HostSurface = {
+      published: [{ toolName: 'tool_mode_run', contract: TOOL_MODE_RUN_CONTRACT as never }],
+      execute: async () => ({ isError: false, value: {} }),
+    }
+    const host = createMcpHost({ surface, serverInfo: { name: 'tool-mode', version: '0.1.3' } })
+    const listed = host.listTools()
+    const entry = listed.find(tool => tool.name === 'tool_mode_run')
+    assert.ok(entry, 'the projection must include the tool')
+
+    const schema = JSON.parse(readFileSync('docs/tool-mode/specs/mcp-2026-07-28/schema.json', 'utf8')) as {
+      $defs?: Record<string, unknown>
+      definitions?: Record<string, unknown>
+    }
+    const ajv = new Ajv2020({ strict: false, allErrors: true })
+    ajv.addSchema(schema as object, 'pinned')
+    const defs = schema.$defs ?? schema.definitions ?? {}
+    const toolDef = defs.Tool
+    assert.ok(toolDef !== undefined, 'the pinned schema must define Tool')
+    const validate = ajv.compile({ $ref: 'pinned#/$defs/Tool' })
+    const projected = {
+      name: entry.name,
+      description: entry.description,
+      inputSchema: entry.inputSchema,
+    }
+    assert.equal(validate(projected), true, `tool_mode_run projection violates the pinned Tool: ${JSON.stringify(validate.errors)}`)
   })
 
   it('a tools/list over the binding returns contract-derived schemas', async () => {
@@ -264,7 +365,7 @@ describe('MCP-08 / MCP-09 — end to end through the plugin', () => {
         toolName: entry.name,
         contract: STANDARD_CONTRACTS.find(contract => contract.toolName === entry.name)!,
       })),
-      execute: async () => ({ isError: false, value: { language: 'de' } }),
+      execute: async () => ({ isError: false, value: { reliability: 'confident', tooCloseToCall: false, candidates: [{ language: 'de', probability: 1 }] } }),
     }
     const host = createMcpHost({ surface, serverInfo: { name: 'dsh-tool-mode', version: '0.1.0' } })
     const { response } = await dispatch(request('tools/list'), host)

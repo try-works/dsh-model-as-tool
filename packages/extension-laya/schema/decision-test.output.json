@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision", "confidence", "calibrated", "probabilities", "abstained"],
+  "properties": {
+    "decision": { "type": ["string", "null"], "enum": ["yes", "no", null], "description": "The yes/no decision, or null when abstained." },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "EXPLICITLY UNCALIBRATED (DEC-08)." },
+    "calibrated": { "const": false },
+    "probabilities": { "type": "object", "additionalProperties": { "type": "number" }, "description": "{yes, no} softmax scores (uncalibrated)." },
+    "abstained": { "type": "boolean" },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "act_probability": { "type": "number" } }
+    }
+  }
+}

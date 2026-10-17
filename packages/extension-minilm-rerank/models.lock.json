@@ -1,0 +1,47 @@
+{
+  "protocolVersion": "1.1.0",
+  "assetSets": {
+    "minilm-rerank-onnx": {
+      "pinning": {
+        "state": "measured",
+        "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+        "measuredOn": {
+          "os": "win32",
+          "arch": "x64",
+          "accelerator": "cpu",
+          "node": "24.11.0"
+        },
+        "recordedAt": "2026-10-18",
+        "reason": "The pinned ONNX conversion (onnx/model.onnx) and the uncased WordPiece vocabulary (vocab.txt) were downloaded from the public cross-encoder/ms-marco-MiniLM-L-6-v2 repository at revision 233902d25c440f23af6f7d6e94d2946bac0bee0a, hashed, and RUN on this host through the exact adapter path (onnxruntime-node 1.30.0 + the pure-TS WordPiece pair encoder): the qualification record at docs/tool-mode/qualification/minilm.json carries the measurements (a relevant pair scored above an unrelated pair). The tokenizer pair encoding was pinned against the HF reference tokenizer (8/8 fixtures identical). No placeholder hashes: every digest below is measured from the acquired bytes."
+      },
+      "license": {
+        "name": "Apache License 2.0",
+        "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2"
+      },
+      "groups": [
+        {
+          "id": "text-backbone",
+          "enables": ["text"],
+          "assets": [
+            {
+              "id": "minilm-rerank-model-onnx",
+              "file": "onnx/model.onnx",
+              "bytes": 91011230,
+              "source": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2/resolve/233902d25c440f23af6f7d6e94d2946bac0bee0a/onnx/model.onnx",
+              "digest": "5d3e70fd0c9ff14b9b5169a51e957b7a9c74897afd0a35ce4bd318150c1d4d4a",
+              "executable": false
+            },
+            {
+              "id": "minilm-rerank-vocab",
+              "file": "vocab.txt",
+              "bytes": 231508,
+              "source": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2/resolve/233902d25c440f23af6f7d6e94d2946bac0bee0a/vocab.txt",
+              "digest": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+              "executable": false
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

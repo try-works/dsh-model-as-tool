@@ -77,6 +77,9 @@ const httpConfig: HttpTransportConfig = {
   maxBodyBytes: 4 * 1024 * 1024,
   allowedOrigins: [],
   auth: { scheme: 'static-token', token: PLACEHOLDER_TOKEN, clientId: 'fixture-capture' },
+  // The capture records MANY requests under one token; the AT-12 default rate limit
+  // is not the subject of the fixtures, so it is disabled here.
+  rateLimit: false,
 }
 const httpHandler = createHttpHandler(httpConfig, host)
 
@@ -333,6 +336,16 @@ for (const fixture of fixtures) {
 const pinnedCommit = execFileSync('node', ['-e', "process.stdout.write(require('node:fs').readFileSync('docs/tool-mode/specs/mcp-2026-07-28/SOURCE_COMMIT.txt','utf8').trim())"], { encoding: 'utf8' })
 
 const sdkVersion = (() => {
+  // The V2 line is the relevant SDK family: it implements 2026-07-28 via
+  // discovery, while the v1 @modelcontextprotocol/sdk line cannot speak the
+  // revision. The manifest records the v2 version when resolvable and the fact
+  // the v2 line supports the revision, so a re-capture cannot regress the
+  // corrected reading (the round-57 review's F2).
+  for (const probe of ['@modelcontextprotocol/client/package.json', '@modelcontextprotocol/core/package.json']) {
+    try {
+      return execFileSync('node', ['-e', `process.stdout.write(require(${JSON.stringify(probe)}).version)`], { encoding: 'utf8' })
+    } catch { /* keep probing */ }
+  }
   try {
     return execFileSync('node', ['-e', "process.stdout.write(require('@modelcontextprotocol/sdk/package.json').version)"], { encoding: 'utf8' })
   } catch {
@@ -347,13 +360,14 @@ writeFileSync(`${OUT}/MANIFEST.json`, `${JSON.stringify({
   pinnedSchemaCommit: pinnedCommit,
   pinnedSchemaPath: 'docs/tool-mode/specs/mcp-2026-07-28/schema.json',
   /**
-   * The official SDK's version, recorded even though it CANNOT speak this revision.
-   * MCP-04 asks for the version and the compatibility matrix, and "the SDK we did
-   * not use, and why" is part of that answer.
+   * The official SDK's version and whether it can speak this revision. The v2
+   * line implements 2026-07-28 via discovery; the v1 line cannot. Both facts
+   * are recorded rather than asserted, because MCP-04 asks for the matrix and
+   * "the SDK we did not use, and why" is part of that answer.
    */
   officialSdkVersion: sdkVersion,
-  officialSdkSupportsRevision: false,
-  officialSdkNote: '@modelcontextprotocol/sdk does not list 2026-07-28 in SUPPORTED_PROTOCOL_VERSIONS, so this server is the schema-conformant adaptation MCP-01 permits rather than an SDK configuration.',
+  officialSdkSupportsRevision: sdkVersion !== 'not-installed' && !sdkVersion.startsWith('1.'),
+  officialSdkNote: 'The v1 @modelcontextprotocol/sdk line does not list 2026-07-28 in SUPPORTED_PROTOCOL_VERSIONS; the v2 line implements the revision via discovery. This server is the schema-conformant adaptation MCP-01 permits rather than an SDK configuration.',
   fixtureCount: fixtures.length,
   credentialPlaceholder: PLACEHOLDER_TOKEN,
   probe: 'scripts/probe-mcp-conformance.mjs',

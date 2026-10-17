@@ -146,6 +146,14 @@ export function redactText(text: string): string {
     .replace(/\b(?:npm_|ghp_|gho_|ghs_|sk-|xox[baprs]-)[A-Za-z0-9_-]{8,}/g, '<redacted>')
     .replace(/\bBearer\s+[A-Za-z0-9._-]{8,}/gi, 'Bearer <redacted>')
     .replace(/\b[A-Fa-f0-9]{40,}\b/g, '<redacted>')
+    // SEC-01: a generated secret is exactly 32 base64url bytes (43 characters). A
+    // note that ever embedded one is redacted here, even though nothing in the
+    // receipt pipeline takes a secret as input. The boundaries are NON-WORD
+    // lookarounds, not \b: a base64url secret may begin or end with '-' (or '_'),
+    // which are word characters — a \b-bounded pattern misses such a secret when
+    // it abuts another word character, and the reviewer demonstrated real
+    // crypto-random secrets with a leading '-' surviving redaction.
+    .replace(/(?<![A-Za-z0-9_-])[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/g, '<redacted>')
     .replace(/[A-Za-z]:\\[^\s"']*/g, '<path>')
     .replace(/(?<![\w.])\/(?:[\w.-]+\/)+[\w.-]+/g, '<path>')
 }

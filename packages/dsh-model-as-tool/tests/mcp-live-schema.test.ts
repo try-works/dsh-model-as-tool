@@ -138,7 +138,10 @@ async function liveServer(options: { readonly maxBodyBytes?: number } = {}) {
     port: 0,
     maxBodyBytes: options.maxBodyBytes ?? 1024 * 1024,
     allowedOrigins: [],
-    auth: { kind: 'static-token', token: TOKEN },
+    auth: { scheme: 'static-token', token: TOKEN, clientId: 'test-client' },
+    // This file validates responses against the pinned schema; the AT-12 rate limiter
+    // is the subject of mcp-rate-limit.test.ts.
+    rateLimit: false,
   } as HttpTransportConfig
   const endpoint = await startHttpServer(config, host)
   return { ctx, endpoint }
@@ -413,7 +416,7 @@ describe('P26-13 — the server\'s LIVE responses conform to the pinned schema',
     }
   })
 
-  it('a NOTIFICATION is acknowledged with no body (202)', async () => {
+  it('a stdio-only cancellation notification is refused over HTTP with a valid error envelope', async () => {
     const { endpoint } = await liveServer()
     try {
       const response = await fetch(endpoint.url, {
@@ -428,10 +431,13 @@ describe('P26-13 — the server\'s LIVE responses conform to the pinned schema',
         // No id: a notification carries none and expects no response.
         body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/cancelled', params: { requestId: 99 } }),
       })
-      assert.equal(response.status, 202)
-      // An accepted notification has nothing to say, so there is no body to validate — and
-      // asserting the emptiness is the whole check.
-      assert.equal((await response.text()).length, 0)
+      assert.equal(response.status, 400)
+      // There are no core client-to-server HTTP notifications in this revision.
+      // A refusal must be explicit; 202 applies only to accepted notifications.
+      const body = await response.json() as { error: { code: number; message: string } }
+      assert.equal(body.error.code, -32600)
+      assert.match(body.error.message, /does not accept standalone notifications/)
+      assertConforms('JSONRPCErrorResponse', body, 'unsupported HTTP notification')
     } finally {
       await endpoint.close()
     }

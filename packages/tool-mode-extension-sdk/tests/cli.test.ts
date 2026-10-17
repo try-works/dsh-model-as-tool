@@ -12,6 +12,7 @@
 
 import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -42,6 +43,82 @@ function capture() {
   return { out, err, io: { out: (line: string) => out.push(line), err: (line: string) => err.push(line) } }
 }
 
+describe('RCP-08 — the recipes namespace forwards lazily, or refuses precisely', () => {
+  it('forwards the raw recipe argv to the injected runner and propagates its exit code', async () => {
+    const seen: string[][] = []
+    const { io } = capture()
+    const code = await runToolModeCli(
+      ['recipes', 'create', '--template', 'text-title', '--out', './x'],
+      io,
+      {
+        recipeCliRunner: {
+          async runRecipeCli(argv, sink) {
+            seen.push([...argv])
+            sink.out('forwarded')
+            return 7
+          },
+        },
+      },
+    )
+    assert.equal(code, 7, 'the recipes runner\'s exit code is propagated verbatim')
+    assert.deepEqual(seen, [['create', '--template', 'text-title', '--out', './x']], 'the argv is forwarded RAW, not re-parsed')
+  })
+
+  it('answers a PRECISE refusal when the recipes package cannot be resolved', async () => {
+    const { io, err } = capture()
+    const code = await runToolModeCli(
+      ['recipes', 'validate', 'x.json'],
+      io,
+      { resolveRecipeCli: async () => undefined },
+    )
+    assert.equal(code, 1, 'an unavailable recipes CLI is a refusal, never a fake pass')
+    assert.match(err.join('\n'), /@try-works\/tool-mode-recipes is not installed/)
+    assert.match(err.join('\n'), /tool-mode-recipe/)
+  })
+
+  it('resolves the REAL recipes CLI beside the SDK and forwards end to end', async (t) => {
+    // The workspace links the recipes package into node_modules: the default
+    // resolver must find it and hand over the same implementation.
+    let resolved: boolean
+    try {
+      await import('@try-works/tool-mode-recipes/cli')
+      resolved = true
+    } catch {
+      resolved = false
+    }
+    if (!resolved) {
+      t.skip('the recipes package is not resolvable beside the SDK in this environment')
+      return
+    }
+    const { io, err } = capture()
+    const code = await runToolModeCli(['recipes', 'validate', 'does-not-exist.json'], io)
+    assert.equal(code, 2, 'a missing file through the forwarded CLI is the recipes CLI\'s usage failure')
+    assert.match(err.join('\n'), /cannot read/)
+  })
+
+  it('a THROWING forwarded runner becomes a named refusal, never a re-thrown raw error', async () => {
+    const { io, err } = capture()
+    let code = -1
+    try {
+      code = await runToolModeCli(
+        ['recipes', 'create', '--template', 'text-title', '--out', './x'],
+        io,
+        {
+          recipeCliRunner: {
+            async runRecipeCli() {
+              throw new Error('raw runner explosion')
+            },
+          },
+        },
+      )
+    } catch (error) {
+      assert.fail(`the namespace re-threw a raw error: ${(error as Error).message}`)
+    }
+    assert.equal(code, 1, 'a throwing runner is a refusal, not a crash')
+    assert.match(err.join('\n'), /raw runner explosion/)
+  })
+})
+
 /** A registrar that always succeeds. */
 const allowingRegistrar: ContributionRegistrar = {
   publish: contribution => `h:${contribution.name}`,
@@ -64,7 +141,9 @@ function buildZip(name: string, version = '1.0.0', tools: { id: string; name: st
     compatibility: { hostApi: '^1.1.0', requiredFeatures: [] },
     execution: { kind: 'module', entry: './index.js' },
     permissions: { networkOrigins: [], inputFiles: false, storage: 'none', secrets: [], nativeCode: false },
-    models: [], implementations: [], skills: [],
+    models: [], implementations: tools.map(tool => ({
+      id: `binding-${tool.id}`, contractId: `@test/${tool.id}`, contractVersion: '1.0.0', recipeVersion: '1.0.0',
+    })), skills: [],
     tools: tools.map(tool => ({
       id: tool.id, name: tool.name, contractId: `@test/${tool.id}`, contractVersion: '1.0.0',
       description: `The ${tool.name} tool used for CLI testing.`,
@@ -296,7 +375,7 @@ describe('EXT-28 — uninstall requires a preview and explicit deactivation', ()
     assert.match(text, /--deactivate/)
   })
 
-  it('uninstalls with --deactivate and retains the tombstone', async () => {
+  it('refuses --deactivate uninstall when a new CLI has no owning publication handles', async () => {
     const store = scratch()
     await seed(store, '@acme/tools', '1.0.0', [{ id: 'a', name: 'acme_a' }])
     await cli(['extensions', 'activate', '@acme/tools', '--store', store], { registrar: allowingRegistrar })
@@ -305,9 +384,9 @@ describe('EXT-28 — uninstall requires a preview and explicit deactivation', ()
       ['extensions', 'uninstall', '@acme/tools', '--deactivate', '--store', store],
       { registrar: allowingRegistrar },
     )
-    assert.equal(code, 0)
-    assert.match(out.join('\n'), /tombstone is retained/)
-    assert.equal(new ExtensionStore(store).listInstalled().value.length, 0)
+    assert.equal(code, 1)
+    assert.equal(new ExtensionStore(store).listInstalled().value.length, 1)
+    assert.equal(new ExtensionStore(store).readProfileState('default').value[0]?.observedActivation, 'quarantined')
   })
 
   it('uninstalls an inactive extension without needing --deactivate', async () => {
@@ -343,22 +422,27 @@ describe('EXT-31 — offline edits take exclusive ownership', () => {
   it('refuses when another live process owns the store', async () => {
     const store = scratch()
     const extensions = new ExtensionStore(store)
-    // A lock held by a process that is certainly alive: this one.
-    extensions.acquireExclusive()
-    // Rewrite the lock to name a DIFFERENT live pid, standing in for a running host.
-    const { writeFileSync: write } = await import('node:fs')
-    write(join(store, 'store.lock'), JSON.stringify({ pid: process.pid, since: new Date().toISOString() }))
-
-    const other = new ExtensionStore(store)
-    // Simulated: the same pid would look like our own lock, so assert the shape of
-    // the guard by checking a foreign live pid is treated as held.
+    // A REAL live foreign process: a child that stays alive for the test's
+    // duration, so isProcessAlive(pid) is genuinely true (a made-up pid would
+    // read as a stale lock and the refusal would never fire — the round-49
+    // review's vacuous-test finding).
+    const holder = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 30000)'])
     try {
-      other.acquireExclusive()
-      // Taking it in the same process is legitimate re-entry; the refusal path is
-      // covered by the message and code asserted below.
-    } catch (error) {
-      assert.ok(error instanceof ManagementError)
-      assert.equal(error.code, 'EXTENSION_IN_USE')
+      const { writeFileSync: write } = await import('node:fs')
+      write(join(store, 'store.lock'), JSON.stringify({ pid: holder.pid, since: new Date().toISOString() }))
+
+      const other = new ExtensionStore(store)
+      assert.throws(
+        () => other.acquireExclusive(),
+        (error: unknown) => {
+          assert.ok(error instanceof ManagementError)
+          assert.equal(error.code, 'EXTENSION_IN_USE')
+          assert.match(error.message, new RegExp(String(holder.pid)))
+          return true
+        },
+      )
+    } finally {
+      holder.kill()
     }
   })
 
@@ -372,6 +456,30 @@ describe('EXT-31 — offline edits take exclusive ownership', () => {
     // Proceeding is correct: refusing would make one crashed run block the store
     // permanently, which is a worse failure than a recoverable stale lock.
     release()
+  })
+
+  it('refuses `tools disable` while another live process owns the store', async () => {
+    const store = scratch()
+    await seed(store, '@acme/tools', '1.0.0', [{ id: 'a', name: 'acme_a' }, { id: 'b', name: 'acme_b' }])
+    await cli(['extensions', 'activate', '@acme/tools', '--store', store], { registrar: allowingRegistrar })
+    // A REAL foreign live process: a node child that stays alive, standing in for a
+    // running host that owns the store.
+    const { spawn } = await import('node:child_process')
+    const foreign = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' })
+    try {
+      const { writeFileSync: write } = await import('node:fs')
+      write(join(store, 'store.lock'), JSON.stringify({ pid: foreign.pid, since: new Date().toISOString() }))
+
+      const { code, err } = await cli(['tools', 'disable', 'acme_a', '--store', store])
+      assert.equal(code, 1)
+      assert.match(err.join('\n'), /owned by process|EXTENSION_IN_USE/)
+      // The durable choice must NOT change when the command could not take ownership:
+      // racing a host's live registry with no mutual exclusion would split the truth.
+      const state = new ExtensionStore(store).readProfileState('default').value[0]
+      assert.equal(state?.tools.find(tool => tool.toolName === 'acme_a')?.enabled, true)
+    } finally {
+      foreign.kill()
+    }
   })
 
   it('release removes only its own lock', async () => {

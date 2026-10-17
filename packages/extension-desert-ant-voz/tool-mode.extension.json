@@ -50,7 +50,17 @@
       ]
     }
   ],
-  "tools": [],
+  "tools": [
+    {
+      "id": "voz-stt-transcribe",
+      "name": "stt_transcribe",
+      "contractId": "tool-mode/stt_transcribe",
+      "contractVersion": "1.0.0",
+      "description": "On-device speech transcription with honest partial-coverage reporting.",
+      "inputSchema": "./schemas/stt-transcribe.input.json",
+      "outputSchema": "./schemas/stt-transcribe.output.json"
+    }
+  ],
   "implementations": [
     {
       "id": "voz-default",

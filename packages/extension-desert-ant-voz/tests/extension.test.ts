@@ -76,8 +76,12 @@ describe('BASE-09 — the extension is reached through the public entry', () => 
     const discovery = discoverExtension(extensionDir())
     assert.equal(discovery.packageName, '@try-works/extension-desert-ant-voz')
     assert.equal(discovery.manifest.id, discovery.packageName)
-    // It implements the STANDARD contract rather than declaring a new one (EXT-21).
-    assert.deepEqual([...discovery.manifest.tools], [])
+    // It implements the STANDARD contract (EXT-21): the tool is DECLARED in
+    // tools[] AND bound by the implementation, with the schema refs shipped.
+    const tool = discovery.manifest.tools[0]
+    assert.ok(tool !== undefined, 'the tool must be declared in tools[]')
+    assert.equal(tool.name, 'stt_transcribe')
+    assert.equal(tool.contractId, 'tool-mode/stt_transcribe')
     assert.equal(discovery.manifest.implementations[0]?.contractId, 'tool-mode/stt_transcribe')
     assert.equal(discovery.manifest.implementations[0]?.modelId, 'voz')
   })
@@ -110,9 +114,10 @@ describe('EXT-18 — inspection reads local state only', () => {
     const { instance } = await activate()
     const provider = await instance.createProvider({ modelId: 'voz', configuration: {} })
     const inspection = await provider.inspect(new AbortController().signal)
-    // Reporting "ready" before loading would be a claim the provider has not
-    // earned; the weights are ~349 MB and no graph has been compiled yet.
-    assert.equal(inspection.readiness, 'unprepared')
+    // Inspection distinguishes preparation from residency: if the local runtime
+    // prerequisites resolve, a cold provider is callable and may report ready
+    // without compiling the graph merely to inspect it.
+    assert.equal(inspection.readiness, inspection.missing.length === 0 ? 'prepared-cold' : 'needs-preparation')
     assert.deepEqual(
       [...inspection.features].sort(),
       ['speech-to-text', 'word-timestamps'],
@@ -125,7 +130,7 @@ describe('EXT-18 — inspection reads local state only', () => {
     const inspection = await provider.inspect(new AbortController().signal)
     // In this checkout neitheroptional dependency is installed, so inspection must
     // say WHICH one is missing rather than reporting a generic failure.
-    if (inspection.readiness === 'unprepared' && inspection.missing.length > 0) {
+    if (inspection.readiness === 'needs-preparation' && inspection.missing.length > 0) {
       for (const entry of inspection.missing) {
         assert.ok(entry.reason.includes('install'), 'each missing prerequisite needs actionable guidance')
       }

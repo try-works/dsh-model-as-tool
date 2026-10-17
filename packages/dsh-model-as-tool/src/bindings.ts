@@ -13,12 +13,13 @@
  * @module @try-works/dsh-model-as-tool/bindings
  */
 
-import { defineTool, type ParameterSchemaSpec } from '@deepseek-ai/dsh-tools'
+import { defineTool, type ParameterSchemaSpec, type ValueSchemaSpec } from '@deepseek-ai/dsh-tools'
 import {
   assertValidContract,
   assertValidInput,
   assertValidOutput,
   crossFieldRules,
+  projectSchemaToDsh,
   toDshParameters,
   type ExecutionLocation,
   type ToolContract,
@@ -33,7 +34,7 @@ import {
   type InvocationAuthority,
   type ToolGrant,
 } from './authority.ts'
-import type { ModelAdapter, JsonValue } from './adapters/index.ts'
+import type { ModelAdapter } from './adapters/index.ts'
 
 /** Host identity stamped into every result. */
 export interface HostIdentity {
@@ -88,6 +89,7 @@ export interface ContractBinding {
  */
 export function executionLocationOf(route: ModelRoute): ExecutionLocation {
   switch (route) {
+    case 'extension':
     case 'npm-native':
     case 'npm-onnxruntime':
       return 'host'
@@ -202,33 +204,26 @@ export function registerContractTool(
     parameters: toDshParameters(contract) as unknown as ParameterSchemaSpec,
     output: {
       /**
-       * An open object schema, and DECL-02 names this as INADEQUATE.
+       * The PROJECTED output schema, closing the DECL-02 advertisement gap.
        *
-       * The requirement says in as many words that an unconstrained
-       * `{type: "object", additionalProperties: true}` is not an adequate implementation
-       * of an ordinary leaf tool's contract. It is right, and this repository cannot yet
-       * do better: the contract's real output schema CANNOT be projected into DSH's
-       * value-schema DSL. Attempting it produced four distinct rejections at
-       * registration, recorded here because the next person will try the same thing:
+       * The registry validates every success against this advertised schema, so it may
+       * never be STRICTER than the contract. `projectSchemaToDsh` only loosens: it drops
+       * keywords the DSH value-schema DSL cannot carry (`items` at depth, non-scalar
+       * `enum`, `minimum`/`pattern`/`minLength`), records each in `runtimeEnforced`, and
+       * keeps every property name, type and closedness. `assertValidOutput` still
+       * enforces the FULL contract at runtime, so the projection is advertisement-only.
        *
-       *   1. `schema.required is not supported by the value schema DSL`
-       *   2. `schema.properties.candidates.items.required is not supported` - so required
-       *      is unsupported at EVERY depth, not merely at the root
-       *   3. `schema.properties.words.items is not supported` - `items` is in the
-       *      documented supported set but its support does not extend to an array nested
-       *      inside an object, which is what every output schema has
-       *   4. `schema.properties.reliability.enum must be a non-empty array of scalar
-       *      values` - and separate attempts to express the union type as `oneOf` were
-       *      rejected too, with `oneOf must be an array of at least two value schemas`
-       *
-       * Stripping each keyword in turn does converge, but it converges on a schema that
-       * advertises almost nothing while APPEARING to be a real declaration - which is
-       * worse than this open object, because a client would trust it. The contract
-       * itself is unchanged and complete: `assertValidOutput` enforces the real schema at
-       * runtime against the untouched contract, so results ARE validated. What is
-       * missing is the ADVERTISEMENT.
+       * The open `{type:"object", additionalProperties:true}` this replaces declared
+       * nothing about any field; the projection names every property, its type and its
+       * requiredness — a genuine declaration. Registration was previously impossible
+       * because the projection mangled scalar enums into objects (`{0:'host',...}`) via
+       * an array/record confusion in stripItems; that defect is fixed and probed.
        */
-      schema: { type: 'object', additionalProperties: true },
+      schema: {
+        type: 'object',
+        properties: projectSchemaToDsh(contract.outputSchema).parameters,
+        additionalProperties: false,
+      } as unknown as ValueSchemaSpec,
       render: (_args, value) => {
         const record = value as Record<string, unknown>
         return [{ type: 'text', text: renderForModel(contract, record) }]
@@ -270,7 +265,14 @@ export function registerContractTool(
       // call that failed validation would claim provenance for a result nobody
       // received, so the sink sees only calls that actually completed.
       host.recordReceipt?.(buildReceipt(binding, host, meta))
-      return value as Record<string, never> | Record<string, JsonValue>
+      /**
+       * The cast exists because the projected schema's inferred type is a closed
+       * record, while the registry validates the VALUE against the projected schema
+       * (which only LOOSENS the contract) and `assertValidOutput` enforces the full
+       * contract. The value is losslessly JSON and has passed both; the type-level
+       * fiction is contained to this return.
+       */
+      return value as unknown as never
     },
     presentCall(callArgs) {
       const primary = Object.values(callArgs as Record<string, unknown>)[0]

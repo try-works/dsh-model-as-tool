@@ -1,0 +1,124 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/fixture-planner",
+  "version": "1.0.0",
+  "displayName": "Planning discipline fixture",
+  "description": "A deterministic planning fixture: it contributes tools_plan and structured_extract under their reserved names with planning-shaped declared schemas, and its provider answers canned scenarios keyed off the request text. No engine, no weights, no network — the HOST-side pipeline (frozen snapshot, name gate, proposal re-checks, meta stamping) is the thing under test.",
+  "activation": {
+    "policy": "operator",
+    "deactivatable": true
+  },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": []
+  },
+  "execution": {
+    "kind": "module",
+    "entry": "./lib/index.js",
+    "isolation": "host-inline"
+  },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": false
+  },
+  "models": [
+    {
+      "id": "fixture-planner-model",
+      "assetSet": "fixture-planner-bundled",
+      "assetLock": "./models.lock.json",
+      "platforms": [{ "os": "win32", "arch": "x64", "accelerator": "cpu" }]
+    }
+  ],
+  "tools": [
+    {
+      "id": "fixture-tools-plan",
+      "name": "tools_plan",
+      "contractId": "@try-works/fixture-planner/tools_plan",
+      "contractVersion": "1.0.0",
+      "description": "Propose the tool calls a request implies, as DATA. The fixture provider answers canned scenarios; it executes nothing and performs no inference.",
+      "inputSchema": "./schemas/tools-plan.input.json",
+      "outputSchema": "./schemas/tools-plan.output.json"
+    },
+    {
+      "id": "fixture-structured-extract",
+      "name": "structured_extract",
+      "contractId": "@try-works/fixture-planner/structured_extract",
+      "contractVersion": "1.0.0",
+      "description": "Extract structured data from text into a caller-supplied JSON Schema. The fixture provider returns a canned record; it performs no inference.",
+      "inputSchema": "./schemas/structured-extract.input.json",
+      "outputSchema": "./schemas/structured-extract.output.json"
+    }
+  ],
+  "implementations": [
+    {
+      "id": "fixture-planner-tools-plan",
+      "contractId": "@try-works/fixture-planner/tools_plan",
+      "contractVersion": "1.0.0",
+      "modelId": "fixture-planner-model",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "fixture-planner-structured-extract",
+      "contractId": "@try-works/fixture-planner/structured_extract",
+      "contractVersion": "1.0.0",
+      "modelId": "fixture-planner-model",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": [],
+  "licenses": [
+    {
+      "layer": "code",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "engine",
+      "name": "none: the fixture performs no inference",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "weights",
+      "name": "none: the fixture owns no model",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "sdk",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "conversion-artifacts",
+      "name": "none: no conversion step is performed",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    }
+  ],
+  "network": {
+    "requiredTelemetry": false,
+    "otherNetworkUse": false
+  }
+}

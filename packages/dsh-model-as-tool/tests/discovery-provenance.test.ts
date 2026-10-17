@@ -128,7 +128,7 @@ describe('EXT-32 — an absent tool is explicable', () => {
     const ctx = await mountPlugin({ models: ['tongue'] })
     const tongue = (await listing(ctx)).find(row => row.id === 'tongue')
     // The readiness the publication surface computed, not a guess made here.
-    assert.ok(['ready', 'unprepared', 'preparing', 'failed', 'unknown'].includes(tongue?.readiness ?? ''))
+    assert.ok(['unavailable', 'needs-preparation', 'preparing', 'prepared-cold', 'loading', 'ready', 'busy', 'failed', 'unknown'].includes(tongue?.readiness ?? ''))
   })
 })
 

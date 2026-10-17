@@ -1,0 +1,21 @@
+{
+  "name": "@try-works/harness-vision",
+  "version": "0.1.0",
+  "description": "The describe_image declarative harness-model package (HLM-12, RCP-01). Recipes-only: this package ships no executable code.",
+  "type": "module",
+  "license": "MIT",
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  },
+  "exports": {
+    "./tool-mode.extension.json": "./tool-mode.extension.json",
+    "./recipes/describe-image.json": "./recipes/describe-image.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "tool-mode.extension.json",
+    "recipes/*.json",
+    "schemas/*.json",
+    "README.md"
+  ]
+}

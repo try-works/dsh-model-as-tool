@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lang_detect output",
+  "description": "The standard tool-mode/lang_detect contract payload (TOOL-03). The host attaches the reserved meta field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["language", "reliability", "tooCloseToCall", "candidates"],
+  "properties": {
+    "language": { "type": ["string", "null"], "description": "Best candidate, or null when input had no language signal." },
+    "reliability": {
+      "type": "string",
+      "enum": ["confident", "likely", "tentative", "unknown"],
+      "description": "Vendor-reported verdict. Not a calibrated probability."
+    },
+    "tooCloseToCall": {
+      "type": "boolean",
+      "description": "True when the leading candidates are within the implementation's declared tie margin."
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["language", "probability"],
+        "properties": {
+          "language": { "type": "string" },
+          "probability": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    }
+  }
+}

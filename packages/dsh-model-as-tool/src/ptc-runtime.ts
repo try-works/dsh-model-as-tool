@@ -180,22 +180,85 @@ export function admitTimeout(requestedMs: number | null | undefined): number {
 }
 
 /**
- * Whether generated-code execution may be exposed to callers yet (CODE-08).
+ * Whether the confinement acceptance tests have passed on this deployment
+ * (CODE-09).
  *
- * The directive is explicit: "Do not expose generated-code execution to production
- * clients before the specification's confinement tests pass." Those tests have not run
- * here, so this returns false and the caller refuses rather than relying on a comment.
- * @returns always false until confinement is demonstrated.
+ * This is the SINGLE release-gate flip point. It is a module-level flag with a
+ * TEST-ONLY setter so the acceptance test that eventually passes can open the
+ * gate for its own proof — the "export APPEARS when the gate opens" case must be
+ * executable before the gate opens in production, not exercised there for the
+ * first time. Production builds leave it false.
  */
-export function mayExposeToClients(): boolean {
-  return false
+let confinementEvidence = false
+
+/** The current confinement evidence (CODE-09). */
+export function confinementDemonstrated(): boolean {
+  return confinementEvidence
 }
 
 /**
- * Describe why generated-code execution is withheld.
+ * The environment marker that arms the test seam (CODE-09).
+ *
+ * The setter below SHIPS in the built artifact (there is no separate test
+ * bundle), so it must be inert in every normal process. It therefore refuses to
+ * move the gate unless the OPERATOR started this process with an explicit
+ * marker — which is itself an operator action, so opening the gate always costs
+ * an operator decision and never happens by config, by import or by accident.
+ * The acceptance test sets the marker; production never does.
+ */
+const CONFINEMENT_SEAM_ENV = 'DSH_PTC_CONFINEMENT_SEAM'
+const CONFINEMENT_SEAM_TOKEN = 'open-for-acceptance-test'
+
+/**
+ * Set the confinement evidence (TEST SEAM, CODE-09).
+ *
+ * The setter is the seam the acceptance test uses. It is inert — throws without
+ * moving anything — unless the process carries the explicit environment marker,
+ * so the built artifact cannot have the gate opened by code that merely imports
+ * it. A production build never sets the marker.
+ * @param value - the evidence state to adopt.
+ */
+export function setConfinementDemonstratedForTest(value: boolean): void {
+  if (process.env[CONFINEMENT_SEAM_ENV] !== CONFINEMENT_SEAM_TOKEN) {
+    throw new Error(
+      'the confinement evidence is a release gate; the acceptance-test seam is '
+      + 'closed in this process because the operator marker is absent',
+    )
+  }
+  confinementEvidence = value
+}
+
+/**
+ * Whether generated-code execution may be exposed to callers (CODE-08, CODE-10).
+ *
+ * Exposure is the CONJUNCTION of two independent facts, and neither can stand in
+ * for the other:
+ *
+ * - CODE-09: the specification's confinement tests must have passed. They have
+ *   not run here, so this half is false — no configuration can open it.
+ * - CODE-10: the OPERATOR must have granted hosted code execution, which is a
+ *   separate consent from ordinary model-tool access. The caller passes the
+ *   operator's grant in, so the gate has a real input rather than being a literal.
+ *
+ * A host with the grant flipped but no confinement evidence stays closed; a host
+ * with confinement evidence but no operator grant stays closed too.
+ * @param operatorGranted - whether the operator granted hosted code execution.
+ * @returns whether a caller may be served.
+ */
+export function mayExposeToClients(operatorGranted: boolean): boolean {
+  return operatorGranted && confinementDemonstrated()
+}
+
+/**
+ * Describe why generated-code execution is withheld, naming WHICH fact is unmet.
+ * @param operatorGranted - whether the operator granted hosted code execution.
  * @returns the reason callers are given.
  */
-export function exposureWithheldReason(): string {
+export function exposureWithheldReason(operatorGranted: boolean): string {
+  if (!operatorGranted) {
+    return 'generated-code execution is disabled: the operator has not granted hosted '
+      + 'code execution (CODE-10); it is a separate consent from model-tool access'
+  }
   return 'generated-code execution is withheld until the confinement tests pass; '
     + 'the runtime is mounted and usable in-process, and no production client is served it'
 }

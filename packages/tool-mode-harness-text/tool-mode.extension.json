@@ -1,0 +1,49 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/tool-mode-harness-text",
+  "version": "0.1.0",
+  "displayName": "Harness Text Tools",
+  "description": "The text_title declarative harness-model tool: proposes a bounded title and description for supplied text through an authorized DSH harness model (RCP-12).",
+  "license": "MIT",
+  "activation": { "policy": "operator", "deactivatable": true },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": ["harness-model-recipes-v1"]
+  },
+  "execution": { "kind": "declarative" },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "none",
+    "secrets": [],
+    "nativeCode": false,
+    "harnessModel": {
+      "inputModalities": ["text"],
+      "outputModalities": ["text"]
+    }
+  },
+  "models": [],
+  "tools": [
+    {
+      "id": "text-title",
+      "name": "text_title",
+      "contractId": "text.title",
+      "contractVersion": "1.0.0",
+      "description": "Propose a bounded title and one-sentence description for supplied text through an authorized harness model.",
+      "inputSchema": "./schemas/text-title.input.json",
+      "outputSchema": "./schemas/text-title.output.json"
+    }
+  ],
+  "implementations": [
+    {
+      "id": "text-title-harness",
+      "kind": "harness-model",
+      "contractId": "text.title",
+      "contractVersion": "1.0.0",
+      "recipeVersion": "1.0.0",
+      "recipe": "./recipes/text-title.json"
+    }
+  ],
+  "skills": []
+}

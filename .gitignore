@@ -13,3 +13,12 @@ research/text/
 
 # recursive-mode runtime state
 /.recursive/config/recursive-router-discovered.json
+
+# Session/tooling logs and scratch captures: never part of the deliverable.
+/.verify-*.log
+/.review-*.log
+/host-*.log
+/.paper/
+/.tmp-real-corpus/
+/launch-video/
+docs/tool-mode/qualification/.voz-wavs-*/

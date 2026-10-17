@@ -44,6 +44,31 @@ function listen(id: string, notifications: Record<string, unknown>): WireRequest
   }
 }
 
+describe('P26-03 / P26-12 — subscription capability negotiation follows wiring', () => {
+  it('accepts subscriptions/listen as required only when a registry is composed', async () => {
+    const registry = new SubscriptionRegistry()
+    const required = {
+      jsonrpc: '2.0' as const,
+      id: 'discover-with-subscriptions',
+      method: 'server/discover',
+      params: {
+        _meta: {
+          [META_KEYS.protocolVersion]: PROTOCOL_VERSION,
+          [META_KEYS.clientCapabilities]: { required: ['subscriptions/listen'] },
+        },
+      },
+    }
+    const withoutRegistry = await dispatch(required, host)
+    assert.equal(withoutRegistry.httpStatus, 400)
+    assert.match(JSON.stringify(withoutRegistry.response), /-32021/)
+
+    const withRegistry = await dispatch(required, host, { subscriptions: registry, clientId: 'client-a' })
+    assert.equal(withRegistry.httpStatus, 200)
+    const capabilities = (withRegistry.response?.result as { capabilities: { tools?: { listChanged?: boolean } } }).capabilities
+    assert.equal(capabilities.tools?.listChanged, true)
+  })
+})
+
 describe('P26-09 — acknowledge only what is supported', () => {
   it('acknowledges a requested supported filter', () => {
     assert.deepEqual(acknowledgeFilter({ toolsListChanged: true }), { toolsListChanged: true })

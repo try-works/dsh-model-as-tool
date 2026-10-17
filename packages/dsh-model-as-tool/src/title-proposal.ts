@@ -45,6 +45,30 @@ export const SECTION_TITLE_LIMITS: TitleLimits = {
   maxRepairs: 1,
 }
 
+/**
+ * The contract limits for one configuration's CODE-11 repair ceiling.
+ *
+ * The title/description lengths stay contract-stated; the repair ceiling is
+ * the operator's configured number (an integer 0..8, default 1). An invalid
+ * ceiling is a REFUSAL, never a silent clamp — the recorded lineage must show
+ * the budget the operator actually approved.
+ * @param repairCeiling - the configured ceiling; absent means the default 1.
+ * @returns the limits the repair decision and lineage honor.
+ */
+export function titleLimitsFor(repairCeiling?: number): TitleLimits {
+  const ceiling = repairCeiling ?? SECTION_TITLE_LIMITS.maxRepairs
+  if (!Number.isInteger(ceiling) || ceiling < 0 || ceiling > 8) {
+    throw new Error(
+      `the repair ceiling must be an integer between 0 and 8 (CODE-11); received ${JSON.stringify(ceiling)}`,
+    )
+  }
+  return {
+    maxTitleChars: SECTION_TITLE_LIMITS.maxTitleChars,
+    maxDescriptionChars: SECTION_TITLE_LIMITS.maxDescriptionChars,
+    maxRepairs: ceiling,
+  }
+}
+
 /** What a title is being proposed for. */
 export type TitleKind = 'section' | 'page' | 'document'
 
@@ -239,6 +263,57 @@ export function mayRepairTitle(
     }
   }
   return { repair: true, repairs: repairsSoFar + 1 }
+}
+
+/**
+ * One repair-lineage entry (CODE-11): the traceable per-attempt record the
+ * budget lineage owes — which repair, the budget before and after the
+ * decision, and the outcome the decision produced. A COUNT alone cannot show
+ * WHERE a budget was spent; the lineage does.
+ */
+export interface RepairLineageEntry {
+  /** One-based repair attempt index. */
+  readonly repairIndex: number
+  /** The repair budget before the decision. */
+  readonly budgetBefore: number
+  /** The repair budget after the decision (one lower when a repair ran). */
+  readonly budgetAfter: number
+  /** What the previous attempt produced, so the lineage names WHY. */
+  readonly previousKind: string
+  /** The decision outcome for this attempt. */
+  readonly outcome: 'repaired' | 'exhausted' | 'not-needed'
+}
+
+/**
+ * Record one repair decision into the lineage (CODE-11, pure and testable).
+ * @param lineage - the lineage so far (mutated in place, then returned).
+ * @param decision - the `mayRepairTitle` decision for this attempt.
+ * @param previousKind - the previous outcome kind.
+ * @param budgetBefore - the budget the decision was made against.
+ * @returns the updated lineage.
+ */
+export function recordRepairLineage(
+  lineage: RepairLineageEntry[],
+  decision: { readonly repair: boolean; readonly repairs: number },
+  previousKind: string,
+  budgetBefore: number,
+): RepairLineageEntry[] {
+  const outcome = decision.repair
+    ? 'repaired'
+    : decision.repairs >= budgetBefore && previousKind !== 'proposed'
+      ? 'exhausted'
+      : 'not-needed'
+  lineage.push({
+    repairIndex: lineage.length + 1,
+    budgetBefore,
+    // The budget AFTER the decision is the budget before minus the one
+    // attempt a repair consumed — the lineage's own contract ("one lower
+    // when a repair ran"), never the consumed count relabelled.
+    budgetAfter: budgetBefore - (decision.repair ? 1 : 0),
+    previousKind,
+    outcome,
+  })
+  return lineage
 }
 
 /**

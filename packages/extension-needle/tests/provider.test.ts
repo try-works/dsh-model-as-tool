@@ -173,12 +173,12 @@ describe('EXT-19 — creating a provider is a handle, not a load', () => {
 })
 
 describe('EXT-18 — inspection reports what is ACTUALLY on this machine', () => {
-  it('reports unprepared and names every artifact it could not verify', async () => {
+  it('reports needs-preparation and names every artifact it could not verify', async () => {
     // An empty storage directory and no configuration: nothing can resolve unless the
     // environment points at real bytes.
     const inspection = await (await provider()).inspect(new AbortController().signal)
     if (PINNED === undefined) {
-      assert.equal(inspection.readiness, 'unprepared')
+      assert.equal(inspection.readiness, 'needs-preparation')
       // An EMPTY feature list is the honest answer while unprepared: `features` is what this
       // deployment can RUN, not what the model is documented to do.
       assert.deepEqual([...inspection.features], [])
@@ -212,7 +212,7 @@ describe('EXT-18 — inspection reports what is ACTUALLY on this machine', () =>
     writeFileSync(fakeEngine, Buffer.alloc(enginePin.bytes, 0x41))
     const created = await provider({ ...NO_ENVIRONMENT }, dir)
     const inspection = await created.inspect(new AbortController().signal)
-    assert.equal(inspection.readiness, 'unprepared')
+    assert.equal(inspection.readiness, 'needs-preparation')
     const engineProblem = inspection.missing.find(entry => entry.name === 'needle-engine-win-x64')
     assert.ok(engineProblem, 'the wrong-bytes engine must be reported as a problem')
     assert.match(engineProblem.reason, /SHA-256/)

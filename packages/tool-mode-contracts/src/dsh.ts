@@ -106,30 +106,60 @@ function projectNode(
       out[keyword] = projectNode(value as Record<string, unknown>, `${path}[]`, runtimeEnforced)
     } else if (keyword === 'type' && Array.isArray(value)) {
       /**
-       * A union `type` array advertises its CONCRETE member, with the union recorded as
-       * runtime-enforced.
+       * A union `type` array is advertised as `type: 'json'` (unconstrained), NOT
+       * narrowed to one member.
        *
-       * Three attempts got here. `{ type: ['string', 'null'] }` is valid JSON Schema but
-       * the DSL rejected the array with "type must be string/number/... or use oneOf",
-       * and converting it to `oneOf` was rejected too, with "oneOf must be an array of at
-       * least two value schemas" - `{ type: 'null' }` does not count as one. So the
-       * non-null member is advertised, which is the case a client actually handles, and
-       * the nullability is reported in runtimeEnforced rather than dropped silently,
-       * which is what BASE-04 forbids.
+       * An earlier version advertised the concrete non-null member, which made the
+       * advertised schema STRICTER than the contract: `{ type: ['string','null'] }`
+       * was projected to `type: 'string'`, and the registry VALIDATES success values
+       * against the advertised schema, so a legitimate null result was rejected.
+       * Dropping the type entirely also fails: the DSL requires every property to
+       * have a type or oneOf. `type: 'json'` is the loosest the DSL accepts, it is
+       * strictly looser than any union, and the runtime contract check still enforces
+       * the union itself.
        */
-      const members = value as unknown[]
-      const concrete = members.find(member => member !== 'null')
-      if (concrete === undefined) {
-        runtimeEnforced.push(`${path}.type`)
-      } else {
-        out.type = concrete
-        if (members.length > 1) runtimeEnforced.push(`${path}.type(non-nullable projection)`)
-      }
+      runtimeEnforced.push(`${path}.type(union -> json)`)
+      out.type = 'json'
     } else {
       out[keyword] = value
     }
   }
+  /**
+   * Post-pass the DSL rejects but projectNode would otherwise emit:
+   *
+   * - `type: 'json'` cannot carry `items`/`enum`/`const` siblings, so a union-typed
+   *   array whose element schema (or scalar constraints) survived the pass is
+   *   stripped HERE, with the keyword recorded rather than silently lost.
+   * - A NON-SCALAR `enum` is dropped everywhere: the DSL requires "a non-empty array
+   *   of scalar values", and the confidence contract (DECL-04) enumerates OBJECT
+   *   members to distinguish vendor-reported from calibrated from unavailable.
+   *   Membership is still enforced at runtime against the untouched contract.
+   * - An annotation-only node (every keyword dropped to runtimeEnforced) has no
+   *   `type`/`oneOf`, which the DSL rejects; advertising `type: 'json'` keeps it
+   *   strictly looser than the original instead of crashing registration.
+   */
+  if (out.type === undefined && out.oneOf === undefined) {
+    runtimeEnforced.push(`${path}.type(annotation-only -> json)`)
+    out.type = 'json'
+  }
+  if (out.type === 'json') {
+    for (const sibling of ['items', 'enum', 'const'] as const) {
+      if (sibling in out) {
+        runtimeEnforced.push(`${path}.${sibling}`)
+        delete out[sibling]
+      }
+    }
+  }
+  if (out.type !== 'json' && Array.isArray(out.enum) && !out.enum.every(member => isScalar(member))) {
+    runtimeEnforced.push(`${path}.enum`)
+    delete out.enum
+  }
   return out
+}
+
+/** A scalar the DSL's `enum` admits. */
+function isScalar(member: unknown): boolean {
+  return typeof member === 'string' || typeof member === 'number' || typeof member === 'boolean'
 }
 
 /**
@@ -244,55 +274,42 @@ export function projectSchemaToDsh(schema: Readonly<Record<string, unknown>>): D
   const runtimeEnforced: string[] = []
   const projected = projectNode(schema as Record<string, unknown>, '', runtimeEnforced)
   /**
-   * `items` is stripped from an OUTPUT projection, and this is a real DSL limit found
-   * the hard way rather than a precaution.
+   * Nested array `items` are RETAINED, not stripped.
    *
-   * `items` is in the supported set and works for a top-level input parameter, but the
-   * registry rejected `schema.properties.words.items` with "items is not supported by
-   * the value schema DSL" - so its support does not extend to an array nested inside an
-   * object, which is exactly what an output schema contains. Keeping it would make the
-   * tool fail to register at all.
-   *
-   * The result is still a genuine declaration: property names, types and requiredness
-   * are advertised, and `words` is declared an array. Only the ELEMENT schema is left to
-   * runtime enforcement, which the contract's assertValidOutput performs against the
-   * untouched schema. That is a long way from the
-   * `{type: "object", additionalProperties: true}` this replaced, which declared nothing
-   * about any field.
+   * An earlier version stripped every `items` at depth, on evidence that the registry
+   * rejected `schema.properties.words.items`. That evidence is stale against the pinned
+   * `dsh-tools@0.2.0-rc.2`, which compiles nested array items (probed: a `words` schema
+   * with a full item schema registers and validates). Stripping by key name was also a
+   * stricter-than-contract bug in waiting: a payload field legitimately NAMED `items`
+   * would lose its advertisement. Union-typed arrays (`type: ['array','null']`) become
+   * `type: 'json'` in projectNode, which already removes the `items` sibling with the
+   * keyword recorded, so nothing here needs to strip it again.
    */
   const parameters = stripItems(projected.properties ?? {}, '', runtimeEnforced)
   return { parameters: parameters as DshParameters, runtimeEnforced }
 }
 
 /**
- * Remove `items` at every depth in an output projection, recording each removal
- * (DECL-02).
+ * Deep-clone a projected schema while preserving ARRAYS as arrays (DECL-02).
+ *
+ * The post-pass in projectNode removed every keyword the DSL rejects, so this
+ * function no longer edits keywords — it exists so no recursion turns a scalar
+ * `enum` array like ['host','device'] into a record {0:'host',1:'device'}, which
+ * is an invalid schema the registry rejects.
  * @param node - the projected node.
- * @param path - the path, for the runtime-enforced list.
- * @param runtimeEnforced - collected keyword paths.
- * @returns the node without `items`.
+ * @param path - the path, for diagnostics.
+ * @param runtimeEnforced - collected keyword paths (unused; kept for the signature).
+ * @returns the node, arrays intact.
  */
 function stripItems(node: unknown, path: string, runtimeEnforced: string[]): unknown {
+  void path
+  void runtimeEnforced
   if (typeof node !== 'object' || node === null) return node
+  if (Array.isArray(node)) {
+    return node.map((child, index) => stripItems(child, `${path}[${index}]`, runtimeEnforced))
+  }
   const out: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
-    if (key === 'items') {
-      runtimeEnforced.push(`${path}.items`)
-      continue
-    }
-    /**
-     * A non-scalar `enum` is dropped, for the same reason `items` is.
-     *
-     * The DSL requires "a non-empty array of scalar values", and the confidence contract
-     * (DECL-04) enumerates OBJECT members to distinguish vendor-reported from calibrated
-     * from unavailable. Membership is still enforced at runtime against the untouched
-     * contract.
-     */
-    const scalar = (member: unknown): boolean => typeof member === 'string' || typeof member === 'number' || typeof member === 'boolean'
-    if (key === 'enum' && Array.isArray(value) && (value.length === 0 || !value.every(scalar))) {
-      runtimeEnforced.push(`${path}.enum`)
-      continue
-    }
     out[key] = stripItems(value, `${path}.${key}`, runtimeEnforced)
   }
   return out

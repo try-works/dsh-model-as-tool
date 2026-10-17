@@ -108,6 +108,19 @@ describe('EXT-24 — withdrawal is safe in every direction', () => {
     assert.equal(tools.get('acme_tool')?.ownerExtension, '@acme/two')
   })
 
+  it('retains the handle and reserved name when disposal fails, allowing cleanup retry', () => {
+    let attempts = 0
+    const registrar = createContributionRegistrar({ activated: ACTIVATED, registry: {
+      registerTool() { return () => { if (++attempts === 1) throw new Error('cleanup failed') } },
+    } })
+    const handle = registrar.publish({ extensionId: '@acme/one', kind: 'tool', name: 'retry_tool' })
+    assert.throws(() => registrar.withdraw(handle), /cleanup failed/)
+    assert.throws(() => registrar.publish({ extensionId: '@acme/two', kind: 'tool', name: 'retry_tool' }), /already published/)
+    registrar.withdraw(handle)
+    assert.equal(attempts, 2)
+    registrar.publish({ extensionId: '@acme/two', kind: 'tool', name: 'retry_tool' })
+  })
+
   it('is IDEMPOTENT: withdrawing twice does not throw', () => {
     const { registry } = makeRegistry()
     const registrar = createContributionRegistrar({ registry, activated: ACTIVATED })

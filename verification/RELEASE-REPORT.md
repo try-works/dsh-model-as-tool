@@ -1,6 +1,6 @@
 # Tool Mode release report
 
-Generated 2026-10-14T04:28:30.685Z from commit `1fb2dc5bce16754cbd516727ba77d9dacc65891c` (working tree DIRTY, so this describes a state that exists in no commit).
+Generated 2026-10-17T19:56:45.835Z from commit `e4795d53c21a89c0e261760381aec8f4b7982c47` (working tree DIRTY, so this describes a state that exists in no commit).
 
 ## How to reproduce
 
@@ -17,18 +17,22 @@ requirements needing either are recorded as BLOCKED or NOT_RUN rather than PASS.
 | `@try-works/tool-mode-extension-sdk` | 0.1.0 |
 | `@try-works/extension-desert-ant-tongue` | 0.1.0 |
 | `@try-works/extension-desert-ant-voz` | 0.1.0 |
+| `@try-works/extension-embeddinggemma` | 0.1.0 |
+| `@try-works/extension-needle` | 0.1.0 |
+| `@try-works/tool-mode-recipes` | 0.1.0 |
+| `@try-works/tool-mode-harness-text` | 0.1.0 |
 
 ## Requirement status
 
 | Status | Count |
 |---|---|
-| PASS | 6 |
-| FAIL | 100 |
-| BLOCKED | 5 |
-| NOT_RUN | 206 |
+| PASS | 18 |
+| FAIL | 252 |
+| BLOCKED | 3 |
+| NOT_RUN | 44 |
 | NOT_APPLICABLE | 0 |
 
-Total: 317 requirements, of which 6 PASS.
+Total: 317 requirements, of which 18 PASS.
 
 ## MCP conformance matrix
 
@@ -36,7 +40,7 @@ Total: 317 requirements, of which 6 PASS.
 |---|---|
 | Revision implemented | 2026-07-28 |
 | Pinned schema commit | 5f5440bb26a62e2cf3440b92da5a667efa03b267 |
-| Official SDK supports the revision | NO |
+| Official SDK supports the revision | YES (v2 line) |
 | Basis | Schema-conformant adaptation, verified by an independent probe |
 | Probe checks | `npm run verify:mcp` |
 
@@ -50,8 +54,8 @@ Total: 317 requirements, of which 6 PASS.
 
 ## Known limitations and unresolved gates
 
-311 requirement(s) are not PASS.
-200 requirement(s) have no status written for them, and are reported as NOT_RUN.
+299 requirement(s) are not PASS.
+0 requirement(s) have no status written for them, and are reported as NOT_RUN.
 No status key names something that is not a requirement.
 
 The first 40 unresolved requirements:
@@ -60,14 +64,13 @@ The first 40 unresolved requirements:
 - BASE-03 is FAIL
 - BASE-04 is FAIL
 - BASE-05 is FAIL
-- BASE-06 is NOT_RUN
-- BASE-07 is NOT_RUN
-- BASE-08 is NOT_RUN
-- BASE-10 is NOT_RUN
+- BASE-06 is FAIL
+- BASE-07 is FAIL
+- BASE-09 is FAIL
+- BASE-10 is FAIL
 - BASE-11 is NOT_RUN
-- BASE-12 is NOT_RUN
-- BASE-13 is NOT_RUN
-- BASE-14 is NOT_RUN
+- BASE-12 is FAIL
+- BASE-14 is FAIL
 - ARCH-01 is FAIL
 - ARCH-02 is FAIL
 - ARCH-03 is FAIL
@@ -76,8 +79,7 @@ The first 40 unresolved requirements:
 - ARCH-06 is FAIL
 - RUN-01 is FAIL
 - RUN-02 is FAIL
-- RUN-03 is NOT_RUN
-- RUN-04 is NOT_RUN
+- RUN-03 is FAIL
 - RUN-05 is FAIL
 - RUN-06 is FAIL
 - RUN-07 is FAIL
@@ -88,15 +90,17 @@ The first 40 unresolved requirements:
 - MCP-04 is FAIL
 - MCP-05 is FAIL
 - MCP-06 is FAIL
-- MCP-07 is NOT_RUN
+- MCP-07 is FAIL
 - MCP-08 is FAIL
 - MCP-09 is FAIL
 - MCP-10 is FAIL
 - MCP-11 is NOT_RUN
 - MCP-12 is FAIL
 - MCP-13 is FAIL
-- SEC-01 is NOT_RUN
-- …and 271 more, in `verification/evidence.json`
+- SEC-01 is FAIL
+- SEC-02 is FAIL
+- SEC-03 is FAIL
+- …and 259 more, in `verification/evidence.json`
 
 ## What this report does NOT claim
 

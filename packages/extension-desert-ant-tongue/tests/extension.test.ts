@@ -11,7 +11,7 @@
 
 import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -55,9 +55,15 @@ describe('BASE-09 — the extension is reached through the public entry', () => 
     const discovery = discoverExtension(extensionDir())
     assert.equal(discovery.packageName, '@try-works/extension-desert-ant-tongue')
     assert.equal(discovery.manifest.id, discovery.packageName)
-    // It implements a STANDARD contract rather than declaring a new one (EXT-21).
-    assert.deepEqual([...discovery.manifest.tools], [])
+    // It implements a STANDARD contract (EXT-21): the tool is DECLARED in
+    // tools[] AND bound by the implementation, with the schema refs shipped.
+    const tool = discovery.manifest.tools[0]
+    assert.ok(tool !== undefined, 'the tool must be declared in tools[]')
+    assert.equal(tool.name, 'lang_detect')
+    assert.equal(tool.contractId, 'tool-mode/lang_detect')
     assert.equal(discovery.manifest.implementations[0]?.contractId, 'tool-mode/lang_detect')
+    assert.equal(existsSync(join(extensionDir(), 'schemas', 'lang-detect.input.json')), true)
+    assert.equal(existsSync(join(extensionDir(), 'schemas', 'lang-detect.output.json')), true)
   })
 
   it('resolves its entry from its own exports map, not a host convention', () => {
@@ -99,7 +105,7 @@ describe('EXT-19 — import and create stay lightweight', () => {
     assert.ok(elapsed < 1500, `createProvider took ${elapsed}ms, suggesting it loaded the model`)
 
     const inspection = await provider.inspect(new AbortController().signal)
-    assert.equal(inspection.readiness, 'unprepared')
+    assert.equal(inspection.readiness, inspection.missing.length === 0 ? 'prepared-cold' : 'needs-preparation')
     assert.ok(inspection.features.includes('language-detection'))
     await instance.dispose('deactivate')
   })
@@ -109,9 +115,11 @@ describe('EXT-19 — import and create stay lightweight', () => {
     const loaded = await loadExtensionModule(resolveExtensionEntry(discovery))
     const instance = await activateExtension(loaded, context())
     const provider = await instance.createProvider({ modelId: 'tongue', configuration: {} })
-    // EXT-18: inspection reads approved local state only. Reporting "ready" before
-    // loading would be a claim the provider has not earned.
-    assert.equal((await provider.inspect(new AbortController().signal)).readiness, 'unprepared')
+    // EXT-18: inspection reads approved local state only. It may report a cold
+    // deployment as ready only after proving all local prerequisites resolve; it
+    // must not load the model merely to answer readiness.
+    const inspection = await provider.inspect(new AbortController().signal)
+    assert.equal(inspection.readiness, inspection.missing.length === 0 ? 'prepared-cold' : 'needs-preparation')
   })
 
   it('refuses a model id it does not implement', async () => {

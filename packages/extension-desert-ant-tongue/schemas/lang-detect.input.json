@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lang_detect input",
+  "description": "The standard tool-mode/lang_detect contract input (TOOL-03).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text"],
+  "properties": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "description": "The text to identify. Only the leading portion is examined."
+    },
+    "top": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20,
+      "default": 3,
+      "description": "How many ranked alternatives to return."
+    }
+  }
+}

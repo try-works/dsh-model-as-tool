@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "stt_transcribe input",
+  "description": "The standard tool-mode/stt_transcribe contract input.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["audio"],
+  "properties": {
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "description": "Absolute path to the recording." },
+        "sampleRateHz": {
+          "type": "integer",
+          "minimum": 8000,
+          "maximum": 48000,
+          "description": "Declared sample rate; inspected against the file header, not trusted."
+        },
+        "channels": { "type": "integer", "minimum": 1, "maximum": 2 }
+      }
+    },
+    "language": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Requested language as a BCP-47/ISO 639 code. An unsupported request is an error, never a silent fallback."
+    },
+    "timestamps": {
+      "type": "string",
+      "enum": ["none", "word"],
+      "default": "none",
+      "description": "Word timestamps when requested; an implementation that cannot supply them must error rather than omit them."
+    }
+  }
+}

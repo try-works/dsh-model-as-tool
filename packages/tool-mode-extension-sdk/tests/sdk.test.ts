@@ -232,6 +232,72 @@ describe('EXT-16 — versioning and normalization', () => {
       /does not satisfy the schema/,
     )
   })
+
+  it('accepts a complete qualification record in the asset lock (MODEL-05)', () => {
+    const dir = writePackage(paths => {
+      writeFileSync(paths.lock, JSON.stringify({
+        assetSets: {
+          'topic-model-cpu': {
+            qualification: {
+              modelRevision: '1.2.3', artifactSha: 'sha256:abc', tokenizer: 'bundled',
+              processor: 'none', engineVersion: '1.2.3', nodeAbi: '137',
+              architecture: 'x64', executionProvider: 'cpu',
+            },
+          },
+        },
+      }))
+    })
+    assert.doesNotThrow(() => discoverExtension(dir))
+  })
+
+  it('REFUSES a qualification record with a missing field (MODEL-05: a gap is not a qualification)', () => {
+    const dir = writePackage(paths => {
+      writeFileSync(paths.lock, JSON.stringify({
+        assetSets: {
+          'topic-model-cpu': {
+            qualification: {
+              modelRevision: '1.2.3', artifactSha: 'sha256:abc', tokenizer: 'bundled',
+              processor: 'none', engineVersion: '1.2.3', nodeAbi: '137',
+              // architecture missing
+              executionProvider: 'cpu',
+            },
+          },
+        },
+      }))
+    })
+    assert.throws(() => discoverExtension(dir), /missing or has blank: architecture/)
+  })
+
+  it('REFUSES a qualification record with a BLANK field', () => {
+    const dir = writePackage(paths => {
+      writeFileSync(paths.lock, JSON.stringify({
+        assetSets: {
+          'topic-model-cpu': {
+            qualification: {
+              modelRevision: '', artifactSha: 'sha256:abc', tokenizer: 'bundled',
+              processor: 'none', engineVersion: '1.2.3', nodeAbi: '137',
+              architecture: 'x64', executionProvider: 'cpu',
+            },
+          },
+        },
+      }))
+    })
+    assert.throws(() => discoverExtension(dir), /missing or has blank: modelRevision/)
+  })
+
+  it('leaves a lock WITHOUT a qualification record alone (the record is optional)', () => {
+    const dir = writePackage() // the fixture lock is '{}'
+    assert.doesNotThrow(() => discoverExtension(dir))
+  })
+
+  it('REFUSES an oversized lock by STAT before reading it (bounded allocation)', () => {
+    const dir = writePackage(paths => {
+      // A 2 MB lock of JSON padding: the stat-first cap must refuse it without
+      // buffering the file into memory.
+      writeFileSync(paths.lock, JSON.stringify({ padding: 'x'.repeat(2 * 1024 * 1024) }))
+    })
+    assert.throws(() => discoverExtension(dir), /over the \d+ cap/)
+  })
 })
 
 describe('EXT-13 — bounded static discovery', () => {
@@ -417,11 +483,49 @@ describe('EXT-34 — management errors', () => {
 })
 
 describe('EXT-17 — the SDK stands alone', () => {
-  it('imports neither DSH nor the host', () => {
+  it('imports neither DSH nor the host', async () => {
     // The SDK must be usable by an author who has no DSH installation. A host or
     // DSH import would make it unbuildable in that situation.
     const manifest = validateManifest(validManifest(), IDENTITY) as ExtensionManifest
     assert.equal(manifest.runtimeApi, 1)
     assert.equal(typeof admitsInvocation, 'function')
+
+    // The NAME of this test promises an import-hygiene assertion, and for one
+    // round the name was the whole promise (the round-53 review's AT-26 finding).
+    // The property is now asserted, not implied: every source file the SDK ships
+    // is scanned, and an import of the host, DSH, or anything outside the
+    // node/ajv/adm-zip set the SDK's own package.json declares is a failure.
+    const { readFileSync, readdirSync, statSync } = (await import('node:fs')) as typeof import('node:fs')
+    const { dirname, join, resolve } = (await import('node:path')) as typeof import('node:path')
+    const pkg = JSON.parse(readFileSync(resolve(dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '../package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>
+      devDependencies?: Record<string, string>
+      peerDependencies?: Record<string, string>
+    }
+    const declared = new Set([
+      ...Object.keys(pkg.dependencies ?? {}),
+      ...Object.keys(pkg.peerDependencies ?? {}),
+    ])
+    const forbidden = [/@try-works\/dsh-model-as-tool/, /@try-works\/tool-mode-contracts/, /deepseek/, /^dsh$/]
+    for (const name of declared) {
+      assert.ok(
+        !forbidden.some(pattern => pattern.test(name)),
+        `the SDK declares a host/DSH dependency: ${name}`,
+      )
+    }
+    const sourceRoot = resolve(dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '../src')
+    const walk = (dir: string): string[] =>
+      readdirSync(dir).flatMap((name) => {
+        const path = join(dir, name)
+        return statSync(path).isDirectory() ? walk(path) : [path]
+      })
+    for (const file of walk(sourceRoot)) {
+      if (!file.endsWith('.ts')) continue
+      const text = readFileSync(file, 'utf8')
+      assert.ok(
+        !/from\s+['"]@try-works\/dsh-model-as-tool/.test(text) && !/from\s+['"]@try-works\/tool-mode-contracts/.test(text),
+        `the SDK source imports the host or contracts: ${file}`,
+      )
+    }
   })
 })

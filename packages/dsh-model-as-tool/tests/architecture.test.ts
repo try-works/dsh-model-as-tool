@@ -22,6 +22,7 @@ import {
   checkExtensionIsolation,
   checkHostPurity,
   checkExtensionReleaseIndependence,
+  checkHostPackageModelDependencySplit,
   checkNoHardcodedPrompt,
   checkRepository,
   checkSingleDispatchAuthority,
@@ -164,6 +165,67 @@ describe('the gates pass on the repository as it stands', () => {
     // The real check, over the real sources. If the host ever regains a built-in,
     // this test and `npm run verify` both fail.
     assert.deepEqual(checkRepository(), [])
+  })
+})
+
+describe('AT-25 / BASE-09 — the host install stays model-runtime-free', () => {
+  it('reports no violation for the host manifest as it stands', () => {
+    assert.deepEqual(checkHostPackageModelDependencySplit(process.cwd()), [])
+  })
+
+  it('catches a host optional dependency on a first-party model runtime', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'arch-at25-'))
+    dirs.push(dir)
+    mkdirSync(join(dir, 'packages', 'dsh-model-as-tool'), { recursive: true })
+    writeFileSync(
+      join(dir, 'packages', 'dsh-model-as-tool', 'package.json'),
+      JSON.stringify({
+        name: '@try-works/dsh-model-as-tool',
+        version: '0.1.0',
+        optionalDependencies: { '@desert-ant-labs/tongue': '^3.6.0' },
+      }),
+    )
+    const violations = checkHostPackageModelDependencySplit(dir)
+    assert.equal(violations[0]?.rule, 'AT-25/host-installs-model-runtime')
+  })
+
+  it('catches a host dependency on a native model engine', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'arch-at25-engine-'))
+    dirs.push(dir)
+    mkdirSync(join(dir, 'packages', 'dsh-model-as-tool'), { recursive: true })
+    writeFileSync(
+      join(dir, 'packages', 'dsh-model-as-tool', 'package.json'),
+      JSON.stringify({
+        name: '@try-works/dsh-model-as-tool',
+        version: '0.1.0',
+        dependencies: { 'onnxruntime-node': '^1.20.0' },
+      }),
+    )
+    const violations = checkHostPackageModelDependencySplit(dir)
+    assert.equal(violations[0]?.rule, 'AT-25/host-installs-model-runtime')
+  })
+
+  it('catches a stale lockfile entry for a model runtime even when the manifest is clean', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'arch-at25-lock-'))
+    dirs.push(dir)
+    mkdirSync(join(dir, 'packages', 'dsh-model-as-tool'), { recursive: true })
+    writeFileSync(
+      join(dir, 'packages', 'dsh-model-as-tool', 'package.json'),
+      JSON.stringify({ name: '@try-works/dsh-model-as-tool', version: '0.1.0' }),
+    )
+    writeFileSync(
+      join(dir, 'packages', 'dsh-model-as-tool', 'package-lock.json'),
+      JSON.stringify({
+        name: '@try-works/dsh-model-as-tool',
+        lockfileVersion: 3,
+        packages: {
+          '': { name: '@try-works/dsh-model-as-tool', version: '0.1.0' },
+          'node_modules/@desert-ant-labs/tongue': { version: '3.6.0', optional: true },
+        },
+      }),
+    )
+    const violations = checkHostPackageModelDependencySplit(dir)
+    assert.equal(violations[0]?.rule, 'AT-25/host-lock-installs-model-runtime')
   })
 })
 

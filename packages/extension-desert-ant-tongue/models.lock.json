@@ -5,9 +5,9 @@
       "model": {
         "provider": "desert-ant-labs",
         "identity": "@desert-ant-labs/tongue",
-        "revision": "the version resolved from the optional dependency"
+        "revision": "3.6.0"
       },
-      "engine": { "kind": "pure-javascript", "version": "same as the package" },
+      "engine": { "kind": "pure-javascript", "version": "3.6.0" },
       "tokenizer": { "kind": "bundled", "identity": "tongue-vocabulary" },
       "platforms": [
         { "os": "win32", "arch": "x64", "accelerator": "cpu" },
@@ -21,7 +21,17 @@
         "redistribution": "not-permitted"
       },
       "assets": [],
-      "note": "Tongue ships its 2 MB weights inside the npm package, so there is no separately downloaded asset to lock. The asset array is empty by design, not by omission: an empty array here asserts that preparation fetches nothing."
+      "qualification": {
+        "modelRevision": "3.6.0",
+        "artifactSha": "sha256:2cea7b6a92be043c58596d0b6f482fbc27fb901e5697d77159247d3ec6bdf767",
+        "tokenizer": "tongue-vocabulary (bundled)",
+        "processor": "the package's own normalization (whitespace/case folding per tongue_meta.json)",
+        "engineVersion": "@desert-ant-labs/tongue@3.6.0 (pure JavaScript)",
+        "nodeAbi": "137 (Node 24)",
+        "architecture": "x64",
+        "executionProvider": "cpu (pure JavaScript, no native addon)"
+      },
+      "note": "Tongue ships its 2 MB weights inside the npm package, so there is no separately downloaded asset to lock. The asset array is empty by design, not by omission: an empty array here asserts that preparation fetches nothing. The qualification record above is REAL: artifactSha is the SHA-256 of the shipped dist/tongue_int8.bin the extension stats at inspection time, and the qualification test re-computes it and runs real inference through the installed package."
     }
   }
 }

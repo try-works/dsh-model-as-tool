@@ -20,6 +20,9 @@
  * @module @try-works/dsh-model-as-tool/extension-dispatch
  */
 
+import { assertNoReservedMeta } from '@try-works/tool-mode-extension-sdk'
+import type { PreparedAssetMap } from './prepared-assets.ts'
+
 /** What a manifest declares about one tool. */
 export interface DeclaredTool {
   readonly name: string
@@ -31,6 +34,7 @@ export interface DeclaredTool {
 export interface DeclaredImplementation {
   readonly id: string
   readonly contractId: string
+  readonly contractVersion: string
   /** The model that serves the contract. */
   readonly modelId: string
 }
@@ -43,7 +47,12 @@ export interface DispatchManifest {
 
 /** A provider, narrowed to what dispatch needs. */
 export interface DispatchProvider {
-  load(request: { readonly assets: unknown; readonly signal: AbortSignal }): Promise<void>
+  load(request: {
+    readonly assets: unknown
+    readonly signal: AbortSignal
+    /** The manifest model id; the managed worker's load keys by it. */
+    readonly modelId?: string
+  }): Promise<void>
   invoke(request: {
     readonly implementationId: string
     readonly input: Readonly<Record<string, unknown>>
@@ -59,6 +68,14 @@ export interface DispatchEnvironment {
   providerFor(modelId: string): Promise<DispatchProvider>
   /** Build the invocation context, which carries host-issued identity. */
   contextFor(implementationId: string, signal: AbortSignal): unknown
+  /**
+   * The host's verified prepared-asset map for THIS extension, or undefined
+   * when nothing was prepared (the load then receives the EMPTY map — an
+   * extension needing assets refuses by name inside its own load, which is the
+   * honest MOD-02 behavior rather than an invented verification). Closes over
+   * the extension the environment was built for.
+   */
+  assetsFor?(): PreparedAssetMap | undefined
 }
 
 /** Why a tool could not be dispatched. */
@@ -91,7 +108,8 @@ export function resolveImplementation(
       },
     }
   }
-  const implementation = manifest.implementations.find(candidate => candidate.contractId === tool.contractId)
+  const implementation = manifest.implementations.find(candidate =>
+    candidate.contractId === tool.contractId && candidate.contractVersion === tool.contractVersion)
   if (implementation === undefined) {
     /**
      * THE HONEST REFUSAL, and the case the earlier stub conflated with every other.
@@ -141,17 +159,34 @@ export async function createDispatch(
       // extension that was deactivated and reactivated — is not served from a stale handle.
       const provider = await environment.providerFor(implementation.modelId)
       /**
-       * `assets` is empty here. RUN-05 forbids package resolution and model preparation at
-       * STARTUP, and this call happens at INVOCATION — but the host has no verified asset
-       * map for an extension-declared tool yet, and inventing one would claim a
-       * verification that did not happen.
+       * The HOST-VERIFIED prepared-asset map, when a preparation completed.
+       * An absent map means the empty map — the extension's own load refuses a
+       * missing group by name (MOD-02), which is the honest outcome rather than
+       * a host that invents a verification that never happened. The same map
+       * reaches BOTH provider routes here: the in-process module provider and
+       * the managed worker (its load forwards the assets to the child).
        */
-      await provider.load({ assets: { get: () => undefined, assetIds: [] }, signal })
-      return provider.invoke({
+      const prepared = environment.assetsFor?.()
+      await provider.load({ assets: prepared ?? { get: () => undefined, assetIds: [] }, signal, modelId: implementation.modelId })
+      const value = await provider.invoke({
         implementationId: implementation.id,
         input: args,
         context: environment.contextFor(implementation.id, signal),
       })
+      /**
+       * THE EXT-17 META RESERVATION IS ENFORCED HERE, AT THE DISPATCH BOUNDARY.
+       *
+       * The reserved root `meta` is HOST-authored provenance; an extension supplying one
+       * is asserting who ran it and under what receipt, which it does not get to do. The
+       * ProviderBridge asserts this on the CATALOG path, but the contribution path
+       * (module and declarative providers alike) went unasserted — so a provider that
+       * smuggled a `meta` key reached callers whenever its declared output schema did not
+       * require the envelope. Asserting at the boundary the two provider routes share
+       * closes the gap for both, and it runs BEFORE any host stamping, so a forged
+       * envelope is refused rather than overwritten.
+       */
+      assertNoReservedMeta(value as never, implementation.id)
+      return value
     },
   }
 }

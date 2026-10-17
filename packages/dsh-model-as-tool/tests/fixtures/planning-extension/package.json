@@ -1,0 +1,13 @@
+{
+  "name": "@try-works/fixture-planner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Planning fixture extension: a deterministic tools_plan/structured_extract provider with no engine, used to prove the HOST-side planning discipline (frozen snapshot, requested-name gate, proposal re-checks, meta stamping) without the pinned Needle artifacts.",
+  "type": "module",
+  "exports": {
+    "./tool-mode": "./lib/index.js"
+  },
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  }
+}

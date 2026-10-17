@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "semantic_deduplicate output",
+  "description": "Output for semantic_deduplicate (MOD-12): greedy representative groups in input order. The grouping is deterministic for a fixed threshold, is NOT transitive (A may match B and B match C without A matching C), and never deletes, moves or rewrites source files. A member's score is its cosine similarity to the group's REPRESENTATIVE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["groups", "algorithm", "threshold", "embeddingSpaceId"],
+  "properties": {
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["representativeId", "members"],
+        "properties": {
+          "representativeId": { "type": "string" },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "score"],
+              "properties": {
+                "id": { "type": "string" },
+                "score": { "type": "number", "minimum": -1, "maximum": 1 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "algorithm": { "const": "greedy_representative_cosine_v1" },
+    "threshold": { "type": "number" },
+    "embeddingSpaceId": { "type": "string" },
+    "meta": { "type": "object" }
+  }
+}

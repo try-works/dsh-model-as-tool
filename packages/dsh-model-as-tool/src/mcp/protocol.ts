@@ -50,8 +50,15 @@ export const META_KEYS = {
  * Error codes.
  *
  * The reserved range belongs to the protocol. P26-03 is explicit that custom
- * errors must not be allocated there, so this module declares only codes the
- * revision defines and refuses to mint new ones in that band.
+ * errors must not be allocated there, and the pinned revision partitions the
+ * bands: `-32768..-32000` is JSON-RPC's own predefined-error allocation,
+ * `-32020..-32099` is reserved for MCP-defined codes (allocated sequentially,
+ * and this module declares exactly those the revision defines), while
+ * `-32000..-32019` is the IMPLEMENTATION-DEFINED sub-range — the specification
+ * will never define codes there, and receivers must not assume cross-
+ * implementation semantics. `rateLimited` lives in that sub-range deliberately:
+ * it is a documented implementation allocation, never a minted code in the
+ * reserved band.
  */
 export const ERROR_CODES = {
   /** Standard JSON-RPC. */
@@ -64,6 +71,16 @@ export const ERROR_CODES = {
   headerMismatch: -32020,
   unsupportedClientCapability: -32021,
   unsupportedProtocolVersion: -32022,
+  /**
+   * Implementation-defined (-32000..-32019, never allocated by the specification).
+   *
+   * The revision defines NO rate-limit error, so a refusal uses this documented
+   * implementation code rather than pretending the request was invalid (-32600) or
+   * minting a code in the MCP-reserved band. The HTTP 429 status carries the
+   * semantics; receivers that do not know this code still get a conformant
+   * `JSONRPCErrorResponse` envelope and a `Retry-After` header.
+   */
+  rateLimited: -32001,
 } as const
 
 /** The convention for a tool that ran and returned a domain failure (P26-04). */
@@ -269,11 +286,14 @@ export function implementedCapabilities(wiring: { readonly subscriptions?: boole
  * @param required - capability names the client declared as required.
  * @returns the unsupported names, empty when all are supported.
  */
-export function unsupportedRequiredCapabilities(required: readonly string[]): string[] {
-  const implemented = new Set(implementedCapabilities())
-  // `tools` is the only capability a client can require of this server today; any
-  // other requirement cannot be met, and P26-03 wants that answered with -32021
-  // rather than attempted.
+export function unsupportedRequiredCapabilities(
+  required: readonly string[],
+  wiring: { readonly subscriptions?: boolean } = {},
+): string[] {
+  const implemented = new Set(implementedCapabilities(wiring))
+  // The supported set is deployment-specific: `subscriptions/listen` is available only
+  // when the caller composed a subscription registry. A static default here rejected a
+  // capability that the very same dispatch call could serve.
   return required.filter(name => !implemented.has(name))
 }
 
@@ -429,6 +449,9 @@ export function assertHeadersMatch(headers: HeaderInput, body: WireRequest): voi
     return fail(`the MCP-Protocol-Version header (${version}) does not match the request body (${bodyVersion})`)
   }
   const method = headers.method === undefined ? undefined : decodeHeaderValue(headers.method)
+  // Pinned Streamable HTTP: Mcp-Method is REQUIRED for every request, not
+  // merely checked when supplied. Never synthesize a missing authority header.
+  if (body.id !== undefined && method === undefined) return fail('the Mcp-Method header is required')
   if (method !== undefined && method !== body.method) {
     return fail(`the Mcp-Method header (${method}) does not match the request method (${body.method})`)
   }

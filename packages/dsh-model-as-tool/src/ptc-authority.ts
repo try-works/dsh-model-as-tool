@@ -64,6 +64,8 @@ export interface BindingRejection {
     | 'duplicate'
     /** Not a usable identifier as a binding name. */
     | 'invalid-name'
+    /** CODE-07: never bindable inside a program, regardless of grant. */
+    | 'excluded'
   /** What the caller can do about it, when anything. */
   readonly remedy: string
 }
@@ -138,6 +140,30 @@ const RESERVED_BINDING_GLOBALS = new Set([
 ])
 
 /**
+ * Tool names a program binding must NEVER expose, regardless of grant (CODE-07).
+ *
+ * `tool_mode_run` is the recursive composition door: a program could nest programs, which
+ * the requirement forbids in v1. The management surface (`model_tools` and the extension
+ * install/activation controls) is operator territory: EXT-32 excludes installer and
+ * administration bindings from Code Mode, and SEC-09 keeps installation approval separate
+ * from tool-use permission, so a program that could reach them would hold the management
+ * grant by proxy.
+ *
+ * EXPORTED so the planning surface (NDL-02) reuses the SAME names: a `tools_plan`
+ * proposal must never target the composition door or the management surface either, and a
+ * second, independently maintained copy of this list would drift the first time one of
+ * them was edited. One set, two consumers, both refused by name.
+ *
+ * SEALED AS A FROZEN ARRAY, deliberately not a frozen `Set`: freezing a `Set` does NOT
+ * prevent `add`/`delete` (those methods mutate internal slots without consulting
+ * extensibility), so a frozen Set would only LOOK immutable. A frozen array throws on
+ * every mutation in strict mode, so neither consumer — nor any code holding a
+ * reference — can add or remove a name at runtime and silently desynchronize the two
+ * surfaces that depend on it.
+ */
+export const EXCLUDED_BINDINGS: readonly string[] = Object.freeze(['tool_mode_run', 'model_tools', 'tool_mode_list', 'tool_mode_describe'] as const)
+
+/**
  * Build the bindings a program may call (CODE-03, SEC-03).
  *
  * Intersects the requested names with BOTH the grant and the visible set, and refuses the
@@ -178,6 +204,22 @@ export function authorizeProgramTools(
       continue
     }
     seen.add(name)
+
+    /**
+     * CODE-07 EXCLUSIONS ARE CHECKED FIRST.
+     *
+     * These names are un-bindable by policy, not by grant state: whether the caller's
+     * grant admits them is irrelevant, because a program must never hold the composition
+     * door or the management surface regardless of who authorizes it.
+     */
+    if (EXCLUDED_BINDINGS.includes(name)) {
+      rejections.push({
+        name,
+        reason: 'excluded',
+        remedy: `"${name}" cannot be called from a program: recursive composition and management bindings are excluded from Code Mode (CODE-07).`,
+      })
+      continue
+    }
 
     /**
      * FORBIDDEN IS CHECKED BEFORE UNKNOWN, deliberately.

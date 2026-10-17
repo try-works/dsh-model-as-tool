@@ -13,7 +13,7 @@
  * @module @try-works/tool-mode-extension-sdk/manifest
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { isAbsolute, join, normalize, resolve, sep } from 'node:path'
 import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js'
 import { ManagementError } from './errors.ts'
@@ -30,6 +30,8 @@ export const KNOWN_FEATURES: readonly string[] = [
   'verified-assets-v1',
   'declarative-recipes-v1',
   'harness-executors-v1',
+  'harness-model-recipes-v1',
+  'typed-image-input-v1',
 ]
 
 /** Largest manifest accepted, in bytes. Bounded so a huge file cannot be parsed. */
@@ -117,10 +119,18 @@ export interface ManifestTool {
 /** A declared implementation binding. */
 export interface ManifestImplementation {
   readonly id: string
+  /**
+   * `"harness-model"` marks the spec §19.3 recipe binding; absent means the
+   * module form. The SDK validates the SHAPE; whether the host supports the
+   * binding is negotiated through the declared required features (EXT-14).
+   */
+  readonly kind?: 'harness-model'
   readonly contractId: string
   readonly contractVersion: string
   readonly modelId?: string
   readonly recipeVersion: string
+  /** The package-relative recipe file of a harness-model binding (RCP-01). */
+  readonly recipe?: string
 }
 
 /** A declared skill contribution. */
@@ -237,10 +247,20 @@ export function validateManifest(
     )
   }
   // The lift provenance is attached AFTER validation, so the closed schema never
-  // has to admit an SDK-internal field.
+  // has to admit an SDK-internal field. The §19.3 declarative example elides
+  // `activation` and `runtimeApi`; the SDK defaults them at VALIDATION (the
+  // bytes stay untouched): operator activation + runtime API major 1.
+  const rawManifest = normalized.value as unknown as {
+    activation?: ExtensionManifest['activation']
+    runtimeApi?: number
+  } & ExtensionManifest
   const manifest = {
-    ...(normalized.value as unknown as ExtensionManifest),
+    ...rawManifest,
     ...normalized.normalizedFrom === undefined ? {} : { normalizedFrom: normalized.normalizedFrom },
+    ...rawManifest.activation === undefined
+      ? { activation: { policy: 'operator' as const, deactivatable: true } }
+      : {},
+    ...rawManifest.runtimeApi === undefined ? { runtimeApi: 1 } : {},
   }
 
   if (manifest.id !== options.packageName) {
@@ -257,6 +277,18 @@ export function validateManifest(
       'discover',
       `the manifest version ${JSON.stringify(manifest.version)} must equal the package version ${JSON.stringify(options.packageVersion)} exactly`,
       'Make the manifest version and package.json version identical.',
+    )
+  }
+
+  // §19.5: a declarative package with an executable entry is REFUSED — the two
+  // execution modes are exclusive, and a declarative package claiming an entry
+  // would blur the "no executable code" boundary the recipe path exists for.
+  if (manifest.execution.kind === 'declarative' && manifest.execution.entry !== undefined) {
+    throw new ManagementError(
+      'INVALID_EXTENSION',
+      'discover',
+      'a declarative package declares an executable entry; declarative packages ship static recipe files and no executable module (§19.5)',
+      'Remove the execution.entry and any executable code, or publish the package as a module extension.',
     )
   }
 
@@ -319,6 +351,7 @@ function assertReferencedFilesExist(manifest: ExtensionManifest, packageDir: str
     ...manifest.skills.map(skill => skill.path),
     ...manifest.configurationSchema === undefined ? [] : [manifest.configurationSchema],
     ...manifest.execution.entry === undefined ? [] : [manifest.execution.entry],
+    ...manifest.implementations.flatMap(implementation => implementation.recipe === undefined ? [] : [implementation.recipe]),
   ]
   for (const relative of referenced) {
     // Schema files are offline package files; a remote $ref is never fetched and a
@@ -342,5 +375,108 @@ function assertReferencedFilesExist(manifest: ExtensionManifest, packageDir: str
         'Include the referenced file in the published package, or correct the path.',
       )
     }
+  }
+}
+
+/**
+ * The qualification-record fields a lock may declare (MODEL-05).
+ *
+ * Mirrored, not imported, from the host's `model-qualification` module, for the
+ * same reason the embedding extension mirrors its dimension constants: the SDK
+ * must stay buildable without the host (EXT-02), and a second definition that
+ * drifts is caught by the discovery test asserting the field set.
+ */
+export const QUALIFICATION_FIELDS: readonly string[] = [
+  'modelRevision', 'artifactSha', 'tokenizer', 'processor',
+  'engineVersion', 'nodeAbi', 'architecture', 'executionProvider',
+]
+
+/** Largest lock file accepted, in bytes. Bounded so a huge file cannot be parsed. */
+export const MAX_LOCK_BYTES = 1024 * 1024
+
+/**
+ * Validate the qualification records an asset lock declares.
+ *
+ * A `qualification` object is not decoration: if it is present it must carry
+ * every field, each a non-blank string, or the package is refused at discovery —
+ * a record that can silently rot into a claim the artifacts no longer satisfy is
+ * worse than none (MODEL-05: a gap is not a qualification).
+ * @param lockPath - the lock file's absolute path.
+ * @param assetSet - the asset set whose record to check.
+ */
+function assertQualificationRecord(lockPath: string, assetSet: string): void {
+  // STAT FIRST, READ SECOND (review finding): a hostile package can ship a
+  // multi-GB lock, and buffering it before the cap check is the unbounded
+  // allocation discovery must never perform. The stat is free, so the cap is
+  // enforced on the byte count BEFORE any bytes are read.
+  let stat: { size: number }
+  try {
+    stat = statSync(lockPath)
+  } catch (error) {
+    throw new ManagementError(
+      'INVALID_EXTENSION',
+      'discover',
+      `the asset lock cannot be read: ${error instanceof Error ? error.message : String(error)}`,
+      'Ship a valid JSON asset lock.',
+    )
+  }
+  if (stat.size > MAX_LOCK_BYTES) {
+    throw new ManagementError(
+      'INVALID_EXTENSION',
+      'discover',
+      `the asset lock is ${stat.size} bytes, over the ${MAX_LOCK_BYTES} cap`,
+      'Keep the lock under the cap.',
+    )
+  }
+  let lock: unknown
+  try {
+    lock = JSON.parse(readFileSync(lockPath, 'utf8'))
+  } catch (error) {
+    throw new ManagementError(
+      'INVALID_EXTENSION',
+      'discover',
+      `the asset lock cannot be read: ${error instanceof Error ? error.message : String(error)}`,
+      'Ship a valid JSON asset lock.',
+    )
+  }
+  const sets = (lock as { assetSets?: Record<string, unknown> } | undefined)?.assetSets
+  if (typeof sets !== 'object' || sets === null) return
+  const set = sets[assetSet]
+  if (typeof set !== 'object' || set === null) return
+  const qualification = (set as { qualification?: unknown }).qualification
+  if (qualification === undefined) return
+  if (typeof qualification !== 'object' || qualification === null || Array.isArray(qualification)) {
+    throw new ManagementError(
+      'INVALID_EXTENSION',
+      'discover',
+      `the ${assetSet} qualification record is not an object`,
+      'Declare the record as an object with every MODEL-05 field, or remove it.',
+    )
+  }
+  const record = qualification as Record<string, unknown>
+  const missing = QUALIFICATION_FIELDS.filter(field => typeof record[field] !== 'string' || record[field].length === 0)
+  if (missing.length > 0) {
+    throw new ManagementError(
+      'INVALID_EXTENSION',
+      'discover',
+      `the ${assetSet} qualification record is missing or has blank: ${missing.join(', ')}`,
+      'Populate every MODEL-05 field with a non-blank string, or remove the record.',
+    )
+  }
+}
+
+/**
+ * Validate the qualification records the manifest's asset locks declare.
+ *
+ * The assetLock path was ALREADY escape-checked and existence-checked by
+ * `assertReferencedFilesExist` before this runs (discovery calls that first),
+ * so the join here reuses a validated relative path rather than a raw one.
+ * @param manifest - the validated manifest.
+ * @param packageDir - the package directory.
+ */
+export function validateLockQualifications(manifest: ExtensionManifest, packageDir: string): void {
+  for (const model of manifest.models) {
+    const lockPath = join(packageDir, model.assetLock.replace(/^\.\//, ''))
+    assertQualificationRecord(lockPath, model.assetSet)
   }
 }

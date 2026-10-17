@@ -1,0 +1,58 @@
+{
+  "lockVersion": 1,
+  "assetSets": {
+    "laya-decision-onnx": {
+      "model": {
+        "provider": "NandhaKishorM",
+        "identity": "NandhaKishorM/laya (multilingual decision checkpoint)",
+        "url": "https://github.com/NandhaKishorM/laya",
+        "modalities": ["text"],
+        "note": "The Laya decision-family checkpoint at commit c73908d96ff73c0062c340a11bf7c54ec7d8bc4d (tag v0.4.6, Apache-2.0). The model card ships UNCALIBRATED logits with a clamping warning — every confidence this extension returns is marked calibrated: false (DEC-08)."
+      },
+      "conversion": {
+        "identity": "upstream scripts/export_onnx.py split export (encoder + head with external data)",
+        "url": "https://github.com/NandhaKishorM/laya/blob/c73908d96ff73c0062c340a11bf7c54ec7d8bc4d/scripts/export_onnx.py",
+        "kind": "upstream six-artifact split ONNX export of the source checkpoint",
+        "quantizationProfile": "unquantized fp32",
+        "revision": "7b928d828b7b0e022f929d9bd2e44165aa270148",
+        "note": "The six artifacts below were exported from the pinned checkpoint and measured on this host; torch-vs-ONNX parity passed 3/3 (worst logits diff 1.0e-06, act_probs 0.0e+00) per docs/tool-mode/LAYA-INTEGRATION-FINDINGS.md. The encoder takes input_ids/attention_mask; the head takes hidden_states/marker_pos/marker_mask/qtype/attention_mask and returns logits + act_logits."
+      },
+      "engine": {
+        "kind": "onnxruntime-node (native CPU execution provider) driven by the vendored laya-ts runtime",
+        "version": "onnxruntime-node ^1.20.0 + vendored laya-ts dist from the pinned commit",
+        "note": "The vendored runtime creates the ONNX sessions DIRECTLY over encoder.onnx + head.onnx and verifies every artifact's SHA-256 before loading (the loadNodeBundle refusal)."
+      },
+      "tokenizer": {
+        "kind": "the checkpoint's own tokenizer.json (metaspace BPE, vocab 50285 with the ModernBERT special ids)",
+        "identity": "ships with the pinned checkpoint; parsed by the vendored laya-ts tokenizer (parseTokenizerJson)",
+        "note": "No external tokenizer package is required: the vendored runtime parses the pinned tokenizer.json itself."
+      },
+      "groups": [
+        {
+          "id": "text-backbone",
+          "enables": ["text"],
+          "assets": [
+            { "id": "laya-encoder-onnx", "file": "encoder.onnx", "bytes": 2451566, "source": "the split export of the pinned checkpoint", "digest": "A774C5C634B99D1A4CED21ACBF11B9617A5CD55C7C7957BD52480B17D95A97F4", "executable": false },
+            { "id": "laya-encoder-onnx-data", "file": "encoder.onnx.data", "bytes": 1227816960, "source": "the split export of the pinned checkpoint", "digest": "F1E49A027352064D72831863456BE6160748854296BFF8332DF14130DBF79834", "executable": false }
+          ]
+        },
+        {
+          "id": "decision-head",
+          "enables": ["text"],
+          "assets": [
+            { "id": "laya-head-onnx", "file": "head.onnx", "bytes": 245312, "source": "the split export of the pinned checkpoint", "digest": "7F6B9AC15D5FDF9EEBB352E66BDD3CE799D32885F1446014D268D8C53207858B", "executable": false },
+            { "id": "laya-head-onnx-data", "file": "head.onnx.data", "bytes": 59899904, "source": "the split export of the pinned checkpoint", "digest": "0292A4EB478C2C3EC0B6555B4A4093BC802E965654D7AEB4AC22907A17F261D3", "executable": false }
+          ]
+        },
+        {
+          "id": "tokenizer-config",
+          "enables": ["text"],
+          "assets": [
+            { "id": "laya-tokenizer", "file": "tokenizer.json", "bytes": 34363188, "source": "the split export of the pinned checkpoint", "digest": "609D8F4C067CD3950F88594C5A802616CEA245823836EF5848EE4FC40AAB5B6F", "executable": false },
+            { "id": "laya-rl-agent-config", "file": "rl_agent_config.json", "bytes": 472, "source": "the split export of the pinned checkpoint", "digest": "25061739243B617AD88D1219BA6F8A9C86C5881CA28DF024FA2D9B3B2FCC30C6", "executable": false }
+          ]
+        }
+      ]
+    }
+  }
+}

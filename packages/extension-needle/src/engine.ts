@@ -31,6 +31,19 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { assertNoListenerArgument, runProcess, type ProcessOutcome } from './process-bridge.ts'
+
+/**
+ * NDL-06: the qualified local-no-telemetry posture, enforced by THIS package's
+ * code rather than assumed from the binary: every engine child process is
+ * handed the documented opt-out controls. The binary's own honored variable
+ * set is NOT independently verified (recorded honestly in the manifest's
+ * telemetryContent), so the posture is enforced at the spawn boundary on top
+ * of the bridge's scrubbed allow-list environment.
+ */
+export const NEEDLE_TELEMETRY_ENV = {
+  NEEDLE_TELEMETRY: '0',
+  DO_NOT_TRACK: '1',
+} as const
 import type { OfferedTool } from './contracts.ts'
 
 /** One request to the engine. */
@@ -313,6 +326,8 @@ export async function invokeEngine(
         cwd: scratch,
         timeoutMs: request.timeoutMs,
         maxOutputBytes: request.maxOutputBytes,
+        // NDL-06: the qualified local-no-telemetry posture (see the const).
+        env: { ...NEEDLE_TELEMETRY_ENV },
         ...signal === undefined ? {} : { signal },
       },
     )

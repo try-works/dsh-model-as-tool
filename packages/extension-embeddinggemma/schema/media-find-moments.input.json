@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "media_find_moments input",
+  "description": "Input for media_find_moments (MOD-13): find the source-time windows of one media item that best match a query. AUDIO media is supported in this build (WAV, bounded decoder); VIDEO media is refused by name — the fused video embedding (the model's per-frame video grid + video_features scatter) is the recorded remainder, and windows over image-grid rows would fabricate a result. The implementation enforces what JSON Schema cannot express alone: the final window clips to the source range and is included exactly once, the total window count is capped, and `sampling` is a video-only field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query", "media", "windowSeconds", "strideSeconds"],
+  "properties": {
+    "query": { "$ref": "#/$defs/item" },
+    "media": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path"],
+      "properties": {
+        "kind": { "enum": ["audio", "video"] },
+        "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "range": { "$ref": "#/$defs/timeRange" }
+      }
+    },
+    "windowSeconds": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 11.2,
+      "description": "The window width in seconds; capped at the model's 11.2 s audio window (MOD-08)."
+    },
+    "strideSeconds": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 120,
+      "description": "The stride between window starts in seconds (MOD-13)."
+    },
+    "top_k": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 256,
+      "description": "How many ranked matches to return."
+    },
+    "sampling": {
+      "$ref": "#/$defs/videoSampling",
+      "description": "VIDEO ONLY: the frame sampling instruction. Supplying it for audio media is an error (MOD-13)."
+    },
+    "dimensions": {
+      "type": "integer",
+      "enum": [768, 512, 256, 128],
+      "default": 768,
+      "description": "The width the query and every window are embedded at (MOD-04)."
+    }
+  },
+  "$defs": {
+    "timeRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startSeconds", "endSeconds"],
+      "properties": {
+        "startSeconds": { "type": "number", "minimum": 0 },
+        "endSeconds": { "type": "number", "minimum": 0 }
+      }
+    },
+    "videoSampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "maxFrames"],
+      "properties": {
+        "mode": { "const": "uniform" },
+        "maxFrames": { "type": "integer", "minimum": 1, "maximum": 300 }
+      }
+    },
+    "mediaPart": {
+      "description": "One part of an item, as a closed discriminated union on `kind` (MOD-06).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "text"],
+          "properties": {
+            "kind": { "const": "text" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "text"],
+          "properties": {
+            "kind": { "const": "code" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "language": { "type": "string", "minLength": 1, "maxLength": 64 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "image" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "audio" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "range": { "$ref": "#/$defs/timeRange" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "video" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "range": { "$ref": "#/$defs/timeRange" },
+            "sampling": { "$ref": "#/$defs/videoSampling" }
+          }
+        }
+      ]
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "parts"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/mediaPart" }
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    }
+  }
+}

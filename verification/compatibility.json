@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordedAt": "2026-10-17",
+  "note": "Qualification matrix from the RECORDED evidence only (verification/evidence.json platform/command blocks, package.json dependencies, docs/tool-mode/qualification/*.json). Rows marked NOT_VERIFIED are honest gaps, not claims. This file is drift-checked by scripts/gen-models-index.mjs --check in the verify chain.",
+  "platform": {
+    "os": "win32",
+    "arch": "x64",
+    "node": "v24.11.0",
+    "accelerator": "cpu"
+  },
+  "matrix": {
+    "dsh": {
+      "status": "NOT_VERIFIED",
+      "detail": "The plugin mounts into the running DSH harness (packed probes at 127.0.0.1), but no DSH harness version string was recorded in the evidence files."
+    },
+    "node": {
+      "status": "VERIFIED",
+      "version": "v24.11.0",
+      "source": "verification/evidence.json platform.node; all suites run on this runtime"
+    },
+    "os": {
+      "status": "VERIFIED",
+      "version": "win32 x64 (Windows CPU)",
+      "source": "verification/evidence.json platform; qualification records (voz.json, embeddinggemma.json)"
+    },
+    "mcp": {
+      "status": "VERIFIED",
+      "versions": {
+        "@modelcontextprotocol/server": "2.3.1",
+        "@modelcontextprotocol/client": "2.3.1 (devDependency, interop driver)",
+        "@modelcontextprotocol/node": "2.1.1"
+      },
+      "revision": "2026-07-28",
+      "source": "packages/dsh-model-as-tool/package.json; docs/tool-mode/specs/mcp-2026-07-28/"
+    },
+    "providers": {
+      "tongue": {
+        "package": "@desert-ant-labs/tongue",
+        "version": "3.6.0",
+        "engine": "pure-javascript",
+        "status": "VERIFIED",
+        "source": "packages/extension-desert-ant-tongue/models.lock.json; qualification runs"
+      },
+      "voz": {
+        "package": "@desert-ant-labs/voz",
+        "version": "3.6.0",
+        "engine": "onnxruntime-node 1.30.0",
+        "status": "VERIFIED",
+        "source": "docs/tool-mode/qualification/voz.json model.engine"
+      },
+      "embeddinggemma": {
+        "identity": "google/embeddinggemma-2",
+        "conversion": "onnx-community/embeddinggemma-2-ONNX",
+        "revision": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+        "engine": "onnxruntime-node (native CPU) + @huggingface/transformers (GemmaTokenizer)",
+        "status": "VERIFIED (text/image/audio); video embedding NOT_IMPLEMENTED (recorded remainder)",
+        "source": "docs/tool-mode/qualification/embeddinggemma.json"
+      },
+      "needle": {
+        "identity": "Cactus-Compute/needle3",
+        "revision": "93e88ede867e4311c39151285e74df513e4b835b",
+        "engine": "pinned native needle.exe (managed process bridge)",
+        "status": "VERIFIED (native route; WASM route recorded as unqualified)",
+        "source": "packages/extension-needle/models.lock.json; packages/extension-needle/src/artifacts.ts"
+      },
+      "laya": {
+        "status": "NOT_IMPLEMENTED",
+        "detail": "No Laya extension exists; decision_choose/test/score are spec gaps (audit HIGH)."
+      },
+      "minilm": {
+        "status": "NOT_IMPLEMENTED",
+        "detail": "text_embed/text_rerank are absent (audit HIGH)."
+      }
+    }
+  }
+}

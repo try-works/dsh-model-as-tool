@@ -50,7 +50,17 @@
       ]
     }
   ],
-  "tools": [],
+  "tools": [
+    {
+      "id": "tongue-lang-detect",
+      "name": "lang_detect",
+      "contractId": "tool-mode/lang_detect",
+      "contractVersion": "1.0.0",
+      "description": "Identify the language of a short piece of text with a reliability verdict and ranked alternatives.",
+      "inputSchema": "./schemas/lang-detect.input.json",
+      "outputSchema": "./schemas/lang-detect.output.json"
+    }
+  ],
   "implementations": [
     {
       "id": "tongue-default",

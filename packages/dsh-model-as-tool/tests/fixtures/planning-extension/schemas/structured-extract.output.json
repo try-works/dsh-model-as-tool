@@ -1,0 +1,41 @@
+{
+  "title": "structured_extract output (fixture)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["extraction", "proposed", "valid", "issues", "meta"],
+  "properties": {
+    "extraction": { "type": "object", "additionalProperties": true },
+    "proposed": { "type": "boolean" },
+    "valid": { "type": "boolean" },
+    "issues": { "type": "array", "maxItems": 32, "items": { "type": "string" } },
+    "reasoning": { "type": "string", "maxLength": 8192 },
+    "confidence": { "type": ["number", "null"] },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contractVersion",
+        "implementationId",
+        "extension",
+        "extensionVersion",
+        "activationGeneration",
+        "executionLocation",
+        "receiptId",
+        "warnings"
+      ],
+      "description": "The host stamps this envelope. The provider never authors it.",
+      "properties": {
+        "contract": { "type": "string" },
+        "contractVersion": { "type": "string" },
+        "implementationId": { "type": "string" },
+        "extension": { "type": "string" },
+        "extensionVersion": { "type": "string" },
+        "activationGeneration": { "type": "integer" },
+        "executionLocation": { "type": "string", "enum": ["device", "remote"] },
+        "receiptId": { "type": "string" },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

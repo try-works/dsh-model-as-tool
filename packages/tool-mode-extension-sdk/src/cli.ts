@@ -21,6 +21,7 @@
 import { ManagementError } from './errors.ts'
 import { ExtensionStore } from './install/store.ts'
 import { ExtensionLifecycle, type ContributionRegistrar } from './install/lifecycle.ts'
+import { commitUpdate, rollback } from './install/update-flow.ts'
 import { summarize } from './state.ts'
 
 /** Where the CLI writes. Injected so a test can capture output. */
@@ -49,6 +50,61 @@ export interface CliDependencies {
   readonly registrar?: ContributionRegistrar
   /** Parse and install from a specifier; injected so the CLI owns no network stack. */
   readonly install?: (spec: string, integrity: string | undefined, store: string) => Promise<string>
+  /**
+   * The recipes authoring runner, forwarded to by the `recipes` namespace
+   * (RCP-08). When absent, the SDK resolves `@try-works/tool-mode-recipes/cli`
+   * lazily at invocation time; when that also fails, the command answers a
+   * PRECISE refusal — the SDK never duplicates recipe semantics and never
+   * depends on the recipes package at import time.
+   */
+  readonly recipeCliRunner?: { runRecipeCli(argv: readonly string[], io: CliIo): Promise<number> }
+  /** Override the lazy resolver (tests); returns the runner or undefined. */
+  readonly resolveRecipeCli?: () => Promise<{ runRecipeCli(argv: readonly string[], io: CliIo): Promise<number> } | undefined>
+}
+
+/** The default lazy resolver: the recipes CLI beside this SDK, or nothing. */
+async function defaultRecipeCliResolver(): Promise<{ runRecipeCli(argv: readonly string[], io: CliIo): Promise<number> } | undefined> {
+  try {
+    const module = await import('@try-works/tool-mode-recipes/cli') as
+      { runRecipeCli(argv: readonly string[], io: CliIo): Promise<number> }
+    return { runRecipeCli: module.runRecipeCli }
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * The `recipes` namespace: lazy OPTIONAL forwarding to the recipes authoring
+ * CLI (RCP-08). The SDK ships no recipe semantics of its own — the same
+ * implementation runs here as under the recipes package's own bin.
+ * @param argv - the recipe arguments after the `recipes` token.
+ * @param io - output sinks.
+ * @param dependencies - the injected runner or resolver.
+ * @returns the process exit code.
+ */
+async function forwardRecipes(
+  argv: readonly string[],
+  io: CliIo,
+  dependencies: CliDependencies,
+): Promise<number> {
+  const runner = dependencies.recipeCliRunner
+    ?? await (dependencies.resolveRecipeCli ?? defaultRecipeCliResolver)()
+  if (runner === undefined) {
+    io.err(
+      'the recipes authoring CLI is not available beside this SDK: @try-works/tool-mode-recipes is not installed. '
+      + 'Install it, or run its own bin `tool-mode-recipe` directly. This refusal is deliberate: the SDK never '
+      + 'pretends to author a recipe it cannot validate.',
+    )
+    return 1
+  }
+  // A raw throw from the forwarded runner becomes a refusal here: the SDK
+  // namespace never re-throws into the caller's stack.
+  try {
+    return await runner.runRecipeCli(argv, io)
+  } catch (error) {
+    io.err(`the recipes CLI failed: ${error instanceof Error ? error.message : String(error)}`)
+    return 1
+  }
 }
 
 /** The usage text. */
@@ -61,10 +117,20 @@ const USAGE = `dsh-tool-mode — manage Tool Mode extensions
   extensions prepare <id> --model <model>           prepare a model deployment
   extensions deactivate <id> [--profile p]          deactivate in a profile
   extensions uninstall <id> [--deactivate] [--purge-assets]
+  extensions update <id> --to <version>          commit a staged, approved update
+                                                  (offline: pointerOnly; the host
+                                                  reconciles admissions)
+  extensions rollback <id> [--to <version>]       restore the recorded previous
+                                                  pointer (pointer-only restore)
+  extensions purge-assets <id>                    refused here: purging belongs to
+                                                  the running host's coordinator
   tools enable <tool> [--profile p]                 enable one tool
   tools disable <tool> [--profile p]                disable one tool
+  recipes <…>                                       author recipes: forwards to the
+                                                    recipes CLI (create / edit-draft /
+                                                    test / validate / describe / pack)
 
-Global: --store <dir>  --profile <name>
+Global: --store <dir>  --profile <name>  --json (one JSON document: {command, exit, output, errors})
 
 Mutating commands take exclusive ownership of the store. They refuse rather than
 race a running host, and the management surface is never published on the
@@ -84,7 +150,7 @@ export function parseArgs(argv: readonly string[]): CliOptions {
   const positional: string[] = []
   const flags: Record<string, string | true> = {}
   const known = new Set([
-    'store', 'profile', 'integrity', 'model', 'deactivate', 'purge-assets', 'json', 'help',
+    'store', 'profile', 'integrity', 'model', 'deactivate', 'purge-assets', 'json', 'help', 'to',
   ])
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index] as string
@@ -139,6 +205,22 @@ export async function runToolModeCli(
   io: CliIo,
   dependencies: CliDependencies = {},
 ): Promise<number> {
+  // The recipes namespace is forwarded RAW (no SDK-side parsing): the recipes
+  // CLI owns its own argv contract, and this file must not duplicate it. The
+  // --json wrapper applies to the forwarded namespace too.
+  if (argv[0] === 'recipes') {
+    const jsonIndex = argv.indexOf('--json')
+    if (jsonIndex === -1) {
+      return await forwardRecipes(argv.slice(1), io, dependencies)
+    }
+    const output: string[] = []
+    const errors: string[] = []
+    const forwarded = [...argv.slice(1, jsonIndex), ...argv.slice(jsonIndex + 1)]
+    const code = await forwardRecipes(forwarded, { out: line => output.push(line), err: line => errors.push(line) }, dependencies)
+    io.out(JSON.stringify({ command: `recipes ${forwarded.join(' ')}`, exit: code, output, errors }))
+    return code
+  }
+
   let options: CliOptions
   try {
     options = parseArgs(argv)
@@ -160,8 +242,43 @@ export async function runToolModeCli(
     registrar: dependencies.registrar ?? refusingRegistrar,
   })
 
+  // --json: the whole command's output is captured and emitted as ONE JSON
+  // document with the exit code as the normalized status (0 success, 1 named
+  // management refusal, 2 usage/IO) — never hanging an unattended caller.
+  if (options.flags.json === true) {
+    const output: string[] = []
+    const errors: string[] = []
+    const code = await dispatchCli(`${group} ${action}`, options, store, lifecycle, { out: line => output.push(line), err: line => errors.push(line) }, dependencies)
+    io.out(JSON.stringify({ command: `${group} ${action}`, exit: code, output, errors }))
+    return code
+  }
+
   try {
-    switch (`${group} ${action}`) {
+    return await dispatchCli(`${group} ${action}`, options, store, lifecycle, io, dependencies)
+  } catch (error) {
+    if (error instanceof ManagementError) {
+      io.err(`${error.code}: ${error.message}`)
+      // Recovery advice is the point of the vocabulary: a code alone tells an
+      // operator what failed but not what to do about it.
+      io.err(`  ${error.recovery}`)
+      return 1
+    }
+    io.err(error instanceof Error ? error.message : String(error))
+    return 1
+  }
+}
+
+/** The command dispatch, shared by the prose and the --json paths. */
+async function dispatchCli(
+  command: string,
+  options: CliOptions,
+  store: ExtensionStore,
+  lifecycle: ExtensionLifecycle,
+  io: CliIo,
+  dependencies: CliDependencies,
+): Promise<number> {
+  try {
+    switch (command) {
       case 'extensions list':
         return listExtensions(store, lifecycle, io)
       case 'extensions inspect':
@@ -176,20 +293,24 @@ export async function runToolModeCli(
         return await deactivateExtension(lifecycle, options, io)
       case 'extensions uninstall':
         return await uninstallExtension(lifecycle, store, options, io)
+      case 'extensions update':
+        return await updateExtension(store, options, io)
+      case 'extensions rollback':
+        return await rollbackExtension(store, options, io)
+      case 'extensions purge-assets':
+        return purgeAssets(options, io)
       case 'tools enable':
-        return setTool(lifecycle, options, io, true)
+        return await setTool(store, lifecycle, options, io, true)
       case 'tools disable':
-        return setTool(lifecycle, options, io, false)
+        return await setTool(store, lifecycle, options, io, false)
       default:
-        io.err(`unknown command ${JSON.stringify(`${group} ${action}`)}`)
+        io.err(`unknown command ${JSON.stringify(command)}`)
         io.err(USAGE)
         return 2
     }
   } catch (error) {
     if (error instanceof ManagementError) {
       io.err(`${error.code}: ${error.message}`)
-      // Recovery advice is the point of the vocabulary: a code alone tells an
-      // operator what failed but not what to do about it.
       io.err(`  ${error.recovery}`)
       return 1
     }
@@ -209,6 +330,77 @@ const refusingRegistrar: ContributionRegistrar = {
     )
   },
   withdraw() { /* nothing was published */ },
+}
+
+/**
+ * `extensions update <id> --to <v>` (EXT-31).
+ *
+ * The OFFLINE CLI path: the version must already be staged and approved
+ * (stageUpdate/recordApproval); the commit runs pointerOnly — the durable
+ * pointer moves and the running host reconciles admissions on its next
+ * lifecycle pass (the CLI never fakes a publication, EXT-31's management
+ * channel is the host's).
+ */
+async function updateExtension(store: ExtensionStore, options: CliOptions, io: CliIo): Promise<number> {
+  const id = options.positional[2]
+  const version = options.flags.to
+  if (id === undefined) {
+    io.err('extensions update needs an extension id')
+    return 2
+  }
+  if (typeof version !== 'string') {
+    io.err('extensions update needs --to <version> (the staged, approved version)')
+    return 2
+  }
+  const result = await commitUpdate({
+    storeDir: store.rootDir,
+    profile: options.profile,
+    extensionId: id,
+    stagedVersion: version,
+    pointerOnly: true,
+  })
+  io.out(`updated ${id}: active ${result.activeVersion}${result.previousVersion === undefined ? '' : ` (was ${result.previousVersion})`}`)
+  return 0
+}
+
+/** `extensions rollback <id> [--to <v>]` (EXT-31): pointer restore only. */
+async function rollbackExtension(store: ExtensionStore, options: CliOptions, io: CliIo): Promise<number> {
+  const id = options.positional[2]
+  if (id === undefined) {
+    io.err('extensions rollback needs an extension id')
+    return 2
+  }
+  const requested = options.flags.to
+  const pointers = store.readProfilePointers(options.profile)
+  if (pointers.corrupt) {
+    io.err(`the profile pointers could not be read: ${pointers.diagnostic ?? 'unknown reason'}`)
+    return 1
+  }
+  const previous = pointers.value.previousVersions[id]
+  if (requested !== undefined && requested !== previous) {
+    io.err(`rollback --to ${String(requested)} does not match the recorded previous version ${previous ?? '(none)'}; `
+      + 'rollback restores the recorded previous pointer, never an arbitrary version')
+    return 1
+  }
+  const result = await rollback({ storeDir: store.rootDir, profile: options.profile, extensionId: id })
+  io.out(`rolled back ${id}: active ${result.activeVersion}${result.hookFailure === undefined ? '' : ` (hook failure reported: ${result.hookFailure})`}`)
+  return 0
+}
+
+/**
+ * `extensions purge-assets <id>` (EXT-31).
+ *
+ * Honest refusal: asset purging is the deployment coordinator's job in the
+ * running host — the offline CLI owns no asset registry and never invents one.
+ */
+function purgeAssets(options: CliOptions, io: CliIo): number {
+  const id = options.positional[2]
+  if (id === undefined) {
+    io.err('extensions purge-assets needs an extension id')
+    return 2
+  }
+  io.err(`asset purging for ${id} requires the running host's deployment coordinator; this offline CLI owns no asset registry and refuses rather than faking a purge`)
+  return 1
 }
 
 /** `extensions list` */
@@ -406,8 +598,7 @@ async function uninstallExtension(
     io.err('Re-run with --deactivate to deactivate it first.')
     return 1
   }
-  const release = store.acquireExclusive()
-  try {
+  await store.exclusive(async () => {
     await lifecycle.uninstall(id, { deactivate: options.flags.deactivate === true })
     io.out(`uninstalled ${id}`)
     if (options.flags['purge-assets'] === true) {
@@ -416,14 +607,18 @@ async function uninstallExtension(
       io.out('  asset purge requested; on Windows deletion may complete after restart')
     }
     io.out('  a disabled tombstone is retained so the package cannot silently return')
-    return 0
-  } finally {
-    release()
-  }
+  })
+  return 0
 }
 
 /** `tools enable|disable <tool>` */
-function setTool(lifecycle: ExtensionLifecycle, options: CliOptions, io: CliIo, enabled: boolean): number {
+async function setTool(
+  store: ExtensionStore,
+  lifecycle: ExtensionLifecycle,
+  options: CliOptions,
+  io: CliIo,
+  enabled: boolean,
+): Promise<number> {
   const toolName = options.positional[2]
   if (toolName === undefined) {
     io.err(`tools ${enabled ? 'enable' : 'disable'} needs a tool name`)
@@ -436,7 +631,19 @@ function setTool(lifecycle: ExtensionLifecycle, options: CliOptions, io: CliIo, 
     io.err(`no extension in profile ${options.profile} contributes a tool named ${toolName}`)
     return 1
   }
-  lifecycle.setToolEnabled(owner.extensionId, toolName, enabled)
+  // A toggle RECONCILES the published surface now, so like every other offline
+  // mutation it must hold exclusive store ownership: racing a running host's own
+  // registry mutations with none would leave the two processes disagreeing. The
+  // reentrant exclusive() is used rather than the raw lock so the lifecycle's own
+  // acquisition nests at depth 2 instead of overwriting this command's record.
+  try {
+    await store.exclusive(async () => {
+      await lifecycle.setToolEnabled(owner.extensionId, toolName, enabled)
+    })
+  } catch (error) {
+    io.err(error instanceof Error ? error.message : String(error))
+    return 1
+  }
   io.out(`${enabled ? 'enabled' : 'disabled'} ${toolName} in profile ${options.profile}`)
   return 0
 }

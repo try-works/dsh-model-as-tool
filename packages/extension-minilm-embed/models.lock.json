@@ -1,0 +1,47 @@
+{
+  "protocolVersion": "1.1.0",
+  "assetSets": {
+    "minilm-l6-onnx": {
+      "pinning": {
+        "state": "measured",
+        "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+        "measuredOn": {
+          "os": "win32",
+          "arch": "x64",
+          "accelerator": "cpu",
+          "node": "24.11.0"
+        },
+        "recordedAt": "2026-10-18",
+        "reason": "The pinned ONNX conversion (onnx/model.onnx) and the uncased WordPiece vocabulary (vocab.txt) were downloaded from the public sentence-transformers/all-MiniLM-L6-v2 repository at revision 1110a243fdf4706b3f48f1d95db1a4f5529b4d41, hashed, and RUN on this host through the exact adapter path (onnxruntime-node 1.30.0 + the pure-TS WordPiece tokenizer): the qualification record at docs/tool-mode/qualification/minilm.json carries the measurements (384-d embeddings, finite, unit norm). The tokenizer ids were pinned against the HF reference tokenizer (8/8 fixtures identical). No placeholder hashes: every digest below is measured from the acquired bytes."
+      },
+      "license": {
+        "name": "Apache License 2.0",
+        "url": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2"
+      },
+      "groups": [
+        {
+          "id": "text-backbone",
+          "enables": ["text"],
+          "assets": [
+            {
+              "id": "minilm-embed-model-onnx",
+              "file": "onnx/model.onnx",
+              "bytes": 90405214,
+              "source": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/onnx/model.onnx",
+              "digest": "6fd5d72fe4589f189f8ebc006442dbb529bb7ce38f8082112682524616046452",
+              "executable": false
+            },
+            {
+              "id": "minilm-embed-vocab",
+              "file": "vocab.txt",
+              "bytes": 231508,
+              "source": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/vocab.txt",
+              "digest": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+              "executable": false
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

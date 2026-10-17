@@ -25,6 +25,15 @@
  * @module @try-works/dsh-model-as-tool/publication
  */
 
+import type { ModelReadiness } from '@try-works/tool-mode-extension-sdk'
+
+const CALLABLE_READINESS: ReadonlySet<ModelReadiness> = new Set<ModelReadiness>([
+  'prepared-cold',
+  'loading',
+  'ready',
+  'busy',
+])
+
 /** Why a candidate contribution did not reach the published surface. */
 export interface WithheldContribution {
   /** Stable reason code. */
@@ -48,7 +57,7 @@ export interface ImplementationCandidate {
   /** The catalog model backing it. */
   readonly modelId: string
   /** Whether the model is prepared and callable right now. */
-  readonly readiness: 'unprepared' | 'preparing' | 'ready' | 'failed'
+  readonly readiness: ModelReadiness
   /** Whether the model can run on this host at all. */
   readonly runnable: boolean
 }
@@ -161,12 +170,14 @@ export function buildSurface(options: {
         extensionId: implementation.extensionId,
         modelId: implementation.modelId,
         readiness: implementation.readiness,
-        // Callable requires BOTH that the host can run it and that it is ready.
-        callable: implementation.runnable && implementation.readiness === 'ready',
+        // Callable requires BOTH that the host can run it and that preparation
+        // says a call is possible. Residency states such as prepared-cold/loading
+        // affect admission, not publication (RES-04).
+        callable: implementation.runnable && CALLABLE_READINESS.has(implementation.readiness),
         reason: !implementation.runnable
           ? 'this model cannot run on this host'
-          : implementation.readiness === 'ready'
-            ? 'prepared and callable'
+          : CALLABLE_READINESS.has(implementation.readiness)
+            ? `model is ${implementation.readiness}; prepared and callable`
             : `model is ${implementation.readiness}; the tool is not advertised as working`,
       })
     }
@@ -190,7 +201,7 @@ export function buildSurface(options: {
       })
       continue
     }
-    if (selected.readiness !== 'ready') {
+    if (!CALLABLE_READINESS.has(selected.readiness)) {
       // EXT-24: an active package with an unprepared model may publish readiness
       // and preparation guidance, but MUST NOT advertise working inference.
       withheld.push({

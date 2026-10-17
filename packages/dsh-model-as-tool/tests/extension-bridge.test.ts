@@ -42,6 +42,7 @@ function packFixture(): { bytes: Uint8Array; sha512: string } {
     'lib/index.js',
     'schemas/input.json',
     'schemas/output.json',
+    'models.lock.json',
   ]) {
     zip.addFile(relative, readFileSync(join(FIXTURE_DIR, relative)))
   }
@@ -84,8 +85,9 @@ describe('the host mounts the lifecycle, so an extension tool REACHES the regist
               const entry = await import(
                 new URL(`file:///${join(installPathFor(storeDir, installed.extensionId, installed.version), 'lib', 'index.js').replace(/\\/g, '/')}`).href
               )
-              const instance = entry.createExtension()
-              return instance.tools[0].invoke({ token: 'bridge-proof', upper: true })
+              const instance = await entry.default.create({})
+              const provider = await instance.createProvider({ modelId: 'fixture-echo-model', configuration: {} })
+              return provider.invoke({ implementationId: 'fixture-echo', input: { token: 'bridge-proof', upper: true }, context: {} })
             },
           } as never)
           return () => {

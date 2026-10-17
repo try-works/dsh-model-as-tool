@@ -410,6 +410,32 @@ export function rankBySimilarity(
 }
 
 /**
+ * The MOD-11 selection rule, pure and model-free (testable without weights).
+ *
+ * A label is SELECTED only when the best raw cosine clears `minScore` AND its
+ * margin over the runner-up clears `minMargin`. Otherwise the honest answer is
+ * ABSTAINED with no label — an embedding scorer never fabricates a calibrated
+ * probability to force a decision (MOD-11, DECL-04).
+ * @param scored - the label scores, in the caller's label order.
+ * @param minScore - the minimum score for the best label.
+ * @param minMargin - the minimum margin over the runner-up.
+ * @returns the selection.
+ */
+export function classifySelection(
+  scored: readonly { readonly id: string; readonly score: number }[],
+  minScore: number,
+  minMargin: number,
+): { readonly status: 'selected' | 'abstained'; readonly label?: string } {
+  const ordered = [...scored].sort((left, right) => right.score - left.score)
+  const best = ordered[0]
+  if (best === undefined) return { status: 'abstained' }
+  const runnerUp = ordered[1]?.score ?? Number.NEGATIVE_INFINITY
+  return best.score >= minScore && best.score - runnerUp >= minMargin
+    ? { status: 'selected', label: best.id }
+    : { status: 'abstained' }
+}
+
+/**
  * Group near-duplicate vectors by deterministic greedy representative selection (MOD-12).
  *
  * The algorithm is specified rather than chosen: each item in INPUT ORDER is compared against
@@ -428,6 +454,40 @@ export function rankBySimilarity(
  * @throws Error for an out-of-range threshold, more than {@link MAX_DEDUPLICATION_ITEMS}
  * items, duplicate IDs, or vectors of differing widths.
  */
+/**
+ * Plan the moments windows over a source duration (MOD-13), the SAME math for
+ * audio samples and video seconds: windows advance by the stride, the FINAL
+ * window clips to the source end and is included exactly once.
+ * @param duration - the source length (seconds).
+ * @param windowSeconds - the window length.
+ * @param strideSeconds - the advance between windows.
+ * @param maxWindows - the per-call window cap (MOD-08).
+ * @returns the planned windows in source order.
+ */
+export function planMomentsWindows(
+  duration: number,
+  windowSeconds: number,
+  strideSeconds: number,
+  maxWindows: number,
+): readonly { start: number; end: number }[] {
+  if (!(windowSeconds > 0) || !(strideSeconds > 0)) throw new Error('window and stride must be positive')
+  const windows: { start: number; end: number }[] = []
+  for (let start = 0; start + windowSeconds <= duration; start += strideSeconds) {
+    windows.push({ start, end: start + windowSeconds })
+  }
+  const last = windows[windows.length - 1]
+  const tailStart = Math.max(0, duration - windowSeconds)
+  if (last === undefined || last.start < tailStart) {
+    windows.push({ start: tailStart, end: duration })
+  }
+  if (windows.length > maxWindows) {
+    throw new Error(
+      `the source produces ${windows.length} windows, over the ${maxWindows}-window limit for one call (MOD-08)`,
+    )
+  }
+  return windows
+}
+
 export function deduplicateGroups(
   items: readonly IdentifiedVector[],
   threshold: number,

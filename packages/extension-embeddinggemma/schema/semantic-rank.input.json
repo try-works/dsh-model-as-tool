@@ -92,7 +92,7 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kind", "path", "sampling"],
+          "required": ["kind", "path"],
           "properties": {
             "kind": { "const": "video" },
             "path": { "type": "string", "minLength": 1, "maxLength": 4096 },

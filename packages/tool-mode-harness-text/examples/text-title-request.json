@@ -1,0 +1,9 @@
+{
+  "$comment": "A worked example of a caller request for the text_title recipe (RCP-12). The arguments satisfy the recipe's declared inputs: text is required (maxLength 32768), kind is optional with the enum [section, page, document] and the default \"section\", repairFeedback is optional. Omitted optional inputs are OMITTED from the prompt, never stringified as \"undefined\" (RCP-03).",
+  "toolName": "text_title",
+  "arguments": {
+    "text": "The release candidate for version 2.4 fixes a memory leak in the asset cache and moves certificate pinning behind a build flag. The changelog notes the leak grew with every cache miss, and that pinning is now enforced in the packaged build only.",
+    "kind": "document",
+    "repairFeedback": "The previous attempt invented a version number not present in the text; state only what the text supports."
+  }
+}

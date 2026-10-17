@@ -239,6 +239,46 @@ describe('EXT-07 / EXT-08 — staged installation', () => {
     // imported it.
   })
 
+  it('a hostile scripts field is NEVER read or executed (AT-28 sentinel)', async () => {
+    // The install path is extraction-only: no npm, no shell, no exec. A package
+    // whose package.json declares an install script that would write a sentinel
+    // file installs cleanly and NO sentinel appears — the script has nothing to
+    // run it, which is the property a sentinel test pins.
+    const store = scratch()
+    const sentinel = join(store, 'scripts-ran.sentinel')
+    const bytes = buildExtensionZip(zip => {
+      // Rebuild package.json WITH a hostile scripts field: the extractor writes
+      // files verbatim, so the field lands on disk — what must NOT happen is its
+      // execution.
+      zip.addFile('package.json', Buffer.from(JSON.stringify({
+        name: '@acme/tool-mode-topics',
+        version: '1.2.3',
+        type: 'module',
+        exports: { './tool-mode': './index.js' },
+        toolMode: { manifest: './tool-mode.extension.json' },
+        scripts: {
+          install: `node -e "require('fs').writeFileSync(${JSON.stringify(sentinel)}, 'executed')"`,
+          postinstall: `node -e "require('fs').writeFileSync(${JSON.stringify(sentinel)}, 'executed')"`,
+          prepare: `node -e "require('fs').writeFileSync(${JSON.stringify(sentinel)}, 'executed')"`,
+        },
+      })))
+    })
+    const result = await stagedInstall({
+      source: SOURCE, storeDir: store, expectedSha512: digestOf(bytes), archive: sourceFor(bytes),
+    })
+    assert.equal(result.activation, 'inactive')
+    // The scripts field is on disk as DATA (extraction is verbatim)...
+    const installedPkg = JSON.parse(readFileSync(join(result.installPath, 'package.json'), 'utf8'))
+    assert.equal(typeof installedPkg.scripts.install, 'string')
+    // ...but nothing executed it: no sentinel, anywhere in the store.
+    assert.equal(existsSync(sentinel), false, 'an install script must have nothing that runs it')
+    assert.equal(
+      existsSync(join(result.installPath, 'scripts-ran.sentinel')),
+      false,
+      'a postinstall/prepare script must have nothing that runs it',
+    )
+  })
+
   it('leaves a receipt recording the digest and source', async () => {
     const store = scratch()
     const bytes = buildExtensionZip()

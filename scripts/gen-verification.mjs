@@ -20,13 +20,13 @@
  *
  * What this does NOT do is claim acceptance. It reports what was observed.
  *
- * Usage: node scripts/gen-verification.mjs [--check]
+ * Usage: node scripts/gen-verification.mjs [--check] [--release-gate] [--report <path>]
  */
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 const SPEC_DIR = 'docs/tool-mode/specs'
 const OUT_DIR = 'verification'
@@ -57,6 +57,26 @@ const PLATFORM = {
 /** Read the implementation status record. */
 function statusRecord() {
   return JSON.parse(readFileSync('docs/tool-mode/status.json', 'utf8'))
+}
+
+/**
+ * Whether the official MCP SDK supports the pinned revision, READ from the
+ * fixture manifest rather than hardcoded (the round-57 review's F1).
+ *
+ * The manifest is the recorded fact: the v2 line implements 2026-07-28 via
+ * discovery, while the v1 line cannot speak it. A hardcoded 'NO' contradicted
+ * the corrected manifest and would drift again the moment the manifest is
+ * re-captured.
+ */
+function mcpOfficialSdkSupports() {
+  try {
+    const manifest = JSON.parse(readFileSync(
+      'docs/tool-mode/fixtures/mcp-2026-07-28/MANIFEST.json', 'utf8',
+    ))
+    return manifest.officialSdkSupportsRevision === true ? 'YES (v2 line)' : 'NO'
+  } catch {
+    return 'UNKNOWN'
+  }
 }
 
 /**
@@ -142,7 +162,7 @@ function owningModule(id) {
     DEC: 'not implemented',
     NDL: 'not implemented',
     TDD: 'scripts/gen-verification.mjs',
-    MOD: 'not implemented',
+    MOD: 'packages/extension-embeddinggemma/src/',
   }
   return map[family] ?? 'unmapped'
 }
@@ -183,6 +203,10 @@ function packageIdentities() {
     'packages/tool-mode-extension-sdk',
     'packages/extension-desert-ant-tongue',
     'packages/extension-desert-ant-voz',
+    'packages/extension-embeddinggemma',
+    'packages/extension-needle',
+    'packages/tool-mode-recipes',
+    'packages/tool-mode-harness-text',
   ]) {
     const path = join(dir, 'package.json')
     if (!existsSync(path)) continue
@@ -210,6 +234,12 @@ function testStatusFor(requirementStatus, hasTest) {
 
 const args = process.argv.slice(2)
 const checkOnly = args.includes('--check')
+const reportArg = args.indexOf('--report')
+const requestedReportPath = reportArg >= 0 ? args[reportArg + 1] : undefined
+if (reportArg >= 0 && (requestedReportPath === undefined || requestedReportPath.startsWith('--'))) {
+  console.error('--report requires a path')
+  process.exit(2)
+}
 /**
  * The release gate (TDD-06).
  *
@@ -344,7 +374,13 @@ if (checkOnly) {
     requirements: records,
   }, null, 2)}\n`)
 
-  writeFileSync(join(OUT_DIR, 'evidence.json'), `${JSON.stringify(result, null, 2)}\n`)
+  const evidenceText = `${JSON.stringify(result, null, 2)}\n`
+  writeFileSync(join(OUT_DIR, 'evidence.json'), evidenceText)
+  if (requestedReportPath !== undefined) {
+    const parent = dirname(requestedReportPath)
+    if (parent !== '.' && parent !== '') mkdirSync(parent, { recursive: true })
+    writeFileSync(requestedReportPath, evidenceText)
+  }
 
   const report = [
     '# Tool Mode release report',
@@ -377,7 +413,7 @@ if (checkOnly) {
     '|---|---|',
     '| Revision implemented | 2026-07-28 |',
     '| Pinned schema commit | 5f5440bb26a62e2cf3440b92da5a667efa03b267 |',
-    '| Official SDK supports the revision | NO |',
+    `| Official SDK supports the revision | ${mcpOfficialSdkSupports()} |`,
     '| Basis | Schema-conformant adaptation, verified by an independent probe |',
     '| Probe checks | `npm run verify:mcp` |',
     '',
@@ -414,6 +450,7 @@ if (checkOnly) {
   writeFileSync(join(OUT_DIR, 'RELEASE-REPORT.md'), report)
 
   console.log(`verification written: ${records.length} requirements`)
+  if (requestedReportPath !== undefined) console.log(`  report: ${requestedReportPath}`)
   console.log(`  ${TEST_STATUSES.map(name => `${name}=${counts[name] ?? 0}`).join('  ')}`)
   console.log(`  not PASS: ${unresolved.length}   no status recorded: ${unrecorded.length}   orphaned keys: ${orphaned.length}`)
 }

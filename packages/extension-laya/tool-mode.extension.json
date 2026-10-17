@@ -1,0 +1,87 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/extension-laya",
+  "version": "1.0.0",
+  "displayName": "Laya decision family",
+  "description": "The Laya decision family (H5): decision_choose (a choice over the caller's options), decision_test (yes/no) and decision_score (an ordinal level) over the pinned multilingual Laya checkpoint (github.com/NandhaKishorM/laya, commit c73908d96ff73c0062c340a11bf7c54ec7d8bc4d, tag v0.4.6, Apache-2.0), running through the vendored laya-ts runtime. Every returned confidence is EXPLICITLY UNCALIBRATED (DEC-08): the upstream model card ships uncalibrated logits and a clamping warning, and this extension never presents them as calibrated probabilities.",
+  "license": "Apache-2.0",
+  "activation": { "policy": "operator", "deactivatable": true },
+  "runtimeApi": 1,
+  "compatibility": { "hostApi": "^1.1.0", "requiredFeatures": ["verified-assets-v1"] },
+  "execution": { "kind": "module", "entry": "./lib/index.js", "isolation": "managed-process" },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": true
+  },
+  "models": [
+    {
+      "id": "laya",
+      "assetSet": "laya-decision-onnx",
+      "assetLock": "./models.lock.json",
+      "platforms": [{ "os": "win32", "arch": "x64", "accelerator": "cpu" }]
+    }
+  ],
+  "tools": [
+    {
+      "id": "decision-choose",
+      "name": "decision_choose",
+      "contractId": "@try-works/extension-laya/decision_choose",
+      "contractVersion": "1.0.0",
+      "description": "Choose one of the caller's options for a stated prompt, over the pinned Laya checkpoint. Returns the chosen option, the per-option scores, and a confidence that is EXPLICITLY UNCALIBRATED (DEC-08) — the upstream model ships uncalibrated logits.",
+      "inputSchema": "./schema/decision-choose.input.json",
+      "outputSchema": "./schema/decision-choose.output.json"
+    },
+    {
+      "id": "decision-test",
+      "name": "decision_test",
+      "contractId": "@try-works/extension-laya/decision_test",
+      "contractVersion": "1.0.0",
+      "description": "Answer a stated yes/no question over the pinned Laya checkpoint. The confidence is EXPLICITLY UNCALIBRATED (DEC-08).",
+      "inputSchema": "./schema/decision-test.input.json",
+      "outputSchema": "./schema/decision-test.output.json"
+    },
+    {
+      "id": "decision-score",
+      "name": "decision_score",
+      "contractId": "@try-works/extension-laya/decision_score",
+      "contractVersion": "1.0.0",
+      "description": "Score a stated prompt onto one of the caller's ordinal levels over the pinned Laya checkpoint. The confidence is EXPLICITLY UNCALIBRATED (DEC-08).",
+      "inputSchema": "./schema/decision-score.input.json",
+      "outputSchema": "./schema/decision-score.output.json"
+    }
+  ],
+  "implementations": [
+    {
+      "id": "laya-onnx-decision-choose",
+      "contractId": "@try-works/extension-laya/decision_choose",
+      "contractVersion": "1.0.0",
+      "modelId": "laya",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "laya-onnx-decision-test",
+      "contractId": "@try-works/extension-laya/decision_test",
+      "contractVersion": "1.0.0",
+      "modelId": "laya",
+      "recipeVersion": "1.0.0"
+    },
+    {
+      "id": "laya-onnx-decision-score",
+      "contractId": "@try-works/extension-laya/decision_score",
+      "contractVersion": "1.0.0",
+      "modelId": "laya",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": [],
+  "network": {
+    "requiredTelemetry": false,
+    "telemetryContent": [
+      "the vendored runtime performs no network access; the pinned artifacts load from the host-prepared local directory only"
+    ],
+    "otherNetworkUse": false
+  }
+}

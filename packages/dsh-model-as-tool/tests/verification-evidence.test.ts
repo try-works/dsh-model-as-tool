@@ -120,6 +120,30 @@ describe('TDD-06 — no false passes', () => {
   })
 })
 
+describe('TDD-03 / 21.3 — required verification script names exist', () => {
+  it('provides every stable script name the verification checklist requires', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { scripts: Record<string, string> }
+    for (const name of [
+      'verify:static',
+      'test:unit',
+      'test:contracts',
+      'test:extensions',
+      'test:recipes',
+      'test:integration:dsh',
+      'test:mcp:2026-07-28',
+      'test:composition',
+      'test:models:windows',
+      'test:harness:live',
+      'test:security:windows',
+      'test:packaged:windows',
+      'verify:release',
+    ]) {
+      assert.equal(typeof pkg.scripts[name], 'string', `${name} must be a package script`)
+      assert.ok(pkg.scripts[name].length > 0, `${name} must not be empty`)
+    }
+  })
+})
+
 describe('TDD-09 — evidence records carry the required identities', () => {
   it('records git, package, runtime and command identities', () => {
     const record = evidence()
@@ -169,9 +193,16 @@ describe('TDD-10 — the release report', () => {
     const text = readFileSync(REPORT, 'utf8')
     // "A report whose only protocol assertion is a string equality for 2026-07-28
     // fails this gate", so the matrix records the pinned commit and the SDK's
-    // inability to speak the revision alongside it.
+    // support for the revision READ FROM THE MANIFEST — the v2 line supports it,
+    // the v1 line cannot, and the matrix must not hardcode either (round 59).
     assert.match(text, /5f5440bb26a62e2cf3440b92da5a667efa03b267/)
-    assert.match(text, /Official SDK supports the revision \| NO/)
+    const manifest = JSON.parse(readFileSync(
+      'docs/tool-mode/fixtures/mcp-2026-07-28/MANIFEST.json', 'utf8',
+    )) as { officialSdkSupportsRevision?: boolean }
+    assert.match(
+      text,
+      new RegExp(`Official SDK supports the revision \\| ${manifest.officialSdkSupportsRevision === true ? 'YES' : 'NO'}`),
+    )
   })
 
   it('says which models have NOT been run against real inference', () => {

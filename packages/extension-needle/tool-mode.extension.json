@@ -141,6 +141,9 @@
   ],
   "network": {
     "requiredTelemetry": false,
+    "telemetryContent": [
+      "the binary's honored opt-outs are NOT independently verified; this extension ALWAYS passes NEEDLE_TELEMETRY=0 and DO_NOT_TRACK=1 into the scrubbed child environment (NDL-06), enforcing the posture in host code"
+    ],
     "otherNetworkUse": true
   }
 }

@@ -46,7 +46,9 @@ async function loadV2Client() {
 }
 
 const v2: any = await loadV2Client()
-const SKIP = v2.unavailable === undefined ? undefined : `the v2 client does not resolve: ${v2.unavailable}`
+const SKIP = v2.unavailable === undefined
+  ? undefined
+  : `the v2 client does not resolve: ${v2.unavailable} — run "npm run ensure:v2-sdk" (node scripts/ensure-v2-sdk.mjs) to materialize the pinned v2 packages, then re-run`
 
 /** Start THIS repository's server over a real socket, backed by the real registry. */
 async function liveServer() {
@@ -75,7 +77,10 @@ async function liveServer() {
     port: 0,
     maxBodyBytes: 1024 * 1024,
     allowedOrigins: [],
-    auth: { kind: 'static-token', token: TOKEN },
+    auth: { scheme: 'static-token', token: TOKEN, clientId: 'test-client' },
+    // Interop is the subject; the AT-12 rate limiter is the subject of
+    // mcp-rate-limit.test.ts.
+    rateLimit: false,
   } as HttpTransportConfig
   const endpoint = await startHttpServer(config, host)
   return { ctx, endpoint, names: published.map(tool => tool.toolName) }

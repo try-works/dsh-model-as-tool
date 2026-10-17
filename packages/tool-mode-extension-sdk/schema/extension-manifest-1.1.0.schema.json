@@ -5,7 +5,7 @@
   "description": "The manifest an extension package ships and the host validates before importing any extension code (EXT-14). Schemas referenced from here are offline package files: a remote $ref is not fetched and an executable schema generator is never run during discovery.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["protocolVersion", "id", "version", "displayName", "description", "activation", "runtimeApi", "compatibility", "execution", "permissions"],
+  "required": ["protocolVersion", "id", "version", "displayName", "description", "compatibility", "execution", "permissions"],
   "properties": {
     "protocolVersion": {
       "description": "TMX protocol version. Minor versions are additive; a different major requires reviewed migration (EXT-16).",
@@ -116,6 +116,26 @@
         "nativeCode": {
           "description": "An explicit review signal, not permission to run arbitrary operator commands.",
           "type": "boolean"
+        },
+        "harnessModel": {
+          "description": "Declared harness-model capability request (§19.3): a capability request, not an authorization grant. The actual provider's network use is governed by the host executor profile.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["inputModalities", "outputModalities"],
+          "properties": {
+            "inputModalities": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "enum": ["text", "image", "audio", "video"] }
+            },
+            "outputModalities": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "enum": ["text", "image", "audio", "video"] }
+            }
+          }
         }
       }
     },
@@ -169,18 +189,40 @@
       }
     },
     "implementations": {
+      "description": "Model/recipe bindings. Two closed shapes: the module form (modelId references a declared model) and the spec §19.3 harness-model form (kind + recipe path, no modelId).",
       "type": "array",
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["id", "contractId", "contractVersion", "recipeVersion"],
-        "properties": {
-          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 120 },
-          "contractId": { "type": "string", "minLength": 3, "maxLength": 214 },
-          "contractVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
-          "modelId": { "type": "string", "minLength": 1, "maxLength": 120 },
-          "recipeVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
-        }
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "contractId", "contractVersion", "recipeVersion"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 120 },
+              "contractId": { "type": "string", "minLength": 3, "maxLength": 214 },
+              "contractVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+              "modelId": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "recipeVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "contractId", "contractVersion", "recipeVersion", "recipe"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 120 },
+              "kind": { "type": "string", "const": "harness-model" },
+              "contractId": { "type": "string", "minLength": 3, "maxLength": 214 },
+              "contractVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+              "recipeVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+              "recipe": {
+                "description": "The package-relative recipe file the host interprets through the controlled recipe path (RCP-01, §19.3).",
+                "type": "string",
+                "pattern": "^\\./"
+              }
+            }
+          }
+        ]
       }
     },
     "skills": {

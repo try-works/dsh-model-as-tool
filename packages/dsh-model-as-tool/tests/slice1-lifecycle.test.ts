@@ -64,6 +64,8 @@ function packFixture(): { bytes: Uint8Array; sha512: string } {
     // carry them or the package installs with schemas that point at nothing.
     ['schemas/input.json', 'schemas/input.json'],
     ['schemas/output.json', 'schemas/output.json'],
+    // The declared model's asset lock is also referenced by the manifest.
+    ['models.lock.json', 'models.lock.json'],
   ] as const
   for (const [onDisk, inArchive] of files) {
     const path = join(FIXTURE_DIR, onDisk)
@@ -181,8 +183,9 @@ describe('slice 1 — the fixture extension installs INACTIVE, activates, and de
     // NATIVE EXECUTION: the fixture's own entry runs and returns the deterministic value,
     // which is what proves the call arrived rather than approximating it.
     const entry = await import(pathToFileURL(join(installPathFor(storeDir, EXTENSION_ID, '1.0.0'), 'lib', 'index.js')).href)
-    const instance = entry.createExtension()
-    const echoed = await instance.tools[0].invoke({ token: 'slice-one', upper: true })
+    const instance = await entry.default.create({})
+    const provider = await instance.createProvider({ modelId: 'fixture-echo-model', configuration: {} })
+    const echoed = await provider.invoke({ implementationId: 'fixture-echo', input: { token: 'slice-one', upper: true }, context: {} })
     assert.deepEqual(echoed, { echoed: 'SLICE-ONE', length: 9 })
   })
 
@@ -203,7 +206,8 @@ describe('slice 1 — the fixture extension installs INACTIVE, activates, and de
 
     const installedDir = installPathFor(storeDir, EXTENSION_ID, '1.0.0')
     const entry = await import(pathToFileURL(join(installedDir, 'lib', 'index.js')).href)
-    const instance = entry.createExtension()
+    const instance = await entry.default.create({})
+    const provider = await instance.createProvider({ modelId: 'fixture-echo-model', configuration: {} })
 
     // The fixture's contribution is published on the MCP surface with its DECLARED
     // contract, so the schemas a client sees come from the manifest rather than being
@@ -233,7 +237,7 @@ describe('slice 1 — the fixture extension installs INACTIVE, activates, and de
       async execute({ name, arguments: args }) {
         void name
         try {
-          return { isError: false, value: await instance.tools[0].invoke(args as Record<string, unknown>) }
+          return { isError: false, value: await provider.invoke({ implementationId: 'fixture-echo', input: args as Record<string, unknown>, context: {} }) }
         } catch (error) {
           // A refusal is a TOOL ERROR, not an empty success.
           return { isError: true, message: error instanceof Error ? error.message : String(error) }
@@ -247,7 +251,10 @@ describe('slice 1 — the fixture extension installs INACTIVE, activates, and de
       port: 0,
       maxBodyBytes: 1024 * 1024,
       allowedOrigins: [],
-      auth: { kind: 'static-token', token: TOKEN },
+      auth: { scheme: 'static-token', token: TOKEN, clientId: 'test-client' },
+      // Lifecycle behavior is the subject; the AT-12 rate limiter is the subject of
+      // mcp-rate-limit.test.ts.
+      rateLimit: false,
     } as HttpTransportConfig
     const endpoint = await startHttpServer(config, host)
 
@@ -260,6 +267,7 @@ describe('slice 1 — the fixture extension installs INACTIVE, activates, and de
             'content-type': 'application/json',
             accept: 'application/json, text/event-stream',
             'mcp-protocol-version': PROTOCOL_VERSION,
+            'mcp-method': 'tools/call',
             'mcp-name': 'fixture_echo',
             authorization: `Bearer ${clientToken}`,
           },
@@ -358,3 +366,4 @@ describe('slice 1 — the fixture extension installs INACTIVE, activates, and de
     }
   })
 })
+

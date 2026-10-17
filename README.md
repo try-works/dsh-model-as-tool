@@ -10,8 +10,8 @@ them is a binding decision, not something the schema changes.
 ## Implementation status — read this first
 
 **The specifications are not fully implemented.** The normative specification has 227
-requirements and the verification checklist adds 90 acceptance tests; **6 are done, 100 are
-partial, 5 are blocked and 206 were never started.**
+requirements and the verification checklist adds 90 acceptance tests; **18 are done, 252 are
+partial, 3 are blocked and 44 were never started.**
 
 > **[`verification/FINAL-REPORT.md`](verification/FINAL-REPORT.md) is the honest summary**
 > — generated from the recorded evidence, it states what genuinely stands with the
@@ -74,7 +74,7 @@ Other checks:
 
 | Command | What it proves |
 | --- | --- |
-| `npm test` | 721 tests across five packages |
+| `npm test` | 1452 tests across nine packages |
 | `npm run verify:architecture` | The host holds no model-specific code |
 | `npm run verify:built` | **A real inference through the built artifact** — `lang_detect` on German text must return `de` |
 | `npm run verify:mcp` | 39 checks validating SAVED FIXTURES against the pinned `2026-07-28` schema — not live server conformance |

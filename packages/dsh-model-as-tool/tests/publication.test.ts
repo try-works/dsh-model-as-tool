@@ -25,9 +25,13 @@ import {
 const ready = (modelId: string, extensionId = '@acme/ext'): ImplementationCandidate =>
   ({ extensionId, modelId, readiness: 'ready', runnable: true })
 
+/** An implementation that is prepared but not resident in memory yet. */
+const preparedCold = (modelId: string, extensionId = '@acme/ext'): ImplementationCandidate =>
+  ({ extensionId, modelId, readiness: 'prepared-cold', runnable: true })
+
 /** An implementation whose model is installed but not prepared. */
 const unprepared = (modelId: string, extensionId = '@acme/ext'): ImplementationCandidate =>
-  ({ extensionId, modelId, readiness: 'unprepared', runnable: true })
+  ({ extensionId, modelId, readiness: 'needs-preparation', runnable: true })
 
 /** A tool candidate with one implementation, selected by default. */
 function tool(name: string, implementations: ImplementationCandidate[], selected?: string): ToolCandidate {
@@ -46,6 +50,13 @@ describe('EXT-24 — a tool is published only with an executable binding', () =>
     assert.equal(surface.tools[0]?.name, 'lang_detect')
     assert.equal(surface.tools[0]?.extensionId, '@acme/ext')
     assert.equal(surface.generation, 2)
+  })
+
+  it('publishes a tool whose selected implementation is prepared but cold', () => {
+    const surface = buildSurface({ generation: 2, tools: [tool('lang_detect', [preparedCold('tongue')])], skills: [] })
+    assert.equal(surface.tools.length, 1)
+    assert.equal(surface.tools[0]?.readiness, 'prepared-cold')
+    assert.equal(surface.readiness[0]?.callable, true)
   })
 
   it('withholds a tool whose selected implementation cannot run here', () => {

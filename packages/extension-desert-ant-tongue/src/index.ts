@@ -17,6 +17,10 @@
  * @module @try-works/extension-desert-ant-tongue
  */
 
+import { createRequire } from 'node:module'
+import { statSync } from 'node:fs'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
 import {
   defineExtension,
   type ExtensionContextV1,
@@ -29,6 +33,17 @@ import {
 
 /** The npm package carrying the model. */
 const TONGUE_PACKAGE = '@desert-ant-labs/tongue'
+
+/** Node resolution rooted at THIS module, so inspection never depends on `import.meta.resolve` being present. */
+const requireFromHere = createRequire(import.meta.url)
+
+/**
+ * A complete Tongue bin is ~2.1 MB in every published revision this range admits.
+ * Anything below this floor is treated as truncated or corrupt — an ASSUMPTION
+ * about future revisions, not a fact about this one; a corrupt full-size bin is
+ * caught at load() instead, because EXT-18 forbids parsing the file to prove it.
+ */
+const MIN_WEIGHT_BYTES = 1_000_000
 
 /** Default number of runner-up candidates reported. */
 const DEFAULT_TOP = 3
@@ -113,27 +128,43 @@ function createTongueProvider(context: ExtensionContextV1): ModelProviderV1 {
       throwIfAborted(signal)
       // Inspection reads approved local state only (EXT-18): it reports whether the
       // model can be loaded without loading it, downloading anything or inferring.
-      try {
-        const resolved = import.meta.resolve?.(TONGUE_PACKAGE)
-        if (typeof resolved !== 'string') {
-          return {
-            readiness: 'unprepared',
-            features: ['language-detection'],
-            missing: [{ name: TONGUE_PACKAGE, reason: 'the package could not be resolved on this host' }],
+      //
+      // The check is not mere RESOLVABILITY: the weight file the package ships is
+      // statted, so a package whose bin is missing or truncated (a corrupted
+      // install) reports needs-preparation instead of publishing prepared-cold.
+      // The subpath comes from the package's own exports map, so resolution
+      // succeeds exactly when the file ships.
+      const verdict = inspectBundledWeights(
+        // `createRequire().resolve` exists on every supported Node and throws on
+        // failure; `import.meta.resolve` appeared in 20.6 and would silently
+        // degrade to undefined on older runtimes, which reads as "package absent"
+        // while it is installed. The result is normalised to a file URL because
+        // that is what the helper's statter consumes.
+        specifier => {
+          try {
+            return pathToFileURL(requireFromHere.resolve(specifier)).href
+          } catch {
+            return undefined
           }
-        }
-      } catch {
+        },
+        fileUrl => statSync(fileURLToPath(fileUrl)).size,
+      )
+      if (!verdict.ok) {
         return {
-          readiness: 'unprepared',
+          readiness: 'needs-preparation',
           features: ['language-detection'],
-          missing: [{ name: TONGUE_PACKAGE, reason: `install ${TONGUE_PACKAGE} to enable this deployment` }],
+          missing: [{ name: TONGUE_PACKAGE, reason: verdict.reason }],
         }
       }
       return {
-        readiness: loaded === undefined ? 'unprepared' : 'ready',
+        // The bundled model package is present AND its weight file is complete, so
+        // the deployment is prepared and callable even when it is currently cold.
+        // Residency is not readiness: the first invocation may load the package,
+        // so this is prepared-cold rather than warm `ready`.
+        readiness: loaded === undefined ? 'prepared-cold' : 'ready',
         features: ['language-detection', 'script-detection'],
         missing: [],
-        ...loaded === undefined ? { reason: 'the model is not loaded yet; it loads on first use' } : {},
+        ...loaded === undefined ? { reason: 'the model is prepared but cold; it loads on first use' } : {},
       }
     },
 
@@ -200,3 +231,66 @@ export default defineExtension({
     }
   },
 })
+
+/**
+ * The inspection logic, separated so the weight-file honesty is unit-testable.
+ *
+ * Inspection may not import or parse the model (EXT-18), so it cannot prove the
+ * bin decodes; what it CAN prove without a load is that the file the package's
+ * exports map advertises exists and is not obviously truncated. That is the
+ * difference between "the package is installed" and "the deployment is prepared",
+ * and the exported shape exists so a corrupted install is pinned by a test.
+ * @param resolve - resolves a specifier to a file URL, like import.meta.resolve.
+ * @param statSize - returns a file's byte size, like statSync().size.
+ * @returns the readiness verdict for the bundled weight file.
+ */
+export function inspectBundledWeights(
+  resolve: (specifier: string) => string | undefined,
+  statSize: (fileUrl: string) => number,
+): { readonly ok: true } | { readonly ok: false; readonly reason: string; readonly size?: number } {
+  let resolved: string | undefined
+  try {
+    resolved = resolve(`${TONGUE_PACKAGE}/model/tongue_int8.bin`)
+  } catch {
+    resolved = undefined
+  }
+  if (typeof resolved !== 'string') {
+    /**
+     * Distinguish the two facts behind an unresolvable bin: the PACKAGE absent
+     * (remedy: install it) versus the package present but not shipping the weight
+     * file at its documented subpath (remedy: the installed revision is broken).
+     * Resolving the package's own manifest — present in every published version —
+     * is what tells them apart, so the reason never tells an operator to install
+     * a package that is already installed.
+     */
+    let packagePresent = false
+    try {
+      packagePresent = typeof resolve(`${TONGUE_PACKAGE}/package.json`) === 'string'
+    } catch {
+      packagePresent = false
+    }
+    return packagePresent
+      ? { ok: false, reason: `the installed ${TONGUE_PACKAGE} does not ship the weight file at its documented subpath; reinstall or pin a known-good version` }
+      : { ok: false, reason: `install ${TONGUE_PACKAGE} to enable this deployment` }
+  }
+  let size: number
+  try {
+    // Resolution can succeed while the FILE is gone (an exports target deleted on
+    // disk), so the stat is its own failure mode: a corrupted install must get the
+    // reinstall remedy rather than an uncaught throw the host flattens to 'failed'.
+    size = statSize(resolved)
+  } catch (error) {
+    return {
+      ok: false,
+      reason: `the shipped weight file cannot be read (${error instanceof Error ? error.message : String(error)}); reinstall the package`,
+    }
+  }
+  if (size < MIN_WEIGHT_BYTES) {
+    return {
+      ok: false,
+      size,
+      reason: `the shipped weight file is ${size} bytes, smaller than a complete Tongue bin; reinstall the package`,
+    }
+  }
+  return { ok: true }
+}

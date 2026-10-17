@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "describe_image input",
+  "description": "The describe_image contract input (HLM-11). The host resolves the approved image; the recipe binds it as typed media.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["image_path"],
+  "properties": {
+    "image_path": { "type": "string", "minLength": 1, "description": "An approved image file resolved by the host." },
+    "focus": { "type": "string", "minLength": 1, "maxLength": 500, "description": "An optional bounded question about visible content." }
+  }
+}

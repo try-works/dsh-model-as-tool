@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["prompt"],
+  "properties": {
+    "prompt": { "type": "string", "minLength": 1, "maxLength": 4096, "description": "The yes/no question." },
+    "allow_abstain": { "type": "boolean", "default": true, "description": "Whether the act gate may abstain." }
+  }
+}

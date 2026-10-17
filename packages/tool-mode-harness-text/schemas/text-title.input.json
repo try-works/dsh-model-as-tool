@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "text_title input",
+  "description": "The text to propose a bounded title and description for (RCP-12).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text"],
+  "properties": {
+    "text": { "type": "string", "minLength": 1, "maxLength": 32768 },
+    "kind": { "type": "string", "enum": ["section", "page", "document"], "default": "section" },
+    "repairFeedback": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "Validation feedback for the permitted single repair (HLM-07)."
+    }
+  }
+}

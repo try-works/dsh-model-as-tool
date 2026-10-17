@@ -1,0 +1,27 @@
+{
+  "name": "@your-scope/tool-mode-your-tool",
+  "version": "1.0.0",
+  "description": "A Tool Mode module extension template (EXT-36).",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    "./tool-mode": "./dist/extension.js",
+    "./tool-mode.extension.json": "./tool-mode.extension.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "skills",
+    "models.lock.json",
+    "tool-mode.extension.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  },
+  "dependencies": {
+    "@try-works/tool-mode-extension-sdk": "^1.1.0"
+  }
+}

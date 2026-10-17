@@ -16,7 +16,7 @@
 import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { createProgramRunner, externalRefusal, type ProgramRuntime } from '../src/tool-mode-run.ts'
+import { createProgramRunner, externalRefusal, serveProgram, type ProgramRuntime } from '../src/tool-mode-run.ts'
 import { PTC_SERVICE, type PtcHostContext } from '../src/ptc-runtime.ts'
 import type { ToolBinding } from '../src/ptc-authority.ts'
 import { callTool, cleanup, mountPlugin, tempDir } from './helpers.ts'
@@ -34,7 +34,7 @@ function makeContext(options: { readonly provides?: unknown } = {}) {
 }
 
 /** A runtime that records what it was asked to run. */
-function makeRuntime(options: { readonly fail?: string } = {}) {
+function makeRuntime(options: { readonly fail?: string; readonly invokeBindings?: boolean } = {}) {
   const requests: unknown[] = []
   const runtime: ProgramRuntime = {
     resolve: request => {
@@ -43,6 +43,15 @@ function makeRuntime(options: { readonly fail?: string } = {}) {
     },
     async run(spec) {
       if (options.fail !== undefined) return { error: { kind: options.fail, message: 'probe' } }
+      // When asked, the fake INVOKES every binding once — the program's own source
+      // cannot run without a real runtime, so this simulates "the program called
+      // each requested tool" and lets the counter wrapper be observed.
+      if (options.invokeBindings === true) {
+        const namespace = (spec as { bindings?: { functions?: Record<string, ToolBinding> }[] }).bindings?.[0]
+        for (const fn of Object.values(namespace?.functions ?? {})) {
+          await fn({ token: 'a' })
+        }
+      }
       return { value: { ran: true } }
     },
   }
@@ -52,43 +61,56 @@ function makeRuntime(options: { readonly fail?: string } = {}) {
 /** A runner over a fixed grant and tool set. */
 function makeRunner(overrides: {
   readonly grant?: readonly string[]
-  readonly visible?: readonly string[]
+  readonly visible?: readonly string[] | (() => readonly string[])
   readonly bindings?: Record<string, ToolBinding>
   readonly runtime?: ProgramRuntime
   readonly provides?: unknown
-  readonly backend?: unknown
+  readonly backend?: unknown | (() => Promise<unknown>)
+  readonly operatorGranted?: boolean | (() => boolean)
 } = {}) {
   const { context, mounted } = makeContext({ provides: overrides.provides })
+  const visible = overrides.visible ?? ['fixture_echo']
+  const operatorGranted = overrides.operatorGranted ?? false
   const runner = createProgramRunner({
     context,
     backend: overrides.backend,
-    grant: overrides.grant ?? ['fixture_echo'],
-    visible: overrides.visible ?? ['fixture_echo'],
+    // SEC-04: the grant is read PER RUN; the fixed value becomes a closure.
+    grant: () => overrides.grant ?? ['fixture_echo'],
+    visible: typeof visible === 'function' ? visible : () => visible,
     resolve: name => overrides.bindings?.[name],
     runtime: () => overrides.runtime,
+    operatorGranted: typeof operatorGranted === 'function' ? operatorGranted : () => operatorGranted,
   })
   return { runner, mounted }
 }
 
 describe('CODE-08 — the exposure gate now HAS a caller', () => {
-  it('refuses an external caller, naming why', () => {
-    const { runner } = makeRunner()
+  it('refuses an external caller when the operator has NOT granted hosted code', () => {
+    const { runner } = makeRunner({ operatorGranted: false })
     // Before the wiring this returned false and NOTHING consulted it. Now a refusal is
     // reachable, which is the difference between a control and a symbol.
     const refusal = externalRefusal(runner)
     assert.ok(refusal, 'an external caller must be refused while exposure is withheld')
+    assert.match(refusal.message, /operator has not granted hosted code execution/)
+  })
+
+  it('refuses even WITH the operator grant, while confinement is undemonstrated (CODE-09)', () => {
+    const { runner } = makeRunner({ operatorGranted: true })
+    // The two facts are a CONJUNCTION: the operator's consent alone cannot open a
+    // gate whose other half is the release-gate confinement evidence.
+    const refusal = externalRefusal(runner)
+    assert.ok(refusal, 'confinement evidence is absent, so the caller must still be refused')
     assert.match(refusal.message, /withheld until the confinement tests pass/)
-    assert.match(refusal.message, /no production client is served it/)
   })
 
   it('reports the gate state and its reason independently', () => {
     const { runner } = makeRunner()
     assert.equal(runner.externalExposurePermitted(), false)
-    assert.match(runner.externalExposureReason(), /withheld/)
+    assert.match(runner.externalExposureReason(), /disabled|withheld/)
   })
 
   it('the refusal is the SAME text the gate reports, from one enforcement point', () => {
-    const { runner } = makeRunner()
+    const { runner } = makeRunner({ operatorGranted: true })
     assert.equal(externalRefusal(runner)?.message, runner.externalExposureReason())
   })
 })
@@ -217,17 +239,111 @@ describe('CODE-03 — the budget cannot be widened by asking', () => {
 })
 
 describe('the host REGISTERS tool_mode_run, so the gate is reachable through it', () => {
-  it('is registered and REFUSES with the withheld reason', async () => {
+  it('is registered and REFUSES naming the missing operator grant (CODE-10 default)', async () => {
     const ctx = await mountPlugin({})
     const names = ctx.tools.schemas().map(schema => schema.name)
     // The registration is what makes the gate reachable at all: before this, the refusal
     // existed and no caller could obtain it.
     assert.ok(names.includes('tool_mode_run'), `expected tool_mode_run, saw: ${names.join(', ')}`)
 
-    const result = await callTool(ctx, 'tool_mode_run', {})
+    // Valid CODE-02 arguments, so the registry lets the call REACH execute and the gate
+    // is what refuses it — the point of the assertion.
+    const result = await callTool(ctx, 'tool_mode_run', {
+      description: 'probe',
+      code: 'return 1;',
+      tools: ['lang_detect'],
+    })
     assert.equal(result.isError, true, 'generated-code execution must be withheld')
     const message = JSON.stringify(result)
-    assert.match(message, /withheld until the confinement tests pass/)
+    assert.match(message, /operator has not granted hosted code execution/)
     void tempDir
+  })
+
+  it('with the operator grant, still REFUSES on the confinement gate (CODE-09)', async () => {
+    const ctx = await mountPlugin({ hostedCode: true })
+    const result = await callTool(ctx, 'tool_mode_run', {
+      description: 'probe',
+      code: 'return 1;',
+      tools: ['lang_detect'],
+    })
+    assert.equal(result.isError, true, 'the confinement gate must stay closed')
+    assert.match(JSON.stringify(result), /withheld until the confinement tests pass/)
+    void tempDir
+  })
+})
+
+describe('CODE-02 — the served path (serveProgram) reports what the interface promises', () => {
+  const REPORT = { receiptId: 'rcpt_probe', catalogRevision: '7' }
+
+  it('runs a program through the runner and reports result, logs, elapsed and tool calls', async () => {
+    const calls: string[] = []
+    const { runtime } = makeRuntime({ invokeBindings: true })
+    // A backend CLASS: the runner's prepare() mounts it through the guarded context
+    // so the served path sees a usable deployment rather than backend-unavailable.
+    const { runner } = makeRunner({
+      runtime,
+      backend: class Backend {},
+      bindings: {
+        fixture_echo: async (args: Record<string, unknown>) => {
+          calls.push(String(args.token))
+          return { ok: true }
+        },
+      },
+    })
+    const report = await serveProgram({
+      description: 'probe',
+      code: 'await tools.fixture_echo({ token: "a" }); return { done: true };',
+      tools: ['fixture_echo'],
+    }, runner, REPORT)
+
+    // The FAKE runtime returns a fixed value; what is asserted here is the pipeline
+    // around it: the report shape, the receipt/revision facts, and — most
+    // importantly — that the program's binding call reached the REAL wrapped
+    // binding through the authorized namespace.
+    assert.deepEqual(report.result, { ran: true })
+    assert.deepEqual(calls, ['a'], 'the program must reach the binding through the authorized pipeline')
+    assert.equal(report.meta.receiptId, 'rcpt_probe')
+    assert.equal(report.meta.catalogRevision, '7')
+    assert.equal(report.meta.toolCalls, 1, 'the call count must be real, not a fabricated zero')
+    assert.ok(report.meta.elapsedMs >= 0)
+    assert.ok(Array.isArray(report.logs))
+  })
+
+  it('refuses an input-bearing program, naming the missing structured-data path (CODE-04)', async () => {
+    const { runtime } = makeRuntime()
+    const { runner } = makeRunner({ runtime })
+    await assert.rejects(
+      serveProgram({
+        description: 'probe',
+        code: 'return input.x;',
+        input: { x: 1 },
+        tools: ['fixture_echo'],
+      }, runner, REPORT),
+      /no structured-data path/,
+    )
+  })
+
+  it('refuses when the backend is unavailable, naming the deployment fact', async () => {
+    const { runtime } = makeRuntime()
+    const { runner } = makeRunner({ runtime, backend: undefined })
+    await assert.rejects(
+      serveProgram({ description: 'probe', code: 'return 1;', tools: ['fixture_echo'] }, runner, REPORT),
+      /backend is unavailable/,
+    )
+  })
+
+  it('refuses a program that requests the recursive composition door (CODE-07)', async () => {
+    const { runtime } = makeRuntime()
+    const { runner } = makeRunner({
+      runtime,
+      backend: class Backend {},
+      grant: ['tool_mode_run'],
+      visible: () => ['tool_mode_run'],
+      bindings: { tool_mode_run: async () => ({ nested: true }) },
+    })
+    await assert.rejects(
+      serveProgram({ description: 'probe', code: 'await tools.tool_mode_run({});', tools: ['tool_mode_run'] }, runner, REPORT),
+      /excluded.*CODE-07/s,
+    )
   })
 })

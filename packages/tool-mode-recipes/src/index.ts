@@ -110,3 +110,26 @@ export {
   type DescribeImageTool,
   type ImageDescription,
 } from './images.ts'
+
+export {
+  judgeRecipe,
+  runRecipeCli,
+  type RecipeCliIo,
+  type RecipeVerdict,
+} from './cli.ts'
+
+export {
+  DshLlmProvider,
+  type DshCompletionRequest,
+  type DshContentPart,
+  type DshFailure,
+  type DshFinishReason,
+  type DshImagePart,
+  type DshImageTransport,
+  type DshLlmSurface,
+  type DshModelDescriptor,
+  type DshProviderOptions,
+  type DshStreamChunk,
+  type DshTextPart,
+  type DshUserMessage,
+} from './dsh-adapter.ts'

@@ -23,7 +23,10 @@
  * @module @try-works/dsh-model-as-tool/mcp/host-binding
  */
 
+import { Ajv, type ValidateFunction } from 'ajv'
 import type { ToolContract } from '@try-works/tool-mode-contracts'
+import { redactText } from './../receipt.ts'
+import type { ExternalCaller } from './client-grant.ts'
 import type { McpHost, McpToolDefinition, ToolInvocationOutcome } from './server.ts'
 import {
   accountInvocation,
@@ -34,6 +37,9 @@ import {
 
 /** The reserved root field the host authors, never the implementation. */
 const RESERVED_META = 'meta'
+
+const ajv = new Ajv({ allErrors: true, strict: false, allowUnionTypes: true })
+const payloadValidators = new Map<string, ValidateFunction>()
 
 /**
  * Derive the payload schema from a contract's final output schema (§16.4).
@@ -75,6 +81,42 @@ export interface PublishedTool {
   readonly notExportableReason?: string
 }
 
+/** Render Ajv errors as bounded, path-qualified text. */
+function renderValidationErrors(errors: ValidateFunction['errors']): string {
+  return (errors ?? [])
+    .map(error => `${error.instancePath || '(root)'} ${error.message ?? 'is invalid'}`)
+    .slice(0, 8)
+    .join('; ')
+}
+
+/** Validator for the externally advertised payload schema. */
+function payloadValidator(contract: ToolContract): ValidateFunction {
+  const existing = payloadValidators.get(contract.contract)
+  if (existing !== undefined) return existing
+  const validate = ajv.compile(derivePayloadSchema(contract.outputSchema))
+  payloadValidators.set(contract.contract, validate)
+  return validate
+}
+
+/**
+ * Convert a host result into the MCP payload shape and validate it.
+ *
+ * Host-native results may include the reserved `meta` envelope because the DSH tool contract
+ * validates that full value. MCP §16.4 publishes the payload schema with `meta` removed, so the
+ * external value must be the same payload with only that reserved field omitted. A malformed host
+ * result is returned as a tool error rather than a success-shaped `structuredContent`.
+ */
+function payloadForMcp(contract: ToolContract, value: unknown): { ok: true; value: unknown } | { ok: false; reason: string } {
+  const payload = typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value as Record<string, unknown>).filter(([key]) => key !== RESERVED_META))
+    : value
+  const validate = payloadValidator(contract)
+  if (!validate(payload)) {
+    return { ok: false, reason: `tool result violates the advertised MCP output schema: ${renderValidationErrors(validate.errors)}` }
+  }
+  return { ok: true, value: payload }
+}
+
 /** What the binding needs from the host. */
 export interface HostSurface {
   /** The tools the host currently publishes. */
@@ -91,6 +133,14 @@ export interface HostSurface {
     readonly signal: AbortSignal
     /** Server-issued. A caller-supplied id would let a caller forge a receipt. */
     readonly callId: string
+    /**
+     * The AUTHENTICATED external caller and its derived grant (SEC-04).
+     *
+     * Absent for calls with no client identity (native paths). When present, the
+     * implementation MUST authorize the call against THIS caller's grant rather than
+     * the host's own — an external client is not the operator.
+     */
+    readonly caller?: ExternalCaller
   }): Promise<{
     readonly isError: boolean
     readonly value?: unknown
@@ -154,7 +204,7 @@ export function createMcpHost(options: {
       return out
     },
 
-    async callTool(name, args, signal): Promise<ToolInvocationOutcome> {
+    async callTool(name, args, signal, caller): Promise<ToolInvocationOutcome> {
       const definition = options.surface.published.find(tool => tool.toolName === name)
       // A tool that is not EXPORTABLE must not be callable either. Looking only for
       // its presence in `published` would let a client invoke by name exactly the
@@ -174,6 +224,8 @@ export function createMcpHost(options: {
        * The timer measures the external call's own phases and the outcome is classified
        * from what was OBSERVED, not assumed — a cancelled external call must not be
        * recorded as a failure, so the abort state is read from the caller's own signal.
+       * The CALLER'S grant identity rides the record (SEC-04): identity only, never the
+       * payload, so the operator can tell which client called.
        */
       const callId = `mcp_${Date.now().toString(36)}_${(++counter).toString(36)}`
       const timer = new PhaseTimer()
@@ -187,32 +239,46 @@ export function createMcpHost(options: {
           // Server-issued, monotonically increasing. A caller-supplied identity would
           // let a caller forge a receipt (BASE-05).
           callId,
+          ...caller === undefined ? {} : { caller },
         })
       } catch (error) {
         options.onAccounted?.(accountInvocation({
           receiptId: callId,
           timings: timer.finish(),
           failureClass: classifyOutcome({ ok: false, aborted: signal.aborted }),
-          reason: error instanceof Error ? error.message : String(error),
+          reason: error instanceof Error ? redactText(error.message) : String(error),
           input: args,
           engineVersion: options.engineVersion ?? 'unknown',
+          ...caller === undefined ? {} : { grantId: caller.grantId, clientId: caller.clientId },
         }))
         throw error
       }
 
+      // CORRELATION (the round-65 review's finding): the contract payload's
+      // reserved meta carries the NATIVE receipt id the host dispatch issued, so
+      // the external accounting joins the native ring by that id when the result
+      // carries one — the two rings are no longer unjoinable. A value without
+      // meta (a tool that predates the meta contract) falls back to the
+      // server-issued id.
+      const nativeReceiptId = (() => {
+        const meta = (outcome.value as { meta?: { receiptId?: unknown } } | undefined)?.meta
+        return typeof meta?.receiptId === 'string' ? meta.receiptId : callId
+      })()
+
       options.onAccounted?.(accountInvocation({
-        receiptId: callId,
+        receiptId: nativeReceiptId,
         timings: timer.finish(),
         failureClass: classifyOutcome({
           ok: outcome.isError !== true,
           aborted: signal.aborted,
           refused: outcome.isError === true,
         }),
-        ...outcome.isError === true && outcome.message !== undefined ? { reason: outcome.message } : {},
+        ...outcome.isError === true && outcome.message !== undefined ? { reason: redactText(outcome.message) } : {},
         input: args,
         // An error carries no result, so nothing crossed the boundary as output.
         output: outcome.isError === true ? undefined : outcome.value,
         engineVersion: options.engineVersion ?? 'unknown',
+        ...caller === undefined ? {} : { grantId: caller.grantId, clientId: caller.clientId },
       }))
 
       if (outcome.isError) {
@@ -223,12 +289,13 @@ export function createMcpHost(options: {
           isError: true,
         }
       }
+      const payload = payloadForMcp(definition.contract, outcome.value ?? null)
+      if (!payload.ok) {
+        return { structured: null, text: payload.reason, isError: true }
+      }
       return {
-        // The canonical value, post-policy, exactly as the host returned it: a
-        // redaction here would be a content-only control, which MCP-11 says is not a
-        // confidentiality control at all.
-        structured: outcome.value ?? null,
-        text: renderBounded(outcome.value),
+        structured: payload.value,
+        text: renderBounded(payload.value),
       }
     },
   }

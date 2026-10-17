@@ -281,6 +281,62 @@ export function checkRepository(root = process.cwd()) {
   // ARCH-02: installing an extension must not require rebuilding the host, which is
   // only true while no extension depends on the host package.
   violations.push(...checkExtensionReleaseIndependence(root))
+  // AT-25/BASE-09: the host package itself must not install model runtimes.
+  violations.push(...checkHostPackageModelDependencySplit(root))
+  return violations
+}
+
+/**
+ * AT-25 / BASE-09: the host package must not install model-specific runtimes.
+ *
+ * First-party implementations are separate extensions. If the host declares a
+ * vendor SDK as a runtime, peer or optional dependency, a clean host install can
+ * download model code/engines and the package split is no longer true. Root-level
+ * devDependencies are intentionally outside this rule; they are test fixtures for
+ * this repository, not the published host install surface.
+ * @param {string} root - repository root.
+ * @returns {ArchitectureViolation[]} every violation.
+ */
+export function checkHostPackageModelDependencySplit(root) {
+  const violations = []
+  const path = join(root, 'packages', 'dsh-model-as-tool', 'package.json')
+  const lockPath = join(root, 'packages', 'dsh-model-as-tool', 'package-lock.json')
+  if (existsSync(path)) {
+    const pkg = JSON.parse(readFileSync(path, 'utf8'))
+    for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies', 'bundleDependencies', 'bundledDependencies']) {
+      const value = pkg[field]
+      const names = Array.isArray(value) ? value : Object.keys(value ?? {})
+      for (const name of names) {
+        if (/^(?:@desert-ant-labs\/|onnxruntime-node$)/.test(name)) {
+          violations.push(new ArchitectureViolation(
+            'AT-25/host-installs-model-runtime',
+            'packages/dsh-model-as-tool/package.json',
+            1,
+            `the host declares ${name} in ${field}; model runtimes belong in independently installed extension packages`,
+          ))
+        }
+      }
+    }
+  }
+
+  if (existsSync(lockPath)) {
+    const lock = JSON.parse(readFileSync(lockPath, 'utf8'))
+    const packages = lock.packages ?? {}
+    for (const [packagePath, record] of Object.entries(packages)) {
+      const name = packagePath === '' ? undefined : String(packagePath).replace(/^node_modules\//, '')
+      const declaredNames = [name, ...Object.keys(record.dependencies ?? {}), ...Object.keys(record.optionalDependencies ?? {})]
+      for (const declared of declaredNames) {
+        if (declared !== undefined && /^(?:@desert-ant-labs\/|onnxruntime-node$)/.test(declared)) {
+          violations.push(new ArchitectureViolation(
+            'AT-25/host-lock-installs-model-runtime',
+            'packages/dsh-model-as-tool/package-lock.json',
+            1,
+            `the host lock contains ${declared} at ${packagePath || '<root>'}; model runtimes belong in extension package locks`,
+          ))
+        }
+      }
+    }
+  }
   return violations
 }
 

@@ -16,6 +16,8 @@
  * @module @try-works/tool-mode-extension-sdk/runtime
  */
 
+import type { ModelReadiness } from './state.ts'
+
 /** A lossless JSON value. */
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
 
@@ -84,8 +86,13 @@ export interface ExtensionContextV1 {
 
 /** What an inspection found (EXT-18). Read-only; never downloads or infers. */
 export interface ProviderInspectionV1 {
-  /** Whether the deployment is prepared and callable. */
-  readonly readiness: 'unprepared' | 'preparing' | 'ready' | 'failed'
+  /**
+   * Current deployment readiness/residency using the RES-04 state vocabulary.
+   * Prepared-but-cold deployments report `prepared-cold`, not `ready`: readiness
+   * determines whether a call is possible, while residency determines whether a
+   * call must load before running.
+   */
+  readonly readiness: ModelReadiness
   /** Features this build actually provides, as opposed to what it declares. */
   readonly features: readonly string[]
   /** Prerequisites that are absent, each with a reason. */

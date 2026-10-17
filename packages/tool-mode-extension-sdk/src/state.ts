@@ -80,6 +80,15 @@ export interface ExtensionState {
   readonly tools: readonly ToolSelection[]
   /** Export authorization, which is independent of local enablement. */
   readonly export: ExportAuthorization
+  /**
+   * The process that published this extension's surface, when it is active.
+   *
+   * Publication handles are IN-MEMORY, so a fresh process cannot see whether the
+   * handles it lacks died with a previous process or belong to a live one. Recording
+   * the owner makes that distinction durable: a restarted process may restore an
+   * `active` extension whose owner is gone, and must refuse one whose owner is alive.
+   */
+  readonly ownerPid?: number
 }
 
 /** The operator-facing summary, derived rather than stored. */
@@ -135,14 +144,26 @@ export function summarize(state: ExtensionState): ExtensionSummary {
 }
 
 /**
- * Whether a caller may invoke a tool right now.
+ * Whether a caller may invoke a tool right now, using ONLY persisted state.
  *
  * Export authorization is deliberately NOT part of this check: a local caller
  * being able to call a tool says nothing about whether an external client may, and
  * conflating the two is exactly what EXT-25 separates.
+ *
+ * SCOPE — read this before using it as an admission decision. This helper sees the
+ * state FILE, which records operator intent and readiness; it cannot see which
+ * contributions were actually PUBLISHED, because that is process-local. It therefore
+ * answers "is this tool enabled and is every declared deployment callable", which is
+ * NOT the same question as "was this tool published and can it be dispatched".
+ *
+ * `ExtensionLifecycle.admits()` is the admission decision: it additionally requires the
+ * tool to be in the committed published surface, and it evaluates readiness per BINDING
+ * rather than over every deployment. This function remains the pure-state predicate the
+ * state tests exercise, and a host that used it alone would admit tools that publication
+ * withheld. Prefer `ExtensionLifecycle.admits()` wherever a lifecycle is available.
  * @param state - the orthogonal state.
  * @param toolName - the tool being invoked.
- * @returns whether the invocation is admitted.
+ * @returns whether the persisted state alone admits the invocation.
  */
 export function admitsInvocation(state: ExtensionState, toolName: string): boolean {
   if (state.installation !== 'installed') return false

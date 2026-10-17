@@ -5,7 +5,7 @@ by `scripts/gen-final-report.mjs`. Do not edit by hand; run `npm run final-repor
 
 ## The headline, before the detail
 
-Of **317 tracked items** — 227 normative requirements and 90 acceptance tests — **6 are done**, 100 are partial, 5 are blocked by something outside this repository, and **206 were never started**.
+Of **317 tracked items** — 227 normative requirements and 90 acceptance tests — **12 are done**, 250 are partial, 4 are blocked by something outside this repository, and **51 were never started**.
 
 **The objective is not achieved.** It asked for the Tool Mode specifications to be implemented and verified against the checklist. Most of the normative requirements are unimplemented. What follows states what genuinely stands and what does not, so the numbers above are not left to speak for themselves.
 
@@ -27,10 +27,16 @@ Each claim below is verified by an artifact or an automated check, not by assert
 ## The requirements that are done
 
 - **BASE-01** — (no summary recorded)
-- **BASE-09** — (no summary recorded)
+- **BASE-08** — (no summary recorded)
+- **BASE-13** — (no summary recorded)
+- **EXT-01** — Host/package separation.
+- **MOD-20** — Description discipline.
+- **NDL-07** — Optional embeddings.
+- **HLM-05** — Minimal isolated request.
 - **P26-02** — Required metadata.
 - **P26-04** — Result shape.
 - **P26-07** — No resumable/replayed effects.
+- **P26-11** — MRTR rather than server RPC.
 - **P26-12** — Optional extensions.
 
 ## Blocked, with the concrete condition
@@ -40,13 +46,11 @@ These are not implementation gaps. There is no artifact to integrate, and no fur
 - **MODEL-02** — Dedicated decisions.
   - BLOCKED ON A MISSING PUBLISHED PACKAGE, verified earlier and re-checked: npm `laya-ts` returns 404, so there is no published Node entry point for the Laya decision model.
 - **MODEL-03** — Needle's role.
-  - BLOCKED ON A MISSING NODE DISTRIBUTION, verified earlier: Needle exists (github.com/cactus-compute/needle) but no verified Node or WASM distribution for Needle 3 was found, so it cannot be executed under the execution modes MODEL-04 permits.
+  - RE-SCOPED (round 54): the earlier 'no verified Node or WASM distribution' was superseded by the NDL-01 re-adjudication — the pinned Windows x86_64 executable with a managed process bridge IS a verified, digest-checked runtime (NDL-01 PARTIAL, round 48), and MODEL-04 permits a managed native executable.
 - **TOOL-02** — Decisions.
   - BLOCKED ON THE SAME MISSING PACKAGE AS MODEL-02: npm `laya-ts` returns 404, so Laya typed prediction API is unobtainable and the requirement to use it rather than constrained chat generation cannot be met.
 - **DEC-02** — Maintainer export, Node consumer.
   - Same missing `laya-ts` entry point, plus DEC-02 requires a maintainer-run ONNX export in CI with numerical-parity evidence, which needs the source checkpoint and a Python toolchain.
-- **NDL-01** — Windows/Node runtime.
-  - Needle exists upstream (github.com/cactus-compute/needle, HF cactus-compute/needle) but no verified Node/WASM distribution for Needle 3 was found; the runtime strategy is unqualified.
 
 ## What actually runs on this host
 
@@ -70,35 +74,35 @@ The accurate statement is therefore much narrower than the one it replaced: **tw
 | Family | What it covers | Done | Partial | Blocked | Not run |
 | --- | --- | --- | --- | --- | --- |
 | `ARCH` | Host composition and responsibility boundaries | 0 | 5 | 0 | 1 |
-| `BASE` | Foundational rules: tool identity, schemas, authority, packaging | 2 | 4 | 0 | 8 |
-| `CODE` | Code Mode | 0 | 0 | 0 | 12 |
+| `BASE` | Foundational rules: tool identity, schemas, authority, packaging | 3 | 10 | 0 | 1 |
+| `CODE` | Code Mode | 0 | 12 | 0 | 0 |
 | `DEC` | Decision-tool decisions | 0 | 1 | 1 | 6 |
 | `DECL` | Authored-once declarations and discovery | 0 | 8 | 0 | 0 |
-| `EXT` | Extension protocol and management | 0 | 21 | 0 | 15 |
-| `HLM` | Host language model integration | 0 | 0 | 0 | 14 |
+| `EXT` | Extension protocol and management | 1 | 34 | 0 | 1 |
+| `HLM` | Host language model integration | 1 | 12 | 0 | 1 |
 | `LIC` | Licensing, attribution and permission records | 0 | 4 | 0 | 0 |
-| `MCP` | Model Context Protocol wire conformance | 0 | 11 | 0 | 2 |
-| `MOD` | Multimodal EmbeddingGemma 2 inference | 0 | 0 | 0 | 20 |
+| `MCP` | Model Context Protocol wire conformance | 0 | 12 | 0 | 1 |
+| `MOD` | Multimodal EmbeddingGemma 2 inference | 1 | 12 | 0 | 7 |
 | `MODEL` | Model identity, qualification and capability | 0 | 4 | 2 | 0 |
-| `NDL` | Needle integration decisions | 0 | 0 | 1 | 7 |
-| `OBS` | Observability and diagnostics | 0 | 0 | 0 | 5 |
-| `P26` | MCP revision 2026-07-28, section 20 | 4 | 12 | 0 | 1 |
-| `RCP` | Recipe runtime | 0 | 0 | 0 | 12 |
+| `NDL` | Needle integration decisions | 1 | 7 | 0 | 0 |
+| `OBS` | Observability and diagnostics | 0 | 4 | 0 | 1 |
+| `P26` | MCP revision 2026-07-28, section 20 | 5 | 12 | 0 | 0 |
+| `RCP` | Recipe runtime | 0 | 10 | 0 | 2 |
 | `RES` | Resources, budgets, preparation and loading | 0 | 10 | 0 | 0 |
 | `RUN` | Listener, plugin and process lifecycle | 0 | 6 | 0 | 2 |
-| `SEC` | Authorization, isolation and sandboxing | 0 | 4 | 0 | 6 |
-| `TDD` | Verification discipline and evidence | 0 | 4 | 0 | 6 |
+| `SEC` | Authorization, isolation and sandboxing | 0 | 9 | 0 | 1 |
+| `TDD` | Verification discipline and evidence | 0 | 8 | 0 | 2 |
 | `TOOL` | Per-tool behavioural contracts | 0 | 4 | 1 | 1 |
-| `AT` | The 90 acceptance tests from the verification checklist | 0 | 2 | 0 | 88 |
+| `AT` | The 90 acceptance tests from the verification checklist | 0 | 66 | 0 | 24 |
 
 ### Unstarted work that is IMPLEMENTATION, not a missing artifact
 
 An earlier version of this report classified these as external blockers. That was wrong, and the correction matters because a blocker removes the obligation to do the work.
 
-- **extension-host worker bridge and lifecycle (EXT-20)** — 15 unstarted requirements in `EXT`
-- **DSH PTC composition and the external run surface (CODE-01..03)** — 12 unstarted requirements in `CODE`
-- **provider-neutral LLM broker and recipe interpreter (HLM, RCP)** — 26 unstarted requirements in `HLM`, `RCP`
-- **multimodal EmbeddingGemma 2 inference (MOD-01..)** — 20 unstarted requirements in `MOD`
+- **extension-host worker bridge and lifecycle (EXT-20)** — 1 unstarted requirements in `EXT`
+- **DSH PTC composition and the external run surface (CODE-01..03)** — 0 unstarted requirements in `CODE`
+- **provider-neutral LLM broker and recipe interpreter (HLM, RCP)** — 3 unstarted requirements in `HLM`, `RCP`
+- **multimodal EmbeddingGemma 2 inference (MOD-01..)** — 7 unstarted requirements in `MOD`
 
 Each of these is repository work with a known route: DSH publishes its PTC runtime sources, `EXT-20` assigns managed executable worker hosting to this project, `MODEL-04` permits a managed native Windows executable, and the Laya TypeScript source and trained checkpoint are obtainable even though the npm name is not.
 

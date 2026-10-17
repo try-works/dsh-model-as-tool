@@ -36,6 +36,7 @@ const entryOf = (id: string) => {
   if (entry === undefined) throw new Error(`no catalog entry "${id}"`)
   return entry
 }
+const withoutProvider = (id: string) => ({ ...entryOf(id), provider: undefined })
 
 const signal = new AbortController().signal
 let counter = 0
@@ -194,6 +195,40 @@ describe('transport — bridge responses', () => {
 })
 
 describe('capability — transport routes', () => {
+  it('uses the extension route for provider-bound models without requiring host model packages', () => {
+    const verdict = resolveCapability(entryOf('tongue'), {
+      platform: 'win32',
+      resolve: specifier => specifier === '@try-works/extension-desert-ant-tongue/package.json',
+      cliAvailable: false,
+    })
+    assert.equal(verdict.runnable, true)
+    assert.equal(verdict.route, 'extension')
+    assert.deepEqual(verdict.resolved, ['@try-works/extension-desert-ant-tongue/package.json'])
+  })
+
+  it('does not hide an extension-backed ONNX model when its runtime is not a host dependency', () => {
+    const verdict = resolveCapability(entryOf('voz'), {
+      platform: 'win32',
+      resolve: specifier => specifier === '@try-works/extension-desert-ant-voz/package.json',
+      cliAvailable: false,
+    })
+    assert.equal(verdict.runnable, true)
+    assert.equal(verdict.route, 'extension')
+    assert.deepEqual(verdict.resolved, ['@try-works/extension-desert-ant-voz/package.json'])
+  })
+
+  it('does not claim an extension-backed model is runnable when the extension is absent', () => {
+    const verdict = resolveCapability(entryOf('tongue'), {
+      platform: 'win32',
+      resolve: () => false,
+      cliAvailable: false,
+    })
+    assert.equal(verdict.runnable, false)
+    assert.equal(verdict.route, 'unavailable')
+    assert.deepEqual(verdict.missing, ['@try-works/extension-desert-ant-tongue/package.json'])
+    assert.match(verdict.reason, /extension-desert-ant-tongue/)
+  })
+
   it('offers the CLI route for a model whose npm prebuild is missing here', () => {
     const verdict = resolveCapability(entryOf('redact'), {
       platform: 'win32',
@@ -215,8 +250,8 @@ describe('capability — transport routes', () => {
     assert.match(verdict.reason, /bridge at http:\/\/mac\.local:8787/)
   })
 
-  it('prefers an in-process package over the CLI and the bridge', () => {
-    const verdict = resolveCapability(entryOf('tongue'), {
+  it('prefers an in-process package over the CLI and the bridge for a non-provider catalog entry', () => {
+    const verdict = resolveCapability(withoutProvider('tongue'), {
       platform: 'linux',
       resolve: () => true,
       cliAvailable: true,
@@ -225,8 +260,8 @@ describe('capability — transport routes', () => {
     assert.equal(verdict.route, 'npm-native')
   })
 
-  it('recommends installing onnxruntime-node when only the runtime is missing', () => {
-    const verdict = resolveCapability(entryOf('voz'), {
+  it('recommends installing onnxruntime-node when only the runtime is missing for a non-provider catalog entry', () => {
+    const verdict = resolveCapability(withoutProvider('voz'), {
       platform: 'win32',
       // voz itself resolves; onnxruntime-node does not.
       resolve: specifier => specifier === '@desert-ant-labs/voz',
@@ -301,6 +336,22 @@ describe('plugin — install flow', () => {
     const models = (result.value as { models: { id: string; installed: boolean }[] }).models
     assert.equal(models.find(model => model.id === 'tongue')?.installed, true)
     assert.equal(models.find(model => model.id === 'voz')?.installed, false)
+  })
+
+  it('does not use ProviderBridge for a provider-bound model on a non-extension route', async () => {
+    const pushes: string[][] = []
+    const bridge = { adapterFor: () => { throw new Error('bridge must not be used for cli route') } }
+    const adapter = createAdapter(entryOf('tongue'), {
+      route: 'cli',
+      cliCommand: 'da',
+      run: async (_command, argv) => {
+        pushes.push([...argv])
+        return { code: 0, stdout: '{"language":"de"}', stderr: '' }
+      },
+    }, undefined, bridge as never)
+    assert.ok(adapter, 'a provider-bound entry may still use an explicit generic transport route')
+    assert.deepEqual(await adapter.invoke({ args: { text: 'hallo' }, signal }), { language: 'de' })
+    assert.deepEqual(pushes, [['tongue', 'hallo', '--json']])
   })
 
   it('adapter routes a CLI-capable model through the injected runner', async () => {

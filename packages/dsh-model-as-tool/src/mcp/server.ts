@@ -31,6 +31,7 @@ import {
   type WireRequest,
 } from './protocol.ts'
 import type { SubscriptionRegistry } from './subscriptions.ts'
+import type { ExternalCaller } from './client-grant.ts'
 
 /** One tool as the MCP surface describes it. */
 export interface McpToolDefinition {
@@ -72,9 +73,16 @@ export interface McpHost {
    * @param name - the tool name.
    * @param args - the tool arguments.
    * @param signal - the caller's abort signal.
+   * @param caller - the AUTHENTICATED external caller and its derived grant (SEC-04),
+   *   resolved by the transport; absent for non-HTTP transports that carry no client.
    * @returns the outcome.
    */
-  callTool(name: string, args: Readonly<Record<string, unknown>>, signal: AbortSignal): Promise<ToolInvocationOutcome>
+  callTool(
+    name: string,
+    args: Readonly<Record<string, unknown>>,
+    signal: AbortSignal,
+    caller?: ExternalCaller,
+  ): Promise<ToolInvocationOutcome>
 }
 
 /** One dispatched response. */
@@ -141,6 +149,13 @@ export async function dispatch(
     readonly subscriptions?: SubscriptionRegistry
     /** The authenticated client, which a subscription is bound to. */
     readonly clientId?: string
+    /**
+     * The authenticated external caller and its derived grant (SEC-04).
+     *
+     * Resolved by the TRANSPORT after authentication, never read from the request body:
+     * a caller cannot supply or forge its own identity or grant (BASE-05).
+     */
+    readonly caller?: ExternalCaller
   } = {},
 ): Promise<DispatchResult> {
   const id = request.id ?? null
@@ -153,8 +168,9 @@ export async function dispatch(
 
     // Capabilities the CLIENT requires. A requirement this server cannot meet is
     // -32021 rather than a silent partial service.
+    const wiring = { subscriptions: options.subscriptions !== undefined }
     const required = requiredCapabilities(metadata.clientCapabilities)
-    const unsupported = unsupportedRequiredCapabilities(required)
+    const unsupported = unsupportedRequiredCapabilities(required, wiring)
     if (unsupported.length > 0) {
       throw new WireError(
         ERROR_CODES.unsupportedClientCapability,
@@ -193,7 +209,7 @@ export async function dispatch(
     switch (request.method) {
       case 'server/discover':
         return {
-          response: { jsonrpc: '2.0', id, result: successResult(discoverResult(), host.serverInfo) },
+          response: { jsonrpc: '2.0', id, result: successResult(discoverResult(wiring), host.serverInfo) },
           httpStatus: 200,
         }
       case 'tools/list':
@@ -205,7 +221,15 @@ export async function dispatch(
               {
                 // Deterministic ordering (MCP-06): the caller sees a stable list, so
                 // a client diffing two listings does not see spurious changes.
+                //
+                // SEC-04: an AUTHENTICATED external caller sees only its GRANTED
+                // tools — the list is the client's authorized set, not the operator's
+                // whole surface. The grant stays the AUTHORITY: calling a
+                // non-granted tool still yields the grant refusal, this only
+                // narrows what a client is shown. The caller-less path (stdio /
+                // native) sees the full surface.
                 tools: [...host.listTools()]
+                  .filter(tool => options.caller === undefined || options.caller.allowedTools.includes(tool.name))
                   .sort((left, right) => left.name.localeCompare(right.name))
                   .map(toMcpTool),
                 // Required by the schema's CacheableResult; omitting them makes the
@@ -239,7 +263,7 @@ export async function dispatch(
         }
       }
       case 'tools/call':
-        return await callTool(request, id, host, options.signal ?? new AbortController().signal)
+        return await callTool(request, id, host, options.signal ?? new AbortController().signal, options.caller)
       default:
         throw new WireError(ERROR_CODES.methodNotFound, `unknown method ${JSON.stringify(request.method)}`)
     }
@@ -294,6 +318,7 @@ async function callTool(
   id: string | number | null,
   host: McpHost,
   signal: AbortSignal,
+  caller?: ExternalCaller,
 ): Promise<DispatchResult> {
   const name = request.params?.name
   if (typeof name !== 'string' || name.length === 0) {
@@ -319,7 +344,7 @@ async function callTool(
     )
   }
 
-  const outcome = await host.callTool(name, (args ?? {}) as Record<string, unknown>, signal)
+  const outcome = await host.callTool(name, (args ?? {}) as Record<string, unknown>, signal, caller)
   const result = outcome.isError === true
     // An application failure is a tool-error RESULT (P26-04), so the protocol
     // exchange still succeeded.
@@ -336,13 +361,13 @@ async function callTool(
 }
 
 /** The `server/discover` result, in the shape the pinned schema requires. */
-function discoverResult(): Record<string, unknown> {
+function discoverResult(wiring: { readonly subscriptions?: boolean } = {}): Record<string, unknown> {
   return {
     // `supportedVersions` is the field the schema defines; there is no
     // `protocolVersion` on a DiscoverResult, which is the mistake pinning the schema
     // caught. A client learns the versions the server speaks, not one it picked.
     supportedVersions: [...SUPPORTED_PROTOCOL_VERSIONS],
-    capabilities: serverCapabilities(),
+    capabilities: serverCapabilities(wiring),
     ...cacheableResultFields(),
   }
 }
@@ -355,10 +380,10 @@ function discoverResult(): Record<string, unknown> {
  * advertised only when it is genuinely implemented.
  * @returns the `ServerCapabilities` object.
  */
-function serverCapabilities(): Record<string, unknown> {
-  const implemented = new Set(implementedCapabilities())
+function serverCapabilities(wiring: { readonly subscriptions?: boolean } = {}): Record<string, unknown> {
+  const implemented = new Set(implementedCapabilities(wiring))
   return {
-    ...implemented.has('tools') ? { tools: {} } : {},
+    ...implemented.has('tools') ? { tools: { listChanged: implemented.has('subscriptions/listen') } } : {},
     ...implemented.has('prompts') ? { prompts: {} } : {},
     ...implemented.has('resources/subscribe') ? { resources: {} } : {},
     ...implemented.has('logging') ? { logging: {} } : {},

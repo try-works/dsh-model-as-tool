@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "semantic_classify output",
+  "description": "Output for semantic_classify (MOD-11). `scores` is the full raw-cosine list in descending order; `status` is selected only when the best score clears min_score AND the margin, otherwise abstained with no `label`. `calibrated` is always false: these are embedding cosines, not calibrated decision probabilities.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "scores", "scoreKind", "calibrated", "embeddingSpaceId"],
+  "properties": {
+    "status": { "enum": ["selected", "abstained"] },
+    "label": { "type": "string" },
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "score"],
+        "properties": {
+          "id": { "type": "string" },
+          "score": { "type": "number", "minimum": -1, "maximum": 1 }
+        }
+      }
+    },
+    "scoreKind": { "const": "cosine_similarity" },
+    "calibrated": { "const": false },
+    "embeddingSpaceId": { "type": "string" },
+    "processing": { "type": "array", "items": { "type": "object" } },
+    "meta": { "type": "object" }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "qualifiedAt": "2026-10-17T19:17:39.962Z",
+  "modelDir": "E:\\tmp\\laya-investigation\\laya\\model-ml",
+  "digests": [
+    {
+      "file": "encoder.onnx",
+      "bytes": 2451566,
+      "expected": "A774C5C634B99D1A4CED21ACBF11B9617A5CD55C7C7957BD52480B17D95A97F4",
+      "got": "A774C5C634B99D1A4CED21ACBF11B9617A5CD55C7C7957BD52480B17D95A97F4",
+      "ok": true
+    },
+    {
+      "file": "encoder.onnx.data",
+      "bytes": 1227816960,
+      "expected": "F1E49A027352064D72831863456BE6160748854296BFF8332DF14130DBF79834",
+      "got": "F1E49A027352064D72831863456BE6160748854296BFF8332DF14130DBF79834",
+      "ok": true
+    },
+    {
+      "file": "head.onnx",
+      "bytes": 245312,
+      "expected": "7F6B9AC15D5FDF9EEBB352E66BDD3CE799D32885F1446014D268D8C53207858B",
+      "got": "7F6B9AC15D5FDF9EEBB352E66BDD3CE799D32885F1446014D268D8C53207858B",
+      "ok": true
+    },
+    {
+      "file": "head.onnx.data",
+      "bytes": 59899904,
+      "expected": "0292A4EB478C2C3EC0B6555B4A4093BC802E965654D7AEB4AC22907A17F261D3",
+      "got": "0292A4EB478C2C3EC0B6555B4A4093BC802E965654D7AEB4AC22907A17F261D3",
+      "ok": true
+    },
+    {
+      "file": "tokenizer.json",
+      "bytes": 34363188,
+      "expected": "609D8F4C067CD3950F88594C5A802616CEA245823836EF5848EE4FC40AAB5B6F",
+      "got": "609D8F4C067CD3950F88594C5A802616CEA245823836EF5848EE4FC40AAB5B6F",
+      "ok": true
+    },
+    {
+      "file": "rl_agent_config.json",
+      "bytes": 472,
+      "expected": "25061739243B617AD88D1219BA6F8A9C86C5881CA28DF024FA2D9B3B2FCC30C6",
+      "got": "25061739243B617AD88D1219BA6F8A9C86C5881CA28DF024FA2D9B3B2FCC30C6",
+      "ok": true
+    }
+  ],
+  "calls": [
+    {
+      "tool": "decision_choose",
+      "prompt": "Which of these is a fruit?",
+      "answer": {
+        "choice": "apple",
+        "confidence": 0.0035,
+        "calibrated": false,
+        "probabilities": {
+          "apple": 0.3741,
+          "car": 0.3193,
+          "banana": 0.3066
+        },
+        "action": {
+          "act_probability": 1
+        }
+      },
+      "durationMs": 293
+    },
+    {
+      "tool": "decision_test",
+      "prompt": "Is water wet?",
+      "answer": {
+        "choice": "yes",
+        "confidence": 0.0018,
+        "calibrated": false,
+        "probabilities": {
+          "yes": 0.5252,
+          "no": 0.4748
+        },
+        "action": {
+          "act_probability": 1
+        }
+      },
+      "durationMs": 326
+    },
+    {
+      "tool": "decision_score",
+      "prompt": "How urgent is this: the server is on fire?",
+      "answer": {
+        "score": 1.5159,
+        "confidence": 0.0007,
+        "calibrated": false,
+        "probabilities": {
+          "0": 0.2341,
+          "1": 0.2643,
+          "2": 0.2532,
+          "3": 0.2484
+        },
+        "action": {
+          "act_probability": 1
+        }
+      },
+      "durationMs": 403
+    }
+  ],
+  "notes": [
+    "decisions ran through the vendored runtime over the pinned ONNX sessions (encoder + head, CPU); every confidence is marked calibrated: false (DEC-08, the upstream card ships uncalibrated logits with a clamping warning)"
+  ]
+}

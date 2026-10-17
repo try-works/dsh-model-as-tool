@@ -14,12 +14,13 @@
  * @module @try-works/tool-mode-extension-sdk/install/staged
  */
 
-import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { linkRuntimeSdk, RUNTIME_SDK_NAME, type RuntimeLinkOutcome } from './runtime-link.ts'
 import { join, resolve, sep } from 'node:path'
 import { ManagementError } from './../errors.ts'
 import { discoverExtension, type ExtensionDiscovery } from './../discovery.ts'
 import { digestInstalledContent, ExtensionStore } from './store.ts'
+import { installDependencyGraph, type InstallDependencyGraph, type LockedDependency } from './dependencies.ts'
 import {
   DEFAULT_ARCHIVE_LIMITS,
   validateArchiveEntries,
@@ -104,6 +105,43 @@ export interface StagedInstallResult {
 }
 
 /**
+ * The EXT-08 operator approval PREVIEW, produced before materialization.
+ *
+ * The caller inspects the permissions/licences/models/download implications
+ * and may refuse (throw) to abort the install while nothing is promoted.
+ */
+export interface InstallPreview {
+  readonly extensionId: string
+  readonly version: string
+  readonly permissions: ExtensionDiscovery['manifest']['permissions']
+  /** Declared model asset sets with their platform descriptors. */
+  readonly models: readonly { readonly id: string; readonly assetSet: string; readonly platforms: readonly string[] }[]
+  /** The declared licence layers, as `layer: name` strings. */
+  readonly licenses: readonly string[]
+  /** What the install implies for downloads and preparation consent. */
+  readonly downloadImplications: string
+  /** Whether this install warrants an explicit operator approval. */
+  readonly requiresApproval: boolean
+}
+
+/**
+ * Provenance fields recorded AS DATA, NEVER AS TRUST (EXT-12): where the
+ * registry reported integrity/provenance flags, they travel with the install
+ * record for audit; verification is always against the operator-supplied
+ * digest, never against these fields alone.
+ */
+export interface InstallProvenance {
+  /** The registry-recorded integrity string, verbatim. */
+  readonly registryIntegrity?: string
+  /** Whether the registry reported a build-provenance attestation. */
+  readonly provenance?: boolean
+  /** Reported attestation references, verbatim. */
+  readonly attestations?: readonly string[]
+  /** Reported signature references, verbatim. */
+  readonly signatures?: readonly string[]
+}
+
+/**
  * Install an extension into an operator-owned store, staged (EXT-08).
  *
  * Steps, in order: fetch into quarantine → verify integrity → list entries →
@@ -129,6 +167,17 @@ export async function stagedInstall(options: {
   readonly limits?: InstallLimits
   /** When false, the lock document is not updated. Defaults to true. */
   readonly record?: boolean
+  /**
+   * The injected dependency graph installer (EXT-09). When the package
+   * declares runtime dependencies and this is omitted, the install REFUSES
+   * with DEPENDENCY_UNSATISFIED rather than materializing an unresolvable
+   * extension.
+   */
+  readonly dependencies?: InstallDependencyGraph
+  /** The EXT-08 operator approval preview, called before materialization. */
+  readonly preview?: (preview: InstallPreview) => void | Promise<void>
+  /** Provenance fields recorded as data, never as trust (EXT-12). */
+  readonly provenance?: InstallProvenance
 }): Promise<StagedInstallResult> {
   const limits = options.limits ?? DEFAULT_INSTALL_LIMITS
   const storeDir = resolve(options.storeDir)
@@ -170,6 +219,57 @@ export async function stagedInstall(options: {
     // Discovery reads data and imports nothing; a manifest referencing a file the
     // package does not ship is refused before anything is promoted.
     const discovery = discoverExtension(extracted)
+
+    // EXT-09: the extension's runtime dependencies are resolved, verified and
+    // materialized into the extension's OWN directory before promotion. A
+    // package that declares dependencies without a provided graph installer is
+    // REFUSED rather than installed as a guaranteed-broken extension.
+    let lockedDependencies: readonly LockedDependency[] = []
+    let declaredDependenciesCount = 0
+    try {
+      const packageJson = JSON.parse(readFileSync(join(extracted, 'package.json'), 'utf8')) as {
+        dependencies?: Record<string, unknown>
+      }
+      declaredDependenciesCount = Object.keys(packageJson.dependencies ?? {}).length
+    } catch {
+      // The package.json was already read by discovery; this cannot fail.
+    }
+    if (declaredDependenciesCount > 0) {
+      if (options.dependencies === undefined) {
+        throw new ManagementError(
+          'DEPENDENCY_UNSATISFIED',
+          'install',
+          `${discovery.packageName} declares ${declaredDependenciesCount} runtime dependenc${declaredDependenciesCount === 1 ? 'y' : 'ies'} but no dependency-graph installer was provided; the extension would be installed broken`,
+          'Provide the operator-configured registry resolver, or publish the extension with every runtime dependency bundled.',
+        )
+      }
+      lockedDependencies = await installDependencyGraph(extracted, options.dependencies)
+    }
+
+    // EXT-08: the operator approval PREVIEW runs BEFORE materialization — the
+    // caller sees the permissions/licenses/platform/download implications and
+    // may refuse (throw) to abort the install while nothing is promoted.
+    if (options.preview !== undefined) {
+      const manifest = discovery.manifest
+      await options.preview({
+        extensionId: discovery.packageName,
+        version: discovery.packageVersion,
+        permissions: manifest.permissions,
+        models: manifest.models.map(model => ({
+          id: model.id,
+          assetSet: model.assetSet,
+          platforms: model.platforms.map(platform => `${platform.os}-${platform.arch}${platform.accelerator === undefined ? '' : `-${platform.accelerator}`}`),
+        })),
+        licenses: (manifest.licenses ?? []).map(layer => `${layer.layer}: ${layer.name}`),
+        downloadImplications: manifest.models.length === 0
+          ? 'no model assets declared; nothing is downloaded at install'
+          : `${manifest.models.length} model asset set(s) declared; downloads require the separate preparation consent, never the install`,
+        requiresApproval: manifest.permissions.nativeCode
+          || manifest.permissions.networkOrigins.length > 0
+          || manifest.permissions.storage !== 'none'
+          || manifest.models.length > 0,
+      })
+    }
 
     // Promote by rename, which is atomic within a store. The destination is keyed
     // by identity AND version, so an update installs side by side rather than
@@ -226,6 +326,8 @@ export async function stagedInstall(options: {
       archiveDigest,
       ...runtimeLinkDiagnostic === undefined ? {} : { runtimeLink: runtimeLinkDiagnostic },
       source: { kind: options.source.kind, requested: options.source.requested },
+      ...lockedDependencies.length === 0 ? {} : { dependencies: lockedDependencies },
+      ...options.provenance === undefined ? {} : { provenance: options.provenance },
       installedAt: new Date().toISOString(),
     }, null, 2)}\n`)
 
@@ -243,6 +345,8 @@ export async function stagedInstall(options: {
         // Digest the content as installed, so a later edit is detectable.
         contentDigest: digestInstalledContent(destination),
         source: { kind: options.source.kind, requested: options.source.requested },
+        ...lockedDependencies.length === 0 ? {} : { dependencies: lockedDependencies },
+        ...options.provenance === undefined ? {} : { provenance: options.provenance },
         installedAt: new Date().toISOString(),
       })
     }

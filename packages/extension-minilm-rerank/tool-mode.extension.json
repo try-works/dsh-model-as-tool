@@ -1,0 +1,37 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/extension-minilm-rerank",
+  "version": "1.0.0",
+  "displayName": "MiniLM text_rerank",
+  "description": "The ms-marco MiniLM-L-6 cross-encoder reranking extension (TOOL-05): query/document pairs cross-encoded to ranking logits, returned with the caller's own ids in descending score order with exact ties broken by input order. The scores are ranking logits, NOT embedding cosines.",
+  "activation": { "policy": "operator", "deactivatable": true },
+  "runtimeApi": 1,
+  "compatibility": { "hostApi": "^1.1.0", "requiredFeatures": ["verified-assets-v1"] },
+  "execution": { "kind": "module", "entry": "./lib/index.js", "isolation": "managed-process" },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": false
+  },
+  "models": [
+    {
+      "id": "minilm-rerank",
+      "assetSet": "minilm-rerank-onnx",
+      "assetLock": "./models.lock.json",
+      "platforms": [{ "os": "win32", "arch": "x64", "accelerator": "cpu" }]
+    }
+  ],
+  "tools": [],
+  "implementations": [
+    {
+      "id": "minilm-rerank-onnx",
+      "contractId": "text.rerank",
+      "contractVersion": "1.0.0",
+      "modelId": "minilm-rerank",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": []
+}

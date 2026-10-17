@@ -113,6 +113,8 @@ export interface ModelCatalogEntry {
 
 /** How an adapter reaches a model at run time. */
 export type ModelRoute =
+  /** A Tool Mode extension package loaded in this process. */
+  | 'extension'
   /** An npm package loaded in this process. */
   | 'npm-native'
   /** An npm package plus a caller-supplied ONNX Runtime module. */

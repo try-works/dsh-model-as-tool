@@ -23,10 +23,26 @@ import {
   maySubstituteSilently,
   modelNameImpliesCapability,
   qualificationGaps,
+  QUALIFICATION_FIELDS,
   resolveCapability,
   type ExecutionMode,
   type QualificationRecord,
 } from '../src/model-qualification.ts'
+import { QUALIFICATION_FIELDS as SDK_QUALIFICATION_FIELDS } from '@try-works/tool-mode-extension-sdk'
+
+describe('MODEL-05 — the host and SDK field vocabularies cannot drift', () => {
+  it('the two mirrored field lists are EQUAL', () => {
+    // The round-47 review proved the "cannot drift" claim had no test behind it.
+    // The SDK enforces records at discovery using ITS list; the host evaluates
+    // records with ITS list. If either changes alone, packages and hosts disagree
+    // silently — so the sets are asserted equal here, the same anti-drift pattern
+    // the embedding/needle mirrors use.
+    assert.deepEqual(
+      [...QUALIFICATION_FIELDS].sort(),
+      [...SDK_QUALIFICATION_FIELDS].sort(),
+    )
+  })
+})
 
 /** A complete qualification record. */
 const QUALIFIED: QualificationRecord = {

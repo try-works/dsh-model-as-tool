@@ -12,6 +12,8 @@ export {
   assertValidContract,
   assertValidInput,
   assertValidOutput,
+  assertAgainstSchema,
+  compileSchema,
   ContractError,
   ContractViolationError,
   TOOL_META_SCHEMA,
@@ -33,9 +35,43 @@ export {
 
 export { sttTranscribe, STT_ADMITTED_FORMATS } from './contracts/stt-transcribe.ts'
 export { langDetect } from './contracts/lang-detect.ts'
+export { textEmbed } from './contracts/text-embed.ts'
+export { textRerank } from './contracts/text-rerank.ts'
+export {
+  textTitle,
+  imageDescribe,
+  multimodalEmbed,
+  semanticSimilarity,
+  semanticRank,
+  semanticClassify,
+  semanticDeduplicate,
+  mediaFindMoments,
+  decisionChoose,
+  decisionTest,
+  decisionScore,
+  structuredExtract,
+  toolsPlan,
+} from './contracts/standard.ts'
 
 import { sttTranscribe } from './contracts/stt-transcribe.ts'
 import { langDetect } from './contracts/lang-detect.ts'
+import { textEmbed } from './contracts/text-embed.ts'
+import { textRerank } from './contracts/text-rerank.ts'
+import {
+  textTitle,
+  imageDescribe,
+  multimodalEmbed,
+  semanticSimilarity,
+  semanticRank,
+  semanticClassify,
+  semanticDeduplicate,
+  mediaFindMoments,
+  decisionChoose,
+  decisionTest,
+  decisionScore,
+  structuredExtract,
+  toolsPlan,
+} from './contracts/standard.ts'
 import type { ToolContract } from './registry.ts'
 
 /**
@@ -44,4 +80,22 @@ import type { ToolContract } from './registry.ts'
  * A host iterates this list; it does not switch on model names, which is what
  * ARCH-02 and EXT-01 require of model-independent code.
  */
-export const STANDARD_CONTRACTS: readonly ToolContract[] = [sttTranscribe, langDetect]
+export const STANDARD_CONTRACTS: readonly ToolContract[] = [
+  sttTranscribe,
+  langDetect,
+  textEmbed,
+  textRerank,
+  textTitle,
+  imageDescribe,
+  multimodalEmbed,
+  semanticSimilarity,
+  semanticRank,
+  semanticClassify,
+  semanticDeduplicate,
+  mediaFindMoments,
+  decisionChoose,
+  decisionTest,
+  decisionScore,
+  structuredExtract,
+  toolsPlan,
+]

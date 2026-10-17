@@ -13,11 +13,9 @@
  * every schema file named here is present, closed and compilable. The schema DOCUMENTS are the
  * authority on shape; this module carries the identity and the dispatch mapping.
  *
- * Only the tools this build can describe are declared. `semantic_classify`,
- * `semantic_deduplicate` and `media_find_moments` are part of the same requirement family, and
- * the deterministic grouping maths `semantic_deduplicate` needs already exists in
- * `./vectors.ts`, but declaring a caller-facing tool name that nothing serves would advertise
- * a capability this build does not have (MOD-15, MOD-20).
+ * The six tools this build serves are declared here and served by the provider:
+ * multimodal_embed, semantic_similarity, semantic_rank, semantic_classify (MOD-11),
+ * semantic_deduplicate (MOD-12) and media_find_moments (MOD-13).
  *
  * @module @try-works/extension-embeddinggemma/contracts
  */
@@ -49,12 +47,14 @@ export type PartKind = (typeof PART_KINDS)[number]
 /**
  * The part kinds THIS BUILD reads (MOD-20).
  *
- * The contracts admit image, audio and video parts because the model does; this build does
- * not, because no Node decoder is wired yet. MOD-20 requires a description to say which inputs
- * the actual enabled adapter supports, so the restriction is data here and is enforced in the
- * provider rather than being left to a reader's assumption.
+ * The contracts admit image, audio and video parts because the model does. This build reads all
+ * of them: text, code, image and audio through the bounded Node decoders and the wired
+ * vision/audio encoders (MOD-07), and VIDEO through the fused video path — the bounded
+ * uncompressed-DIB AVI sampler, the per-frame video grid (max_soft_tokens 140, a distinct
+ * grid from the vision encoder's 42x60 image grid) and the fused model's video_features
+ * scatter (MOD-20).
  */
-export const SUPPORTED_PART_KINDS: readonly PartKind[] = ['text', 'code']
+export const SUPPORTED_PART_KINDS: readonly PartKind[] = ['text', 'code', 'image', 'audio', 'video']
 
 /**
  * The declared limits on one call.
@@ -78,6 +78,12 @@ export const CALL_LIMITS = {
   maxIdCharacters: 128,
   /** Most characters of an optional item title. */
   maxTitleCharacters: 512,
+  /** Most labels one `semantic_classify` call accepts. */
+  maxClassifyLabels: 128,
+  /** Most items one `semantic_deduplicate` call accepts. */
+  maxDedupItems: 256,
+  /** Most windows one `media_find_moments` call may evaluate. */
+  maxMomentWindows: 256,
 } as const
 
 /** One tool contract this package owns and serves. */export interface OwnedToolContract {
@@ -110,8 +116,9 @@ export const OWNED_TOOL_CONTRACTS: readonly OwnedToolContract[] = [
     description:
       'Embed one or more items into a shared embedding space over EmbeddingGemma 2. Returns L2-normalized vectors '
       + 'of 768, 512, 256 or 128 dimensions plus a per-item processing record of the modality, source range and '
-      + 'video sampling that produced each one. This build reads text and code parts only: image, audio and video '
-      + 'parts are refused by name until the Node decoders are wired. It does not describe an image in words, '
+      + 'video sampling that produced each one. This build reads text, code, image and audio parts; a video part is '
+      + 'refused by name (the bounded frame sampler exists, but the model video grid and fused video scatter are '
+      + 'not reconstructed). It does not describe an image in words, '
       + 'transcribe speech, return OCR text or produce calibrated decisions.',
     inputSchema: './schema/multimodal-embed.input.json',
     outputSchema: './schema/multimodal-embed.output.json',
@@ -126,8 +133,7 @@ export const OWNED_TOOL_CONTRACTS: readonly OwnedToolContract[] = [
       'Cosine similarity between two items embedded in one space over EmbeddingGemma 2, supporting text-to-text, '
       + 'text-to-image, text-to-audio and image-to-image pairings on a qualified build. The score is a cosine '
       + 'similarity, not a probability that the two mean the same thing, and it is comparable only within one '
-      + 'embedding space. This build reads text and code parts only, so any media part is refused by name rather '
-      + 'than silently ignored.',
+      + 'embedding space. This build reads text, code, image and audio parts; a video part is refused by name.',
     inputSchema: './schema/semantic-similarity.input.json',
     outputSchema: './schema/semantic-similarity.output.json',
   },
@@ -141,9 +147,56 @@ export const OWNED_TOOL_CONTRACTS: readonly OwnedToolContract[] = [
       'Rank candidate items against a query by embedding cosine similarity over EmbeddingGemma 2, returning '
       + 'the caller\'s own IDs in stable descending score order with exact ties broken by input order. This is '
       + 'embedding ranking, not the cross-encoder text_rerank tool: the two produce different score kinds and are '
-      + 'not interchangeable. This build reads text and code parts only, so any media part is refused by name.',
+      + 'not interchangeable. This build reads text, code, image and audio parts; a video part is refused by name.',
     inputSchema: './schema/semantic-rank.input.json',
     outputSchema: './schema/semantic-rank.output.json',
+  },
+  {
+    toolId: 'semantic-classify',
+    toolName: 'semantic_classify',
+    contractId: '@try-works/extension-embeddinggemma/semantic_classify',
+    contractVersion: '1.0.0',
+    implementationId: 'embeddinggemma2-classify',
+    description:
+      'Classify one item against caller-supplied label descriptions by embedding cosine similarity over '
+      + 'EmbeddingGemma 2 (MOD-11). Returns the best label with its raw cosine score plus every label score, or '
+      + 'status "abstained" when the best score is below min_score or the margin to the runner-up is below '
+      + 'min_margin. The scores are raw embedding cosines — calibrated is always false, and this is not the '
+      + 'dedicated decision model: an embedding label scorer is not an equivalent implementation of a probabilistic '
+      + 'decision contract. This build reads text, code, image and audio parts; a video part is refused by name.',
+    inputSchema: './schema/semantic-classify.input.json',
+    outputSchema: './schema/semantic-classify.output.json',
+  },
+  {
+    toolId: 'semantic-deduplicate',
+    toolName: 'semantic_deduplicate',
+    contractId: '@try-works/extension-embeddinggemma/semantic_deduplicate',
+    contractVersion: '1.0.0',
+    implementationId: 'embeddinggemma2-deduplicate',
+    description:
+      'Group near-duplicate items by greedy representative clustering in input order over EmbeddingGemma 2 '
+      + 'cosine similarity (MOD-12): each item joins the FIRST group whose representative scores at or above the '
+      + 'threshold, otherwise it starts a new group. The result is deterministic for a fixed threshold, is not '
+      + 'transitive (A may match B and B match C without A matching C), and never deletes, moves or rewrites '
+      + 'source files. This build reads text, code, image and audio parts; a video part is refused by name.',
+    inputSchema: './schema/semantic-deduplicate.input.json',
+    outputSchema: './schema/semantic-deduplicate.output.json',
+  },
+  {
+    toolId: 'media-find-moments',
+    toolName: 'media_find_moments',
+    contractId: '@try-works/extension-embeddinggemma/media_find_moments',
+    contractVersion: '1.0.0',
+    implementationId: 'embeddinggemma2-moments',
+    description:
+      'Find the source-time windows of one audio item that best match a query by embedding each window and '
+      + 'ranking by cosine similarity (MOD-13). Returns window-level matches with source timestamps, the score '
+      + 'kind, the number of windows evaluated and the sampled-frame timestamps (empty for audio). The final '
+      + 'window is clipped to the actual source range and included exactly once. No transcription happens: this '
+      + 'is embedding retrieval, not speech recognition. VIDEO media is refused by name in this build (the fused '
+      + 'video-grid reconstruction is the separate recorded remainder).',
+    inputSchema: './schema/media-find-moments.input.json',
+    outputSchema: './schema/media-find-moments.output.json',
   },
 ]
 

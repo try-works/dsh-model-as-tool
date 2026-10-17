@@ -55,7 +55,12 @@
           "an end-to-end run on a machine where the host, not an environment variable, prepared the assets",
           "a recorded run at a second revision, to show the pin actually fails on a different artifact rather than merely matching the one it was computed from",
           "a decision on whether the WASM route (wasm/needle.js plus wasm/needle.wasm) is qualified as a fallback for platforms with no published native folder"
-        ]
+        ],
+        "wasmRouteDecision": {
+          "decision": "not offered",
+          "recordedOn": "2026-10-16",
+          "reason": "NDL-01 requires ONE qualified strategy per platform; the Windows x86_64 native route is the qualified one and the extension declares only that platform. The WASM artifacts remain recorded under inspectedNotPinned so their absence from the offer is a stated fact, not an unexamined omission. Offering them would require an independent qualification (NDL-01: each route has independent qualification and an explicit selection)."
+        }
       },
       "inspectedNotPinned": [
         {

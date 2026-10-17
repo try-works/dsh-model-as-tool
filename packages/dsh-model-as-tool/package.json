@@ -36,7 +36,6 @@
       "types": "./lib/catalog.d.ts",
       "default": "./lib/catalog.js"
     },
-    "./src/*": "./src/*",
     "./catalog/desert-ant-models.json": "./catalog/desert-ant-models.json",
     "./catalog/playbooks.json": "./catalog/playbooks.json",
     "./package.json": "./package.json"
@@ -57,23 +56,18 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": ">=0.2.0-rc.2",
-    "@deepseek-ai/dsh-skill": ">=0.2.0-rc.2",
-    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.2",
-    "@deepseek-ai/schemastery": ">=0.2.0-rc.2"
+    "@deepseek-ai/cordis": ">=0.2.0-rc.2 || >=0.2.1-rc.1",
+    "@deepseek-ai/dsh-skill": ">=0.2.0-rc.2 || >=0.2.1-rc.1",
+    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.2 || >=0.2.1-rc.1",
+    "@deepseek-ai/schemastery": ">=0.2.0-rc.2 || >=0.2.1-rc.1"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-skill": {
       "optional": true
     }
   },
-  "optionalDependencies": {
-    "@desert-ant-labs/tongue": "^3.6.0",
-    "@desert-ant-labs/voz": "^3.6.0",
-    "onnxruntime-node": "^1.20.0"
-  },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node scripts/clean-lib.mjs && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
     "prepack": "node scripts/stage-bundle.mjs && npm run build",
@@ -81,23 +75,31 @@
     "postpack": "node scripts/stage-bundle.mjs --clean"
   },
   "devDependencies": {
-    "@modelcontextprotocol/client": "^2.3.1",
-    "@modelcontextprotocol/server": "^2.3.1",
+    "@modelcontextprotocol/client": "2.3.1",
     "@types/node": "^24.0.0",
     "typescript": "^5.9.0"
   },
   "dependencies": {
+    "@modelcontextprotocol/node": "2.1.1",
+    "@modelcontextprotocol/server": "2.3.1",
     "@try-works/tool-mode-contracts": "^0.1.0",
+    "@try-works/tool-mode-extension-sdk": "^0.1.0",
     "ajv": "^8.20.0",
     "@try-works/tool-mode-recipes": "^0.1.0"
   },
   "bin": {
-    "dsh-tool-mode-mcp-stdio": "./bin/dsh-tool-mode-mcp-stdio.mjs"
+    "dsh-tool-mode": "./bin/dsh-tool-mode.mjs",
+    "dsh-tool-mode-mcp-stdio": "./bin/dsh-tool-mode-mcp-stdio.mjs",
+    "dsh-tool-mode-credentials": "./bin/dsh-tool-mode-credentials.mjs"
   },
   "bundledDependencies": [
-    "@try-works/tool-mode-contracts"
+    "@try-works/tool-mode-contracts",
+    "@try-works/tool-mode-extension-sdk",
+    "@try-works/tool-mode-recipes"
   ],
   "bundleDependencies": [
-    "@try-works/tool-mode-contracts"
+    "@try-works/tool-mode-contracts",
+    "@try-works/tool-mode-extension-sdk",
+    "@try-works/tool-mode-recipes"
   ]
 }

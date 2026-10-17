@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "semantic_deduplicate input",
+  "description": "Input for semantic_deduplicate (MOD-12): items grouped by greedy representative clustering in input order. Each item joins the FIRST group whose representative scores >= threshold, otherwise it starts a group. The implementation enforces what JSON Schema cannot express alone: item ids must be unique, and the threshold must lie strictly inside (-1, 1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items", "threshold"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/item" },
+      "description": "The items in the caller's order; that order determines representatives and tie outcomes (MOD-12)."
+    },
+    "threshold": {
+      "type": "number",
+      "exclusiveMinimum": -1,
+      "exclusiveMaximum": 1,
+      "description": "The cosine similarity at or above which two items belong to one group (MOD-12)."
+    },
+    "dimensions": {
+      "type": "integer",
+      "enum": [768, 512, 256, 128],
+      "default": 768,
+      "description": "The width every item is embedded at (MOD-04)."
+    }
+  },
+  "$defs": {
+    "timeRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startSeconds", "endSeconds"],
+      "properties": {
+        "startSeconds": { "type": "number", "minimum": 0 },
+        "endSeconds": { "type": "number", "minimum": 0 }
+      }
+    },
+    "videoSampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "maxFrames"],
+      "properties": {
+        "mode": { "const": "uniform" },
+        "maxFrames": { "type": "integer", "minimum": 1, "maximum": 300 }
+      }
+    },
+    "mediaPart": {
+      "description": "One part of an item, as a closed discriminated union on `kind` (MOD-06).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "text"],
+          "properties": {
+            "kind": { "const": "text" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "text"],
+          "properties": {
+            "kind": { "const": "code" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "language": { "type": "string", "minLength": 1, "maxLength": 64 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "image" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "audio" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "range": { "$ref": "#/$defs/timeRange" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "video" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "range": { "$ref": "#/$defs/timeRange" },
+            "sampling": { "$ref": "#/$defs/videoSampling" }
+          }
+        }
+      ]
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "parts"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/mediaPart" }
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    }
+  }
+}

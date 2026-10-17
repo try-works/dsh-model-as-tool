@@ -88,10 +88,9 @@ export function createAdapter(
   bridge?: ProviderBridge,
 ): ModelAdapter | undefined {
   // A declared extension binding is the model's own statement of who implements
-  // it, so it is consulted before any host-side knowledge.
-  if (bridge !== undefined && entry.provider !== undefined) {
-    return bridge.adapterFor(entry)
-  }
+  // it, but only the explicit extension route may use it. This keeps CLI/remote
+  // fallback routes from accidentally trying to load a provider package.
+  if (options.route === 'extension') return bridge?.adapterFor(entry)
 
   for (const factory of factories) {
     const adapter = factory(entry)

@@ -27,6 +27,7 @@ import {
   type HttpTransportConfig,
 } from '../src/mcp/http.ts'
 import { ERROR_CODES, META_KEYS, PROTOCOL_VERSION } from '../src/mcp/protocol.ts'
+import { DEFAULT_RATE_LIMIT_POLICY } from '../src/mcp/rate-limit.ts'
 import { startHttpServer } from '../src/mcp/http.ts'
 import type { McpHost, McpToolDefinition } from '../src/mcp/server.ts'
 
@@ -49,6 +50,10 @@ const host: McpHost = {
 const config: HttpTransportConfig = {
   ...DEFAULT_HTTP_CONFIG,
   auth: { scheme: 'static-token', token: TOKEN, clientId: 'cli-1' },
+  // This file exercises transport properties across many requests with one token;
+  // the AT-12 rate limiter is the subject of mcp-rate-limit.test.ts, so it is
+  // explicitly disabled here rather than silently relying on a generous window.
+  rateLimit: false,
 }
 
 const handler = createHttpHandler(config, host)
@@ -71,6 +76,8 @@ function httpRequest(overrides: Partial<HttpRequestDescription> = {}): HttpReque
     method: 'POST',
     path: '/mcp',
     headers: {
+      'content-type': 'application/json',
+      accept: 'application/json, text/event-stream',
       authorization: `Bearer ${TOKEN}`,
       'mcp-protocol-version': PROTOCOL_VERSION,
       'mcp-method': 'tools/list',
@@ -103,6 +110,21 @@ describe('SEC-02 / MCP-02 — the binding is loopback only', () => {
     assert.equal(response.status, 403)
   })
 
+  it('refuses a hostile Host header even on loopback', async () => {
+    const response = await handler(httpRequest({
+      headers: { ...httpRequest().headers, host: 'evil.example' },
+    }))
+    assert.equal(response.status, 403)
+    assert.match(response.body, /Host header/)
+  })
+
+  it('permits the configured loopback Host header', async () => {
+    const response = await handler(httpRequest({
+      headers: { ...httpRequest().headers, host: '127.0.0.1:3765' },
+    }))
+    assert.equal(response.status, 200)
+  })
+
   it('recognises the loopback forms a real socket reports', () => {
     assert.equal(isLoopback('127.0.0.1'), true)
     assert.equal(isLoopback('::1'), true)
@@ -118,6 +140,9 @@ describe('SEC-02 / MCP-02 — the binding is loopback only', () => {
     assert.equal(DEFAULT_HTTP_CONFIG.host, '127.0.0.1')
     assert.equal(DEFAULT_HTTP_CONFIG.port, 3765)
     assert.equal(DEFAULT_HTTP_CONFIG.path, '/mcp')
+    // AT-12: the default configuration carries the default per-client rate limit, so
+    // the transport is bounded by default rather than only when configured.
+    assert.deepEqual(DEFAULT_HTTP_CONFIG.rateLimit, DEFAULT_RATE_LIMIT_POLICY)
   })
 })
 
@@ -213,10 +238,10 @@ describe('P26-15 — authentication is required on every request', () => {
 
   it('does not claim OAuth conformance', () => {
     // P26-15 permits the static-token mode only while forbidding the claim.
-    assert.equal(claimsOAuthConformance(), false)
-    assert.equal(authProfile().oauth21ResourceServer, false)
-    assert.equal(authProfile().scheme, 'static-token')
-    assert.match(String(authProfile().note), /not implemented and is not claimed/)
+    assert.equal(claimsOAuthConformance(config.auth), false)
+    assert.equal(authProfile(config.auth).oauth21ResourceServer, false)
+    assert.equal(authProfile(config.auth).scheme, 'static-token')
+    assert.match(String(authProfile(config.auth).note), /not used and is not claimed/)
   })
 })
 
@@ -361,7 +386,7 @@ describe('P26-06 / P26-07 — response channels and cancellation', () => {
     )
   })
 
-  it('acknowledges a notification without a response body', async () => {
+  it('refuses stdio-only cancellation notifications over modern HTTP', async () => {
     const body = JSON.stringify({
       jsonrpc: '2.0',
       method: 'notifications/cancelled',
@@ -376,9 +401,13 @@ describe('P26-06 / P26-07 — response channels and cancellation', () => {
       body,
       headers: { ...httpRequest().headers, 'mcp-method': 'notifications/cancelled' },
     }))
-    // 202 with no body: a notification has no id to answer.
-    assert.equal(response.status, 202)
-    assert.equal(response.body, '')
+    // Pinned modern HTTP defines no core client notifications; cancelled is
+    // stdio-only. 202/no body applies only IF a notification is accepted.
+    assert.equal(response.status, 400)
+    const refused = JSON.parse(response.body)
+    assert.equal(refused.error.code, ERROR_CODES.invalidRequest)
+    assert.match(refused.error.message, /does not accept standalone notifications/)
+    assert.equal('result' in refused, false)
   })
 })
 
@@ -515,16 +544,18 @@ describe('P26-09 — a transport that CANNOT deliver a follow-up REFUSES rather 
     assert.notEqual(clean.status, 500, 'the guard must not fire for a request with no follow-up')
   })
 
-  it('the guard exists and reads the field the dispatcher populates', async () => {
-    /**
-     * Asserted against the SOURCE, deliberately, because the branch is unreachable through the
-     * public handler in this configuration: `subscriptions/listen` answers -32601 unless a
-     * registry is composed, and composing one is a deployment step. Reading the source is
-     * weaker than driving the branch, and it is stated as such rather than presented as
-     * behavioural coverage.
-     */
-    const source = await readFile(new URL('../src/mcp/http.ts', import.meta.url), 'utf8')
-    assert.match(source, /outcome\.followUp/, 'the transport must READ the field')
-    assert.match(source, /undeliverable/, 'and it must report what it could not deliver')
+  it('refuses an open subscription before starting an undeliverable stream', async () => {
+    const response = await handler(httpRequest({
+      headers: { ...httpRequest().headers, 'mcp-method': 'subscriptions/listen' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 'listen-refusal', method: 'subscriptions/listen',
+        params: { _meta: { [META_KEYS.protocolVersion]: PROTOCOL_VERSION,
+          [META_KEYS.clientCapabilities]: {} } } }),
+    }))
+    assert.equal(response.status, 404)
+    const refused = JSON.parse(response.body)
+    assert.equal(refused.error.code, ERROR_CODES.methodNotFound)
+    assert.match(refused.error.message, /does not offer open subscription streams/)
+    assert.equal('result' in refused, false, 'no false subscription acknowledgement')
+    assert.equal(response.headers['content-type']?.includes('text/event-stream'), false)
   })
 })

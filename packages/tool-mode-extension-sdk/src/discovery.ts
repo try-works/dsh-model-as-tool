@@ -24,7 +24,7 @@ import {
   type NoNetworkVerdict,
   type ResolvedLicenseRecord,
 } from './licensing.ts'
-import { MAX_MANIFEST_BYTES, validateManifest, type ExtensionManifest } from './manifest.ts'
+import { MAX_MANIFEST_BYTES, validateManifest, validateLockQualifications, type ExtensionManifest } from './manifest.ts'
 
 /** Largest `package.json` accepted, in bytes. */
 export const MAX_PACKAGE_JSON_BYTES = 256 * 1024
@@ -232,6 +232,9 @@ export function discoverExtension(packageDir: string): ExtensionDiscovery {
 
   // Named alidated because manifest already holds the parsed package.json above.
   const validated = validateManifest(raw, { packageName, packageVersion, packageDir: root })
+  // The declared asset locks' qualification records are validated too (MODEL-05):
+  // a record that claims a qualified path must actually carry every field.
+  validateLockQualifications(validated, root)
 
   /**
    * The `exports` requirement, applied where the execution KIND is known.
