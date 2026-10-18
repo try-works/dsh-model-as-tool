@@ -365,6 +365,14 @@ export interface Config {
    */
   managedWorkers?: boolean
   /**
+   * Extension ids the operator switched OFF in Settings.
+   *
+   * The store still holds them and their desired activation is unchanged; the
+   * host simply does not restore them, so their tools never register. Removing
+   * an id re-activates the extension on the next load.
+   */
+  disabledExtensions?: string[]
+  /**
    * Environment names to pass through to managed workers, on top of the SDK's
    * bootstrap allowlist. Explicit names only — never `process.env` wholesale.
    */
@@ -434,6 +442,7 @@ export const Config: z<Config> = z.object({
   managedWorkers: settingsField(z.boolean().default(false)),
   workerEnvPassthrough: z.array(z.string()).default([]),
   allowNpm: settingsField(z.boolean().default(true)),
+  disabledExtensions: settingsField(z.array(z.string()).default([])),
   /**
    * §12 CONFIG V3: the proposed nested schemaVersion-3 shape. The spec's
    * fixed-false flags are parsed here and REJECTED when set true (unsupported
@@ -616,7 +625,7 @@ export function describeModels(resolved: readonly ResolvedModel[]): ModelDescrip
  */
 const VOLATILE_CONFIG_KEYS = [
   'approvedRoots', 'repairAttempts', 'models', 'exclude', 'exposeUnavailable',
-  'registerSkills', 'registerControlTool', 'managedWorkers', 'allowNpm',
+  'registerSkills', 'registerControlTool', 'managedWorkers', 'allowNpm', 'disabledExtensions',
 ] as const
 
 /** Read a plain value out of a volatile reference (or return it untouched). */
@@ -3441,8 +3450,17 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
     }
 
     const installedRecords = store.listInstalled().value
+    /**
+     * Extensions the operator switched OFF in Settings.
+     *
+     * Checked at the restore decision because this loop is the host's only
+     * activation surface: filtering after activation would let the extension
+     * register its tools and then be denied, which is the two-sources-of-truth
+     * mistake the publication path already forbids.
+     */
+    const disabledExtensions = new Set(config.disabledExtensions ?? [])
     const toRestore = store.readProfileState('default').value
-      .filter(entry => entry.desiredActivation === 'active')
+      .filter(entry => entry.desiredActivation === 'active' && !disabledExtensions.has(entry.extensionId))
       .map(entry => ({
         extensionId: entry.extensionId,
         version: installedRecords.find(candidate => candidate.extensionId === entry.extensionId)?.version,

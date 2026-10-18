@@ -663,7 +663,7 @@ window.__ModuleLoader__.load({
     }
 
     /** One extension row: identity, tools, models and the store-owned state. */
-    function extensionRow(entry) {
+    function extensionRow(entry, enabled, disabled, onToggle) {
       const parts = []
       if (entry.tools.length > 0) parts.push('tools: ' + entry.tools.join(', '))
       if (entry.contracts.length > 0) parts.push('contracts: ' + entry.contracts.join(', '))
@@ -678,13 +678,24 @@ window.__ModuleLoader__.load({
             entry.id,
             parts.length > 0 ? ' · ' + parts.join(' · ') : '',
             ' · ',
-            entry.license ?? 'no license')))
+            entry.license ?? 'no license')),
+        h('div', { className: 'mtt-control' },
+          h('button', {
+            type: 'button',
+            className: 'mtt-toggle',
+            'data-on': enabled ? 'true' : 'false',
+            disabled: disabled,
+            'aria-pressed': enabled,
+            title: enabled ? 'Disable this extension' : 'Enable this extension',
+            onClick: () => onToggle(entry.id, !enabled),
+          }, h('span', { className: 'mtt-knob' }))))
     }
 
     function ModelToolsSettings({ form }) {
       const [snap, setSnap] = React.useState(() => form.getSnapshot())
       const [draft, setDraft] = React.useState({})
       const [exclude, setExclude] = React.useState(null)
+      const [disabledExt, setDisabledExt] = React.useState(null)
       const [status, setStatus] = React.useState(null)
 
       React.useEffect(() => form.subscribe(() => setSnap(form.getSnapshot())), [form])
@@ -716,7 +727,7 @@ window.__ModuleLoader__.load({
         return allowlist.length === 0 || allowlist.includes(id)
       }
 
-      const dirty = FIELDS.some(field => draft[field.key] !== undefined) || exclude !== null
+      const dirty = FIELDS.some(field => draft[field.key] !== undefined) || exclude !== null || disabledExt !== null
 
       const save = async () => {
         setStatus({ kind: 'busy', text: 'Saving…' })
@@ -731,8 +742,13 @@ window.__ModuleLoader__.load({
             const accepted = await form.set('exclude', exclude)
             if (accepted === false) refused = true
           }
+          if (disabledExt !== null) {
+            const accepted = await form.set('disabledExtensions', disabledExt)
+            if (accepted === false) refused = true
+          }
           setDraft({})
           setExclude(null)
+          setDisabledExt(null)
           setStatus(refused
             ? { kind: 'error', text: 'Refused by the host — see the dsh logs.' }
             : { kind: 'ok', text: 'Saved. Changes apply to new sessions.' })
@@ -740,6 +756,16 @@ window.__ModuleLoader__.load({
           setStatus({ kind: 'error', text: String((error && error.message) || error) })
         }
       }
+
+      const savedDisabledExt = Array.isArray(value.disabledExtensions) ? value.disabledExtensions : []
+      const currentDisabledExt = disabledExt ?? savedDisabledExt
+      const isExtensionEnabled = id => !currentDisabledExt.includes(id)
+      const toggleExtension = (id, on) => setDisabledExt(() => {
+        const next = new Set(currentDisabledExt)
+        if (on) next.delete(id)
+        else next.add(id)
+        return [...next].sort()
+      })
 
       const toggleModel = (id, on) => setExclude(() => {
         const next = new Set(currentExclude)
@@ -767,7 +793,7 @@ window.__ModuleLoader__.load({
           h('p', { className: 'mtt-help' },
             'Tool Mode extensions shipped with this plugin. They register their tools when the extension store '
             + 'installs and activates them; this page cannot observe that state.'),
-          EXTENSIONS.map(extensionRow)),
+          EXTENSIONS.map(entry => extensionRow(entry, isExtensionEnabled(entry.id), disabled, toggleExtension))),
         h('div', { className: 'mtt-card' }, FIELDS.map(field => fieldRow(field, value, draft, edit, disabled))),
         h('div', { className: 'mtt-actions' },
           h('button', {
