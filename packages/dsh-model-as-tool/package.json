@@ -1,6 +1,6 @@
 {
   "name": "@try-works/dsh-model-as-tool",
-  "version": "0.1.12",
+  "version": "0.2.0",
   "description": "Install Desert Ant Labs on-device models as DSH tools and skills, with per-platform capability gating",
   "keywords": [
     "dsh",
@@ -33,6 +33,8 @@
       "default": "./lib/index.js"
     },
     "./client": "./client/index.js",
+    "./typert": "./remote/typert.host.mjs",
+    "./remote": "./remote/typert.remote-client.mjs",
     "./catalog": {
       "types": "./lib/catalog.d.ts",
       "default": "./lib/catalog.js"
@@ -46,6 +48,8 @@
     "lib/**/*.d.ts",
     "lib/**/*.d.ts.map",
     "client/index.js",
+    "client/client.model-tools.js",
+    "remote/*.mjs",
     "catalog/desert-ant-models.json",
     "catalog/playbooks.json",
     "cordis.patch.yml",
@@ -80,6 +84,8 @@
   "scripts": {
     "build": "node scripts/clean-lib.mjs && tsc -p tsconfig.build.json && node scripts/gen-client-catalog.mjs",
     "build:client": "node scripts/gen-client-catalog.mjs",
+    "build:remote": "node scripts/gen-remote-artifacts.mjs",
+    "check:remote": "node scripts/gen-remote-artifacts.mjs --check",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
     "prepack": "node scripts/stage-bundle.mjs && npm run build",

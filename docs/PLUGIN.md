@@ -13,6 +13,7 @@ the plugin contract the harness loader reads.
 | Injects | `tools` |
 | Bundle patch | `cordis.patch.yml` (`dsh.bundle.patch`) |
 | Entry | `lib/index.js` (built from `src/index.ts`) |
+| Remote namespace | `modelTools` (`./typert` + `./remote` + `client/client.model-tools.js`) |
 | Requires | Node ≥ 24, DSH ≥ 0.2.1-rc.2 (peers: cordis, dsh-tools, optional dsh-skill) |
 
 ## Install into a profile
@@ -116,6 +117,43 @@ Two rules make the page work, and both are pinned by tests:
 
 Credentials, the bridge endpoint, the extension store and the headless MCP
 listener stay config-file only, where the launcher and `doctor` read them.
+
+### Remote namespace `modelTools`
+
+The extension card does not guess state from config: it asks the host. The
+host ↔ browser contract is `src/extensions-api.ts`, published as one Typert
+Remote namespace mounted as `ctx.remote.modelTools`:
+
+| Piece | Where | What it is |
+|---|---|---|
+| Host artifact | `remote/typert.host.mjs` (`./typert`) | strict invocation descriptors; `@deepseek-ai/dsh-typert-loader` registers them for this package's Loader row |
+| Client artifact | `remote/typert.remote-client.mjs` (`./remote`) | mountable `TypertRemoteInfo` contribution for a standard Client assembly |
+| Browser chunk | `client/client.model-tools.js` | the contribution as a package-local lazy-CJS chunk; the client module system serves only `./client`, so the page loads it with `require.async('./client.model-tools.js')` and calls `mount(ctx)` |
+| Source of truth | `remote/spec.mjs` | descriptors, codecs, and documentation the three artifacts are built from (`scripts/gen-remote-artifacts.mjs`; `--check` catches drift) |
+| Host wiring | `src/extensions-remote.ts` | `provideModelToolsService(ctx, service)` attaches the Gateway's `typertRemote` binding and provides the `modelTools` Cordis service |
+
+Two wire facts a caller must respect:
+
+- **Every client method resolves a `RemoteResult`, not a bare value** —
+  `{ ok: true, value }` or `{ ok: false, error }`. Unwrap `.ok` before rendering
+  state; the host service signatures in `src/extensions-api.ts` are the raw
+  in-process shape.
+- **The install method is named `installExtension` on the wire.** The harness'
+  client `RemoteNamespaceService` owns a private method `install` and the
+  gateway refuses any Remote method that collides with it
+  (`client api: method "modelTools/install" conflicts with its namespace
+  service`). The Host service keeps its member `install`; the descriptor's
+  `implementation` maps the wire name to it.
+- **Optional wire parameters still occupy a positional slot.** `source` is
+  optional on the host, but a client call must pass it explicitly:
+  `installExtension(id, undefined)` uses the configured first-party source.
+
+Proof without a page:
+`node --import tsx --test packages/dsh-model-as-tool/tests/remote-typert.test.ts`
+validates the host artifact with the shipping Typert loader, mounts the client
+contribution through the shipping Typert registry and Gateway client over a
+fake Connection carrier, and asserts `describe()`/`enable()`/`installExtension()`
+send the exact `/api/<namespace>/<method>` payload and return a `RemoteResult`.
 
 ## Troubleshooting (observed while validating this install)
 

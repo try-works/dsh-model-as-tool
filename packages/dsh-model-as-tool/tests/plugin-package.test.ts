@@ -20,6 +20,48 @@ import test from 'node:test'
 const PACKAGE_DIR = join(process.cwd(), 'packages', 'dsh-model-as-tool')
 const CHECK = join(PACKAGE_DIR, 'scripts', 'check-package.mjs')
 
+/**
+ * Load the generated client bundle the way the web shell does: the file
+ * registers through window.__ModuleLoader__.load({ id, factory }), and the
+ * factory receives the lazy-CJS module table's require. Only 'react' may be
+ * requested, so the fake table provides just that.
+ *
+ * This is deliberately an execution of the SHIPPED bundle (not the template):
+ * the helper functions it exposes are what the page renders from, and a source
+ * marker alone cannot prove they behave as the two extension flows expect.
+ */
+function loadGeneratedClient(): Record<string, unknown> {
+  const source = readFileSync(join(PACKAGE_DIR, 'client', 'index.js'), 'utf8')
+  type Registration = { factory: (request: (id: string) => unknown) => Record<string, unknown> }
+  let registration: Registration | undefined
+  const window = { __ModuleLoader__: { load(value: Registration) { registration = value } } }
+  const request = (id: string): Record<string, unknown> => {
+    assert.equal(id, 'react', 'the client bundle may require only "react"')
+    return {
+      createElement: () => null,
+      useState: () => [null, () => {}],
+      useEffect: () => {},
+    }
+  }
+  new Function('window', 'require', source)(window, request)
+  assert.ok(registration !== undefined, 'the client bundle must register through __ModuleLoader__.load')
+  return registration.factory(request)
+}
+
+/** One internal helper from the generated bundle, with its callable face checked. */
+function clientHelper(exports: Record<string, unknown>, name: string): (...args: unknown[]) => unknown {
+  const internals = exports.__internals
+  assert.ok(internals !== null && typeof internals === 'object', 'the client bundle must expose __internals')
+  const candidate = (internals as Record<string, unknown>)[name]
+  assert.equal(typeof candidate, 'function', '__internals.' + name + ' must be a function')
+  return candidate as (...args: unknown[]) => unknown
+}
+
+/** A fake Context that answers the one read the extension card performs. */
+function contextWith(remote: unknown): { get: (name: string) => unknown } {
+  return { get: (name: string) => name === 'remote' ? remote : undefined }
+}
+
 test('the package check script passes (the shape a loader requires)', (t) => {
   if (!existsSync(join(PACKAGE_DIR, 'lib', 'index.js'))) {
     return t.skip('the package lib/ is not built; run the host build first')
@@ -64,6 +106,127 @@ test('the client half is a generated ModuleLoader bundle with the model list emb
   // Drift guard: the committed bundle must equal what the generator produces now.
   const generated = spawnSync(process.execPath, [join(PACKAGE_DIR, 'scripts', 'gen-client-catalog.mjs'), '--check'], { encoding: 'utf8' })
   assert.equal(generated.status, 0, `${generated.stdout}\n${generated.stderr}`)
+})
+
+test('the client half ships both extension flows: host Remote and config-only fallback', () => {
+  const source = readFileSync(join(PACKAGE_DIR, 'client', 'index.js'), 'utf8')
+  // Host Remote flow: the optional wire chunk is attempted, state comes from
+  // describe(), install/enable/disable go through the Remote, and a busy label
+  // makes an action in flight visible rather than a silent click.
+  assert.match(source, /\.modelTools\b/, 'the page must read the modelTools Remote')
+  assert.match(source, /client\.model-tools\.js/, 'the page must attempt the optional wire chunk')
+  assert.match(source, /\.describe\(\)/, 'the page must read extension state from the host')
+  assert.match(source, /installExtension/, 'the page must call the wire installExtension operation')
+  // The wire descriptor is installExtension(id, source): the gateway counts
+  // business arguments exactly, so an omitted source must still be passed as
+  // undefined or the call is refused before it reaches the host.
+  assert.match(source, /install\.call\(namespace, id, undefined\)/,
+    'installExtension must be called with its source positional slot filled')
+  assert.match(source, /\.enable\(id\)/, 'the page must enable an installed extension through the Remote')
+  assert.match(source, /\.disable\(id\)/, 'the page must disable an installed extension through the Remote')
+  assert.match(source, /'Installing…'/, 'an install in flight must be visible, not a silent click')
+  // Two durable sources describe "disabled": the lifecycle the Remote changes and
+  // Config.disabledExtensions, which the restore filter re-checks. Every
+  // enable/disable must dual-write the list or a restart undoes the user's choice.
+  assert.match(source, /form\.set\('disabledExtensions', nextList\)/,
+    'the ready state must dual-write disabledExtensions after enable/disable')
+  assert.match(source, /refused the disabledExtensions update/,
+    'a refused dual-write must be surfaced as a non-fatal note')
+  assert.match(source, /config list still names this extension/,
+    'an active-but-listed extension must warn that a restart will disable it')
+  assert.match(source, /config list does not name this extension/,
+    'an inactive-but-unlisted extension must warn that a restart may restore it')
+  // Fallback flow: no Remote -> the disabledExtensions preference, and a note
+  // that says exactly what the switch can and cannot do.
+  assert.match(source, /kind: 'absent'/, 'the page must keep the absent-Remote fallback branch')
+  assert.match(source, /extension controls are not available/, 'the fallback must say the Remote is unavailable')
+  assert.match(source, /disabledExtensions preference/, 'the fallback must say the switch only records a preference')
+  // Only react may be requested from the lazy-CJS module table; the wire chunk
+  // travels through require.async, not require().
+  assert.ok(source.includes("require('react')"))
+  assert.equal((source.match(/require\(/g) ?? []).length, 1, 'the client half must request only "react"')
+  assert.match(source, /require\.async\(/, 'the wire chunk must load through require.async')
+})
+
+test('the generated client helpers map both Remote result shapes to the rows the page draws', async () => {
+  const exports = loadGeneratedClient()
+  const modelToolsRemote = clientHelper(exports, 'modelToolsRemote')
+  const extensionInstallMethod = clientHelper(exports, 'extensionInstallMethod')
+  const remoteErrorText = clientHelper(exports, 'remoteErrorText')
+  const unwrapRemoteResult = clientHelper(exports, 'unwrapRemoteResult')
+  const normalizeDescribe = clientHelper(exports, 'normalizeDescribe')
+  const describeExtensions = clientHelper(exports, 'describeExtensions')
+  const findExtensionState = clientHelper(exports, 'findExtensionState')
+  const nextDisabledExtensions = clientHelper(exports, 'nextDisabledExtensions')
+
+  const namespace = {
+    describe: async () => ({ ok: true, value: { store: 'C:/store', writable: true, extensions: [] } }),
+  }
+  // Remote absent: no chunk status, no service, or a context that throws.
+  assert.equal(modelToolsRemote(contextWith(undefined), null), null)
+  assert.equal(modelToolsRemote(contextWith({}), null), null)
+  assert.equal(modelToolsRemote({ get: () => { throw new Error('not mounted') } }, null), null)
+  // The wire chunk's mount status is the primary route.
+  assert.equal(modelToolsRemote(contextWith(undefined), { remote: { modelTools: namespace } }), namespace)
+  assert.equal(modelToolsRemote(contextWith(undefined), { modelTools: namespace }), namespace)
+  // The namespace service itself is the second route (readable without inject).
+  assert.equal(modelToolsRemote({ get: name => name === 'remote.modelTools' ? namespace : undefined }, null), namespace)
+  // The associated `remote` service is the last route.
+  assert.equal(modelToolsRemote(contextWith({ modelTools: namespace }), null), namespace)
+  // An associated namespace can throw on an undeclared `remote`; the direct
+  // service route must still win rather than taking the page down.
+  const directWins = {
+    get(name: string) {
+      if (name === 'remote.modelTools') return namespace
+      throw new Error('cannot get property "remote.modelTools" without inject')
+    },
+  }
+  assert.equal(modelToolsRemote(directWins, null), namespace)
+
+  // The install verb is installExtension on the wire; the raw `install` is
+  // tolerated only as a fallback, because the harness gateway refuses it.
+  const wireInstall = async () => 'installExtension'
+  const hostInstall = async () => 'install'
+  assert.equal(extensionInstallMethod({ installExtension: wireInstall, install: hostInstall }), wireInstall)
+  assert.equal(extensionInstallMethod({ install: hostInstall }), hostInstall)
+  assert.equal(extensionInstallMethod({}), null)
+  assert.equal(extensionInstallMethod(null), null)
+
+  // A generated Typert method resolves a RemoteResult; the host service resolves
+  // the raw value. Both must reach the page as the value, and a refusal must
+  // surface the host's own message.
+  assert.deepEqual(unwrapRemoteResult({ ok: true, value: { model: 'laya' } }), { model: 'laya' })
+  assert.deepEqual(unwrapRemoteResult({ model: 'laya' }), { model: 'laya' })
+  assert.throws(
+    () => unwrapRemoteResult({ ok: false, error: { code: 'no-store', message: 'No extension store configured.' } }),
+    /No extension store configured/,
+  )
+  assert.throws(() => unwrapRemoteResult({ ok: false }), /did not explain/)
+  assert.equal(remoteErrorText(new Error('boom')), 'boom')
+  assert.equal(remoteErrorText('plain text'), 'plain text')
+
+  // describe() narrowing is strict about the list and drops unnamed rows.
+  assert.deepEqual(
+    normalizeDescribe({ store: null, writable: false, extensions: [{ id: 'a' }, null, { package: 'b' }] }),
+    { store: null, writable: false, extensions: [{ id: 'a' }] },
+  )
+  assert.throws(() => normalizeDescribe(null), /no extension state/)
+  assert.throws(() => normalizeDescribe({ store: null }), /without its extension list/)
+  assert.deepEqual(await describeExtensions(namespace), { store: 'C:/store', writable: true, extensions: [] })
+
+  // Row matching: a host may key its row by the extension id or the package name.
+  const state = { id: '@try-works/extension-laya', package: '@try-works/extension-laya', installed: true }
+  assert.equal(findExtensionState({ id: '@try-works/extension-laya', package: 'x' }, [state]), state)
+  assert.equal(findExtensionState({ id: 'x', package: '@try-works/extension-laya' }, [state]), state)
+  assert.equal(findExtensionState({ id: 'x', package: 'y' }, [state]), null)
+
+  // The dual-write list: enable removes the id, disable adds it, both sorted and
+  // tolerant of a malformed saved value (a config edit can put anything there).
+  assert.deepEqual(nextDisabledExtensions(['b', 'a'], 'a', 'enable'), ['b'])
+  assert.deepEqual(nextDisabledExtensions(['b'], 'a', 'disable'), ['a', 'b'])
+  assert.deepEqual(nextDisabledExtensions(undefined, 'a', 'disable'), ['a'])
+  assert.deepEqual(nextDisabledExtensions([null, 7, 'b'], 'a', 'disable'), ['a', 'b'])
+  assert.deepEqual(nextDisabledExtensions(['a'], 'a', 'enable'), [])
 })
 
 test('the Settings-editable fields are marked volatile so the host exposes them', async (t) => {

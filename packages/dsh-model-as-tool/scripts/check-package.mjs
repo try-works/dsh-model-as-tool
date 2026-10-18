@@ -85,6 +85,31 @@ if (client !== undefined) {
       note(source.includes('"name": "Laya"'), 'the generated extensions must list the Laya extension')
       note(source.includes('"name": "Needle 3"'), 'the generated extensions must list the Needle extension')
       note(/mtt-toggle/.test(source), 'the client half must render model toggles')
+      // The extension card ships two honest flows: the host Remote (read state,
+      // install when absent, enable/disable when installed) and the config-only
+      // disabledExtensions fallback for a host that does not mount it. A build
+      // that loses either one ships a page that lies about extension state.
+      note(/\.modelTools\b/.test(source),
+        'the client half must read the extension state through the modelTools Remote')
+      note(/kind: 'absent'/.test(source),
+        'the client half must keep its config-only extension fallback')
+      note(/installExtension/.test(source) && /install\.call\(namespace, id, undefined\)/.test(source)
+        && /\.enable\(id\)/.test(source) && /\.disable\(id\)/.test(source),
+        'the client half must call installExtension(id, undefined)/enable(id)/disable(id) through the Remote')
+      // Two sources describe "disabled": the lifecycle the Remote changes and
+      // Config.disabledExtensions, which the restore filter re-checks. Losing
+      // either half of the dual-write lets a restart undo the operator's choice.
+      note(/form\.set\('disabledExtensions', nextList\)/.test(source),
+        'the client half must dual-write disabledExtensions after a Remote enable/disable')
+      note(source.includes('refused the disabledExtensions update'),
+        'the client half must surface a refused dual-write as a non-fatal note')
+      note(source.includes('config list still names this extension')
+        && source.includes('config list does not name this extension'),
+        'the client half must warn when the config list disagrees with the effective extension state')
+      note(source.includes('./client.model-tools.js'),
+        'the client half must attempt the optional extension Remote chunk (client.model-tools.js)')
+      note(source.includes("require('react')") && (source.match(/require\(/g) ?? []).length === 1,
+        'the client half must request only "react" from the lazy-CJS module table')
     }
     note((manifest.files ?? []).includes('client/index.js'),
       'files[] must ship the GENERATED client/index.js (not the template)')

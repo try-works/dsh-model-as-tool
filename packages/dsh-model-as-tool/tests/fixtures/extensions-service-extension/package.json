@@ -1,0 +1,13 @@
+{
+  "name": "@try-works/fixture-ext-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fixture extension for the host extension-management service tests: one deterministic tool, no model, no inference, no network.",
+  "type": "module",
+  "exports": {
+    "./tool-mode": "./lib/index.js"
+  },
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  }
+}

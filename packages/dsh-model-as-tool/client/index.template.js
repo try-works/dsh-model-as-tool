@@ -38,9 +38,11 @@ window.__ModuleLoader__.load({
      * The Tool Mode extensions this repository ships, embedded at build time.
      *
      * Each entry: { id, name, package, version, license, summary, models, tools,
-     * contracts }. These are installed and activated through the extension
-     * store, so the page lists them as provided-but-not-observable here rather
-     * than inventing an installed/uninstalled state.
+     * contracts }. The host's extension store is the authority for
+     * installed/active state, and it is reachable as `ctx.remote.modelTools`
+     * when this client assembly mounts that Remote. When it does not, the page
+     * degrades to the config-only `disabledExtensions` preference and says so:
+     * it never invents an installed state.
      */
     const EXTENSIONS = /*__EXTENSIONS_JSON__*/ []
 
@@ -166,6 +168,18 @@ window.__ModuleLoader__.load({
   color: var(--dsw-alias-label-tertiary);
 }
 .mtt-badge-on { color: var(--dsw-alias-label-primary); border-color: var(--dsw-alias-label-tertiary); }
+.mtt-row-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+.mtt-row-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-state-error-primary, var(--dsw-alias-label-primary));
+}
 .mtt-actions {
   display: flex;
   align-items: center;
@@ -184,6 +198,11 @@ window.__ModuleLoader__.load({
   cursor: pointer;
 }
 .mtt-button:disabled { opacity: 0.5; cursor: default; }
+.mtt-button-small {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+}
 .mtt-status { font-size: 12px; line-height: 18px; color: var(--dsw-alias-label-tertiary); }
 .mtt-status-ok { color: var(--dsw-alias-label-secondary); }
 .mtt-status-error { color: var(--dsw-alias-label-primary); }
@@ -333,12 +352,278 @@ window.__ModuleLoader__.load({
           }, h('span', { className: 'mtt-knob' }))))
     }
 
-    /** One extension row: identity, tools, models and the store-owned state. */
-    function extensionRow(entry, enabled, disabled, onToggle) {
+    /** How an in-flight Install/Enable/Disable is spelled in the card. */
+    const EXTENSION_ACTION_LABELS = { install: 'Installing', enable: 'Enabling', disable: 'Disabling' }
+
+    // The extension Remote is a package-local lazy chunk (`client.model-tools.js`)
+    // mounted by the wire half: it installs the generated Typert namespace on
+    // ctx.remote as `modelTools`. It is optional on purpose — a host without the
+    // Remote leaves the page on its config-only fallback.
+    const REMOTE_CHUNK = './client.model-tools.js'
+
+    // The namespace may arrive a moment after the page mounts (the chunk is
+    // fetched, then the Remote contribution mounts). The first read retries
+    // briefly, and the slot subscription below re-reads whenever the chunk's
+    // mount settles, so a slow mount upgrades the card instead of stranding it.
+    const REMOTE_RETRY_ATTEMPTS = 3
+    const REMOTE_RETRY_DELAY_MS = 400
+
+    /**
+     * A tiny observable for the optional Remote mount.
+     *
+     * `apply()` cannot await the chunk before registering the Settings section:
+     * on a host without the Remote the page must still render. So the mount runs
+     * in the background and publishes its status here; the card subscribes and
+     * re-reads when it changes.
+     */
+    function createRemoteSlot() {
+      const listeners = new Set()
+      let status = null
+      return {
+        get: () => status,
+        set: next => {
+          if (next === status) return
+          status = next
+          for (const listener of [...listeners]) {
+            try {
+              listener()
+            } catch (error) {
+              // A broken listener must not abort the mount or another listener.
+            }
+          }
+        },
+        subscribe: listener => {
+          listeners.add(listener)
+          return () => { listeners.delete(listener) }
+        },
+      }
+    }
+
+    /** Warn without letting a logger failure blank the page. */
+    function warnClient(ctx, message) {
+      try {
+        if (ctx.logger && typeof ctx.logger.warn === 'function') ctx.logger.warn(message)
+        else if (typeof console !== 'undefined' && typeof console.warn === 'function') console.warn(message)
+      } catch (error) {
+        // A warning is diagnostics, never control flow.
+      }
+    }
+
+    /**
+     * Load the wire chunk and mount the optional `modelTools` namespace.
+     *
+     * Never throws into `apply`: a missing chunk (older host), a chunk that fails
+     * to mount, or a host without `remote` all leave the slot unset, which is the
+     * config-only fallback. The disposer is registered through ctx.effect so the
+     * namespace unmounts with this plugin.
+     */
+    function mountExtensionRemote(ctx, slot) {
+      const load = async () => {
+        if (typeof require.async !== 'function') return
+        const chunk = await require.async(REMOTE_CHUNK)
+        if (chunk === null || chunk === undefined || typeof chunk.mount !== 'function') {
+          throw new Error('the extension Remote chunk exposes no mount()')
+        }
+        const mounted = await chunk.mount(ctx)
+        if (mounted === null || mounted === undefined) return
+        if (typeof mounted.dispose === 'function') {
+          ctx.effect(() => () => mounted.dispose(), 'model-tools: extension Remote')
+        }
+        slot.set(mounted)
+      }
+      load().catch(error => warnClient(ctx, 'model-tools: extension Remote unavailable: '
+        + ((error && error.message) || String(error))))
+    }
+
+    /**
+     * The extension Remote, when this client has one.
+     *
+     * The generated namespace is registered as the context service
+     * `remote.modelTools`, so a direct service read is tried FIRST: the `remote`
+     * service's associated-property lookup would resolve against this plugin's
+     * own fiber and throw without an `inject`, while `ctx.get('remote.modelTools')`
+     * reads the provided service without that requirement. The mount status is
+     * still tried as a fallback (a future chunk could hand back the namespace
+     * directly), and the associated `remote.modelTools` property is the last
+     * route for an assembly that provides it that way. Every route is guarded so
+     * absence is a value, not an exception.
+     *
+     * @param ctx - the client plugin context.
+     * @param remoteStatus - the mounted status published by the wire chunk, or null.
+     * @returns the namespace surface, or null when it is not available.
+     */
+    function modelToolsRemote(ctx, remoteStatus) {
+      const usable = namespace => namespace !== null && namespace !== undefined
+        && typeof namespace.describe === 'function'
+      const routes = [() => ctx.get('remote.modelTools')]
+      if (remoteStatus !== null && remoteStatus !== undefined) {
+        routes.push(() => remoteStatus.remote.modelTools)
+        routes.push(() => remoteStatus.modelTools)
+      }
+      routes.push(() => {
+        const remote = ctx.get('remote')
+        return remote === null || remote === undefined ? null : remote.modelTools
+      })
+      for (const route of routes) {
+        try {
+          const namespace = route()
+          if (usable(namespace)) return namespace
+        } catch (error) {
+          // Try the next route: an undeclared associated namespace throws.
+        }
+      }
+      return null
+    }
+
+    /**
+     * The install operation on the wire namespace.
+     *
+     * The verb is `installExtension`, not `install`: the harness gateway's
+     * RemoteNamespaceService owns a private `install`, and a colliding descriptor
+     * is refused at mount. The host-side service keeps the raw name `install`;
+     * this helper tolerates either spelling so a wire rename cannot blank the UI.
+     *
+     * @param namespace - the modelTools namespace.
+     * @returns the method to call, or null when the host exposes neither.
+     */
+    function extensionInstallMethod(namespace) {
+      if (namespace === null || namespace === undefined) return null
+      if (typeof namespace.installExtension === 'function') return namespace.installExtension
+      if (typeof namespace.install === 'function') return namespace.install
+      return null
+    }
+
+    /**
+     * The host's error text, without inventing one.
+     *
+     * @param error - a RemoteResult error, an Error, or a string.
+     * @returns the message to show; never empty.
+     */
+    function remoteErrorText(error) {
+      if (typeof error === 'string' && error.length > 0) return error
+      if (error !== null && typeof error === 'object'
+        && typeof error.message === 'string' && error.message.length > 0) return error.message
+      return 'The host did not explain the failure.'
+    }
+
+    /**
+     * Read a generated Remote method's answer.
+     *
+     * A generated Typert Remote method resolves a RemoteResult
+     * (`{ ok: true, value }` / `{ ok: false, error }`); the host service itself
+     * resolves the plain value. Both shapes are accepted so a hand-authored wire
+     * artifact and a generated one behave the same here, and a refusal becomes a
+     * thrown error carrying the host's own message.
+     *
+     * @param result - the method's resolved value.
+     * @returns the value.
+     */
+    function unwrapRemoteResult(result) {
+      if (result !== null && typeof result === 'object' && typeof result.ok === 'boolean') {
+        if (result.ok !== true) throw new Error(remoteErrorText(result.error))
+        return result.value
+      }
+      return result
+    }
+
+    /**
+     * Narrow an ExtensionsDescribeResult. A malformed answer is an error, not an
+     * empty list: rendering "not installed" from a broken state read would be a
+     * guess, and a guess about installed state is exactly what this page must not
+     * make.
+     *
+     * @param value - the value describe() resolved.
+     * @returns { store, writable, extensions }.
+     */
+    function normalizeDescribe(value) {
+      if (value === null || typeof value !== 'object') {
+        throw new Error('The host returned no extension state.')
+      }
+      if (!Array.isArray(value.extensions)) {
+        throw new Error('The host returned an extension state without its extension list.')
+      }
+      const extensions = value.extensions.filter(row => row !== null && typeof row === 'object'
+        && typeof row.id === 'string' && row.id.length > 0)
+      return {
+        store: typeof value.store === 'string' && value.store.length > 0 ? value.store : null,
+        writable: value.writable === true,
+        extensions,
+      }
+    }
+
+    /** Read one extension state snapshot, unwrapping the Remote result. */
+    async function describeExtensions(namespace) {
+      return normalizeDescribe(unwrapRemoteResult(await namespace.describe()))
+    }
+
+    /**
+     * Find one shipped extension in a describe() snapshot. The host may key a row
+     * by the extension id or by its package name, so both are compared.
+     *
+     * @param extension - the generated EXTENSIONS entry.
+     * @param states - the describe() rows.
+     * @returns the matching state, or null when the host did not report it.
+     */
+    function findExtensionState(extension, states) {
+      for (let index = 0; index < states.length; index += 1) {
+        const state = states[index]
+        if (state.id === extension.id) return state
+        if (typeof extension.package === 'string' && state.id === extension.package) return state
+        if (typeof state.package === 'string' && state.package === extension.id) return state
+        if (typeof state.package === 'string' && typeof extension.package === 'string'
+          && state.package === extension.package) return state
+      }
+      return null
+    }
+
+    /**
+     * The Config.disabledExtensions list after one Enable/Disable action.
+     *
+     * Two durable sources describe "disabled": the SDK lifecycle that
+     * enable/disable change, and this config list, which the plugin's restore
+     * filter checks on the next load. The Remote UI writes the lifecycle, so it
+     * must dual-write this list too — otherwise a restart can undo the user's
+     * choice in the other direction (the example that motivated this: Enable
+     * succeeds, the list still names the id, and the next restore re-disables it).
+     *
+     * @param list - the saved disabledExtensions list (any value, tolerated).
+     * @param id - the extension id being enabled/disabled.
+     * @param action - 'enable' removes the id; anything else ('disable') adds it.
+     * @returns the sorted next list, with non-string entries dropped.
+     */
+    function nextDisabledExtensions(list, id, action) {
+      const next = new Set(Array.isArray(list)
+        ? list.filter(entry => typeof entry === 'string' && entry.length > 0)
+        : [])
+      if (action === 'disable') next.add(id)
+      else next.delete(id)
+      return [...next].sort()
+    }
+
+    /** The state badge: installed/active are the host's words, not a guess. */
+    function extensionBadge(state) {
+      if (state === null) return h('span', { className: 'mtt-badge' }, 'not reported')
+      if (state.installed !== true) return h('span', { className: 'mtt-badge' }, 'not installed')
+      return state.active === true
+        ? h('span', { className: 'mtt-badge mtt-badge-on' }, 'active')
+        : h('span', { className: 'mtt-badge' }, 'inactive')
+    }
+
+    /** The parts of one extension row shared by both flows: name, tools, models. */
+    function extensionParts(entry) {
       const parts = []
       if (entry.tools.length > 0) parts.push('tools: ' + entry.tools.join(', '))
       if (entry.contracts.length > 0) parts.push('contracts: ' + entry.contracts.join(', '))
       if (entry.models.length > 0) parts.push('models: ' + entry.models.join(', '))
+      return parts
+    }
+
+    /**
+     * The config-only row: the switch records a `disabledExtensions` preference
+     * and cannot observe or change the store. Used when the Remote is absent.
+     */
+    function extensionFallbackRow(entry, enabled, disabled, onToggle) {
+      const parts = extensionParts(entry)
       return h('div', { className: 'mtt-row', key: entry.id },
         h('div', { className: 'mtt-row-text' },
           h('span', { className: 'mtt-label' },
@@ -362,14 +647,157 @@ window.__ModuleLoader__.load({
           }, h('span', { className: 'mtt-knob' }))))
     }
 
-    function ModelToolsSettings({ form }) {
+    /**
+     * The store-backed row: Install when absent, Enable/Disable when installed.
+     *
+     * Nothing here is optimistic. `state` comes from the last describe(), the
+     * toggle reflects `active` from that snapshot, and a failed action leaves the
+     * host's error text on the row rather than flipping a switch that did not move.
+     *
+     * @param entry - the generated extension entry.
+     * @param state - the describe() row for it, or null when not reported.
+     * @param ui - { writable, canInstall, listed, busy, pending, error, onAction }.
+     */
+    function extensionRemoteRow(entry, state, ui) {
+      const installed = state !== null && state.installed === true
+      const active = installed && state.active === true
+      const pending = ui.pending !== null && ui.pending.id === entry.id ? ui.pending.action : null
+      const parts = extensionParts(entry)
+      if (state !== null && typeof state.version === 'string' && state.version.length > 0) {
+        parts.push('installed v' + state.version)
+      }
+      if (installed && state.disabled === true) parts.push('disabled in config')
+
+      const notes = []
+      if (state === null) {
+        notes.push('The extension store did not report this package. Installing asks the host for it, and any refusal is shown here.')
+      }
+      if (state !== null && typeof state.reason === 'string' && state.reason.length > 0) notes.push(state.reason)
+      if (state !== null && state.integrity === 'changed') {
+        notes.push('The installed content changed since it was recorded; reinstall before enabling it.')
+      }
+      // The store and the config list must agree across a restart. Rendering both
+      // is what lets the operator fix a disagreement with one toggle instead of
+      // discovering it after the next restore.
+      if (installed && active && ui.listed) {
+        notes.push('The config list still names this extension; it will be disabled on restart.')
+      }
+      if (installed && !active && !ui.listed) {
+        notes.push('The config list does not name this extension; it will not block a restore.')
+      }
+      if (!installed && !ui.canInstall) {
+        notes.push('This host exposes extension state but not the install action; install it through the extension store.')
+      }
+      if (ui.error !== null && ui.error.id === entry.id) notes.push(ui.error.text)
+
+      const canInstall = ui.canInstall
+      const control = installed
+        ? h('button', {
+          type: 'button',
+          className: 'mtt-toggle',
+          'data-on': active ? 'true' : 'false',
+          disabled: ui.busy || !ui.writable,
+          'aria-pressed': active,
+          'aria-busy': pending !== null,
+          title: active ? 'Disable this extension' : 'Enable this extension',
+          onClick: () => ui.onAction(entry.id, active ? 'disable' : 'enable'),
+        }, h('span', { className: 'mtt-knob' }))
+        : h('button', {
+          type: 'button',
+          className: 'mtt-button mtt-button-small',
+          disabled: ui.busy || !ui.writable || !canInstall,
+          'aria-busy': pending === 'install',
+          title: !canInstall
+            ? 'This host does not expose the extension install action'
+            : state === null ? 'Ask the host to install this extension' : 'Install this extension',
+          onClick: () => ui.onAction(entry.id, 'install'),
+        }, pending === 'install' ? 'Installing…' : 'Install')
+
+      return h('div', { className: 'mtt-row', key: entry.id },
+        h('div', { className: 'mtt-row-text' },
+          h('span', { className: 'mtt-label' },
+            h('span', { className: 'mtt-name' }, entry.name),
+            extensionBadge(state)),
+          h('p', { className: 'mtt-help' }, entry.summary),
+          h('span', { className: 'mtt-meta' },
+            entry.id,
+            parts.length > 0 ? ' · ' + parts.join(' · ') : '',
+            ' · ',
+            entry.license ?? 'no license'),
+          notes.map((note, index) => h('p', {
+            className: ui.error !== null && ui.error.id === entry.id && index === notes.length - 1
+              ? 'mtt-row-error'
+              : 'mtt-row-note',
+            key: 'note-' + index,
+          }, note))),
+        h('div', { className: 'mtt-control' }, control))
+    }
+
+    function ModelToolsSettings({ form, ctx, remoteSlot }) {
       const [snap, setSnap] = React.useState(() => form.getSnapshot())
       const [draft, setDraft] = React.useState({})
       const [exclude, setExclude] = React.useState(null)
       const [disabledExt, setDisabledExt] = React.useState(null)
       const [status, setStatus] = React.useState(null)
+      // Extension state is the HOST's answer, read from ctx.remote.modelTools.
+      // `kind` is loading | ready | absent | error; it starts loading so the card
+      // never renders a guessed installed/active state before the first read.
+      const [extRemote, setExtRemote] = React.useState({ kind: 'loading' })
+      const [extPending, setExtPending] = React.useState(null)
+      const [extRowError, setExtRowError] = React.useState(null)
+      // Non-fatal: activation succeeded but the config-list dual-write did not.
+      // The action is never rolled back for this; the note tells the operator the
+      // two stores can disagree until the list is saved manually.
+      const [extConfigNote, setExtConfigNote] = React.useState(null)
+
+      /** This mount's namespace status, or null when the wire chunk is absent. */
+      const mounted = () => (remoteSlot === null || remoteSlot === undefined ? null : remoteSlot.get())
 
       React.useEffect(() => form.subscribe(() => setSnap(form.getSnapshot())), [form])
+
+      // Read the extension state on mount. The namespace may arrive after this
+      // page (the wire chunk is fetched first), so an absent namespace is retried
+      // briefly AND the chunk's slot subscription re-reads when the mount settles.
+      // `alive` keeps a late answer from writing into an unmounted page.
+      React.useEffect(() => {
+        let alive = true
+        let timer = null
+        let attempts = 0
+        const adopt = namespace => {
+          describeExtensions(namespace).then(described => {
+            if (alive) setExtRemote({ kind: 'ready', namespace, ...described })
+          }, error => {
+            if (alive) setExtRemote({ kind: 'error', text: remoteErrorText(error) })
+          })
+        }
+        const read = () => {
+          const namespace = modelToolsRemote(ctx, mounted())
+          if (namespace !== null) {
+            adopt(namespace)
+            return
+          }
+          if (attempts >= REMOTE_RETRY_ATTEMPTS) {
+            if (alive) setExtRemote({ kind: 'absent' })
+            return
+          }
+          attempts += 1
+          timer = setTimeout(read, REMOTE_RETRY_DELAY_MS)
+        }
+        read()
+        const unsubscribe = remoteSlot !== null && remoteSlot !== undefined
+          && typeof remoteSlot.subscribe === 'function'
+          ? remoteSlot.subscribe(() => {
+            if (!alive) return
+            const namespace = modelToolsRemote(ctx, mounted())
+            if (namespace !== null) adopt(namespace)
+          })
+          : null
+        return () => {
+          alive = false
+          if (unsubscribe !== null) unsubscribe()
+          if (timer !== null) clearTimeout(timer)
+        }
+      }, [ctx])
 
       if (snap.status === 'unavailable') {
         return h('div', { className: 'mtt-page' },
@@ -445,8 +873,186 @@ window.__ModuleLoader__.load({
         return [...next].sort()
       })
 
+      /**
+       * Best-effort write of Config.disabledExtensions after a lifecycle
+       * enable/disable. Activation is the authority: a refusal here is reported
+       * as a NON-FATAL note and never undoes or hides the activation.
+       *
+       * The list is read from the form's CURRENT snapshot (another tab or the
+       * Save button may have changed it since this render), falling back to the
+       * render's saved value.
+       */
+      const dualWriteDisabledExtensions = async (id, action) => {
+        const snapshot = form.getSnapshot()
+        const snapshotValue = snapshot && snapshot.value !== null && typeof snapshot.value === 'object'
+          ? snapshot.value
+          : {}
+        const saved = Array.isArray(snapshotValue.disabledExtensions)
+          ? snapshotValue.disabledExtensions
+          : savedDisabledExt
+        const nextList = nextDisabledExtensions(saved, id, action)
+        const unchanged = Array.isArray(saved) && nextList.length === saved.length
+          && nextList.every((entry, index) => entry === saved[index])
+        if (unchanged) return
+        const what = action === 'disable' ? 'disabled' : 'enabled'
+        try {
+          const accepted = await form.set('disabledExtensions', nextList)
+          if (accepted === false) {
+            setExtConfigNote('The extension was ' + what + ', but the host refused the disabledExtensions update; '
+              + 'the config list can disagree with the store until it is saved manually.')
+          }
+        } catch (error) {
+          setExtConfigNote('The extension was ' + what + ', but the config list update failed: '
+            + remoteErrorText(error))
+        }
+      }
+
+      /** Read the host state once, after a manual "Try again". */
+      const recheckExtensions = async () => {
+        setExtRowError(null)
+        setExtConfigNote(null)
+        setExtRemote({ kind: 'loading' })
+        const namespace = modelToolsRemote(ctx, mounted())
+        if (namespace === null) {
+          setExtRemote({ kind: 'absent' })
+          return
+        }
+        try {
+          setExtRemote({ kind: 'ready', namespace, ...(await describeExtensions(namespace)) })
+        } catch (error) {
+          setExtRemote({ kind: 'error', text: remoteErrorText(error) })
+        }
+      }
+
+      /**
+       * Run one extension action, then RE-READ the host state.
+       *
+       * The host is the authority: a successful install is not activation, and
+       * enable/disable may be refused for reasons only describe() can explain.
+       * The re-read is what moves the controls; the action result is never
+       * painted as a state change by itself.
+       */
+      const runExtensionAction = async (id, action) => {
+        setExtRowError(null)
+        setExtConfigNote(null)
+        setExtPending({ id, action })
+        try {
+          const namespace = modelToolsRemote(ctx, mounted())
+          if (namespace === null) {
+            setExtRemote({ kind: 'absent' })
+            return
+          }
+          if (action === 'install') {
+            const install = extensionInstallMethod(namespace)
+            if (install === null) throw new Error('This host does not expose the extension install action.')
+            // The wire descriptor is installExtension(id, source): Typert counts
+            // business arguments exactly, and an omitted `source` still occupies
+            // its positional slot. Passing only the id is refused by the gateway
+            // ("expected 2 business argument(s) ... got 1"), so pass undefined to
+            // mean "use the configured first-party source".
+            unwrapRemoteResult(await install.call(namespace, id, undefined))
+          } else if (action === 'enable') {
+            unwrapRemoteResult(await namespace.enable(id))
+            // Dual-write Config.disabledExtensions so a restart cannot re-disable
+            // what the operator just enabled. Best-effort and non-fatal.
+            await dualWriteDisabledExtensions(id, 'enable')
+          } else {
+            unwrapRemoteResult(await namespace.disable(id))
+            await dualWriteDisabledExtensions(id, 'disable')
+          }
+          setExtRemote({ kind: 'ready', namespace, ...(await describeExtensions(namespace)) })
+        } catch (error) {
+          setExtRowError({ id, text: remoteErrorText(error) })
+          // The action may have changed host state before failing. Read it back,
+          // but keep the action's error text if the re-read fails as well.
+          try {
+            const namespace = modelToolsRemote(ctx, mounted())
+            if (namespace !== null) {
+              setExtRemote({ kind: 'ready', namespace, ...(await describeExtensions(namespace)) })
+            }
+          } catch (readError) {
+            // The row keeps the host's action error; the state stays the last
+            // snapshot describe() gave us, which is still the last known truth.
+          }
+        } finally {
+          setExtPending(null)
+        }
+      }
+
       const runnable = CATALOG.filter(entry => entry.runnable === true)
       const unavailable = CATALOG.filter(entry => entry.runnable !== true)
+
+      const extPendingEntry = extPending === null
+        ? null
+        : EXTENSIONS.find(entry => entry.id === extPending.id) ?? { name: extPending.id }
+      const extPendingText = extPending === null
+        ? null
+        : (EXTENSION_ACTION_LABELS[extPending.action] ?? 'Working on') + ' ' + extPendingEntry.name + '…'
+      const extWritable = extRemote.kind === 'ready' && extRemote.writable === true
+      const extBusy = extPending !== null
+
+      let extensionCard
+      if (extRemote.kind === 'ready') {
+        const notes = []
+        if (extRemote.store === null) {
+          notes.push('No extension store is configured on this host (extensionStore), so an extension cannot be installed or activated here.')
+        } else if (!extRemote.writable) {
+          notes.push('The host reports its extension store as read-only right now; the extension controls are disabled.')
+        }
+        const canInstall = extensionInstallMethod(extRemote.namespace) !== null
+        extensionCard = h('div', { className: 'mtt-card' },
+          h('p', { className: 'mtt-help' },
+            'Tool Mode extensions shipped with this plugin. The host\'s extension store is the authority: '
+            + 'Install copies a package into the store, then the switch activates it. Installation is not activation.'),
+          notes.map((note, index) => h('p', { className: 'mtt-row-note', key: 'store-note-' + index }, note)),
+          extPendingText === null ? null : h('p', { className: 'mtt-status' }, extPendingText),
+          extConfigNote === null ? null : h('p', { className: 'mtt-row-note' }, extConfigNote),
+          EXTENSIONS.map(entry => extensionRemoteRow(
+            entry,
+            findExtensionState(entry, extRemote.extensions),
+            {
+              writable: extWritable,
+              canInstall,
+              // The SAVED config list, not the fallback draft: the row describes
+              // what a restart will actually read, and the dual-write compares
+              // against the same saved value.
+              listed: savedDisabledExt.includes(entry.id),
+              busy: extBusy,
+              pending: extPending,
+              error: extRowError,
+              onAction: runExtensionAction,
+            })))
+      } else if (extRemote.kind === 'error') {
+        extensionCard = h('div', { className: 'mtt-card' },
+          h('p', { className: 'mtt-help' },
+            'The host exposes extension controls, but reading their state failed.'),
+          h('p', { className: 'mtt-row-error' }, extRemote.text),
+          h('div', { className: 'mtt-actions' },
+            h('button', {
+              type: 'button',
+              className: 'mtt-button mtt-button-small',
+              onClick: recheckExtensions,
+            }, 'Try again')))
+      } else if (extRemote.kind === 'absent') {
+        extensionCard = h('div', { className: 'mtt-card' },
+          h('p', { className: 'mtt-help' },
+            'Tool Mode extensions shipped with this plugin. The host\'s extension controls are not available to '
+            + 'this page (an older host build, or the extension Remote is not mounted), so this page cannot install, '
+            + 'verify, or observe them.'),
+          h('p', { className: 'mtt-row-note' },
+            'The switches below only record a disabledExtensions preference for the next load: they neither install '
+            + 'nor verify the package.'),
+          EXTENSIONS.map(entry => extensionFallbackRow(entry, isExtensionEnabled(entry.id), disabled, toggleExtension)),
+          h('div', { className: 'mtt-actions' },
+            h('button', {
+              type: 'button',
+              className: 'mtt-button mtt-button-small',
+              onClick: recheckExtensions,
+            }, 'Recheck')))
+      } else {
+        extensionCard = h('div', { className: 'mtt-card' },
+          h('p', { className: 'mtt-help' }, 'Reading the extension state from the host…'))
+      }
 
       return h('div', { className: 'mtt-page' },
         h('style', null, CSS),
@@ -460,11 +1066,7 @@ window.__ModuleLoader__.load({
             + 'Unavailable models are listed with the reason they cannot run here.'),
           runnable.map(entry => modelRow(entry, isEnabled(entry.id), disabled, toggleModel)),
           unavailable.map(entry => modelRow(entry, false, disabled, toggleModel))),
-        EXTENSIONS.length === 0 ? null : h('div', { className: 'mtt-card' },
-          h('p', { className: 'mtt-help' },
-            'Tool Mode extensions shipped with this plugin. They register their tools when the extension store '
-            + 'installs and activates them; this page cannot observe that state.'),
-          EXTENSIONS.map(entry => extensionRow(entry, isExtensionEnabled(entry.id), disabled, toggleExtension))),
+        EXTENSIONS.length === 0 ? null : extensionCard,
         h('div', { className: 'mtt-card' }, FIELDS.map(field => fieldRow(field, value, draft, edit, disabled))),
         h('div', { className: 'mtt-actions' },
           h('button', {
@@ -481,6 +1083,13 @@ window.__ModuleLoader__.load({
     }
 
     function apply(ctx) {
+      // The extension Remote is optional. Mount it in the BACKGROUND (never await
+      // it before registering this section): on a host without it the page must
+      // still render its config-only fallback. The slot's subscription upgrades
+      // the card when the mount settles.
+      const remoteSlot = createRemoteSlot()
+      mountExtensionRemote(ctx, remoteSlot)
+
       const forms = NAMESPACES.map(namespace => ctx.configForms.get(namespace))
       const served = () => forms.find(candidate => {
         const snap = candidate.getSnapshot()
@@ -502,13 +1111,32 @@ window.__ModuleLoader__.load({
         // After the shipped sections (general 0, models 10, plugins 15, agent-presets 20).
         order: 65,
         label: 'Model as Tool',
-      }, () => h(ModelToolsSettings, { form }))))
+      }, () => h(ModelToolsSettings, { form, ctx, remoteSlot }))))
     }
 
     exports.name = 'model-tools'
+    // 'remote' is deliberately NOT injected: the mount above is optional and
+    // reaches the namespace through a guarded context read, so a host that does
+    // not mount it can only fall back to the config-only switches. A required
+    // 'remote' / 'remote.modelTools' would park this Settings page instead.
     exports.inject = ['slots', 'configForms']
     exports.apply = apply
-    exports.__internals = { NAMESPACES, FIELDS, CATALOG, fieldValue, fieldPatch }
+    exports.__internals = {
+      NAMESPACES,
+      FIELDS,
+      CATALOG,
+      fieldValue,
+      fieldPatch,
+      createRemoteSlot,
+      modelToolsRemote,
+      extensionInstallMethod,
+      remoteErrorText,
+      unwrapRemoteResult,
+      normalizeDescribe,
+      describeExtensions,
+      findExtensionState,
+      nextDisabledExtensions,
+    }
     return module.exports
   },
 })

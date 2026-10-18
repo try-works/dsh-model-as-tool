@@ -72,6 +72,20 @@ const PEERS = {
   '@deepseek-ai/dsh-timeout': 'packages/util/timeout',
   '@deepseek-ai/dsh-user-approval': 'packages/interaction/user-approval',
   '@deepseek-ai/dsh-sandbox-policy': 'packages/sandbox/sandbox-policy',
+  /**
+   * Typert/Gateway peers for the `modelTools` Remote artifact tests.
+   *
+   * The host artifact is validated by the shipping `typert-loader`, the client
+   * artifact by the shipping `typert-registry` client face, and the mount test
+   * composes the shipping `api-gateway` client face over a fake Connection
+   * carrier (`deque` is its runtime dependency). The tests must exercise the
+   * real validators, not a local restatement of them.
+   */
+  '@deepseek-ai/dsh-typert-protocol': 'packages/typert/protocol',
+  '@deepseek-ai/dsh-typert-registry': 'packages/typert/registry',
+  '@deepseek-ai/dsh-typert-loader': 'packages/typert/loader',
+  '@deepseek-ai/dsh-api-gateway': 'packages/api/gateway',
+  '@deepseek-ai/dsh-deque': 'packages/util/deque',
 }
 
 /**

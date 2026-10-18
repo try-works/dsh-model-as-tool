@@ -93,6 +93,8 @@ import {
 } from './state.ts'
 import type { ModelCatalogEntry } from './types.ts'
 import { runLegacyStartupMigration } from './legacy-migration.ts'
+import { createExtensionsService } from './extensions-service.ts'
+import { provideModelToolsService } from './extensions-remote.ts'
 
 export const name = 'model-tools'
 export const inject = ['tools']
@@ -207,6 +209,21 @@ export interface Config {
    * absent directory is a deployment that has no extensions, not one that forbade them.
    */
   extensionStore?: string
+  /**
+   * Directory that holds first-party extension PACKAGE checkouts, one directory per
+   * package, for the Settings → Model as Tool install path.
+   *
+   * A package lives in the directory named by its final identity segment: a package
+   * `@try-works/extension-laya` is installed from
+   * `<extensionSourceDir>/extension-laya`. Left empty, no first-party source is
+   * advertised and `describe()` reports `sourceDir: null`; an install then needs an
+   * explicit source directory.
+   *
+   * This is DEVELOPER MODE (EXT-06): the directory is only ever used when
+   * `extensions.allowSourceDirectories` explicitly allows it, the installer copies
+   * the tree rather than linking it, and the installation lands INACTIVE.
+   */
+  extensionSourceDir?: string
   /** INTERNAL TEST SEAM: the acquisition source extensions-prepare uses instead
    * of the ranged HTTP source. A suite injects a local file source so the
    * acquisition path is exercised with ZERO network; a deployment never sets
@@ -402,6 +419,11 @@ export const Config: z<Config> = z.object({
   playbookFile: z.string(),
   stateFile: z.string(),
   credentialsFile: z.string(),
+  /**
+   * Where first-party extension package checkouts live (developer-mode installs).
+   * Empty by default: a deployment with no first-party source advertises none.
+   */
+  extensionSourceDir: z.string().default(''),
   persist: z.boolean().default(true),
   providers: z.dict(z.string()).default({}),
   legacyAliases: z.boolean().default(false),
@@ -666,6 +688,30 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
    * install loop; the extension-store block assigns it.
    */
   let extensionLifecycle: ExtensionLifecycle | undefined
+
+  /**
+   * The host half of Settings → Model as Tool's extension management.
+   *
+   * Constructed even when no extension store is configured, so `describe()` can
+   * truthfully answer `store: null` instead of the surface being absent. The
+   * lifecycle thunk resolves once the extension-store block below mounts it; the
+   * disabled getter reads the live (volatile) config list, so a Settings save is
+   * observed without reconstructing the service.
+   *
+   * `provideModelToolsService` attaches the gateway's visible `typertRemote`
+   * binding and provides the object as the `modelTools` Cordis service, which is
+   * what the generated Host artifact dispatches through. It throws at apply time
+   * if a wire method is missing, so a half-wired surface cannot start.
+   */
+  const extensionsService = createExtensionsService({
+    storeDir: config.extensionStore ?? '',
+    sourceDir: config.extensionSourceDir ?? '',
+    allowSourceDirectories: config.extensions?.allowSourceDirectories === true,
+    profile: 'default',
+    disabledExtensions: () => config.disabledExtensions ?? [],
+    lifecycle: () => extensionLifecycle,
+  })
+  provideModelToolsService(ctx, extensionsService)
 
   /**
    * P26-09/MCP-07 (task-65 + task-73): the host-side catalog subscription
