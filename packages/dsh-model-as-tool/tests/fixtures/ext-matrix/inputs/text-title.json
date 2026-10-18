@@ -1,0 +1,4 @@
+{
+  "text": "Deployment pipelines run automated tests, build container images, and promote releases through staging and production. The 2024 migration moved 12 services to the new cluster without downtime, and the team documented each rollback step so on-call engineers could recover quickly.",
+  "kind": "document"
+}

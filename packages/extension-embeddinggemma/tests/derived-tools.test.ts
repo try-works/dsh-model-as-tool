@@ -12,7 +12,7 @@ import { classifySelection } from '../src/vectors.ts'
 function context() {
   return {
     extensionId: '@try-works/extension-embeddinggemma',
-    extensionVersion: '0.1.0',
+    extensionVersion: '0.1.1',
     activationGeneration: 1,
     storage: { directory: '', async read() { return undefined }, async write() { /* no-op */ } },
     logger: { log: () => { /* silent */ } },

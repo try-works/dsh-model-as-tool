@@ -1,0 +1,19 @@
+{
+  "query": {
+    "id": "moments-query",
+    "parts": [
+      {
+        "kind": "text",
+        "text": "The deployment plan was reviewed by the team."
+      }
+    ]
+  },
+  "media": {
+    "kind": "audio",
+    "path": "./assets/tone-2s-16k-mono.wav"
+  },
+  "windowSeconds": 1,
+  "strideSeconds": 1,
+  "top_k": 2,
+  "dimensions": 768
+}

@@ -211,11 +211,53 @@ The namespace exposes `describe`, `installExtension`, `enable`, `disable`, and
   After a successful prepare, re-read `describe()`: a row that previously
   reported `failed` now says the store records no remaining preparation blocker,
   and the next `enable` activates it.
+- **Laya assets are a MANUAL export, not a download.** `extension-laya`'s
+  `models.lock.json` deliberately records each asset's `source` as prose ("the
+  split export of the pinned checkpoint"): the six ONNX artifacts are produced by
+  the upstream export, so the host has no URL to transfer. `prepare` for laya
+  REFUSES before any transfer with
+  `[ASSET_SOURCE_UNAVAILABLE] the asset lock declares no download URL for
+  text-backbone/laya-encoder-onnx: its source is "the split export of the pinned
+  checkpoint"; the artifacts must be produced by the documented export and placed
+  in the prepared-assets cache`, and the `assets` requirement reports
+  `action: "none"` (the page does not offer Prepare).
+  Produce the artifacts at the pinned revision with the upstream script recorded
+  in the lock's `conversion` section
+  (`https://github.com/NandhaKishorM/laya/blob/c73908d96ff73c0062c340a11bf7c54ec7d8bc4d/scripts/export_onnx.py`,
+  checkpoint revision `7b928d828b7b0e022f929d9bd2e44165aa270148`), then place
+  each file's bytes in the content-addressed prepared-assets cache as a blob
+  named by its digest: `<asset-cache>/<DIGEST>` (lower-case SHA-256, no
+  extension). `<asset-cache>` is the `asset-cache` directory beside the plugin's
+  `stateFile` — by default `~/.dsh/model-as-tool/asset-cache`. A cached blob is a
+  legitimate source: `prepare` still verifies its digest before recording
+  readiness, so pre-seeded bytes are verified, never trusted. The six pinned
+  artifacts (all under group roots `text-backbone`, `decision-head`,
+  `tokenizer-config`):
+
+  | asset id | file | bytes | SHA-256 |
+  | --- | --- | --- | --- |
+  | laya-encoder-onnx | encoder.onnx | 2,451,566 | `A774C5C634B99D1A4CED21ACBF11B9617A5CD55C7C7957BD52480B17D95A97F4` |
+  | laya-encoder-onnx-data | encoder.onnx.data | 1,227,816,960 | `F1E49A027352064D72831863456BE6160748854296BFF8332DF14130DBF79834` |
+  | laya-head-onnx | head.onnx | 245,312 | `7F6B9AC15D5FDF9EEBB352E66BDD3CE799D32885F1446014D268D8C53207858B` |
+  | laya-head-onnx-data | head.onnx.data | 59,899,904 | `0292A4EB478C2C3EC0B6555B4A4093BC802E965654D7AEB4AC22907A17F261D3` |
+  | laya-tokenizer | tokenizer.json | 34,363,188 | `609D8F4C067CD3950F88594C5A802616CEA245823836EF5848EE4FC40AAB5B6F` |
+  | laya-rl-agent-config | rl_agent_config.json | 472 | `25061739243B617AD88D1219BA6F8A9C86C5881CA28DF024FA2D9B3B2FCC30C6` |
+
+  The full digests are in `packages/extension-laya/models.lock.json`; do not
+  substitute bytes from another revision — the vendored runtime verifies every
+  artifact before loading. Alternatively, a deployment-owned copy of the lock may
+  replace the prose sources with `https://` or `file://` URLs (the `fixture:`-style
+  scheme is reserved for injected acquisition sources); anything with a URI scheme
+  is treated as a transferable location and keeps the ordinary Prepare path.
 - **`describe()` rows carry the preflight `requirements` model.** `requirements`
   lists every prerequisite the host checked (`store`, `source`, `dependencies`,
-  `assets`, `executable`, `harness-model`, `platform`, `integrity`,
+  `runtime`, `assets`, `executable`, `harness-model`, `platform`, `integrity`,
   `activation`) as `{ satisfied, reason, action }`, and `blocked` is the host's
-  verdict that an unmet requirement prevents activation. Unmet entries can exist
+  verdict that an unmet requirement prevents activation. The `runtime` kind (one
+  per row) covers an extension's optional tool-runtime packages: when one cannot
+  be installed beside the extension, the row is blocked for activation (`enable`
+  refuses with `extension-runtime-unavailable`) even though the install itself
+  succeeded — its tools could not load. Unmet entries can exist
   while `blocked` is false (for example unprepared assets on a row that can
   still be installed), so render the unmet entries, not only `blocked`. Both
   fields are ADDITIVE for older hosts: treat an absent `blocked` as false and an

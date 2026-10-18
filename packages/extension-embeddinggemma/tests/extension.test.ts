@@ -65,7 +65,7 @@ function runtimeResolves(): boolean {
 function context(): ExtensionContextV1 {
   return {
     extensionId: '@try-works/extension-embeddinggemma',
-    extensionVersion: '0.1.0',
+    extensionVersion: '0.1.1',
     activationGeneration: 1,
     storage: { directory: '', async read() { return undefined }, async write() { /* no-op */ } },
     logger: { log: () => { /* silent */ } },
@@ -147,7 +147,7 @@ const EMBED_OUTPUT = {
     contractVersion: '1.0.0',
     implementationId: 'embeddinggemma2-onnx',
     extension: '@try-works/extension-embeddinggemma',
-    extensionVersion: '0.1.0',
+    extensionVersion: '0.1.1',
     activationGeneration: 1,
     executionLocation: 'device',
     receiptId: 'receipt-1',
@@ -159,7 +159,7 @@ describe('EXT-13/EXT-14 — the package is discoverable as data, before any of i
   it('declares a manifest whose identity matches the package exactly', () => {
     const discovery = discoverExtension(PACKAGE_DIR)
     assert.equal(discovery.packageName, '@try-works/extension-embeddinggemma')
-    assert.equal(discovery.packageVersion, '0.1.0')
+    assert.equal(discovery.packageVersion, '0.1.1')
     assert.equal(discovery.manifest.id, discovery.packageName)
     assert.equal(discovery.manifest.version, discovery.packageVersion)
     assert.equal(discovery.manifest.runtimeApi, 1)

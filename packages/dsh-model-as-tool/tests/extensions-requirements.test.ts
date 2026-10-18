@@ -49,7 +49,7 @@ const PREPARABLE_MODEL = 'fixture-preparable-model'
 const EXECUTABLE_MODEL = 'fixture-executable-model'
 
 const REQUIREMENT_KINDS: readonly ExtensionRequirementKind[] = [
-  'store', 'source', 'dependencies', 'assets', 'executable', 'harness-model', 'platform', 'integrity', 'activation',
+  'store', 'source', 'dependencies', 'runtime', 'assets', 'executable', 'harness-model', 'platform', 'integrity', 'activation',
 ]
 const REQUIREMENT_ACTIONS: readonly ExtensionRequirementAction[] = ['install', 'prepare', 'enable', 'config', 'none']
 
@@ -129,7 +129,7 @@ function planSurface(storeDir: string): PrepareAssetsSurface {
     assetMapFor() {
       return undefined
     },
-    registry: undefined as never,
+    registry: { cacheDirectory: join(storeDir, 'asset-cache') } as never,
   }
 }
 
@@ -291,6 +291,35 @@ describe('per-kind requirements are truthful and block the right action', () => 
     const error = await rejects(service.enable(PREPARABLE_ID), 'extension-requirement-unmet')
     assert.equal(error.message, dependencies.reason)
     assert.equal(lifecycle.calls.activate, 0)
+  })
+
+  it('reports a PROSE-source lock as action none and refuses prepare with the named code (task-118)', async () => {
+    const fixture = patchedFixture(PREPARABLE_DIR, directory => {
+      const lockPath = join(directory, 'models.lock.json')
+      const lock = JSON.parse(readFileSync(lockPath, 'utf8')) as {
+        assetSets: Record<string, { groups: { id: string; assets: { id: string; source: string }[] }[] }>
+      }
+      for (const set of Object.values(lock.assetSets)) {
+        for (const group of set.groups) {
+          for (const asset of group.assets) asset.source = 'the split export of the pinned checkpoint'
+        }
+      }
+      writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`)
+    })
+    const storeDir = await installInto(fixture)
+    const service = createExtensionsService({ storeDir, prepareSurface: () => planSurface(storeDir) })
+    const row = (await service.describe()).extensions.find(candidate => candidate.id === PREPARABLE_ID)
+    assert.ok(row !== undefined)
+    const assets = kindOf(row, 'assets')
+    assert.equal(assets.satisfied, false)
+    assert.equal(assets.action, 'none', 'the page must not offer Prepare for a lock with no download location')
+    assert.match(assets.reason, /ASSET_SOURCE_UNAVAILABLE/)
+    assert.match(assets.reason, /text-backbone\/fixture-tiny-asset/)
+    assert.match(assets.reason, /documented export/)
+    assert.equal(row.blocked, true)
+    const error = await rejects(service.prepare(PREPARABLE_ID), 'extension-asset-source-unavailable')
+    assert.match(error.message, /ASSET_SOURCE_UNAVAILABLE/)
+    assert.match(error.message, /no download URL/)
   })
 
   it('reports changed integrity with the install action and keeps the INTEGRITY_MISMATCH refusal code', async () => {
@@ -460,7 +489,7 @@ describe('the audit matrix over every first-party extension', () => {
         continue
       }
       // Every row covers the deployment-wide prerequisites.
-      for (const kind of ['store', 'source', 'dependencies', 'platform', 'integrity', 'activation', 'assets', 'executable'] as const) {
+      for (const kind of ['store', 'source', 'dependencies', 'runtime', 'platform', 'integrity', 'activation', 'assets', 'executable'] as const) {
         kindOf(row, kind)
       }
       // Platform-specific model packages declare assets; declarative ones do not.

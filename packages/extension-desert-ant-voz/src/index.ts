@@ -69,6 +69,51 @@ interface VozModule {
   }
 }
 
+/**
+ * Map the native transcription to the DECLARED contract payload
+ * (schemas/stt-transcribe.output.json, TASK-115): `text` + the honest
+ * `coverage` object, with the optional `words` when requested. The native
+ * wordCount/realtimeFactor/wordsTruncated are NOT in the schema and are
+ * dropped.
+ *
+ * COVERAGE FORMULA (documented honestly): the provider exposes per-word time
+ * spans but no audio duration, so
+ * - transcribedSeconds = last word end − first word start (0 with no spans);
+ * - complete = the transcription was not truncated by MAX_WORDS (the ONLY
+ *   truncation signal the provider exposes);
+ * - totalSeconds = null (no duration is available — never fabricated).
+ */
+export function mapTranscription(
+  result: VozResult,
+  includeWords: boolean,
+): Record<string, unknown> {
+  const nativeWords = result.words ?? []
+  const words = includeWords
+    ? nativeWords.slice(0, MAX_WORDS).map(word => ({
+        text: word.text,
+        start: word.start,
+        end: word.end,
+      }))
+    : undefined
+  const truncated = nativeWords.length > MAX_WORDS
+  const first = nativeWords[0]
+  const last = nativeWords[nativeWords.length - 1]
+  const transcribedSeconds = first !== undefined && last !== undefined
+    ? Math.max(0, last.end - first.start)
+    : 0
+  const value: Record<string, unknown> = {
+    text: result.text,
+    coverage: {
+      complete: !truncated,
+      transcribedSeconds,
+      totalSeconds: null,
+      reason: null,
+    },
+  }
+  if (words !== undefined) value['words'] = words
+  return value
+}
+
 /** Throw if the signal has been aborted. */
 function throwIfAborted(signal: AbortSignal): void {
   if (signal.aborted) {
@@ -77,22 +122,38 @@ function throwIfAborted(signal: AbortSignal): void {
 }
 
 /**
- * Resolve the audio path from the input the host supplied.
+ * Read the CONTRACT input's audio path (TASK-120).
  *
- * An extension speaks the vocabulary of the SDK it wraps, and the HOST owns the
- * translation to and from the public contract: it maps `audio.path` to this
- * native `audio_path` on the way in, and the native result back to the contract
- * payload on the way out. Keeping that on the host side is what lets a second
- * implementation of the same contract use entirely different argument names.
- * @param input - the host-supplied native input.
+ * The host validates the caller's input against
+ * schemas/stt-transcribe.input.json — `{audio: {path, ...}}` with
+ * additionalProperties: false — and hands that document to the handler. The
+ * native `audio_path` name this used to read is never present on the wire,
+ * which was the live failure.
+ * @param input - the validated contract input.
  * @returns the caller-supplied path, still unauthorized.
  */
-function audioPathOf(input: Readonly<JsonObject>): string {
-  const value = input.audio_path
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new Error('argument "audio_path" must be a non-empty string')
+export function audioPathOf(input: Readonly<JsonObject>): string {
+  const audio = input.audio
+  const path = audio !== null && typeof audio === 'object'
+    ? (audio as Readonly<JsonObject>)['path']
+    : undefined
+  if (typeof path !== 'string' || path.length === 0) {
+    throw new Error('argument "audio.path" must be a non-empty string')
   }
-  return value
+  return path
+}
+
+/**
+ * Read the contract's `timestamps` selection into the words decision
+ * (TASK-120): 'word' requires the per-word spans, and an implementation that
+ * cannot supply them must ERROR rather than omit them (the schema's rule).
+ */
+export function includeWordsFor(input: Readonly<JsonObject>): boolean {
+  const timestamps = input.timestamps
+  if (timestamps !== undefined && timestamps !== null && timestamps !== 'none' && timestamps !== 'word') {
+    throw new Error(`unsupported "timestamps" value ${JSON.stringify(timestamps)} (the schema allows "none" or "word")`)
+  }
+  return timestamps === 'word'
 }
 
 /** Build the provider for the Voz deployment. */
@@ -168,33 +229,38 @@ function createVozProvider(context: ExtensionContextV1): ModelProviderV1 {
       // and then opening it would leave a check-then-open window a symlink wins.
       const audioPath = invocation.resolvePath(requested)
 
+      /**
+       * TASK-120, the language request: the voz package documents 25 languages
+       * and auto-detects, and exposes NO per-call language parameter. The
+       * published artifacts carry no retrievable code list, so this
+       * implementation cannot verify per-code support — an explicit,
+       * well-formed language request is therefore honored by the model's own
+       * auto-detection (recorded honestly in the README), and the schema's
+       * malformed-code refusals happen before this handler runs. The residual
+       * (no per-code supported set) is documented, never silently invented.
+       */
+      const requestedLanguage = input.language
+      if (requestedLanguage !== undefined && requestedLanguage !== null
+        && (typeof requestedLanguage !== 'string' || requestedLanguage.length < 2)) {
+        throw new Error('"language" must be a BCP-47/ISO 639 code of at least two characters')
+      }
+      const includeWords = includeWordsFor(input)
+
       const voz = await load()
       throwIfAborted(invocation.signal)
 
       const result = await voz.transcribe(audioPath)
       throwIfAborted(invocation.signal)
 
-      // The native result. The host translates it into the contract payload and
-      // validates it there, so an implementation never has to know the contract's
-      // field names — which is exactly what makes a second implementation possible.
-      const value: JsonObject = {
-        text: result.text,
-        wordCount: result.words?.length ?? 0,
+      if (includeWords && (result.words === undefined || result.words.length === 0)) {
+        throw new Error('timestamps "word" was requested but the model produced no word spans; refuse rather than omit')
       }
-      if (typeof result.realtimeFactor === 'number') {
-        value.realtimeFactor = result.realtimeFactor
-      }
-      const wantsWords = input.include_words !== false
-      if (wantsWords) {
-        const words = result.words ?? []
-        value.words = words.slice(0, MAX_WORDS).map(word => ({
-          text: word.text,
-          start: word.start,
-          end: word.end,
-        }))
-        if (words.length > MAX_WORDS) value.wordsTruncated = true
-      }
-      return value
+
+      // The pure contract mapping (TASK-115): the host validates the payload
+      // against schemas/stt-transcribe.output.json with
+      // additionalProperties: false, so the emitted fields are exactly the
+      // declared ones (the formula is documented on mapTranscription).
+      return mapTranscription(result, includeWords) as unknown as JsonObject
     },
 
     async unload(signal) {

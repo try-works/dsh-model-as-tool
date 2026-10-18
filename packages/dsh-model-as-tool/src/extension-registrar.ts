@@ -65,6 +65,22 @@ export interface HostRegistrySurface {
     readonly name: string
     readonly contractId?: string
   }): () => void
+  /**
+   * Register the STANDARD-named contract tool for a MODULE implementation
+   * whose contract the host knows a standard name for (TASK-121).
+   *
+   * A module package that declares ONLY implementations (no `tools[]` — the
+   * MiniLM pair's shape) serves the standard contract directly: the host maps
+   * the contract id to its standard tool name (text.embed -> text_embed) and
+   * registers the tool with the contract's own schemas. Returns a disposer
+   * when it registered, or undefined when the contract is not a standard one
+   * (the declarative branch below then handles it).
+   */
+  registerContractImplementation?(contribution: {
+    readonly extensionId: string
+    readonly contractId: string
+    readonly implementationId: string
+  }): (() => void) | undefined
 }
 
 /** Raised when a contribution cannot be published. */
@@ -168,15 +184,24 @@ export function createContributionRegistrar(options: RegistrarOptions): Contribu
           ownerExtension: contribution.extensionId,
         })
       } else if (contribution.kind === 'implementation' && options.registry.registerDeclarative !== undefined) {
-        // An `implementation` of a MODULE package is not a caller-facing tool: the model
-        // catalogue binds it. An implementation of a DECLARATIVE package, however, IS the
-        // whole package: the host turns its resolved recipe into the caller-facing tool
-        // here (RCP-01), and the returned disposer is tracked like any other handle.
-        dispose = options.registry.registerDeclarative({
+        // TASK-121: a MODULE implementation whose contract has a standard tool
+        // name registers the standard-named contract tool; the hook returns
+        // undefined when the contract is not standard, and the declarative
+        // branch then handles it (RCP-01).
+        const contractRegistration = options.registry.registerContractImplementation?.({
           extensionId: contribution.extensionId,
-          name: contribution.name,
-          ...contribution.contractId === undefined ? {} : { contractId: contribution.contractId },
+          contractId: contribution.contractId ?? '',
+          implementationId: contribution.name,
         })
+        if (contractRegistration !== undefined) {
+          dispose = contractRegistration
+        } else {
+          dispose = options.registry.registerDeclarative({
+            extensionId: contribution.extensionId,
+            name: contribution.name,
+            ...contribution.contractId === undefined ? {} : { contractId: contribution.contractId },
+          })
+        }
       } else {
         dispose = () => {}
       }

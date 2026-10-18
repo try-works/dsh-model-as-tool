@@ -64,6 +64,29 @@ interface TongueDetection {
   readonly candidates?: readonly { readonly language: string; readonly probability: number }[]
 }
 
+/**
+ * Map the native detection to the DECLARED contract payload
+ * (schemas/lang-detect.output.json, TASK-115): language / reliability /
+ * tooCloseToCall / candidates, with the native `isTooCloseToCall` renamed to
+ * the contract's `tooCloseToCall` and nothing else emitted
+ * (additionalProperties: false).
+ */
+export function mapLanguageDetection(
+  detection: TongueDetection,
+  top: number,
+): Record<string, unknown> {
+  const candidates = (detection.candidates ?? []).slice(0, top)
+  return {
+    language: detection.language ?? null,
+    reliability: detection.reliability ?? 'unknown',
+    tooCloseToCall: detection.isTooCloseToCall ?? false,
+    candidates: candidates.map(candidate => ({
+      language: candidate.language,
+      probability: candidate.probability,
+    })),
+  }
+}
+
 /** A loaded Tongue model. */
 interface TongueInstance {
   detect(text: string): TongueDetection
@@ -185,18 +208,10 @@ function createTongueProvider(context: ExtensionContextV1): ModelProviderV1 {
       throwIfAborted(invocation.signal)
 
       const detection = tongue.detect(text)
-      const candidates = (detection.candidates ?? []).slice(0, top)
       // The domain payload only: the host authors the reserved root `meta`
-      // (EXT-17), so nothing here may supply one.
-      return {
-        language: detection.language ?? null,
-        reliability: detection.reliability ?? 'unknown',
-        isTooCloseToCall: detection.isTooCloseToCall ?? false,
-        candidates: candidates.map(candidate => ({
-          language: candidate.language,
-          probability: candidate.probability,
-        })),
-      }
+      // (EXT-17), so nothing here may supply one. The mapping is the pure
+      // mapLanguageDetection — field names are the CONTRACT's.
+      return mapLanguageDetection(detection, top) as unknown as JsonObject
     },
 
     async unload(signal) {

@@ -178,19 +178,20 @@ describe('SEC-06 — the extension opens only the authorized path', () => {
     // The model is absent here, so the call fails AFTER authorization. That
     // ordering is the point: the path must be authorized before anything opens it,
     // and the extension must use the RESOLVED path rather than the raw argument.
+    // TASK-120: the CONTRACT input shape is {audio: {path}}, never audio_path.
     await assert.rejects(
-      provider.invoke({ implementationId: 'voz-default', input: { audio_path: 'recording.wav' }, context: invocation }),
+      provider.invoke({ implementationId: 'voz-default', input: { audio: { path: 'recording.wav' } }, context: invocation }),
     )
     assert.deepEqual(resolved, ['recording.wav'])
   })
 
-  it('refuses a missing or non-string audio_path before authorizing anything', async () => {
+  it('refuses a missing or non-string audio.path before authorizing anything', async () => {
     const { instance } = await activate()
     const provider = await instance.createProvider({ modelId: 'voz', configuration: {} })
     const { context: invocation, resolved } = invocationContext()
     await assert.rejects(
       provider.invoke({ implementationId: 'voz-default', input: {}, context: invocation }),
-      /audio_path/,
+      /audio\.path/,
     )
     // Nothing was authorized, because there was nothing legitimate to authorize.
     assert.deepEqual(resolved, [])

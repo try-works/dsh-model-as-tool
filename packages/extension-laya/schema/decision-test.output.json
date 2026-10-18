@@ -7,7 +7,7 @@
     "decision": { "type": ["string", "null"], "enum": ["yes", "no", null], "description": "The yes/no decision, or null when abstained." },
     "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "EXPLICITLY UNCALIBRATED (DEC-08)." },
     "calibrated": { "const": false },
-    "probabilities": { "type": "object", "additionalProperties": { "type": "number" }, "description": "{yes, no} softmax scores (uncalibrated)." },
+    "probabilities": { "type": "object", "additionalProperties": true, "description": "{yes, no} softmax scores (uncalibrated)." },
     "abstained": { "type": "boolean" },
     "action": {
       "type": "object",

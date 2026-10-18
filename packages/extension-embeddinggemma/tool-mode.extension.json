@@ -1,7 +1,7 @@
 {
   "protocolVersion": "1.1.0",
   "id": "@try-works/extension-embeddinggemma",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "displayName": "EmbeddingGemma 2 multimodal embeddings",
   "description": "Multimodal embedding and retrieval tools over EmbeddingGemma 2 (google/embeddinggemma-2 through a pinned ONNX conversion): multimodal_embed produces 768-, 512-, 256- or 128-dimensional L2-normalized vectors, and semantic_similarity and semantic_rank apply deterministic cosine math over them. This build declares the deployment, its asset groups and its tool contracts and implements the deterministic vector operations; it wires no ONNX session yet, so the tools report needs-preparation instead of pretending to run.",
   "license": "MIT",

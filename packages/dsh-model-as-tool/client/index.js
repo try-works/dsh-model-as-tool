@@ -280,7 +280,7 @@ window.__ModuleLoader__.load({
         "id": "@try-works/extension-embeddinggemma",
         "name": "EmbeddingGemma 2",
         "package": "@try-works/extension-embeddinggemma",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "license": "MIT",
         "summary": "Multimodal embedding and retrieval tools over EmbeddingGemma 2 (google/embeddinggemma-2 through a pinned ONNX conversion): multimodal_embed produces 768-, 51…",
         "models": [
@@ -307,7 +307,7 @@ window.__ModuleLoader__.load({
         "id": "@try-works/extension-laya",
         "name": "Laya",
         "package": "@try-works/extension-laya",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "license": "Apache-2.0",
         "summary": "The Laya decision family (H5): decision_choose (a choice over the caller's options), decision_test (yes/no) and decision_score (an ordinal level) over the pi…",
         "models": [
@@ -358,7 +358,7 @@ window.__ModuleLoader__.load({
         "id": "@try-works/extension-needle",
         "name": "Needle 3",
         "package": "@try-works/extension-needle",
-        "version": "0.1.0",
+        "version": "0.1.2",
         "license": "MIT",
         "summary": "Tool proposal and structured extraction over the pinned Cactus Needle 3 native engine (Cactus-Compute/needle3, windows-x86_64/needle.exe at revision 93e88ede…",
         "models": [

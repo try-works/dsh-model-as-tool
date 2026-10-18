@@ -7,7 +7,7 @@
     "score": { "type": ["string", "null"], "description": "The scored level label, or null when abstained." },
     "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "EXPLICITLY UNCALIBRATED (DEC-08)." },
     "calibrated": { "const": false },
-    "probabilities": { "type": "object", "additionalProperties": { "type": "number" }, "description": "Per-level softmax scores (uncalibrated)." },
+    "probabilities": { "type": "object", "additionalProperties": true, "description": "Per-level softmax scores (uncalibrated)." },
     "abstained": { "type": "boolean" },
     "action": {
       "type": "object",

@@ -20,6 +20,8 @@ export type ExtensionRequirementKind =
   | 'store'
   | 'source'
   | 'dependencies'
+  /** Optional tool-runtime packages (optionalDependencies) the extension's tools load. */
+  | 'runtime'
   | 'assets'
   | 'executable'
   | 'harness-model'

@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "id": "poem-text",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "A red square and a blue circle on a white field."
+        }
+      ]
+    },
+    {
+      "id": "canvas-image",
+      "parts": [
+        {
+          "kind": "image",
+          "path": "./assets/tiny-canvas.png"
+        }
+      ]
+    }
+  ],
+  "purpose": "similarity",
+  "role": "symmetric",
+  "dimensions": 768
+}

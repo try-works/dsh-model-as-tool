@@ -12,7 +12,7 @@
 import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, readFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import {
   digestInstalledContent,
@@ -253,6 +253,16 @@ describe('the real extension-embeddinggemma lock resolves to the disclosed plan 
     }
     cpSync(join(packageDir, 'lib'), join(installPath, 'lib'), { recursive: true })
     cpSync(join(packageDir, 'schema'), join(installPath, 'schema'), { recursive: true })
+    // task-113: the real package declares @huggingface/transformers and
+    // onnxruntime-node as OPTIONAL tool runtimes. This test is about the ASSETS
+    // blocker, so the runtimes are materialized as minimal stubs (the requirement
+    // probes presence + a satisfying version, not the native engine itself).
+    const runtimeStubs: readonly [string, string][] = [['@huggingface/transformers', '3.0.0'], ['onnxruntime-node', '1.20.0']]
+    for (const [name, version] of runtimeStubs) {
+      const runtimeDir = join(installPath, 'node_modules', ...name.split('/'))
+      mkdirSync(runtimeDir, { recursive: true })
+      writeFileSync(join(runtimeDir, 'package.json'), `${JSON.stringify({ name, version })}\n`)
+    }
     const contentDigest = digestInstalledContent(installPath)
     const store = new ExtensionStore(storeDir)
     store.recordInstall({

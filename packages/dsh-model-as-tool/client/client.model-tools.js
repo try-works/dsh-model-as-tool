@@ -232,6 +232,10 @@ window.__ModuleLoader__.load({
                             },
                             {
                               "kind": "literal",
+                              "value": "runtime"
+                            },
+                            {
+                              "kind": "literal",
                               "value": "assets"
                             },
                             {

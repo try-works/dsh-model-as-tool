@@ -1,0 +1,16 @@
+{
+  "text": "Invoice INV-2024-0042 was issued on 3 March 2024 by Northwind Traders to Acme Corporation for 1,250.00 USD, due within 30 days.",
+  "instruction": "Extract the invoice number, the vendor, the customer, the total amount and the currency as a JSON object.",
+  "schema": {
+    "type": "object",
+    "required": ["vendor", "customer", "invoiceNumber", "totalAmount", "currency"],
+    "properties": {
+      "vendor": { "type": "string" },
+      "customer": { "type": "string" },
+      "invoiceNumber": { "type": "string" },
+      "totalAmount": { "type": "number" },
+      "currency": { "type": "string", "enum": ["USD", "EUR", "GBP"] },
+      "dueInDays": { "type": "integer" }
+    }
+  }
+}

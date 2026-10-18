@@ -24,7 +24,7 @@
     "embeddingSpaceId": { "type": "string" },
     "windowsEvaluated": { "type": "integer", "minimum": 1 },
     "sampledFrameTimestampsSeconds": { "type": "array", "items": { "type": "number" } },
-    "processing": { "type": "array", "items": { "type": "object" } },
-    "meta": { "type": "object" }
+    "processing": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "meta": { "type": "object", "additionalProperties": true }
   }
 }

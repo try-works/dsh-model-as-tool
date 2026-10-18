@@ -54,6 +54,7 @@ const EXTENSION_ROW = {
   requirements: [
     { kind: 'store', satisfied: true, reason: 'the extension store is configured and readable', action: 'none' },
     { kind: 'dependencies', satisfied: true, reason: 'all declared runtime dependencies resolve', action: 'none' },
+    { kind: 'runtime', satisfied: true, reason: 'the package declares no optional tool runtime', action: 'none' },
     { kind: 'assets', satisfied: true, reason: 'every deployment is prepared-cold', action: 'none' },
     { kind: 'activation', satisfied: true, reason: 'the extension is active', action: 'none' },
   ],
@@ -291,6 +292,20 @@ describe('modelTools host artifact', () => {
     assert.deepEqual(parseRow(EXTENSION_ROW), EXTENSION_ROW)
     assert.deepEqual(parseRow(SOURCE_ONLY_ROW), SOURCE_ONLY_ROW)
     assert.deepEqual(parseRow(BLOCKED_ROW), BLOCKED_ROW)
+
+    // The additive `runtime` kind (optional tool-runtime packages) is accepted,
+    // both satisfied (in EXTENSION_ROW) and as the one blocker on a row.
+    const runtimeRow = {
+      ...EXTENSION_ROW,
+      requirements: [{
+        kind: 'runtime',
+        satisfied: false,
+        reason: 'the tool runtime @desert-ant-labs/tongue ^3.6.0 is not installed inside the extension; its tools cannot load',
+        action: 'install',
+      }],
+      blocked: true,
+    }
+    assert.deepEqual(parseRow(runtimeRow), runtimeRow)
 
     // An older Host: neither field present, and the parse must not invent them.
     const legacy = parseRow(LEGACY_EXTENSION_ROW)

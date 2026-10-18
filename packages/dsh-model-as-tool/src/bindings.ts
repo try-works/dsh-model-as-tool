@@ -290,6 +290,89 @@ export function registerContractTool(
 }
 
 /**
+ * Register a STANDARD contract tool served by an ACTIVE extension's
+ * IMPLEMENTATION (TASK-121), mirroring {@link registerContractTool} with the
+ * execution bound to a host-supplied dispatch instead of a catalogue adapter.
+ *
+ * The tool name, description and schemas come from the CONTRACT definition —
+ * never invented per extension — and the dispatch hands the CONTRACT-shaped
+ * input to the extension's implementation (the extension reads the standard
+ * shapes directly). Input/output validation, the grant authorization, the
+ * meta stamping and the receipt are the SAME discipline the catalogue path
+ * applies, so the two routes cannot diverge.
+ * @param ctx - the context whose tool registry receives the definition.
+ * @param contract - the standard contract definition.
+ * @param host - host identity to stamp into results.
+ * @param dispatch - executes through the extension implementation.
+ * @returns the registered tool name and the registry disposer.
+ */
+export function registerContractImplementationTool(
+  ctx: { tools: { register(definition: unknown): () => void } },
+  contract: ToolContract,
+  host: HostIdentity,
+  dispatch: (args: Record<string, unknown>, signal: AbortSignal) => Promise<Record<string, unknown>>,
+  implementation: { readonly id: string; readonly extensionId: string; readonly modelId: string },
+): { toolName: string; dispose: () => void } {
+  assertValidContract(contract)
+  const rules = crossFieldRules(contract)
+  // The minimal binding-lite the provenance builders read: the meta names the
+  // extension's implementation, and the receipt records the extension package.
+  const bindingLite = {
+    contract,
+    implementation: {
+      id: implementation.id,
+      provider: { extension: implementation.extensionId, modelId: implementation.modelId },
+    },
+    route: 'extension',
+  } as unknown as Pick<ContractBinding, 'contract' | 'implementation' | 'route'>
+
+  const definition = defineTool({
+    name: contract.toolName,
+    description: contract.description,
+    parameters: toDshParameters(contract) as unknown as ParameterSchemaSpec,
+    output: {
+      schema: {
+        type: 'object',
+        properties: projectSchemaToDsh(contract.outputSchema).parameters,
+        additionalProperties: false,
+      } as unknown as ValueSchemaSpec,
+      render: (_args, value) => {
+        const record = value as Record<string, unknown>
+        return [{ type: 'text', text: renderForModel(contract, record) }]
+      },
+    },
+    async execute(args, exec) {
+      const record = args as Record<string, unknown>
+      assertValidInput(contract, record)
+      for (const rule of rules) {
+        const violation = rule(record)
+        if (violation !== undefined) {
+          throw new Error(`${contract.toolName}: ${violation}`)
+        }
+      }
+      authorizeTool(host.grant, contract.toolName)
+      const value = await dispatch(record, exec.signal)
+      const meta = buildMeta(bindingLite, host)
+      const stamped = { ...value, meta } as Record<string, unknown>
+      assertValidOutput(contract, stamped)
+      host.recordReceipt?.(buildReceipt(bindingLite, host, meta))
+      return stamped as unknown as never
+    },
+    presentCall(callArgs) {
+      const primary = Object.values(callArgs as Record<string, unknown>)[0]
+      return {
+        card: 'generic',
+        title: contract.toolName,
+        kind: 'read',
+        ...typeof primary === 'string' ? { rawInput: primary } : {},
+      }
+    },
+  })
+
+  return { toolName: contract.toolName, dispose: ctx.tools.register(definition) }
+}
+
+/**
  * Render a contract result for the model.
  *
  * The canonical value is the source of truth; this only chooses the presentation.

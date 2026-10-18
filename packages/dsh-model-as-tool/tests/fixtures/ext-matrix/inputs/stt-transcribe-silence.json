@@ -1,0 +1,9 @@
+{
+  "audio": {
+    "path": "./assets/silence-1s-16k-mono.wav",
+    "sampleRateHz": 16000,
+    "channels": 1
+  },
+  "language": "en",
+  "timestamps": "none"
+}

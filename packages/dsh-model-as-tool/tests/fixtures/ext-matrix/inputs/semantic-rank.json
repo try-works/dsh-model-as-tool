@@ -1,0 +1,50 @@
+{
+  "query": {
+    "id": "rollback-query",
+    "parts": [
+      {
+        "kind": "text",
+        "text": "How does the deployment pipeline handle rollbacks?"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "rank-rollback",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "A rollback restores the previous release when a deployment fails or a health check does not pass."
+        }
+      ]
+    },
+    {
+      "id": "rank-invoice",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "The invoice is issued on the first day of each month and is payable within thirty days."
+        }
+      ]
+    },
+    {
+      "id": "rank-weather",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "Tomorrow will be cloudy with a light breeze from the north."
+        }
+      ]
+    },
+    {
+      "id": "rank-legend",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "The map legend marks rivers in blue and motorways in orange."
+        }
+      ]
+    }
+  ],
+  "top_k": 4
+}

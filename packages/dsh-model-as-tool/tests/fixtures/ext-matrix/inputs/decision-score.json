@@ -1,0 +1,11 @@
+{
+  "prompt": "How risky is deploying a database migration on Friday afternoon?",
+  "levels": [
+    "very low",
+    "low",
+    "medium",
+    "high",
+    "very high"
+  ],
+  "allow_abstain": false
+}

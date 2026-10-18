@@ -1,7 +1,7 @@
 {
   "protocolVersion": "1.1.0",
   "id": "@try-works/extension-needle",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "displayName": "Cactus Needle 3 tool calling and structured extraction",
   "description": "Tool proposal and structured extraction over the pinned Cactus Needle 3 native engine (Cactus-Compute/needle3, windows-x86_64/needle.exe at revision 93e88ede867e4311c39151285e74df513e4b835b). tools_plan returns proposed tool calls as DATA and never executes them; structured_extract fills a caller-supplied JSON Schema through the engine's constraining grammar. The engine is run as a ONE-SHOT child process per call with an argument array and no shell, a scrubbed environment, bounded stdout and stderr, real cancellation and a real timeout, and never with the engine's --serve HTTP listener. This build declares the deployment, its pinned artifacts and its tool contracts, and it refuses an invocation naming any artifact it cannot verify rather than pretending to run the model.",
   "license": "MIT",

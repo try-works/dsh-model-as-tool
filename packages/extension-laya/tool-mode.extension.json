@@ -1,7 +1,7 @@
 {
   "protocolVersion": "1.1.0",
   "id": "@try-works/extension-laya",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "Laya decision family",
   "description": "The Laya decision family (H5): decision_choose (a choice over the caller's options), decision_test (yes/no) and decision_score (an ordinal level) over the pinned multilingual Laya checkpoint (github.com/NandhaKishorM/laya, commit c73908d96ff73c0062c340a11bf7c54ec7d8bc4d, tag v0.4.6, Apache-2.0), running through the vendored laya-ts runtime. Every returned confidence is EXPLICITLY UNCALIBRATED (DEC-08): the upstream model card ships uncalibrated logits and a clamping warning, and this extension never presents them as calibrated probabilities.",
   "license": "Apache-2.0",

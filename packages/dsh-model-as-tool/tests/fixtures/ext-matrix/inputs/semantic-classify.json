@@ -1,0 +1,27 @@
+{
+  "item": {
+    "id": "support-message",
+    "parts": [
+      {
+        "kind": "text",
+        "text": "The server returned a 500 error and the request failed."
+      }
+    ]
+  },
+  "labels": [
+    {
+      "id": "bug",
+      "description": "A software defect that causes incorrect behaviour, an error response or a crash."
+    },
+    {
+      "id": "feature",
+      "description": "A new capability that a user is requesting."
+    },
+    {
+      "id": "question",
+      "description": "A request for information or help about how something works."
+    }
+  ],
+  "min_score": 0,
+  "min_margin": 0
+}

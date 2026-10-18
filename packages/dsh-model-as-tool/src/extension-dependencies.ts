@@ -668,8 +668,17 @@ export interface RegistrySessionOptions {
   readonly archiveFactory: (fetcher: (source: InstallSource) => Promise<Uint8Array>) => ArchiveSource
   /** Hard cap on one downloaded package tarball; defaults to the SDK archive bound. */
   readonly maxTarballBytes?: number
-  /** Request timeout; default 30 s. */
-  readonly timeoutMs?: number
+  /** Packument/metadata request timeout (wall clock); default 30 s. */
+  readonly metadataTimeoutMs?: number
+  /**
+   * Tarball IDLE timeout: abort only after this long with NO bytes arriving.
+   *
+   * A large dependency (onnxruntime-node is hundreds of MB) must not be aborted
+   * by the short metadata budget; the sha512 is verified after the transfer, so
+   * the byte cap is the real bound and a slow-but-moving stream is fine.
+   * Default 10 minutes.
+   */
+  readonly tarballTimeoutMs?: number
   /** Injected fetch, for tests. Defaults to the global fetch. */
   readonly fetchImpl?: typeof fetch
 }
@@ -710,28 +719,64 @@ function encodePackageName(name: string): string {
   return name.startsWith('@') ? name.replace('/', '%2f') : encodeURIComponent(name)
 }
 
-/** Read a response body with a hard byte cap enforced BEFORE allocation grows unbounded. */
-async function readBoundedBody(response: Response, maxBytes: number): Promise<Uint8Array> {
+/** The default packument timeout: metadata is small and must answer promptly. */
+export const DEFAULT_REGISTRY_METADATA_TIMEOUT_MS = 30_000
+
+/** The default tarball IDLE timeout: a large dependency may transfer for minutes. */
+export const DEFAULT_REGISTRY_TARBALL_TIMEOUT_MS = 10 * 60_000
+
+/** Read a response body with a hard byte cap and an optional IDLE timeout. */
+async function readBoundedBody(
+  response: Response,
+  maxBytes: number,
+  options?: {
+    readonly idleTimeoutMs?: number
+    readonly tooLargeMessage?: (declared: number | undefined) => string
+    readonly idleMessage?: () => string
+  },
+): Promise<Uint8Array> {
+  const tooLarge = (declared: number | undefined): RegistryError => new RegistryError(
+    'registry-tarball-too-large',
+    options?.tooLargeMessage?.(declared) ?? `the response is over the ${maxBytes}-byte cap`,
+  )
   const declared = Number(response.headers.get('content-length') ?? Number.NaN)
   if (Number.isFinite(declared) && declared > maxBytes) {
     await response.body?.cancel()
-    throw new RegistryError('registry-tarball-too-large', `the response declares ${declared} bytes, over the ${maxBytes}-byte cap`)
+    throw tooLarge(declared)
   }
   if (response.body === null) {
     const buffer = new Uint8Array(await response.arrayBuffer())
-    if (buffer.byteLength > maxBytes) throw new RegistryError('registry-tarball-too-large', `the response is ${buffer.byteLength} bytes, over the ${maxBytes}-byte cap`)
+    if (buffer.byteLength > maxBytes) throw tooLarge(buffer.byteLength)
     return buffer
   }
   const reader = response.body.getReader()
   const chunks: Uint8Array[] = []
   let total = 0
   for (;;) {
-    const { done, value } = await reader.read()
+    const idleTimeoutMs = options?.idleTimeoutMs
+    const idleMessage = options?.idleMessage
+    const { done, value } = idleTimeoutMs === undefined
+      ? await reader.read()
+      : await new Promise<{ readonly done: boolean; readonly value?: Uint8Array }>((resolve, reject) => {
+          const timer = setTimeout(() => {
+            // Abort the transfer, then name WHY in the caller's vocabulary.
+            void reader.cancel(new Error('registry tarball idle timeout')).catch(() => {})
+            reject(new RegistryError(
+              'registry-tarball-fetch-failed',
+              idleMessage?.() ?? `no bytes arrived for ${idleTimeoutMs} ms (idle timeout)`,
+            ))
+          }, idleTimeoutMs)
+          reader.read().then(
+            result => { clearTimeout(timer); resolve(result) },
+            error => { clearTimeout(timer); reject(error) },
+          )
+        })
     if (done) break
+    if (value === undefined) continue
     total += value.byteLength
     if (total > maxBytes) {
       await reader.cancel()
-      throw new RegistryError('registry-tarball-too-large', `the response is over the ${maxBytes}-byte cap`)
+      throw tooLarge(total)
     }
     chunks.push(value)
   }
@@ -1052,14 +1097,15 @@ function selectPublishedVersion(name: string, spec: string, packument: Packument
 export function createRegistrySession(options: RegistrySessionOptions): RegistrySession {
   const registryUrl = normalizeRegistryUrl(options.registryUrl)
   const maxTarballBytes = options.maxTarballBytes ?? MAX_DEPENDENCY_ARCHIVE_BYTES
-  const timeoutMs = options.timeoutMs ?? 30_000
+  const metadataTimeoutMs = options.metadataTimeoutMs ?? DEFAULT_REGISTRY_METADATA_TIMEOUT_MS
+  const tarballTimeoutMs = options.tarballTimeoutMs ?? DEFAULT_REGISTRY_TARBALL_TIMEOUT_MS
   const fetchImpl = options.fetchImpl ?? fetch
   /** tarball URL per `name@version` key, registered by resolve(). */
   const tarballs = new Map<string, string>()
 
-  const timed = (signal: AbortSignal | undefined): AbortSignal => signal === undefined
-    ? AbortSignal.timeout(timeoutMs)
-    : AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
+  const timedMetadata = (signal: AbortSignal | undefined): AbortSignal => signal === undefined
+    ? AbortSignal.timeout(metadataTimeoutMs)
+    : AbortSignal.any([signal, AbortSignal.timeout(metadataTimeoutMs)])
 
   const requireRegistry = (): string => {
     if (registryUrl === '') {
@@ -1079,10 +1125,14 @@ export function createRegistrySession(options: RegistrySessionOptions): Registry
       try {
         response = await fetchImpl(url, {
           headers: { accept: 'application/vnd.npm.install-v1+json, application/json' },
-          signal: timed(signal),
+          signal: timedMetadata(signal),
         })
       } catch (error) {
-        throw new RegistryError('registry-unavailable', `the npm registry ${base} could not be reached: ${messageOf(error)}`, { cause: error, transport: true })
+        throw new RegistryError(
+          'registry-unavailable',
+          `the npm registry ${base} could not be reached for ${name} within ${metadataTimeoutMs} ms (metadata timeout): ${messageOf(error)}`,
+          { cause: error, transport: true },
+        )
       }
       if (!response.ok) {
         await response.body?.cancel()
@@ -1094,7 +1144,9 @@ export function createRegistrySession(options: RegistrySessionOptions): Registry
         }
         throw new RegistryError('registry-invalid-metadata', `the npm registry ${base} refused ${name} with HTTP ${response.status}`)
       }
-      const metadata = await readBoundedBody(response, MAX_REGISTRY_METADATA_BYTES)
+      const metadata = await readBoundedBody(response, MAX_REGISTRY_METADATA_BYTES, {
+        tooLargeMessage: declared => `the registry metadata for ${name} is over the ${MAX_REGISTRY_METADATA_BYTES}-byte cap${declared === undefined ? '' : ` (declared ${declared})`}`,
+      })
       let parsed: unknown
       try {
         parsed = JSON.parse(new TextDecoder().decode(metadata))
@@ -1122,21 +1174,43 @@ export function createRegistrySession(options: RegistrySessionOptions): Registry
         // resolve-then-fetch, so this is a programming error, not a package refusal.
         throw new RegistryError('registry-invalid-metadata', `the registry tarball ${source.requested} was not resolved by this session`)
       }
+      let host = 'unknown host'
+      try {
+        host = new URL(url).host
+      } catch {
+        // A tarball URL is validated as http(s) at resolve time; keep a safe label.
+      }
+      const label = `${source.requested} from ${host}`
       let response: Response
       try {
-        response = await fetchImpl(url, { signal: timed(signal) })
+        // NO wall-clock deadline here: the bytes are digest-verified, so a large
+        // dependency may transfer for minutes. Only the caller's signal and the
+        // IDLE timeout below can abort it.
+        response = await fetchImpl(url, signal === undefined ? {} : { signal })
       } catch (error) {
-        throw new RegistryError('registry-tarball-fetch-failed', `the tarball for ${source.requested} could not be downloaded: ${messageOf(error)}`, { cause: error })
+        throw new RegistryError(
+          'registry-tarball-fetch-failed',
+          `the tarball for ${label} could not be downloaded (timeout or transport, not the size cap; the cap is ${maxTarballBytes} bytes): ${messageOf(error)}`,
+          { cause: error },
+        )
       }
       if (!response.ok) {
         await response.body?.cancel()
-        throw new RegistryError('registry-tarball-fetch-failed', `the tarball for ${source.requested} answered HTTP ${response.status}`)
+        throw new RegistryError('registry-tarball-fetch-failed', `the tarball for ${label} answered HTTP ${response.status} (not the size cap)`)
       }
       try {
-        return await readBoundedBody(response, maxTarballBytes)
+        return await readBoundedBody(response, maxTarballBytes, {
+          idleTimeoutMs: tarballTimeoutMs,
+          tooLargeMessage: declared => `the tarball for ${label} is over the ${maxTarballBytes}-byte cap${declared === undefined ? '' : ` (${declared} bytes)`}`,
+          idleMessage: () => `the tarball for ${label} timed out: no bytes arrived for ${tarballTimeoutMs} ms (timeout, not the ${maxTarballBytes}-byte cap)`,
+        })
       } catch (error) {
         if (error instanceof RegistryError) throw error
-        throw new RegistryError('registry-tarball-fetch-failed', `the tarball for ${source.requested} could not be read: ${messageOf(error)}`, { cause: error })
+        throw new RegistryError(
+          'registry-tarball-fetch-failed',
+          `the tarball for ${label} could not be read (timeout or transport, not the size cap): ${messageOf(error)}`,
+          { cause: error },
+        )
       }
     },
   }

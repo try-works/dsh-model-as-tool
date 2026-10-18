@@ -185,7 +185,8 @@ async function mountDeclarative(options: {
   readonly llm?: unknown
   readonly settings?: unknown
   readonly harnessRetry?: { intervalMs: number; capMs: number }
-}): Promise<{ ctx: Context; storeDir: string }> {
+  readonly harnessRetryScheduler?: { setInterval: (handler: () => void, ms: number) => unknown; clearInterval: (handle: unknown) => void }
+}): Promise<{ ctx: Context; storeDir: string; disposePlugin: () => Promise<void> }> {
   const storeDir = tempDir()
   const { bytes, sha512 } = packPackage()
   await stagedInstall({
@@ -221,6 +222,7 @@ async function mountDeclarative(options: {
       harnessRetryIntervalMs: options.harnessRetry.intervalMs,
       harnessRetryCapMs: options.harnessRetry.capMs,
     },
+    ...options.harnessRetryScheduler === undefined ? {} : { harnessRetryScheduler: options.harnessRetryScheduler },
   })
   return { ctx, storeDir, disposePlugin: () => pluginFiber.dispose() }
 }
@@ -544,18 +546,36 @@ describe('task-99 — the bounded background retry flips the status without a se
   )
 
   /**
-   * TASK-108: the deterministic promotion helper. The retry tests await an
-   * OBSERVABLE condition with a generous 10 s timeout instead of racing a
-   * tight wall-clock budget; under parallel load the polls lag but the helper
-   * absorbs it. Never assert an exact poll count — `>= N` only.
+   * TASK-127: the deterministic fake scheduler. The retry is advanced by
+   * EXPLICIT ticks — never by wall-clock — so the flip, the cap and the
+   * dispose are driven by the test, not by the machine's load. The product
+   * uses the global scheduler (the seam's default is byte-identical).
    */
-  async function waitFor(condition: () => boolean | Promise<boolean>, what: string, timeoutMs = 10_000): Promise<void> {
-    const deadline = Date.now() + timeoutMs
-    while (Date.now() < deadline) {
-      if (await condition()) return
-      await new Promise(resolve => setTimeout(resolve, 25))
+  function fakeRetryScheduler() {
+    const handlers: (() => void)[] = []
+    let cleared = false
+    const drain = async (): Promise<void> => { await new Promise(resolve => setImmediate(resolve)) }
+    return {
+      scheduler: {
+        setInterval: (handler: () => void): unknown => { handlers.push(handler); return handlers.length },
+        clearInterval: (): void => { cleared = true },
+      },
+      /** Whether a timer is scheduled and not cleared. */
+      active: (): boolean => !cleared && handlers.length > 0,
+      /** Whether the host cleared the timer (dispose / cap / success). */
+      cleared: (): boolean => cleared,
+      /** Run every scheduled handler once, then drain the async refresh twice. */
+      async tick(): Promise<void> {
+        if (cleared) return
+        for (const handler of [...handlers]) handler()
+        await drain()
+        await drain()
+      },
+      /** Tick n times. */
+      async tickN(n: number): Promise<void> {
+        for (let i = 0; i < n; i += 1) await this.tick()
+      },
     }
-    throw new Error(`timed out after ${timeoutMs} ms waiting for: ${what}`)
   }
 
   /** listProviders() stays empty for `emptyPolls` calls, then the route appears. */
@@ -585,68 +605,75 @@ describe('task-99 — the bounded background retry flips the status without a se
   }
 
   it('flips to available within the bounded retry WITHOUT another describe', async () => {
+    const fake = fakeRetryScheduler()
     const deferred = deferredSurface(3)
     const { ctx } = await mountDeclarative({
       llm: deferred.surface,
       settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
       harnessRetry: { intervalMs: 100, capMs: 5_000 },
+      harnessRetryScheduler: fake.scheduler,
     })
     const service = ctx.get('modelTools') as unknown as ServiceDescribe
     const first = await service.describe()
     const initial = harnessRequirement(first)
     assert.equal(initial.satisfied, false, 'the first read sees the honest not-ready-yet')
-    // TASK-108: await the OBSERVABLE flip — the requirement becoming satisfied
-    // — with a generous 10 s timeout. The retry does the work on its own
-    // interval; the poll helper only observes the status it publishes.
-    let flipAttempts = 0
-    await waitFor(async () => {
-      flipAttempts += 1
-      return harnessRequirement(await service.describe()).satisfied
-    }, 'the retry to flip the requirement to satisfied')
-    assert.ok(flipAttempts >= 1)
+    // TASK-127: the flip is driven by EXPLICIT ticks — the retry does its own
+    // polls on the fake's interval, never the machine's wall-clock.
+    for (let i = 0; i < 50; i += 1) {
+      await fake.tick()
+      if (harnessRequirement(await service.describe()).satisfied) break
+    }
+    assert.equal(harnessRequirement(await service.describe()).satisfied, true, 'the retry flips the requirement to satisfied')
     assert.ok(deferred.calls.listProviders > 3, 'the flip came from the retry\'s own polls, not the first read')
   })
 
   it('a registry that stays empty is still not-ready-yet after the cap, with the same reason', async () => {
+    const fake = fakeRetryScheduler()
     const deferred = deferredSurface(1_000_000)
     const { ctx } = await mountDeclarative({
       llm: deferred.surface,
       settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
       harnessRetry: { intervalMs: 60, capMs: 400 },
+      harnessRetryScheduler: fake.scheduler,
     })
     const service = ctx.get('modelTools') as unknown as ServiceDescribe
     const first = await service.describe()
     const initial = harnessRequirement(first)
     assert.match(initial.reason, /has not registered its provider routes yet/)
-    // The cap (400 ms) elapses; the polls stop; the parked verdict — which for
-    // an empty registry IS the not-ready-yet — is published unchanged.
-    await waitFor(() => deferred.calls.resolveModelInfo >= 3, 'a few retry polls to have run')
+    // The cap (6 polls at 60 ms / 400 ms) is reached by TICKS; the parked
+    // verdict — which for an empty registry IS the not-ready-yet — is
+    // published unchanged, and the timer is cleared.
+    await fake.tickN(8)
+    assert.equal(fake.cleared(), true, 'the cap must clear the timer')
     const final = await service.describe()
     const after = harnessRequirement(final)
     assert.equal(after.satisfied, false)
     assert.match(after.reason, /has not registered its provider routes yet/, 'the reason stays the honest not-ready-yet')
   })
 
-  it('dispose stops the retry (no leaked timers)', async () => {
+  it('dispose stops the retry (no pending timers)', async () => {
+    const fake = fakeRetryScheduler()
     const deferred = deferredSurface(1_000_000)
     const { disposePlugin } = await mountDeclarative({
       llm: deferred.surface,
       settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
       harnessRetry: { intervalMs: 50, capMs: 30_000 },
+      harnessRetryScheduler: fake.scheduler,
     })
-    await waitFor(() => deferred.calls.listProviders >= 1, 'the retry to start polling')
+    await fake.tick()
+    assert.equal(fake.active(), true, 'the retry is scheduled before dispose')
     await disposePlugin()
-    // After dispose the polls plateau: give any single in-flight refresh a
-    // chance to land, then require the count to stay put across a quiet window.
-    await new Promise(resolve => setTimeout(resolve, 120))
+    // The plugin fiber's teardown clears the timer; further ticks run nothing.
+    assert.equal(fake.cleared(), true, 'dispose must clear the retry timer')
     const settled = deferred.calls.listProviders
-    await new Promise(resolve => setTimeout(resolve, 400))
-    assert.ok(deferred.calls.listProviders - settled <= 1, `the retry must stop on dispose (settled=${settled}, after=${deferred.calls.listProviders})`)
+    await fake.tickN(3)
+    assert.equal(deferred.calls.listProviders, settled, 'no polls after dispose')
   })
 
   it('task-100 retry e2e: routes first + deferred directory → not-ready-yet, retry continues, then available', async () => {
     // The live boot sequence: routes registered, directory still empty for a
     // few polls. The retry must NOT finalize the empty-directory verdict.
+    const fake = fakeRetryScheduler()
     let directoryPolls = 0
     const surface = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' })
     const directoryCount = { polls: 0 }
@@ -669,15 +696,19 @@ describe('task-99 — the bounded background retry flips the status without a se
       llm: deferred,
       settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
       harnessRetry: { intervalMs: 80, capMs: 5_000 },
+      harnessRetryScheduler: fake.scheduler,
     })
     const service = ctx.get('modelTools') as unknown as ServiceDescribe
     const first = await service.describe()
     const initial = harnessRequirement(first)
     assert.equal(initial.satisfied, false, 'the first read sees the honest not-ready-yet')
     assert.match(initial.reason, /has not registered its provider routes yet/, 'an incomplete directory is not-ready-yet, not the terminal string')
-    // TASK-108: await the OBSERVABLE flip (the requirement becoming satisfied)
-    // — the retry keeps polling and does the work on its own interval.
-    await waitFor(async () => harnessRequirement(await service.describe()).satisfied, 'the retry to reach available once the directory lands')
+    // TASK-127: explicit ticks drive the retry to the available flip.
+    for (let i = 0; i < 62; i += 1) {
+      await fake.tick()
+      if (harnessRequirement(await service.describe()).satisfied) break
+    }
+    assert.equal(harnessRequirement(await service.describe()).satisfied, true, 'the retry reaches available once the directory lands')
     assert.ok(directoryPolls >= 6, 'the flip came from the retry\'s own polling')
     void ctx
   })
@@ -686,6 +717,7 @@ describe('task-99 — the bounded background retry flips the status without a se
     // The live 0.3.5 shape: the directory has OTHER entries but not
     // deepseek-official yet. The safe rule presents the transient startup
     // blocker (not the terminal string) and keeps polling.
+    const fake = fakeRetryScheduler()
     let directoryPolls = 0
     const surface = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' })
     const deferred = {
@@ -707,14 +739,19 @@ describe('task-99 — the bounded background retry flips the status without a se
       llm: deferred,
       settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
       harnessRetry: { intervalMs: 80, capMs: 5_000 },
+      harnessRetryScheduler: fake.scheduler,
     })
     const service = ctx.get('modelTools') as unknown as ServiceDescribe
     const first = await service.describe()
     const initial = harnessRequirement(first)
     assert.equal(initial.satisfied, false, 'the first read sees an unsatisfied requirement')
     assert.match(initial.reason, /has not registered its provider routes yet/, 'the transient string, never the terminal unknown-provider one')
-    // TASK-108: await the OBSERVABLE flip.
-    await waitFor(async () => harnessRequirement(await service.describe()).satisfied, 'the retry to reach available once the entry lands')
+    // TASK-127: explicit ticks drive the retry to the flip.
+    for (let i = 0; i < 62; i += 1) {
+      await fake.tick()
+      if (harnessRequirement(await service.describe()).satisfied) break
+    }
+    assert.equal(harnessRequirement(await service.describe()).satisfied, true, 'the retry reaches available once the entry lands')
     assert.ok(directoryPolls >= 5, 'the flip came from the retry\'s own polling')
     void ctx
   })
@@ -722,6 +759,7 @@ describe('task-99 — the bounded background retry flips the status without a se
   it('task-101: after the cap the REAL not-configured reason is published and polling ends', async () => {
     // The directory is non-empty but never contains the configured provider —
     // the transient presentation must give way to the real verdict at the cap.
+    const fake = fakeRetryScheduler()
     const surface = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' })
     const calls = { resolveModelInfo: 0 }
     const never = {
@@ -738,30 +776,40 @@ describe('task-99 — the bounded background retry flips the status without a se
       llm: never,
       settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
       harnessRetry: { intervalMs: 60, capMs: 400 },
+      harnessRetryScheduler: fake.scheduler,
     })
     const service = ctx.get('modelTools') as unknown as ServiceDescribe
     const first = await service.describe()
     assert.match(harnessRequirement(first).reason, /has not registered its provider routes yet/, 'transient while retrying')
-    // TASK-108: await the OBSERVABLE publication — the REAL verdict appearing
-    // once the cap ends the retry.
-    await waitFor(async () => /cannot be served: the configured provider "deepseek-official" is not a registered LLM route/.test(harnessRequirement(await service.describe()).reason), 'the cap to publish the real verdict')
+    // TASK-127: the cap (6 polls) is reached by ticks; the REAL verdict is
+    // published and the timer cleared — polling has ended.
+    await fake.tickN(8)
+    assert.equal(fake.cleared(), true, 'the cap must clear the timer')
+    assert.match(
+      harnessRequirement(await service.describe()).reason,
+      /cannot be served: the configured provider "deepseek-official" is not a registered LLM route/,
+      'the cap publishes the real verdict',
+    )
     const paused = calls.resolveModelInfo
-    await new Promise(resolve => setTimeout(resolve, 300))
-    assert.ok(calls.resolveModelInfo - paused <= 1, 'no polling after the cap')
+    await fake.tickN(3)
+    assert.equal(calls.resolveModelInfo, paused, 'no polling after the cap')
     void ctx
   })
 
   it('explicit config is never retried or overwritten', async () => {
+    const fake = fakeRetryScheduler()
     const deferred = deferredSurface(0)
     const { ctx } = await mountDeclarative({
       harnessModel: { provider: 'broken-route', model: 'broken-model' },
       llm: deferred.surface,
       harnessRetry: { intervalMs: 50, capMs: 5_000 },
+      harnessRetryScheduler: fake.scheduler,
     })
-    await new Promise(resolve => setTimeout(resolve, 300))
     // The initial composition probes once (the direct pair fails, then the
-    // resolver consults listProviders once); the bounded retry must NOT add
-    // any further polls for explicit config.
+    // resolver consults listProviders once); the bounded retry must NOT be
+    // scheduled for explicit config at all.
+    await fake.tickN(3)
+    assert.equal(fake.active(), false, 'explicit config must never schedule the retry')
     assert.ok(deferred.calls.listProviders <= 1, `explicit config must never be retried (listProviders=${deferred.calls.listProviders})`)
     await cleanup()
   })

@@ -1,6 +1,6 @@
 {
   "name": "@try-works/extension-needle",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
   "description": "First-party Tool Mode extension implementing tools_plan and structured_extract on the Cactus Needle 3 native engine (windows-x86_64/needle.exe)",
   "license": "MIT",

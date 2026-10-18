@@ -49,13 +49,15 @@
  * @module @try-works/dsh-model-as-tool/extensions-service
  */
 
-import { accessSync, constants, existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { accessSync, constants, cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import {
   createTarGzipArchiveSource,
   digestInstalledContent,
   discoverExtension,
   ExtensionStore,
+  installDependencyGraph,
   ManagementError,
   stagedInstall,
   stagedInstallFromDirectory,
@@ -63,6 +65,7 @@ import {
   type ExtensionState as SdkExtensionState,
   type InstallDependencyGraph,
   type InstalledRecord,
+  type LockedDependency,
 } from '@try-works/tool-mode-extension-sdk'
 import type {
   ExtensionInstallResult,
@@ -86,12 +89,27 @@ import {
   MAX_DEPENDENCY_ARCHIVE_BYTES,
   RegistryError,
   resolveFirstPartyDependency,
+  satisfiesRegistryRange,
   type RegistryErrorCode,
 } from './extension-dependencies.ts'
 import type { AcquisitionSource } from './asset-acquisition.ts'
 import { createHttpSource } from './http-acquisition.ts'
-import type { PreparationOutcome, PrepareAssetsSurface } from './prepared-assets.ts'
+import {
+  assetSourceUnavailableReason,
+  firstUnavailableAssetSource,
+  type PreparationOutcome,
+  type PrepareAssetsSurface,
+} from './prepared-assets.ts'
 import type { PreparationPlan } from './deployment-coordinator.ts'
+
+/**
+ * The default dependency-graph depth bound for registry installs (task-116).
+ *
+ * The SDK default (3) is too shallow for real trees; onnxruntime-node reaches
+ * `define-data-property` at depth 4. Preinstalled packages are leaves, so this
+ * only bounds registry-resolved graphs.
+ */
+export const DEFAULT_REGISTRY_DEPENDENCY_DEPTH = 12
 
 /**
  * The readiness values that permit activation (the SDK's callable set).
@@ -118,6 +136,7 @@ const REQUIREMENT_PRIORITY: readonly ExtensionRequirementKind[] = [
   'integrity',
   'platform',
   'dependencies',
+  'runtime',
   'harness-model',
   'executable',
   'assets',
@@ -146,6 +165,7 @@ function blocksRow(installed: boolean, requirement: ExtensionRequirement): boole
     || requirement.kind === 'dependencies'
     || requirement.kind === 'platform'
     || requirement.kind === 'harness-model'
+    || requirement.kind === 'runtime'
 }
 
 /** Build one requirement value. */
@@ -233,6 +253,10 @@ export type ExtensionsServiceErrorCode =
   | 'extension-preparation-failed'
   /** A prerequisite the deployment cannot satisfy blocks activation before any lifecycle call. */
   | 'extension-requirement-unmet'
+  /** The extension's optional tool runtime is not installed, so its tools cannot load. */
+  | 'extension-runtime-unavailable'
+  /** The asset lock declares no transferable location; preparation is not possible here. */
+  | 'extension-asset-source-unavailable'
   /** Registry mode was selected but no registry URL is configured. */
   | 'extension-registry-unconfigured'
   /** The registry has no such package, version, or dist-tag (HTTP 404 / no matching version). */
@@ -317,6 +341,20 @@ export interface ExtensionsServiceOptions {
   readonly registryUrl?: string
   /** Hard cap on one registry package tarball; defaults to the SDK archive bound (256 MiB). */
   readonly registryTarballMaxBytes?: number
+  /**
+   * IDLE timeout for one registry tarball download, in ms; defaults to 10 minutes.
+   *
+   * Separate from the short metadata timeout: onnxruntime-node is hundreds of MB,
+   * and a moving transfer must not be aborted by the packument budget. Aborts only
+   * when NO bytes arrive for this long; the byte cap remains the real bound.
+   */
+  readonly registryTarballTimeoutMs?: number
+  /**
+   * Dependency-graph depth bound for registry installs; defaults to
+   * {@link DEFAULT_REGISTRY_DEPENDENCY_DEPTH} (12). Configurable because real
+   * dependency trees vary; a refusal names the level and the package.
+   */
+  readonly registryDependencyDepth?: number
   /** INTERNAL TEST SEAM: the directory installer, defaulting to the SDK's staged path. */
   readonly installDirectory?: DirectoryInstaller
   /** INTERNAL TEST SEAM: the content digest, defaulting to the SDK's installed-content digest. */
@@ -490,6 +528,8 @@ interface ExtensionFacts {
   readonly executionKind: string | undefined
   readonly platforms: readonly DeclaredPlatform[]
   readonly dependencies: readonly DeclaredDependency[]
+  /** OPTIONAL tool-runtime packages the module's tools load at call time. */
+  readonly optionalDependencies: readonly DeclaredDependency[]
   /** Set when discovery failed; the requirement/reason text reports it. */
   readonly problem: string | null
 }
@@ -504,11 +544,15 @@ const EMPTY_FACTS: ExtensionFacts = {
   executionKind: undefined,
   platforms: [],
   dependencies: [],
+  optionalDependencies: [],
   problem: null,
 }
 
-/** Read a package.json's `dependencies` as name→range pairs; empty when unreadable. */
-function readDeclaredDependencies(packageDir: string | null): readonly DeclaredDependency[] {
+/** Read one package.json dependency field as name→range pairs; empty when unreadable. */
+function readDeclaredDependencies(
+  packageDir: string | null,
+  field: 'dependencies' | 'optionalDependencies' = 'dependencies',
+): readonly DeclaredDependency[] {
   if (packageDir === null) return []
   try {
     const parsed: unknown = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
@@ -516,7 +560,7 @@ function readDeclaredDependencies(packageDir: string | null): readonly DeclaredD
     // SAFETY: the value came from JSON.parse and the object guard above; only
     // string-valued dependency specs are kept, so an unexpected shape yields an
     // empty declaration rather than a trusted one.
-    const dependencies = (parsed as { readonly dependencies?: unknown }).dependencies
+    const dependencies = (parsed as { readonly [key: string]: unknown })[field]
     if (typeof dependencies !== 'object' || dependencies === null || Array.isArray(dependencies)) return []
     const declared: DeclaredDependency[] = []
     // SAFETY: the dependency container was checked to be a non-array object; only
@@ -537,6 +581,7 @@ function readDeclaredDependencies(packageDir: string | null): readonly DeclaredD
  */
 function readExtensionFacts(packageDir: string): ExtensionFacts {
   const dependencies = readDeclaredDependencies(packageDir)
+  const optionalDependencies = readDeclaredDependencies(packageDir, 'optionalDependencies')
   try {
     const discovery = discoverExtension(packageDir)
     const manifest = discovery.manifest
@@ -549,6 +594,7 @@ function readExtensionFacts(packageDir: string): ExtensionFacts {
       executionKind: manifest.execution.kind,
       platforms: manifest.models.flatMap(model => model.platforms),
       dependencies,
+      optionalDependencies,
       problem: null,
     }
   } catch (error) {
@@ -558,14 +604,14 @@ function readExtensionFacts(packageDir: string): ExtensionFacts {
       packageVersion: null,
       packageDir,
       dependencies,
+      optionalDependencies,
       problem: `the package at ${packageDir} is not a usable extension: ${messageOf(error)}`,
     }
   }
 }
 
 /** A short human label for one declared platform. */
-function platformLabel(platform: DeclaredPlatform): string {
-  return `${platform.os}-${platform.arch}${platform.accelerator === undefined ? '' : `-${platform.accelerator}`}`
+function platformLabel(platform: DeclaredPlatform): string {  return `${platform.os}-${platform.arch}${platform.accelerator === undefined ? '' : `-${platform.accelerator}`}`
 }
 
 /**
@@ -575,6 +621,165 @@ function platformLabel(platform: DeclaredPlatform): string {
  */
 function hostPlatformMatches(platforms: readonly DeclaredPlatform[]): boolean {
   return platforms.some(platform => platform.os === process.platform && platform.arch === process.arch)
+}
+
+/** One optional tool-runtime materialization attempt, recorded beside the store. */
+interface RuntimeDependencyRecord {
+  readonly name: string
+  readonly range: string
+  readonly satisfied: boolean
+  readonly version?: string
+  /** Set when materialization failed: the exact registry/SDK refusal. */
+  readonly error?: string
+}
+
+/** The store-local sidecar holding runtime attempts the LOCK cannot carry. */
+interface RuntimeDependencyDocument {
+  readonly updatedAt: string
+  readonly extensions: Readonly<Record<string, {
+    readonly version: string
+    readonly optional: readonly RuntimeDependencyRecord[]
+  }>>
+}
+
+/** The sidecar filename inside the extension store (host-owned, never inside a package). */
+const RUNTIME_DEPENDENCY_FILE = 'runtime-dependencies.json'
+
+/** Read the store's runtime-dependency sidecar; a missing/corrupt document is empty. */
+function readRuntimeDependencyDocument(storeDir: string): RuntimeDependencyDocument {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(join(storeDir, RUNTIME_DEPENDENCY_FILE), 'utf8'))
+    if (typeof parsed !== 'object' || parsed === null) return { updatedAt: '', extensions: {} }
+    const extensions = (parsed as { readonly extensions?: unknown }).extensions
+    if (typeof extensions !== 'object' || extensions === null || Array.isArray(extensions)) {
+      return { updatedAt: '', extensions: {} }
+    }
+    // SAFETY: the container was checked to be a non-array object; each entry is
+    // read defensively by the requirement model, and a malformed entry is ignored.
+    return { updatedAt: '', extensions: extensions as RuntimeDependencyDocument['extensions'] }
+  } catch {
+    return { updatedAt: '', extensions: {} }
+  }
+}
+
+/** Merge one extension's runtime attempts into the store sidecar (atomic replace). */
+function writeRuntimeDependencyDocument(
+  storeDir: string,
+  extensionId: string,
+  version: string,
+  optional: readonly RuntimeDependencyRecord[],
+): void {
+  try {
+    const current = readRuntimeDependencyDocument(storeDir)
+    const document: RuntimeDependencyDocument = {
+      updatedAt: new Date().toISOString(),
+      extensions: {
+        ...current.extensions,
+        [extensionId]: { version, optional },
+      },
+    }
+    const target = join(storeDir, RUNTIME_DEPENDENCY_FILE)
+    const temporary = `${target}.${process.pid}.${Date.now().toString(36)}.tmp`
+    writeFileSync(temporary, `${JSON.stringify(document, null, 2)}\n`, 'utf8')
+    rmSync(target, { force: true })
+    cpSync(temporary, target)
+    rmSync(temporary, { force: true })
+  } catch {
+    // Diagnostics only: failing to record an optional-runtime attempt must never
+    // turn a successful install into a failure. The requirement probes the tree.
+  }
+}
+
+/** Read one installed dependency's package.json version, or undefined. */
+function readInstalledDependencyVersion(installPath: string, name: string): string | undefined {  try {
+    const parsed: unknown = JSON.parse(readFileSync(join(installPath, 'node_modules', ...name.split('/'), 'package.json'), 'utf8'))
+    if (typeof parsed !== 'object' || parsed === null) return undefined
+    const version = (parsed as { readonly version?: unknown }).version
+    return typeof version === 'string' ? version : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Atomically REPLACE one installed record in the store lock.
+ *
+ * The SDK's `recordInstall` deliberately refuses an already-recorded identity
+ * (upgrade protection), and it exposes no update call. The host legitimately
+ * changes an installed copy AFTER activation-free materialization (optional tool
+ * runtimes): the recorded content digest must match the bytes the operator now
+ * has, and the lock is the host-owned document that carries it. The replacement is
+ * a same-file atomic rename, so a crash leaves either the old or the new record.
+ * @param storeDir - the configured store.
+ * @param updated - the record to store, keyed by identity and version.
+ * @returns whether the record was found and replaced.
+ */
+function replaceInstalledRecord(storeDir: string, updated: InstalledRecord): boolean {
+  try {
+    const store = new ExtensionStore(storeDir)
+    const lock = store.readLock()
+    if (lock.corrupt) return false
+    const index = lock.value.extensions.findIndex(candidate =>
+      candidate.extensionId === updated.extensionId && candidate.version === updated.version)
+    if (index === -1) return false
+    const extensions = [...lock.value.extensions]
+    extensions[index] = updated
+    const target = store.lockPath
+    const temporary = `${target}.${process.pid}.${Date.now().toString(36)}.tmp`
+    writeFileSync(temporary, `${JSON.stringify({ lockVersion: 1, extensions }, null, 2)}\n`, 'utf8')
+    renameSync(temporary, target)
+    return true
+  } catch {
+    return false
+  }
+}
+
+
+/**
+ * Directories to search for OPERATOR-PREINSTALLED packages, deepest-nested first.
+ *
+ * A preinstalled package is a LEAF: its transitive dependencies already sit in its
+ * OWN `node_modules` (npm nests them when versions conflict), so root-level lookup
+ * alone misses e.g. `@huggingface/transformers/node_modules/onnxruntime-web`. This
+ * enumerates the preinstalled root, each top-level package directory, and (bounded)
+ * their nested package directories; the resolver tries each in order.
+ * @param root - the operator-configured preinstalled root (its `node_modules` is searched).
+ * @param depth - how many nested package levels to enumerate (bounded).
+ * @returns candidate package roots, root first.
+ */
+function preinstalledSearchRoots(root: string, depth = 3): readonly string[] {
+  const candidates = [root]
+  const visit = (nodeModules: string, remaining: number): void => {
+    if (remaining <= 0) return
+    let entries: string[]
+    try {
+      entries = readdirSync(nodeModules)
+    } catch {
+      return
+    }
+    for (const entry of entries) {
+      if (entry.startsWith('.')) continue
+      const entryPath = join(nodeModules, entry)
+      if (entry.startsWith('@')) {
+        let scoped: string[]
+        try {
+          scoped = readdirSync(entryPath)
+        } catch {
+          continue
+        }
+        for (const name of scoped) {
+          const packageDir = join(entryPath, name)
+          candidates.push(packageDir)
+          visit(join(packageDir, 'node_modules'), remaining - 1)
+        }
+        continue
+      }
+      candidates.push(entryPath)
+      visit(join(entryPath, 'node_modules'), remaining - 1)
+    }
+  }
+  visit(join(root, 'node_modules'), depth)
+  return candidates
 }
 
 /**
@@ -1102,6 +1307,10 @@ export class ExtensionsService implements ModelToolsRemote {
       ))
     }
 
+    // RUNTIME: optional tool-runtime packages must be materialized, or the
+    // extension's tools load and fail at call time — which is not activation.
+    requirements.push(this.#runtimeRequirement(input))
+
     // HARNESS MODEL: only declarative packages are served by the host broker.
     if (input.facts.executionKind === 'declarative') {
       requirements.push(this.#harnessModelRequirement())
@@ -1137,7 +1346,19 @@ export class ExtensionsService implements ModelToolsRemote {
         'install',
       ))
     } else if (blockers.length > 0) {
-      requirements.push(requirement('assets', false, `activation blocked: ${blockers.join('; ')}`, 'prepare'))
+      /**
+       * A lock whose assets carry prose sources (no URL) cannot be prepared by this
+       * host. Report action `none` so the page does not offer Prepare as if it could
+       * succeed; the reason names the artifact and the documented export.
+       */
+      const unavailable = this.#unavailableAssetSource(input.id)
+      requirements.push(unavailable === undefined
+        ? requirement('assets', false, `activation blocked: ${blockers.join('; ')}`, 'prepare')
+        : requirement(
+            'assets', false,
+            `[ASSET_SOURCE_UNAVAILABLE] ${assetSourceUnavailableReason(unavailable.assetId, unavailable.source)}`,
+            'none',
+          ))
     } else {
       requirements.push(requirement(
         'assets', true,
@@ -1216,6 +1437,50 @@ export class ExtensionsService implements ModelToolsRemote {
         )
   }
 
+  /**
+   * The OPTIONAL tool-runtime requirement.
+   *
+   * Module extensions declare the packages their tools `require()` at call time as
+   * optionalDependencies (e.g. tongue's `@desert-ant-labs/tongue`). If one is absent
+   * the extension still activates and its tools fail at call time, so this
+   * requirement BLOCKS activation instead: a tool that cannot load is not served.
+   * The sidecar records why a materialization attempt failed (the lock cannot).
+   */
+  #runtimeRequirement(input: RequirementInput): ExtensionRequirement {
+    const declared = input.facts.optionalDependencies
+    if (declared.length === 0) {
+      return requirement('runtime', true, 'the package declares no optional tool runtime')
+    }
+    if (!input.installed || input.record === undefined) {
+      return requirement('runtime', true, 'not installed yet; optional tool runtimes are materialized and verified at install time')
+    }
+    const recorded = readRuntimeDependencyDocument(input.storeDir).extensions[input.id]
+    const unresolved: string[] = []
+    const resolved: string[] = []
+    for (const dependency of declared) {
+      const installedVersion = readInstalledDependencyVersion(input.record.installPath, dependency.name)
+      if (installedVersion === undefined) {
+        const attempt = recorded?.optional.find(entry => entry.name === dependency.name && !entry.satisfied)
+        unresolved.push(
+          `${dependency.name} ${dependency.range} is not installed inside the extension`
+            + (attempt?.error === undefined ? '' : `: ${attempt.error}`),
+        )
+      } else if (!satisfiesRegistryRange(installedVersion, dependency.range)) {
+        unresolved.push(`${dependency.name} is installed at ${installedVersion}, which does not satisfy ${dependency.range}`)
+      } else {
+        resolved.push(`${dependency.name}@${installedVersion}`)
+      }
+    }
+    if (unresolved.length === 0) {
+      return requirement('runtime', true, `the optional tool runtime${resolved.length === 1 ? ' is' : 's are'} materialized (${resolved.join(', ')})`)
+    }
+    return requirement(
+      'runtime', false,
+      `the extension's tools cannot load: ${unresolved.join('; ')}`,
+      'install',
+    )
+  }
+
   /** The harness-model requirement for a declarative package. */
   #harnessModelRequirement(): ExtensionRequirement {
     const status = this.#options.harnessProviderStatus?.()
@@ -1242,6 +1507,29 @@ export class ExtensionsService implements ModelToolsRemote {
         ?? 'no harness model provider is configured, so declarative extensions cannot be served; set config.harnessModel to a runnable model',
       status.action ?? 'config',
     )
+  }
+
+  /**
+   * The first planned asset with neither an http(s) source nor cached bytes.
+   *
+   * A prose lock source (laya's "split export of the pinned checkpoint") is not a
+   * download location; preparation must refuse before any transfer. A cache hit is
+   * still a source because acquisition verifies the cached digest.
+   * @param extensionId - the installed extension.
+   * @returns the unavailable asset, or undefined when every source is reachable.
+   */
+  #unavailableAssetSource(extensionId: string): { readonly assetId: string; readonly source: string } | undefined {
+    const surface = this.#options.prepareSurface?.()
+    if (surface === undefined) return undefined
+    try {
+      const plan = surface.plan(extensionId)
+      return firstUnavailableAssetSource(
+        plan.assets.map(asset => ({ assetId: asset.assetId, source: asset.source, digest: asset.digest })),
+        surface.registry.cacheDirectory,
+      )
+    } catch {
+      return undefined
+    }
   }
 
   /** The executable requirement for an installed, not-yet-callable model deployment. */
@@ -1600,6 +1888,9 @@ export class ExtensionsService implements ModelToolsRemote {
       registryUrl,
       archiveFactory: createTarGzipArchiveSource,
       maxTarballBytes: this.#options.registryTarballMaxBytes ?? MAX_DEPENDENCY_ARCHIVE_BYTES,
+      ...this.#options.registryTarballTimeoutMs === undefined
+        ? {}
+        : { tarballTimeoutMs: this.#options.registryTarballTimeoutMs },
     })
     let resolved
     try {
@@ -1622,7 +1913,7 @@ export class ExtensionsService implements ModelToolsRemote {
         // Registry metadata recorded AS DATA, never as trust: the bytes are
         // verified against the same sha512 before anything is extracted.
         provenance: { registryIntegrity: resolved.integrity },
-        dependencies: createRegistryDependencyGraph(session),
+        dependencies: this.#installGraph(session),
       })
     } catch (error) {
       if (error instanceof RegistryError) throw this.#mapRegistryFailure(error)
@@ -1657,6 +1948,10 @@ export class ExtensionsService implements ModelToolsRemote {
         `${installed.extensionId}@${installed.version} was installed without a content digest, so it cannot be verified before activation`,
       )
     }
+    // Optional tool runtimes are materialized AFTER the package install and are
+    // NOT allowed to fail it: tongue/voz tools `require()` an optional package at
+    // call time, and the requirement model blocks activation if it is absent.
+    await this.#materializeOptionalRuntimes(storeDir, installed, session, signal)
     return {
       id: installed.extensionId,
       version: installed.version,
@@ -1664,6 +1959,138 @@ export class ExtensionsService implements ModelToolsRemote {
       source: 'registry',
       resolvedVersion: resolved.version,
     }
+  }
+
+  /**
+   * The dependency graph used on the REGISTRY install path (regular AND optional).
+   *
+   * PRECEDENCE: when the operator's preinstalled gate is ON and the host's own
+   * tree holds a package satisfying the range, that operator-completed content is
+   * preferred. The SDK copies it with provenance `preinstalled` and records that
+   * no lifecycle script was run. Anything NOT preinstalled falls to the registry
+   * arm, where EXT-10 still refuses script-declaring packages.
+   *
+   * DEPTH: preinstalled packages are LEAVES for graph purposes — their transitive
+   * tree travels with them — but real registry trees (onnxruntime-node) exceed the
+   * SDK's default 3-level bound, so the host raises the default to
+   * {@link DEFAULT_REGISTRY_DEPENDENCY_DEPTH} and makes it configurable.
+   * @param session - the registry session.
+   * @returns the graph.
+   */
+  #installGraph(session: ReturnType<typeof createRegistrySession>): InstallDependencyGraph {
+    const depth = this.#options.registryDependencyDepth ?? DEFAULT_REGISTRY_DEPENDENCY_DEPTH
+    const registryGraph = { ...createRegistryDependencyGraph(session), maxDepth: depth }
+    const preinstalledRoot = this.#options.preinstalledDependenciesRoot ?? ''
+    const allowPreinstalled = this.#options.allowPreinstalledDependencies === true && preinstalledRoot !== ''
+    if (!allowPreinstalled) return registryGraph
+    const preinstalledRoots = preinstalledSearchRoots(preinstalledRoot)
+    return {
+      resolver: {
+        async resolve(name, range) {
+          // Prefer operator-completed content, root first and then nested package
+          // trees: a preinstalled package's transitive deps live in ITS OWN
+          // node_modules, so root-level lookup alone would fall through to the
+          // registry and refuse a script-declaring leaf under EXT-10.
+          for (const candidateRoot of preinstalledRoots) {
+            try {
+              const found = resolveFirstPartyDependency({ sourcePackageDir: candidateRoot }, name, range)
+              return { name: found.name, version: found.version, dir: found.directory, provenance: 'preinstalled' as const }
+            } catch {
+              continue
+            }
+          }
+          return registryGraph.resolver.resolve(name, range)
+        },
+      },
+      archive: registryGraph.archive,
+      allowPreinstalled: true,
+      preinstalledRoot,
+      maxDepth: depth,
+    }
+  }
+
+  /**
+   * Materialize the extension's optionalDependencies without failing the install.
+   *
+   * Each declaration is resolved and materialized through the SAME SDK dependency
+   * graph discipline as regular dependencies (bounded fetch, sha512 verification,
+   * EXT-10 script refusal) into a scratch package, then merged into the
+   * extension's own node_modules. A failure is RECORDED (store sidecar) and the
+   * requirement model blocks activation instead; the package install stands.
+   *
+   * The store record's content digest is recomputed after a successful merge,
+   * because the installed bytes legitimately changed; the archive digest (the
+   * tarball identity) is untouched.
+   * @param storeDir - the configured store.
+   * @param installed - the just-installed package.
+   * @param session - the registry session used for the install.
+   * @param signal - cancellation.
+   */
+  async #materializeOptionalRuntimes(
+    storeDir: string,
+    installed: { readonly extensionId: string; readonly version: string; readonly installPath: string },
+    session: ReturnType<typeof createRegistrySession>,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const optional = readDeclaredDependencies(installed.installPath, 'optionalDependencies')
+    if (optional.length === 0) return
+    const attempts: RuntimeDependencyRecord[] = []
+    const locked: LockedDependency[] = []
+    for (const dependency of optional) {
+      signal?.throwIfAborted()
+      const scratch = mkdtempSync(join(tmpdir(), 'dsh-optional-runtime-'))
+      try {
+        writeFileSync(
+          join(scratch, 'package.json'),
+          `${JSON.stringify({ name: 'dsh-optional-runtime-host', version: '0.0.0', dependencies: { [dependency.name]: dependency.range } }, null, 2)}\n`,
+          'utf8',
+        )
+        const materialized = await installDependencyGraph(scratch, this.#installGraph(session))
+        const sourceNodeModules = join(scratch, 'node_modules')
+        const targetNodeModules = join(installed.installPath, 'node_modules')
+        if (existsSync(sourceNodeModules)) {
+          for (const name of readdirSync(sourceNodeModules)) {
+            const from = join(sourceNodeModules, name)
+            const to = join(targetNodeModules, name)
+            if (existsSync(to)) {
+              const kept = readInstalledDependencyVersion(installed.installPath, name)
+              const wanted = materialized.find(entry => entry.name === name)
+              if (kept !== undefined && wanted !== undefined && kept !== wanted.version) {
+                throw new Error(`${name} is already installed at ${kept}, but the optional runtime needs ${wanted.version}`)
+              }
+              continue
+            }
+            cpSync(from, to, { recursive: true })
+          }
+          locked.push(...materialized)
+        }
+        const own = materialized.find(entry => entry.name === dependency.name)
+        attempts.push({
+          name: dependency.name,
+          range: dependency.range,
+          satisfied: true,
+          ...own === undefined ? {} : { version: own.version },
+        })
+      } catch (error) {
+        if (signal?.aborted === true) throw error
+        attempts.push({ name: dependency.name, range: dependency.range, satisfied: false, error: messageOf(error) })
+      } finally {
+        rmSync(scratch, { recursive: true, force: true })
+      }
+    }
+    writeRuntimeDependencyDocument(storeDir, installed.extensionId, installed.version, attempts)
+    if (locked.length === 0) return
+    const store = new ExtensionStore(storeDir)
+    const record = store.listInstalled().value.find(candidate => candidate.extensionId === installed.extensionId && candidate.version === installed.version)
+    if (record === undefined) return
+    const existing = new Set((record.dependencies ?? []).map(entry => entry.name))
+    const additions = locked.filter(entry => !existing.has(entry.name))
+    if (additions.length === 0) return
+    replaceInstalledRecord(storeDir, {
+      ...record,
+      contentDigest: digestInstalledContent(installed.installPath),
+      dependencies: [...(record.dependencies ?? []), ...additions],
+    })
   }
 
   /**
@@ -1854,6 +2281,10 @@ export class ExtensionsService implements ModelToolsRemote {
         // that classification while refusing before the lifecycle call.
         throw new ExtensionsServiceError('extension-activation-failed', `[INTEGRITY_MISMATCH] ${unmet.reason}`)
       }
+      if (unmet.kind === 'runtime') {
+        // Activation that cannot serve the extension's tools is not activation.
+        throw new ExtensionsServiceError('extension-runtime-unavailable', unmet.reason)
+      }
       throw new ExtensionsServiceError('extension-requirement-unmet', unmet.reason)
     }
     const ownedHere = current?.observedActivation === 'active'
@@ -1973,6 +2404,20 @@ export class ExtensionsService implements ModelToolsRemote {
       )
     }
     const lifecycle = this.#lifecycle()
+    /**
+     * A prose source (no URL, no cached bytes) is refused BEFORE the lifecycle
+     * probe or any transfer: a URL-parse failure after waiting is the wrong answer.
+     */
+    const unavailable = firstUnavailableAssetSource(
+      plan.assets.map(asset => ({ assetId: asset.assetId, source: asset.source, digest: asset.digest })),
+      surface.registry.cacheDirectory,
+    )
+    if (unavailable !== undefined) {
+      throw new ExtensionsServiceError(
+        'extension-asset-source-unavailable',
+        `[ASSET_SOURCE_UNAVAILABLE] ${assetSourceUnavailableReason(unavailable.assetId, unavailable.source)}`,
+      )
+    }
     if (lifecycle !== undefined && lifecycle.stateOf(extensionId) === undefined) {
       await this.#recordPreparationBlocker(lifecycle, extensionId, record.version)
     }

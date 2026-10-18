@@ -13,14 +13,18 @@ import { after, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
-import { cpSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { createServer as createNetServer } from 'node:net'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
-import { ExtensionStore, type ExtensionState as SdkExtensionState } from '@try-works/tool-mode-extension-sdk'
+import { ExtensionStore, createTarGzipArchiveSource, type ExtensionState as SdkExtensionState } from '@try-works/tool-mode-extension-sdk'
 
 import {
+  createRegistrySession,
+  DEFAULT_REGISTRY_METADATA_TIMEOUT_MS,
+  DEFAULT_REGISTRY_TARBALL_TIMEOUT_MS,
   highestSatisfyingVersion,
+  RegistryError,
   satisfiesRegistryRange,
 } from '../src/extension-dependencies.ts'
 import {
@@ -109,8 +113,24 @@ interface FixtureRegistry {
   close(): Promise<void>
 }
 
+/** Per-test transport behavior for the fixture registry (timeouts and caps). */
+interface RegistryTransportOptions {
+  /** Stream the tarball instead of writing it in one shot (slow/stalled transfers). */
+  readonly streamTarball?: (served: ServedVersion, response: ServerResponse) => void | Promise<void>
+  /** Delay the packument response (metadata-timeout tests). */
+  readonly metadataDelayMs?: number
+}
+
+/** Promise-based sleep for streamed fixtures. */
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 /** Start a local npm registry over the given packages; integrity is the bytes' own sha512 unless overridden. */
-async function startRegistry(packages: Readonly<Record<string, ServedPackage>>): Promise<FixtureRegistry> {
+async function startRegistry(
+  packages: Readonly<Record<string, ServedPackage>>,
+  transport: RegistryTransportOptions = {},
+): Promise<FixtureRegistry> {
   const requests: string[] = []
   const server = createServer((request: IncomingMessage, response: ServerResponse) => {
     const path = decodeURIComponent(new URL(request.url ?? '/', 'http://127.0.0.1').pathname)
@@ -124,6 +144,10 @@ async function startRegistry(packages: Readonly<Record<string, ServedPackage>>):
       const served = version === undefined ? undefined : pkg?.versions[version]
       if (served === undefined) {
         response.writeHead(404).end('missing tarball')
+        return
+      }
+      if (transport.streamTarball !== undefined) {
+        void transport.streamTarball(served, response)
         return
       }
       response.writeHead(200, { 'content-type': 'application/octet-stream' }).end(Buffer.from(served.bytes))
@@ -146,11 +170,15 @@ async function startRegistry(packages: Readonly<Record<string, ServedPackage>>):
         },
       }
     }
-    response.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({
-      name,
-      'dist-tags': pkg.distTags,
-      versions,
-    }))
+    const write = (): void => {
+      response.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({
+        name,
+        'dist-tags': pkg.distTags,
+        versions,
+      }))
+    }
+    if (transport.metadataDelayMs === undefined) write()
+    else setTimeout(write, transport.metadataDelayMs)
   })
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject)
@@ -415,6 +443,412 @@ describe('install from the npm registry', () => {
       assert.equal(materialized, 'export const answer = 43\n')
       // The dependency came from the registry, not from any host tree.
       assert.ok(registry.requests.some(path => path.startsWith('/tar/@fixture/tiny-dep/1.1.0')))
+    } finally {
+      await registry.close()
+    }
+  })
+})
+
+describe('large tarballs: a separate idle timeout, not the packument budget', () => {
+  it('pins the defaults: metadata 30 s, tarball idle 10 min', () => {
+    assert.equal(DEFAULT_REGISTRY_METADATA_TIMEOUT_MS, 30_000)
+    assert.equal(DEFAULT_REGISTRY_TARBALL_TIMEOUT_MS, 10 * 60_000)
+  })
+
+  it('SUCCEEDS on a tarball streamed over several idle windows', async () => {
+    const bytes = tarGz(extensionEntries())
+    const registry = await startRegistry({
+      [EXTENSION_ID]: { versions: { '1.0.0': { bytes } }, distTags: { latest: '1.0.0' } },
+    }, {
+      streamTarball: async (served, response) => {
+        response.writeHead(200, { 'content-type': 'application/octet-stream', 'content-length': served.bytes.byteLength })
+        const chunkSize = Math.max(1, Math.ceil(served.bytes.byteLength / 8))
+        for (let offset = 0; offset < served.bytes.byteLength; offset += chunkSize) {
+          response.write(Buffer.from(served.bytes.subarray(offset, offset + chunkSize)))
+          await delay(200)
+        }
+        response.end()
+      },
+    })
+    try {
+      const started = Date.now()
+      const installed = await createExtensionsService({
+        storeDir: tempDir(),
+        installSource: 'registry',
+        registryUrl: registry.url,
+        // Idle window comfortably longer than the 200 ms between chunks; the OLD
+        // shared 30s budget is irrelevant because this transfer takes seconds.
+        registryTarballTimeoutMs: 1_000,
+      }).install(EXTENSION_ID)
+      assert.equal(installed.source, 'registry')
+      assert.equal(installed.version, '1.0.0')
+      assert.ok(Date.now() - started >= 1_000, 'the transfer really spanned multiple idle windows')
+    } finally {
+      await registry.close()
+    }
+  })
+
+  it('aborts a STALLED stream with a message naming the dependency, host and timeout', async () => {
+    const bytes = tarGz(extensionEntries())
+    const registry = await startRegistry({
+      [EXTENSION_ID]: { versions: { '1.0.0': { bytes } }, distTags: { latest: '1.0.0' } },
+    }, {
+      streamTarball: async (served, response) => {
+        response.writeHead(200, { 'content-type': 'application/octet-stream' })
+        response.write(Buffer.from(served.bytes.subarray(0, 32)))
+        // Stall: no more bytes, no end. The client's idle timeout must abort.
+        await new Promise<void>(resolve => response.once('close', resolve))
+      },
+    })
+    try {
+      const started = Date.now()
+      const stalledStore = tempDir()
+      const error = await refuses(
+        createExtensionsService({
+          storeDir: stalledStore,
+          installSource: 'registry',
+          registryUrl: registry.url,
+          registryTarballTimeoutMs: 250,
+        }).install(EXTENSION_ID),
+        'extension-registry-fetch-failed',
+      )
+      assert.match(error.message, /timed out/)
+      assert.match(error.message, /no bytes arrived for 250 ms/)
+      assert.match(error.message, new RegExp(EXTENSION_ID.replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&')))
+      assert.match(error.message, /127\.0\.0\.1:\d+/)
+      assert.ok(Date.now() - started < 10_000, 'the stalled transfer is aborted promptly, not at a 30s wall clock')
+      assert.deepEqual([...new ExtensionStore(stalledStore).listInstalled().value], [])
+    } finally {
+      await registry.close()
+    }
+  })
+
+  it('still refuses an over-cap tarball and names the cap and host (not a timeout)', async () => {
+    const bytes = tarGz(extensionEntries())
+    const registry = await startRegistry({
+      [EXTENSION_ID]: { versions: { '1.0.0': { bytes } }, distTags: { latest: '1.0.0' } },
+    })
+    try {
+      const error = await refuses(
+        createExtensionsService({
+          storeDir: tempDir(),
+          installSource: 'registry',
+          registryUrl: registry.url,
+          registryTarballMaxBytes: 100,
+        }).install(EXTENSION_ID),
+        'extension-registry-fetch-failed',
+      )
+      assert.match(error.message, /over the 100-byte cap/)
+      assert.match(error.message, /127\.0\.0\.1:\d+/)
+      assert.match(error.message, new RegExp(EXTENSION_ID.replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&')))
+      assert.doesNotMatch(error.message, /no bytes arrived/)
+    } finally {
+      await registry.close()
+    }
+  })
+
+  it('keeps the packument timeout SHORT and independent of the tarball budget', async () => {
+    const bytes = tarGz(extensionEntries())
+    const registry = await startRegistry({
+      [EXTENSION_ID]: { versions: { '1.0.0': { bytes } }, distTags: { latest: '1.0.0' } },
+    }, { metadataDelayMs: 1_500 })
+    try {
+      const session = createRegistrySession({
+        registryUrl: registry.url,
+        archiveFactory: createTarGzipArchiveSource,
+        metadataTimeoutMs: 200,
+        // A 10-minute tarball budget must NOT stretch the metadata request.
+        tarballTimeoutMs: 600_000,
+      })
+      const started = Date.now()
+      await assert.rejects(
+        session.resolve(EXTENSION_ID, 'latest'),
+        (error: unknown) => {
+          assert.ok(error instanceof RegistryError)
+          assert.equal(error.code, 'registry-unavailable')
+          assert.match(error.message, /metadata timeout/)
+          assert.match(error.message, /200 ms/)
+          return true
+        },
+      )
+      assert.ok(Date.now() - started < 5_000)
+    } finally {
+      await registry.close()
+    }
+  })
+})
+
+describe('optional tool runtimes: materialized when resolvable, a named blocker when not', () => {
+  const RUNTIME_DEP = '@fixture/tiny-dep'
+
+  it('materializes a resolvable optional runtime into the extension and stays integrity-clean', async () => {
+    const depBytes = tarGz({
+      'package.json': JSON.stringify({ name: RUNTIME_DEP, version: '1.0.0' }),
+      'index.js': 'export const answer = 42\n',
+    })
+    const extensionBytes = tarGz(extensionEntries({ optionalDependencies: { [RUNTIME_DEP]: '^1.0.0' } }))
+    const registry = await startRegistry({
+      [EXTENSION_ID]: { versions: { '1.0.0': { bytes: extensionBytes } }, distTags: { latest: '1.0.0' } },
+      [RUNTIME_DEP]: { versions: { '1.0.0': { bytes: depBytes } }, distTags: { latest: '1.0.0' } },
+    })
+    try {
+      const storeDir = tempDir()
+      const service = createExtensionsService({ storeDir, installSource: 'registry', registryUrl: registry.url })
+      const installed = await service.install(EXTENSION_ID)
+      assert.equal(installed.source, 'registry')
+
+      const store = new ExtensionStore(storeDir)
+      const record = store.listInstalled().value.find(candidate => candidate.extensionId === EXTENSION_ID)
+      assert.ok(record !== undefined)
+      assert.equal(existsSync(join(record.installPath, 'node_modules', '@fixture', 'tiny-dep', 'index.js')), true)
+      assert.ok(record.dependencies?.some(entry => entry.name === RUNTIME_DEP && entry.version === '1.0.0'))
+      // The installed bytes legitimately changed; the record digest must match them.
+      assert.equal(store.verifyUnchanged(record).unchanged, true)
+
+      const row = (await service.describe()).extensions.find(candidate => candidate.id === EXTENSION_ID)
+      assert.ok(row !== undefined)
+      const runtime = row.requirements.find(candidate => candidate.kind === 'runtime')
+      assert.ok(runtime !== undefined)
+      assert.equal(runtime.satisfied, true)
+      assert.match(runtime.reason, /tiny-dep@1\.0\.0/)
+      assert.equal(row.integrity, 'unchanged')
+      assert.equal(row.blocked, false)
+
+      const lifecycle = fakeLifecycle()
+      const enabled = await createExtensionsService({ storeDir, lifecycle: () => lifecycle }).enable(EXTENSION_ID)
+      assert.equal(enabled.active, true)
+      assert.equal(lifecycle.calls, 1)
+    } finally {
+      await registry.close()
+    }
+  })
+
+  it('does NOT fail the install on an unsatisfiable optional range, and blocks activation', async () => {
+    const depBytes = tarGz({ 'package.json': JSON.stringify({ name: RUNTIME_DEP, version: '1.0.0' }) })
+    const extensionBytes = tarGz(extensionEntries({ optionalDependencies: { [RUNTIME_DEP]: '^9.0.0' } }))
+    const registry = await startRegistry({
+      [EXTENSION_ID]: { versions: { '1.0.0': { bytes: extensionBytes } }, distTags: { latest: '1.0.0' } },
+      [RUNTIME_DEP]: { versions: { '1.0.0': { bytes: depBytes } }, distTags: { latest: '1.0.0' } },
+    })
+    try {
+      const storeDir = tempDir()
+      const service = createExtensionsService({ storeDir, installSource: 'registry', registryUrl: registry.url })
+      const installed = await service.install(EXTENSION_ID)
+      assert.equal(installed.version, '1.0.0')
+
+      const row = (await service.describe()).extensions.find(candidate => candidate.id === EXTENSION_ID)
+      assert.ok(row !== undefined)
+      const runtime = row.requirements.find(candidate => candidate.kind === 'runtime')
+      assert.ok(runtime !== undefined)
+      assert.equal(runtime.satisfied, false)
+      assert.equal(runtime.action, 'install')
+      assert.match(runtime.reason, /tiny-dep \^9\.0\.0/)
+      assert.match(runtime.reason, /no published version|no matching|satisf/i)
+      assert.equal(row.blocked, true)
+
+      // The failure is RECORDED in the store sidecar, not lost.
+      const sidecar = JSON.parse(readFileSync(join(storeDir, 'runtime-dependencies.json'), 'utf8')) as {
+        extensions: Record<string, { optional: { name: string; satisfied: boolean; error?: string }[] }>
+      }
+      const attempt = sidecar.extensions[EXTENSION_ID]?.optional.find(entry => entry.name === RUNTIME_DEP)
+      assert.equal(attempt?.satisfied, false)
+      assert.match(attempt?.error ?? '', /no published version|satisf/i)
+
+      const lifecycle = fakeLifecycle()
+      const error = await refuses(
+        createExtensionsService({ storeDir, lifecycle: () => lifecycle }).enable(EXTENSION_ID),
+        'extension-runtime-unavailable',
+      )
+      assert.equal(error.message, runtime.reason)
+      assert.equal(lifecycle.calls, 0, 'no lifecycle call is attempted for a runtime that cannot load')
+    } finally {
+      await registry.close()
+    }
+  })
+
+  it('does NOT fail the install when the optional runtime package is missing (404)', async () => {
+    const extensionBytes = tarGz(extensionEntries({ optionalDependencies: { '@fixture/ghost': '^1.0.0' } }))
+    const registry = await startRegistry({
+      [EXTENSION_ID]: { versions: { '1.0.0': { bytes: extensionBytes } }, distTags: { latest: '1.0.0' } },
+    })
+    try {
+      const storeDir = tempDir()
+      const service = createExtensionsService({ storeDir, installSource: 'registry', registryUrl: registry.url })
+      const installed = await service.install(EXTENSION_ID)
+      assert.equal(installed.version, '1.0.0')
+      const row = (await service.describe()).extensions.find(candidate => candidate.id === EXTENSION_ID)
+      assert.ok(row !== undefined)
+      const runtime = row.requirements.find(candidate => candidate.kind === 'runtime')
+      assert.ok(runtime !== undefined)
+      assert.equal(runtime.satisfied, false)
+      assert.match(runtime.reason, /@fixture\/ghost \^1\.0\.0/)
+      assert.match(runtime.reason, /not found|404/i)
+      assert.equal(row.blocked, true)
+      await refuses(
+        createExtensionsService({ storeDir, lifecycle: () => fakeLifecycle() }).enable(EXTENSION_ID),
+        'extension-runtime-unavailable',
+      )
+    } finally {
+      await registry.close()
+    }
+  })
+})
+
+describe('dependency graphs: depth bound and preinstalled regular dependencies (task-116)', () => {
+  /** Build one link of a dependency chain served by the fixture registry. */
+  function chainEntry(name: string, next: string | undefined): ServedPackage {
+    const pkg = {
+      name,
+      version: '1.0.0',
+      ...next === undefined ? {} : { dependencies: { [next]: '^1.0.0' } },
+    }
+    return {
+      versions: { '1.0.0': { bytes: tarGz({ 'package.json': JSON.stringify(pkg), 'index.js': `module.exports = ${JSON.stringify(name)}\n` }) } },
+      distTags: { latest: '1.0.0' },
+    }
+  }
+
+  function chainPackages(length: number): Record<string, ServedPackage> {
+    const packages: Record<string, ServedPackage> = {}
+    for (let index = 0; index < length; index += 1) {
+      packages[`@fixture/chain-${index}`] = chainEntry(
+        `@fixture/chain-${index}`,
+        index + 1 < length ? `@fixture/chain-${index + 1}` : undefined,
+      )
+    }
+    return packages
+  }
+
+  it('resolves a >=6-level registry tree with the raised default depth (12)', async () => {
+    const packages = chainPackages(7)
+    const extensionBytes = tarGz(extensionEntries({ dependencies: { '@fixture/chain-0': '^1.0.0' } }))
+    packages[EXTENSION_ID] = { versions: { '1.0.0': { bytes: extensionBytes } }, distTags: { latest: '1.0.0' } }
+    const registry = await startRegistry(packages)
+    try {
+      const storeDir = tempDir()
+      const installed = await createExtensionsService({
+        storeDir,
+        installSource: 'registry',
+        registryUrl: registry.url,
+      }).install(EXTENSION_ID)
+      assert.equal(installed.version, '1.0.0')
+      const record = new ExtensionStore(storeDir).listInstalled().value.find(candidate => candidate.extensionId === EXTENSION_ID)
+      assert.ok(record !== undefined)
+      const names = new Set((record.dependencies ?? []).map(entry => entry.name))
+      for (let index = 0; index < 7; index += 1) assert.equal(names.has(`@fixture/chain-${index}`), true, `chain-${index} missing`)
+    } finally {
+      await registry.close()
+    }
+  })
+
+  it('still refuses a runaway graph, names the depth bound, and installs nothing', async () => {
+    const packages = chainPackages(7)
+    const extensionBytes = tarGz(extensionEntries({ dependencies: { '@fixture/chain-0': '^1.0.0' } }))
+    packages[EXTENSION_ID] = { versions: { '1.0.0': { bytes: extensionBytes } }, distTags: { latest: '1.0.0' } }
+    const registry = await startRegistry(packages)
+    try {
+      const storeDir = tempDir()
+      const error = await refuses(
+        createExtensionsService({
+          storeDir,
+          installSource: 'registry',
+          registryUrl: registry.url,
+          // Deliberately too shallow for a 7-package chain.
+          registryDependencyDepth: 2,
+        }).install(EXTENSION_ID),
+        'extension-dependency-unsatisfied',
+      )
+      assert.match(error.message, /depth bound/)
+      assert.deepEqual([...new ExtensionStore(storeDir).listInstalled().value], [])
+    } finally {
+      await registry.close()
+    }
+  })
+
+  it('resolves a transitive leaf from the PREINSTALLED PACKAGE\'S OWN node_modules (npm nesting)', async () => {
+    // Mirrors the live failure: @huggingface/transformers hoists onnxruntime-web
+    // into ITS OWN node_modules; root-level lookup alone fell through to the
+    // registry and refused the script-declaring leaf under EXT-10.
+    const extensionBytes = tarGz(extensionEntries({ dependencies: { '@fixture/wrapper': '^1.0.0' } }))
+    const registry = await startRegistry({
+      [EXTENSION_ID]: { versions: { '1.0.0': { bytes: extensionBytes } }, distTags: { latest: '1.0.0' } },
+    })
+    const preinstalledRoot = tempDir()
+    const wrapperDir = join(preinstalledRoot, 'node_modules', '@fixture', 'wrapper')
+    const leafDir = join(wrapperDir, 'node_modules', '@fixture', 'scripted-leaf')
+    mkdirSync(leafDir, { recursive: true })
+    writeFileSync(join(wrapperDir, 'package.json'), `${JSON.stringify({
+      name: '@fixture/wrapper',
+      version: '1.0.0',
+      dependencies: { '@fixture/scripted-leaf': '^1.0.0' },
+    })}\n`)
+    writeFileSync(join(wrapperDir, 'index.js'), 'module.exports = require("@fixture/scripted-leaf")\n')
+    writeFileSync(join(leafDir, 'package.json'), `${JSON.stringify({
+      name: '@fixture/scripted-leaf',
+      version: '1.0.0',
+      scripts: { prepare: 'node -e "process.exit(0)"' },
+    })}\n`)
+    writeFileSync(join(leafDir, 'index.js'), 'module.exports = 7\n')
+    try {
+      const storeDir = tempDir()
+      const service = createExtensionsService({
+        storeDir,
+        installSource: 'registry',
+        registryUrl: registry.url,
+        allowPreinstalledDependencies: true,
+        preinstalledDependenciesRoot: preinstalledRoot,
+      })
+      await service.install(EXTENSION_ID)
+      const record = new ExtensionStore(storeDir).listInstalled().value.find(candidate => candidate.extensionId === EXTENSION_ID)
+      assert.ok(record !== undefined)
+      const byName = new Map((record.dependencies ?? []).map(entry => [entry.name, entry]))
+      assert.equal(byName.get('@fixture/wrapper')?.provenance, 'preinstalled')
+      assert.equal(byName.get('@fixture/scripted-leaf')?.provenance, 'preinstalled')
+      assert.equal(existsSync(join(record.installPath, 'node_modules', '@fixture', 'scripted-leaf', 'index.js')), true)
+    } finally {
+      await registry.close()
+    }
+  })
+
+  it('materializes a SCRIPT-DECLARING regular dependency from the operator-preinstalled root', async () => {
+    // The registry does not serve this dependency at all; only the operator's
+    // own installed tree has it, and its install scripts already ran as them.
+    const extensionBytes = tarGz(extensionEntries({ dependencies: { '@fixture/scripted-dep': '^1.0.0' } }))
+    const registry = await startRegistry({
+      [EXTENSION_ID]: { versions: { '1.0.0': { bytes: extensionBytes } }, distTags: { latest: '1.0.0' } },
+    })
+    const preinstalledRoot = tempDir()
+    const preinstalledDir = join(preinstalledRoot, 'node_modules', '@fixture', 'scripted-dep')
+    mkdirSync(preinstalledDir, { recursive: true })
+    writeFileSync(join(preinstalledDir, 'package.json'), `${JSON.stringify({
+      name: '@fixture/scripted-dep',
+      version: '1.0.0',
+      scripts: { prepare: 'node -e "process.exit(0)"' },
+    })}\n`)
+    writeFileSync(join(preinstalledDir, 'index.js'), 'module.exports = 42\n')
+    try {
+      const storeDir = tempDir()
+      const service = createExtensionsService({
+        storeDir,
+        installSource: 'registry',
+        registryUrl: registry.url,
+        allowPreinstalledDependencies: true,
+        preinstalledDependenciesRoot: preinstalledRoot,
+      })
+      const installed = await service.install(EXTENSION_ID)
+      assert.equal(installed.version, '1.0.0')
+      const record = new ExtensionStore(storeDir).listInstalled().value.find(candidate => candidate.extensionId === EXTENSION_ID)
+      assert.ok(record !== undefined)
+      const locked = record.dependencies?.find(entry => entry.name === '@fixture/scripted-dep')
+      assert.ok(locked !== undefined)
+      assert.equal(locked.version, '1.0.0')
+      assert.equal(locked.provenance, 'preinstalled')
+      assert.equal(existsSync(join(record.installPath, 'node_modules', '@fixture', 'scripted-dep', 'index.js')), true)
+      // The regular-dependency requirement is satisfied: the tools can `require` it.
+      const row = (await service.describe()).extensions.find(candidate => candidate.id === EXTENSION_ID)
+      assert.ok(row !== undefined)
+      const dependencies = row.requirements.find(candidate => candidate.kind === 'dependencies')
+      assert.equal(dependencies?.satisfied, true)
     } finally {
       await registry.close()
     }

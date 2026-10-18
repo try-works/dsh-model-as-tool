@@ -3,6 +3,11 @@ node_modules/
 lib/
 *.tsbuildinfo
 
+# scripts/lib holds dependency-free SOURCE libraries used by the harnesses
+# (e.g. the extension matrix), not build output. The generic `lib/` rule above
+# would otherwise hide them from git, so they are un-ignored explicitly.
+!scripts/lib/
+
 # Local spike used to probe upstream SDK behaviour; not part of the deliverable.
 spike/
 spike-mcp/

@@ -1,0 +1,9 @@
+{
+  "audio": {
+    "path": "./assets/tone-2s-16k-mono.wav",
+    "sampleRateHz": 16000,
+    "channels": 1
+  },
+  "language": "en",
+  "timestamps": "none"
+}

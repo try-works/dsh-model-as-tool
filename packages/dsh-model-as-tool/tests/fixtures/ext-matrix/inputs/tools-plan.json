@@ -1,0 +1,6 @@
+{
+  "request": "Extract the invoice number, the vendor and the total amount from this sentence: Invoice INV-2024-0042 was issued by Northwind Traders for 1,250.00 USD.",
+  "tools": [
+    "structured_extract"
+  ]
+}

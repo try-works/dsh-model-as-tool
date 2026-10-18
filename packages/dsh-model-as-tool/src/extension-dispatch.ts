@@ -192,6 +192,71 @@ export async function createDispatch(
 }
 
 /**
+ * Resolve the implementation chain for a declared CONTRACT id (TASK-121).
+ *
+ * An extension whose manifest declares ONLY implementations (no `tools[]` —
+ * the MiniLM pair's shape) still serves a caller-facing standard tool: the
+ * contract id maps to the standard tool name the host knows, and this
+ * resolution finds the implementation by the contract id alone.
+ * @param manifest - the activated extension's manifest.
+ * @param contractId - the contract identity.
+ * @returns the implementation, or why the chain is incomplete.
+ */
+export function resolveImplementationByContract(
+  manifest: DispatchManifest,
+  contractId: string,
+): { readonly ok: true; readonly implementation: DeclaredImplementation }
+  | { readonly ok: false; readonly failure: DispatchFailure } {
+  const implementation = manifest.implementations.find(candidate => candidate.contractId === contractId)
+  if (implementation === undefined) {
+    return {
+      ok: false,
+      failure: {
+        code: 'no-implementation',
+        message: `contract ${contractId} has no implementation in this extension's manifest`,
+        remedy: 'The extension declares the contract but binds no model to it.',
+      },
+    }
+  }
+  return { ok: true, implementation }
+}
+
+/**
+ * Build an `execute` for a standard-named contract tool served by an
+ * IMPLEMENTATION-ONLY extension (TASK-121). The provider is created lazily on
+ * first call, exactly like the declared-tool path.
+ * @param environment - how to reach the extension.
+ * @param contractId - the contract identity to dispatch.
+ * @returns the execute function, or the failure that prevents one.
+ */
+export async function createDispatchForContract(
+  environment: DispatchEnvironment,
+  contractId: string,
+): Promise<
+  | { readonly ok: true; readonly execute: (args: Record<string, unknown>, signal: AbortSignal) => Promise<Record<string, unknown>> }
+  | { readonly ok: false; readonly failure: DispatchFailure }
+> {
+  const resolved = resolveImplementationByContract(environment.getManifest(), contractId)
+  if (!resolved.ok) return resolved
+  const { implementation } = resolved
+  return {
+    ok: true,
+    async execute(args, signal) {
+      const provider = await environment.providerFor(implementation.modelId)
+      const prepared = environment.assetsFor?.()
+      await provider.load({ assets: prepared ?? { get: () => undefined, assetIds: [] }, signal, modelId: implementation.modelId })
+      const value = await provider.invoke({
+        implementationId: implementation.id,
+        input: args,
+        context: environment.contextFor(implementation.id, signal),
+      })
+      assertNoReservedMeta(value as never, implementation.id)
+      return value
+    },
+  }
+}
+
+/**
  * Describe a dispatch failure for a caller (EXT-30).
  * @param failure - the failure.
  * @returns a readable message naming what to do.

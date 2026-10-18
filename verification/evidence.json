@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-18T14:17:01.950Z",
+  "generatedAt": "2026-10-18T22:06:49.151Z",
   "git": {
-    "commit": "a0e02319d178683f94af8070f852223edd24d71a",
+    "commit": "5e1dff850338ea50b4c6ed47a0d7a3f2507dfb7d",
     "branch": "main",
     "dirty": true
   },
@@ -31,7 +31,7 @@
   "packages": [
     {
       "name": "@try-works/dsh-model-as-tool",
-      "version": "0.4.1",
+      "version": "0.4.6",
       "path": "packages/dsh-model-as-tool"
     },
     {
@@ -46,22 +46,22 @@
     },
     {
       "name": "@try-works/extension-desert-ant-tongue",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "path": "packages/extension-desert-ant-tongue"
     },
     {
       "name": "@try-works/extension-desert-ant-voz",
-      "version": "0.1.2",
+      "version": "0.1.5",
       "path": "packages/extension-desert-ant-voz"
     },
     {
       "name": "@try-works/extension-embeddinggemma",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "path": "packages/extension-embeddinggemma"
     },
     {
       "name": "@try-works/extension-needle",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "path": "packages/extension-needle"
     },
     {

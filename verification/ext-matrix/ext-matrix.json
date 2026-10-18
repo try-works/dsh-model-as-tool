@@ -1,0 +1,372 @@
+{
+  "generatedAt": "2026-10-18T22:39:17.257Z",
+  "baseUrl": "http://127.0.0.1:3097",
+  "exitCode": 1,
+  "skipInvoke": false,
+  "rows": [
+    {
+      "id": "@try-works/extension-desert-ant-tongue",
+      "name": "tongue",
+      "status": "PASS",
+      "durationMs": 3460,
+      "blocker": null,
+      "detail": "prepare: prepared",
+      "tools": [
+        "lang_detect"
+      ]
+    },
+    {
+      "id": "@try-works/extension-desert-ant-voz",
+      "name": "voz",
+      "status": "PASS",
+      "durationMs": 34185,
+      "blocker": null,
+      "detail": "prepare: prepared",
+      "tools": [
+        "stt_transcribe"
+      ]
+    },
+    {
+      "id": "@try-works/extension-embeddinggemma",
+      "name": "embeddinggemma",
+      "status": "FAIL",
+      "durationMs": 374707,
+      "blocker": null,
+      "detail": "fetch failed",
+      "tools": [
+        "multimodal_embed",
+        "semantic_similarity",
+        "semantic_rank",
+        "semantic_classify",
+        "semantic_deduplicate",
+        "media_find_moments"
+      ]
+    },
+    {
+      "id": "@try-works/extension-laya",
+      "name": "laya",
+      "status": "SKIPPED",
+      "durationMs": 19562,
+      "blocker": "the asset lock declares no download location; the artifacts require the documented manual export: [ASSET_SOURCE_UNAVAILABLE] the asset lock declares no download URL for text-backbone/laya-encoder-onnx: its source is \"the split export of the pinned checkpoint\"; the artifacts must be produced by the documented export and placed in the prepared-assets cache",
+      "detail": null,
+      "tools": [
+        "decision_choose",
+        "decision_test",
+        "decision_score"
+      ]
+    },
+    {
+      "id": "@try-works/extension-minilm-embed",
+      "name": "minilm-embed",
+      "status": "PASS",
+      "durationMs": 105131,
+      "blocker": null,
+      "detail": "prepare: prepared",
+      "tools": []
+    },
+    {
+      "id": "@try-works/extension-minilm-rerank",
+      "name": "minilm-rerank",
+      "status": "PASS",
+      "durationMs": 130237,
+      "blocker": null,
+      "detail": "prepare: prepared",
+      "tools": []
+    },
+    {
+      "id": "@try-works/extension-needle",
+      "name": "needle",
+      "status": "PASS",
+      "durationMs": 76645,
+      "blocker": null,
+      "detail": "prepare: prepared",
+      "tools": [
+        "tools_plan",
+        "structured_extract"
+      ]
+    },
+    {
+      "id": "@try-works/extension-declarative-recipes",
+      "name": "declarative-recipes",
+      "status": "SKIPPED",
+      "durationMs": 46499,
+      "blocker": "the invocation host composes no LLM provider (harness limitation; the live host serves declarative recipes via the agent)",
+      "detail": null,
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "lang_detect",
+      "extension": "tongue",
+      "ok": true,
+      "allowedRefusal": false,
+      "refusal": null,
+      "detail": "The long English fixture must be detected as en with the top candidate agreeing; probabilities are the vendor's uncalibrated values, only bounded here.",
+      "failures": [],
+      "verdict": {
+        "id": "lang_detect",
+        "ok": true,
+        "checks": [
+          {
+            "name": "output-schema",
+            "ok": true
+          },
+          {
+            "name": "language-is-iso6391",
+            "ok": true,
+            "detail": "language=\"en\""
+          },
+          {
+            "name": "language-top-guess",
+            "ok": true,
+            "detail": "expected \"en\", saw \"en\""
+          },
+          {
+            "name": "reliability-verdict",
+            "ok": true,
+            "detail": "reliability=\"confident\""
+          },
+          {
+            "name": "too-close-to-call-boolean",
+            "ok": true
+          },
+          {
+            "name": "candidate-probabilities",
+            "ok": true,
+            "detail": "3 candidate(s)"
+          },
+          {
+            "name": "candidates-present",
+            "ok": true,
+            "detail": "3 candidate(s) for an expected \"en\""
+          },
+          {
+            "name": "candidates-rank-consistent",
+            "ok": true,
+            "detail": "top candidate=\"en\""
+          }
+        ],
+        "failures": [],
+        "note": "The long English fixture must be detected as en with the top candidate agreeing; probabilities are the vendor's uncalibrated values, only bounded here.",
+        "refusal": null
+      }
+    },
+    {
+      "id": "stt_transcribe",
+      "extension": "voz",
+      "ok": true,
+      "allowedRefusal": false,
+      "refusal": null,
+      "detail": "The fixture is a synthesized 2 s tone, NOT speech: this proves decoding, contract shape and duration-bounded coverage only. It cannot prove word accuracy, and no check here claims it. The silence fixture is used only by the offline honest-empty test.",
+      "failures": [],
+      "verdict": {
+        "id": "stt_transcribe",
+        "ok": true,
+        "checks": [
+          {
+            "name": "output-schema",
+            "ok": true
+          },
+          {
+            "name": "transcript-text-is-string",
+            "ok": true
+          },
+          {
+            "name": "coverage-shape",
+            "ok": true
+          },
+          {
+            "name": "coverage-within-audio",
+            "ok": true,
+            "detail": "transcribedSeconds=0 audio=2s"
+          },
+          {
+            "name": "words-shape",
+            "ok": true,
+            "detail": "undefined"
+          },
+          {
+            "name": "words-within-audio",
+            "ok": true,
+            "detail": "no word timings returned"
+          }
+        ],
+        "failures": [],
+        "note": "The fixture is a synthesized 2 s tone, NOT speech: this proves decoding, contract shape and duration-bounded coverage only. It cannot prove word accuracy, and no check here claims it. The silence fixture is used only by the offline honest-empty test.",
+        "refusal": null
+      }
+    },
+    {
+      "id": "tools_plan",
+      "extension": "needle",
+      "ok": false,
+      "skipped": true,
+      "planningLimitation": true,
+      "detail": "the in-process invocation host composes the host planning adapter but has no Agent turn context, so the frozen planning snapshot is not applied (harness limitation); the live agent host produces a real plan",
+      "failures": [
+        "plan-has-proposals",
+        "plan-proposals-valid"
+      ],
+      "raw": {
+        "isError": false,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"proposals\": [],\n  \"rejected\": [],\n  \"reasoning\": \"Text is the invoice number. Path is 'invoice_invoice_20240042' from 'Invoice INV-2024-0042 was issued by Northwind Traders for 1,250.00 USD'. Instruction is 'Invoice INV-2024-0042 was issued by Northwind Traders for 1,250.00 USD'.\",\n  \"confidence\": 0.0001,\n  \"meta\": {\n    \"contract\": \"@try-works/extension-needle/tools_plan\",\n    \"contractVersion\": \"1.0.0\",\n    \"implementationId\": \"needle3-native-tools-plan\",\n    \"extension\": \"@try-works/extension-needle\",\n    \"extensionVersion\": \"0.1.2\",\n    \"activationGeneration\": 6,\n    \"executionLocation\": \"device\",\n    \"receiptId\": \"rcpt_000001\",\n    \"warnings\": []\n  }\n}"
+          }
+        ],
+        "value": {
+          "proposals": [],
+          "rejected": [],
+          "reasoning": "Text is the invoice number. Path is 'invoice_invoice_20240042' from 'Invoice INV-2024-0042 was issued by Northwind Traders for 1,250.00 USD'. Instruction is 'Invoice INV-2024-0042 was issued by Northwind Traders for 1,250.00 USD'.",
+          "confidence": 0.0001,
+          "meta": {
+            "contract": "@try-works/extension-needle/tools_plan",
+            "contractVersion": "1.0.0",
+            "implementationId": "needle3-native-tools-plan",
+            "extension": "@try-works/extension-needle",
+            "extensionVersion": "0.1.2",
+            "activationGeneration": 6,
+            "executionLocation": "device",
+            "receiptId": "rcpt_000001",
+            "warnings": []
+          }
+        }
+      }
+    },
+    {
+      "id": "structured_extract",
+      "extension": "needle",
+      "ok": true,
+      "allowedRefusal": false,
+      "refusal": null,
+      "detail": "The extraction must satisfy the CALLER schema in the fixture, and the package's own valid/issues report must agree with an independent re-validation; a blob is never accepted as an extraction.",
+      "failures": [],
+      "verdict": {
+        "id": "structured_extract",
+        "ok": true,
+        "checks": [
+          {
+            "name": "output-schema",
+            "ok": true
+          },
+          {
+            "name": "extraction-shape",
+            "ok": true,
+            "detail": "extraction=null"
+          },
+          {
+            "name": "proposed-flag-consistent",
+            "ok": true
+          },
+          {
+            "name": "issues-shape",
+            "ok": true
+          },
+          {
+            "name": "extraction-matches-caller-schema",
+            "ok": true,
+            "detail": "no extraction to validate"
+          },
+          {
+            "name": "valid-flag-consistent",
+            "ok": true,
+            "detail": "a null extraction cannot be reported valid"
+          }
+        ],
+        "failures": [],
+        "note": "The extraction must satisfy the CALLER schema in the fixture, and the package's own valid/issues report must agree with an independent re-validation; a blob is never accepted as an extraction.",
+        "refusal": null
+      }
+    },
+    {
+      "id": "text_embed",
+      "extension": "minilm-embed",
+      "ok": false,
+      "skipped": true,
+      "assetLimitation": true,
+      "detail": "the in-process invocation host does not carry the live host's prepared-asset map (harness limitation); the live host serves this tool after a successful prepare",
+      "failures": [
+        "output-is-success"
+      ],
+      "raw": {
+        "isError": true,
+        "error": {
+          "message": "the \"text-backbone\" asset group was not prepared, so text_embed cannot run (MOD-02). The lock records the acquisition status; a blocked acquisition is reported, never faked"
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: the \"text-backbone\" asset group was not prepared, so text_embed cannot run (MOD-02). The lock records the acquisition status; a blocked acquisition is reported, never faked"
+          }
+        ]
+      }
+    },
+    {
+      "id": "text_rerank",
+      "extension": "minilm-rerank",
+      "ok": false,
+      "skipped": true,
+      "assetLimitation": true,
+      "detail": "the in-process invocation host does not carry the live host's prepared-asset map (harness limitation); the live host serves this tool after a successful prepare",
+      "failures": [
+        "output-is-success"
+      ],
+      "raw": {
+        "isError": true,
+        "error": {
+          "message": "the \"text-backbone\" asset group was not prepared, so text_rerank cannot run (MOD-02). The lock records the acquisition status; a blocked acquisition is reported, never faked"
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: the \"text-backbone\" asset group was not prepared, so text_rerank cannot run (MOD-02). The lock records the acquisition status; a blocked acquisition is reported, never faked"
+          }
+        ]
+      }
+    },
+    {
+      "id": "text_title",
+      "extension": "declarative-recipes",
+      "ok": false,
+      "detail": "the invocation host composes no LLM provider (harness limitation; the live host serves declarative recipes via the agent)",
+      "failures": [],
+      "skipped": true
+    },
+    {
+      "id": "image_describe",
+      "extension": "declarative-recipes",
+      "ok": false,
+      "detail": "the invocation host composes no LLM provider (harness limitation; the live host serves declarative recipes via the agent)",
+      "failures": [],
+      "skipped": true
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "pass": 5,
+    "fail": 1,
+    "skipped": 2,
+    "skippedWithNamedBlocker": 2,
+    "coherenceIssues": [],
+    "invocationRan": true
+  },
+  "hostServices": {
+    "modelTools": true,
+    "agentTurnContext": false,
+    "registeredTools": [
+      "lang_detect",
+      "stt_transcribe",
+      "tools_plan",
+      "structured_extract",
+      "text_embed",
+      "text_rerank"
+    ],
+    "planningTool": true
+  },
+  "surface": {
+    "lifecycle": "gateway RPC: GET /connect?token=… then POST /api/modelTools/<installExtension|describe|prepare|enable> with {type:\"client-request\",rpcId,method,payload:{args}}",
+    "invocation": "in-process shipping host (plugin apply + tool runtime + extension dispatch) over a snapshot of the profile store; the live web profile exposes no MCP/tool-execute endpoint"
+  }
+}

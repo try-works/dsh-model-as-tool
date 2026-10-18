@@ -49,6 +49,7 @@ const REQUIREMENT_KIND = {
     'store',
     'source',
     'dependencies',
+    'runtime',
     'assets',
     'executable',
     'harness-model',

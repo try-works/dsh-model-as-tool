@@ -1,6 +1,6 @@
 {
   "name": "@try-works/extension-laya",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Tool Mode extension implementing the Laya decision family (decision_choose / decision_test / decision_score) on the pinned multilingual Laya checkpoint, with the vendored laya-ts runtime.",
   "license": "Apache-2.0",

@@ -23,7 +23,7 @@
     "scoreKind": { "const": "cosine_similarity" },
     "calibrated": { "const": false },
     "embeddingSpaceId": { "type": "string" },
-    "processing": { "type": "array", "items": { "type": "object" } },
-    "meta": { "type": "object" }
+    "processing": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "meta": { "type": "object", "additionalProperties": true }
   }
 }

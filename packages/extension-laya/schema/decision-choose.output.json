@@ -8,7 +8,7 @@
     "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "EXPLICITLY UNCALIBRATED: the probability mass on the reported answer (DEC-08)." },
     "calibrated": { "const": false, "description": "The upstream model ships uncalibrated logits with a clamping warning; this is never a calibrated probability (DEC-08)." },
     "answer_confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "The same mass as confidence, named for parity with the vendored runtime's fields." },
-    "probabilities": { "type": "object", "additionalProperties": { "type": "number" }, "description": "Per-option softmax scores (uncalibrated)." },
+    "probabilities": { "type": "object", "additionalProperties": true, "description": "Per-option softmax scores (uncalibrated)." },
     "abstained": { "type": "boolean", "description": "True when the model's act gate declined and allow_abstain permitted it." },
     "action": {
       "type": "object",

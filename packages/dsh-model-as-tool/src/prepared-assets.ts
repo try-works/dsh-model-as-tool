@@ -199,6 +199,60 @@ export function lockGroups(lock: ParsedAssetLock, assetSetId: string): readonly 
   return set.groups
 }
 
+/**
+ * Whether one lock `source` is a resolvable http(s) download URL.
+ * @param source - the lock's source string.
+ * @returns whether a transfer can be planned for it.
+ */
+export function isFetchableAssetSource(source: string): boolean {
+  /**
+   * A source is fetchable when it has a URI SCHEME at all: https/http, a `file:`
+   * deployment lock, or the injected-source test scheme (`fixture:`). A PROSE
+   * description ("the split export of the pinned checkpoint") has no scheme and
+   * cannot plan a transfer.
+   */
+  return /^[a-z][a-z0-9+.-]*:/i.test(source.trim())
+}
+
+/** The minimum an asset needs for a source check. */
+export interface AssetSourceProbe {
+  readonly assetId: string
+  readonly source: string
+  readonly digest: string
+}
+
+/**
+ * The operator-facing reason an asset has no transferable location.
+ *
+ * A prose `source` (e.g. "the split export of the pinned checkpoint") is not a
+ * download URL; the bytes must be produced by the documented export and placed in
+ * the prepared-assets cache (file name = the pinned digest) before a transfer-free
+ * preparation can succeed.
+ * @param assetId - the lock asset id.
+ * @param source - the prose/non-URL source.
+ * @returns the exact refusal reason.
+ */
+export function assetSourceUnavailableReason(assetId: string, source: string): string {
+  return `the asset lock declares no download URL for ${assetId}: its source is ${JSON.stringify(source)}; `
+    + 'the artifacts must be produced by the documented export and placed in the prepared-assets cache'
+}
+
+/**
+ * The first planned asset with neither an http(s) URL nor bytes already in the cache.
+ *
+ * A cache hit is a legitimate source: a later acquisition still verifies the blob
+ * against the pinned digest, so pre-seeded artifacts are verified rather than trusted.
+ * @param assets - the planned assets to check.
+ * @param cacheRoot - the content-addressed cache root (blob filename = digest).
+ * @returns the first unavailable asset, or undefined when every asset is reachable.
+ */
+export function firstUnavailableAssetSource(
+  assets: readonly AssetSourceProbe[],
+  cacheRoot: string,
+): AssetSourceProbe | undefined {
+  return assets.find(asset => !isFetchableAssetSource(asset.source) && !existsSync(join(cacheRoot, asset.digest)))
+}
+
 /** The filesystem store acquisition needs, over node:fs. */
 function fsStore(): AcquisitionStore {
   return {
@@ -237,6 +291,8 @@ function statSyncSize(path: string): number {
 
 /** The host-side prepared-assets registry (session-scoped). */
 export interface PreparedAssetRegistry {
+  /** The content-addressed cache root (blob filename = the pinned digest). */
+  readonly cacheDirectory: string
   /** The plan the last extensions-prepare-plan built, per extension id. */
   plans(): ReadonlyMap<string, PreparationPlan>
   /** The acquired group map per extension id (PreparedAssetMapV1 shapes). */
@@ -317,6 +373,7 @@ export function createPreparedAssetRegistry(options: PreparedAssetRegistryOption
   // owners share one set of bytes).
 
   return {
+    cacheDirectory: cacheRoot,
     plans() {
       return new Map([...held.entries()].map(([extensionId, preparation]) => [extensionId, preparation.plan]))
     },
@@ -359,6 +416,20 @@ export function createPreparedAssetRegistry(options: PreparedAssetRegistryOption
     },
 
     async prepare(extensionId, plan, groups, options) {
+      /**
+       * A lock whose assets carry PROSE sources (no URL) has no transferable
+       * location; refuse BEFORE any acquisition, naming the asset, instead of
+       * surfacing a URL-parse error from deep inside the transport. Artifacts
+       * already materialized in the content-addressed cache are a legitimate
+       * source (a later acquisition still verifies their digest).
+       */
+      const unavailable = firstUnavailableAssetSource(
+        groups.flatMap(group => group.assets.map(asset => ({ assetId: `${group.id}/${asset.id}`, source: asset.source, digest: asset.digest }))),
+        cacheRoot,
+      )
+      if (unavailable !== undefined) {
+        return { ok: false, reason: assetSourceUnavailableReason(unavailable.assetId, unavailable.source) }
+      }
       if (!options.allowExecutable && plan.requiresExecutableApproval) {
         return {
           ok: false,

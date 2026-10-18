@@ -1,0 +1,4 @@
+{
+  "prompt": "Is a 16 kHz mono PCM WAV an acceptable audio input for speech transcription?",
+  "allow_abstain": false
+}

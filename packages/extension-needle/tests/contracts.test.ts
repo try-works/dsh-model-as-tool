@@ -77,7 +77,7 @@ const META = {
   contractVersion: '1.0.0',
   implementationId: 'needle3-native-tools-plan',
   extension: '@try-works/extension-needle',
-  extensionVersion: '0.1.0',
+  extensionVersion: '0.1.2',
   activationGeneration: 1,
   executionLocation: 'device',
   receiptId: 'receipt-1',
@@ -88,7 +88,7 @@ describe('EXT-13/EXT-14 — the package is discoverable as data, before any of i
   it('declares a manifest whose identity matches the package exactly', () => {
     const discovery = discoverExtension(PACKAGE_DIR)
     assert.equal(discovery.packageName, '@try-works/extension-needle')
-    assert.equal(discovery.packageVersion, '0.1.0')
+    assert.equal(discovery.packageVersion, '0.1.2')
     assert.equal(discovery.manifest.id, discovery.packageName)
     assert.equal(discovery.manifest.version, discovery.packageVersion)
     assert.equal(discovery.manifest.runtimeApi, 1)

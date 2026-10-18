@@ -163,7 +163,7 @@ describe('MODEL-05 — the tongue qualification record', () => {
     // probabilities.
     assert.equal(payload.language, 'en')
     assert.ok(['confident', 'likely', 'tentative', 'unknown'].includes(String(payload.reliability)), `reliability ${String(payload.reliability)} is not in the contract vocabulary`)
-    assert.equal(typeof payload.isTooCloseToCall, 'boolean')
+    assert.equal(typeof payload.tooCloseToCall, 'boolean')
     const candidates = payload.candidates as readonly { language: string; probability: number }[]
     assert.ok(Array.isArray(candidates))
     assert.equal(candidates[0]?.language, 'en', 'the top candidate must be the detected language')

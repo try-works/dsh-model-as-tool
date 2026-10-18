@@ -1,0 +1,22 @@
+{
+  "query": "How do I reset my account password?",
+  "documents": [
+    {
+      "id": "doc-a",
+      "text": "To reset your password, open Settings, choose Security, and click Reset password. A confirmation email follows."
+    },
+    {
+      "id": "doc-b",
+      "text": "Password managers store credentials in an encrypted vault and can generate strong passwords."
+    },
+    {
+      "id": "doc-c",
+      "text": "Our office is closed on public holidays; support replies resume the next business day."
+    },
+    {
+      "id": "doc-d",
+      "text": "To change your display name, edit the profile page and save your changes."
+    }
+  ],
+  "top_k": 4
+}

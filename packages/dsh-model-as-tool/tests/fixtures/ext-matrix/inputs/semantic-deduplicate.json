@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "id": "deploy-1",
+      "parts": [{ "kind": "text", "text": "The deployment pipeline ran all tests and promoted the release." }]
+    },
+    {
+      "id": "deploy-2",
+      "parts": [{ "kind": "text", "text": "The deployment pipeline ran every test and promoted the release." }]
+    },
+    {
+      "id": "invoice-1",
+      "parts": [{ "kind": "text", "text": "The invoice is payable within thirty days of issue." }]
+    },
+    {
+      "id": "invoice-2",
+      "parts": [{ "kind": "text", "text": "The invoice is due thirty days after it is issued." }]
+    },
+    {
+      "id": "weather-1",
+      "parts": [{ "kind": "text", "text": "A light breeze will arrive from the north tomorrow." }]
+    }
+  ],
+  "threshold": 0.9
+}

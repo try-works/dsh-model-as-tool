@@ -88,13 +88,13 @@ registry, with a verified digest, never from an unverified path.
 
 | Package | Published |
 |---|---|
-| `@try-works/extension-desert-ant-tongue` | 0.1.2 |
-| `@try-works/extension-desert-ant-voz` | 0.1.2 |
-| `@try-works/extension-embeddinggemma` | 0.1.0 |
-| `@try-works/extension-laya` | 1.0.0 |
+| `@try-works/extension-desert-ant-tongue` | 0.1.3 (contract output mapping — task-115) |
+| `@try-works/extension-desert-ant-voz` | 0.1.5 (contract input mapping — task-120) |
+| `@try-works/extension-embeddinggemma` | 0.1.1 (explicit schema additionalProperties — task-124) |
+| `@try-works/extension-laya` | 1.0.1 (explicit schema additionalProperties — task-124) |
 | `@try-works/extension-minilm-embed` | 1.0.0 |
 | `@try-works/extension-minilm-rerank` | 1.0.0 |
-| `@try-works/extension-needle` | 0.1.0 |
+| `@try-works/extension-needle` | 0.1.2 (property-map schema fix — task-125) |
 | `@try-works/extension-declarative-recipes` | 0.1.0 |
 
 Each package ships its extension manifest (`tool-mode.extension.json`), built

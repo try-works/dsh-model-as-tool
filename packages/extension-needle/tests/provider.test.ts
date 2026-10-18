@@ -48,7 +48,7 @@ function scratch(): string {
 function context(storageDirectory = ''): ExtensionContextV1 {
   return {
     extensionId: '@try-works/extension-needle',
-    extensionVersion: '0.1.0',
+    extensionVersion: '0.1.2',
     activationGeneration: 1,
     storage: { directory: storageDirectory, async read() { return undefined }, async write() { /* no-op */ } },
     logger: { log: () => { /* silent */ } },
@@ -449,7 +449,7 @@ describe('DECL-01 — tools_plan returns INERT DATA and has no execution path', 
         contractVersion: '1.0.0',
         implementationId: 'needle3-native-tools-plan',
         extension: '@try-works/extension-needle',
-        extensionVersion: '0.1.0',
+        extensionVersion: '0.1.2',
         activationGeneration: 1,
         executionLocation: 'device',
         receiptId: 'test-receipt',

@@ -32,6 +32,6 @@
     "algorithm": { "const": "greedy_representative_cosine_v1" },
     "threshold": { "type": "number" },
     "embeddingSpaceId": { "type": "string" },
-    "meta": { "type": "object" }
+    "meta": { "type": "object", "additionalProperties": true }
   }
 }

@@ -23,10 +23,11 @@ import { loadCatalog } from './catalog.ts'
 import { resolveCapability, type ResolvedModel } from './capability.ts'
 import { createAdapter } from './adapters/index.ts'
 import { registerModelTool } from './registrar.ts'
-import { registerContractTool, type ContractBinding, type HostIdentity } from './bindings.ts'
+import { registerContractTool, registerContractImplementationTool, type ContractBinding, type HostIdentity } from './bindings.ts'
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { createContributionRegistrar, type RegistrableTool } from './extension-registrar.ts'
+import { createInvocationAuthority } from './authority.ts'
 import { createExternalGrantContext, createProgramRunner, externalRefusal, serveProgram, TOOL_MODE_RUN_CONTRACT, PTC_SERVICE } from './tool-mode-run.ts'
 import { buildDiagnostics } from './diagnostics.ts'
 import { CAPTURE_PATH } from './capture-path.ts'
@@ -36,7 +37,7 @@ import { createFileCredentialStore, defaultCredentialStoreFile } from './mcp/cre
 import { buildHarnessLlmProvider, discoverDefaultHarnessModel, resolveRunnableHarnessModel, type HarnessLlmRuntimeSurface, type HarnessModelConfig } from './harness-llm.ts'
 import { parseRecipe, type LlmProvider, type RecipeManifest } from '@try-works/tool-mode-recipes'
 import { createManagedWorkerRegistry } from './managed-workers.ts'
-import { createDispatch, describeDispatchFailure, resolveImplementation, type DispatchEnvironment, type DispatchManifest } from './extension-dispatch.ts'
+import { createDispatch, createDispatchForContract, describeDispatchFailure, resolveImplementation, type DispatchEnvironment, type DispatchManifest } from './extension-dispatch.ts'
 import {
   captureToolSchemaSnapshot,
   describePlanningRejections,
@@ -246,6 +247,19 @@ export interface Config {
   /** Hard cap on one registry package tarball download. Default 256 MiB. */
   extensionTarballMaxBytes?: number
   /**
+   * IDLE timeout for one registry tarball download, in ms. Default 10 minutes.
+   * Applies only when NO bytes arrive; a slow large download is not aborted.
+   */
+  extensionTarballTimeoutMs?: number
+  /**
+   * Dependency-graph depth bound for registry installs. Default 12.
+   *
+   * Preinstalled dependencies are leaves (their own tree travels with them);
+   * registry-resolved graphs are bounded by this, and a refusal names the level
+   * and the package.
+   */
+  extensionDependencyDepth?: number
+  /**
    * Operator gate: allow dependency content that arrived already materialized.
    *
    * OFF by default. When off, a declared dependency whose package.json carries
@@ -289,6 +303,17 @@ export interface Config {
   /** TASK-99 test seams: the bounded-retry interval/cap (defaults 250 ms / 30 s). */
   harnessRetryIntervalMs?: number
   harnessRetryCapMs?: number
+  /**
+   * TASK-127 test seam: the retry SCHEDULER. A suite injects a fake
+   * {setInterval, clearInterval} so the tests advance the retry by explicit
+   * ticks instead of wall-clock (deterministic under full-suite load). A
+   * deployment never sets this; the default is the global scheduler, so the
+   * product behavior is byte-identical.
+   */
+  harnessRetryScheduler?: {
+    setInterval: (handler: () => void, ms: number) => unknown
+    clearInterval: (handle: unknown) => void
+  }
   /** §12 config v3: the nested shape + the fixed-false flags (see the zod). */
   schemaVersion?: number
   extensions?: {
@@ -494,6 +519,14 @@ export const Config: z<Config> = z.object({
   extensionRegistry: z.string().default('https://registry.npmjs.org/'),
   /** Hard cap on one registry tarball download, in bytes. Default 256 MiB. */
   extensionTarballMaxBytes: z.number().min(1).default(256 * 1024 * 1024),
+  /**
+   * IDLE timeout for one registry tarball download, in ms. Default 10 minutes.
+   * Aborts only when NO bytes arrive for this long; a large dependency streaming
+   * slowly is not aborted by the short package-metadata timeout.
+   */
+  extensionTarballTimeoutMs: z.number().min(1000).default(10 * 60_000),
+  /** Depth bound for registry dependency graphs. Default 12 (SDK default is 3). */
+  extensionDependencyDepth: z.number().min(1).max(64).default(12),
   allowPreinstalledDependencies: z.boolean().default(false),
   preinstalledDependenciesRoot: z.string().default(''),
   /**
@@ -767,6 +800,50 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
   let extensionLifecycle: ExtensionLifecycle | undefined
 
   /**
+   * TASK-117: the catalogue-vs-extension tool-name reconciliation.
+   *
+   * OWNERSHIP RULE: an INSTALLED extension that declares a tool with a given
+   * name OWNS that name — its activation registers the tool, so the catalogue
+   * must SKIP its own registration for a contract-backed entry with the same
+   * tool name (the live EXTENSION_FAULT was the catalogue winning the race at
+   * boot). The skip is recorded; when the owning extension deactivates, the
+   * catalogue registration is RESTORED. Deterministic in both orders: the
+   * probe reads the durable store, not an in-flight registry.
+   */
+  const extensionStore = config.extensionStore !== undefined && config.extensionStore.length > 0
+    ? new ExtensionStore(config.extensionStore)
+    : undefined
+  const catalogueDeferred = new Set<string>()
+  const extensionOwnsToolName = (toolName: string): boolean => {
+    if (extensionStore === undefined) return false
+    try {
+      // Only an ACTIVE extension owns a name at runtime: a disabled (or
+      // failed) installation must not keep the catalogue from serving it.
+      const active = new Set(
+        extensionStore.readProfileState('default').value
+          .filter(entry => entry.desiredActivation === 'active' && entry.observedActivation === 'active')
+          .map(entry => entry.extensionId),
+      )
+      for (const record of extensionStore.listInstalled().value) {
+        if (!active.has(record.extensionId)) continue
+        const discovery = discoverExtension(record.installPath)
+        if (discovery.manifest.tools.some(tool => tool.name === toolName)) return true
+        // TASK-121: an implementation-only extension owns the STANDARD tool
+        // name of each implementation's contract (text.embed -> text_embed),
+        // exactly as the registrar registers it.
+        const implementationNames = (discovery.manifest.implementations ?? [])
+          .map(implementation => STANDARD_CONTRACTS.find(contract => contract.contract === implementation.contractId)?.toolName)
+          .filter((name): name is string => name !== undefined)
+        if (implementationNames.includes(toolName)) return true
+      }
+    } catch (error) {
+      // A broken package cannot own a tool name; the catalogue keeps it.
+      return false
+    }
+    return false
+  }
+
+  /**
    * The extensions the contribution registrar currently admits.
    *
    * Seeded from the durable desired-active state when the store mounts, and kept
@@ -803,6 +880,8 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
     installSource: config.extensionInstallSource ?? 'auto',
     registryUrl: config.extensionRegistry ?? 'https://registry.npmjs.org/',
     registryTarballMaxBytes: config.extensionTarballMaxBytes ?? 256 * 1024 * 1024,
+    registryTarballTimeoutMs: config.extensionTarballTimeoutMs ?? 10 * 60_000,
+    registryDependencyDepth: config.extensionDependencyDepth ?? 12,
     /**
      * The operator gate for already-materialized dependencies. OFF by default:
      * a dependency whose package.json declares install-time scripts still
@@ -841,11 +920,28 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
     onActivationChange: (extensionId, active) => {
       if (active) {
         activatedExtensions.add(extensionId)
+        // TASK-117: the extension now owns its tool names — withdraw the
+        // catalogue registrations for those names BEFORE the lifecycle
+        // publishes (the hook runs before activate), so the activation cannot
+        // collide with a catalogue tool. The names are deferred, not lost.
+        for (const item of resolved.filter(candidate => candidate.entry.contract !== null)) {
+          if (!extensionOwnsToolName(item.entry.tool.name)) continue
+          if (!installed.has(item.entry.id)) continue
+          uninstall(item.entry.id)
+          catalogueDeferred.add(item.entry.id)
+          ctx.logger.info(
+            `model-tools: ${item.entry.name}'s tool ${item.entry.tool.name} is taken over by ${extensionId}; `
+            + 'the catalogue registration is withdrawn and deferred',
+          )
+        }
         return
       }
       if (extensionLifecycle?.stateOf(extensionId)?.observedActivation !== 'active') {
         activatedExtensions.delete(extensionId)
       }
+      // TASK-117: the extension released its tool names — restore every
+      // deferred catalogue registration the release freed.
+      void restoreDeferredCatalogue()
     },
     /**
      * The harness-model provider status seam (task-93): the thunk evaluates the
@@ -1136,11 +1232,18 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
   const HARNESS_RETRY_INTERVAL_MS = config.harnessRetryIntervalMs ?? 250
   const HARNESS_RETRY_CAP_MS = config.harnessRetryCapMs ?? 30_000
   const HARNESS_RETRY_MAX_POLLS = Math.max(1, Math.floor(HARNESS_RETRY_CAP_MS / HARNESS_RETRY_INTERVAL_MS))
-  let harnessRetryTimer: ReturnType<typeof setInterval> | undefined
+  // TASK-127: the scheduler seam. The default IS the global scheduler — a
+  // deployment behaves exactly as before; only a test injects a fake so the
+  // retry advances by explicit ticks rather than wall-clock.
+  const retryScheduler = config.harnessRetryScheduler ?? {
+    setInterval: (handler: () => void, ms: number) => setInterval(handler, ms),
+    clearInterval: (handle: unknown) => clearInterval(handle as ReturnType<typeof setInterval>),
+  }
+  let harnessRetryTimer: ReturnType<typeof retryScheduler.setInterval> | undefined
   let harnessRetryPolls = 0
   const stopHarnessRetry = (): void => {
     if (harnessRetryTimer !== undefined) {
-      clearInterval(harnessRetryTimer)
+      retryScheduler.clearInterval(harnessRetryTimer)
       harnessRetryTimer = undefined
     }
     harnessRetrying = false
@@ -1151,7 +1254,7 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
     if (harnessRetryTimer !== undefined) return
     harnessRetrying = true
     harnessRetryPolls = 0
-    harnessRetryTimer = setInterval(() => {
+    harnessRetryTimer = retryScheduler.setInterval(() => {
       harnessRetryPolls += 1
       void refreshHarness().then(() => {
         if (harnessProvider !== undefined) {
@@ -1170,7 +1273,7 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
         // until the cap, never terminal on an incomplete registry/directory.
       })
     }, HARNESS_RETRY_INTERVAL_MS)
-    harnessRetryTimer.unref?.()
+    ;(harnessRetryTimer as { unref?: () => void } | undefined)?.unref?.()
   }
   if (harnessNotReadyYet) startHarnessRetry()
   // The plugin fiber's teardown stops the retry: no leaked timers.
@@ -1560,6 +1663,19 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
         // Already served by another implementation: this model joins that tool.
         toolName = existing.toolName
         dispose = () => {}
+      } else if (extensionOwnsToolName(entry.tool.name) || extensionOwnsToolName(contractById.get(entry.contract)?.toolName ?? '')) {
+        /**
+         * TASK-117: an installed extension OWNS this tool name — its
+         * activation registers it, so the catalogue registration is SKIPPED
+         * rather than racing it (the live EXTENSION_FAULT). The deferral is
+         * recorded; the extension's deactivation restores the catalogue tool.
+         */
+        catalogueDeferred.add(entry.id)
+        ctx.logger.info(
+          `model-tools: ${entry.name}'s tool ${entry.tool.name} is owned by an installed extension; `
+          + 'the catalogue registration is deferred until the extension releases the name',
+        )
+        return false
       } else {
         const registered = registerContractTool(
           ctx as unknown as { tools: { register(definition: unknown): () => void } },
@@ -1684,6 +1800,34 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
   const configuredIds = resolved
     .filter(item => (wanted === undefined || wanted.has(item.entry.id)) && !excluded.has(item.entry.id))
     .map(item => item.entry.id)
+
+  /**
+   * TASK-117: the deferred catalogue registrations, restored when the owning
+   * extension releases a tool name (deactivation). Runs after `install` and
+   * `resolved` exist; the onActivationChange hook fires it asynchronously.
+   */
+  const restoreDeferredCatalogue = async (): Promise<void> => {
+    for (const modelId of [...catalogueDeferred]) {
+      const item = resolved.find(candidate => candidate.entry.id === modelId)
+      if (item === undefined) {
+        catalogueDeferred.delete(modelId)
+        continue
+      }
+      if (extensionOwnsToolName(item.entry.tool.name)) continue
+      catalogueDeferred.delete(modelId)
+      ctx.logger.info(`model-tools: ${item.entry.name}'s tool ${item.entry.tool.name} is released; restoring the catalogue registration`)
+      try {
+        await install(item)
+      } catch (error) {
+        // A failed restore is reported, never swallowed silently: the operator
+        // must see why the catalogue tool did not come back.
+        ctx.logger.warn(
+          `model-tools: could not restore the catalogue registration for ${item.entry.name}: `
+          + `${error instanceof Error ? error.message : String(error)}`,
+        )
+      }
+    }
+  }
 
   for (const item of resolved) {
     const { install: selection, disabled } = resolveSelection(configuredIds, persisted)
@@ -2859,7 +3003,9 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
    */
   const extensionStoreDir = config.extensionStore ?? ''
   if (extensionStoreDir.length > 0) {
-    const store = new ExtensionStore(extensionStoreDir)
+    // TASK-117: the store is the HOISTED instance (constructed at the apply
+    // top so the catalogue-install loop can probe extension tool ownership).
+    const store = extensionStore as ExtensionStore
 
     /**
      * How dispatch reaches an ACTIVATED extension.
@@ -3087,7 +3233,26 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
         },
         // The manifest is resolved per call: a deactivated+reactivated extension's
         // discovery must be fresh, not a startup snapshot.
-        contextFor: (implementationId, signal) => ({ implementationId, signal }),
+        // TASK-123: the invocation context carries the FULL host-granted surface
+        // the SDK contract documents (InvocationContextV1): the invocation id,
+        // the signal, the resource limits, and the path authority broker — the
+        // SAME authority the catalogue/contract path builds, so an extension
+        // that reads a caller-supplied file path asks the host exactly like the
+        // catalogue adapter does. The broker is always present; a composition
+        // without a grant fails with a NAMED error, never undefined.
+        contextFor: (implementationId, signal) => {
+          if (host.grant === undefined) {
+            throw new Error('path access denied: the host has no configured grant, so the path authority broker is unavailable')
+          }
+          const authority = createInvocationAuthority(host.grant, host.callerKind)
+          return {
+            implementationId,
+            signal,
+            invocationId: `inv_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6).toString(36)}`,
+            limits: authority.limits,
+            resolvePath: (candidate: string): string => authority.resolvePath(candidate),
+          }
+        },
       }
     }
 
@@ -3171,8 +3336,20 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
       let discovery: ReturnType<typeof discoverExtension>
       try {
         discovery = discoverExtension(record.installPath)
-      } catch {
-        return {}
+      } catch (error) {
+        /**
+         * TASK-128: a discovery failure must NOT masquerade as "no schemas
+         * declared". The old `return {}` here turned an unreadable package
+         * (a moved store, a stale lock path) into the NDL-02 refusal "must
+         * declare the planning input shape" — blaming the schema for a
+         * package the host could not even read. The real reason is surfaced
+         * instead: the narrow rollback quarantines with THIS message.
+         */
+        throw new Error(
+          `${tool.name}'s package cannot be read at ${record.installPath}: `
+          + `${error instanceof Error ? error.message : String(error)}. `
+          + 'Reinstall or repair the package; the tool is not published.',
+        )
       }
       const declared = discovery.manifest.tools.find(candidate => candidate.name === tool.name)
       if (declared === undefined) return {}
@@ -3517,6 +3694,53 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
          * deployment with no harness composition fails loudly (the narrow rollback
          * quarantines it) instead of silently registering nothing.
          */
+        /**
+         * TASK-121: the STANDARD contract tool for an implementation-only
+         * MODULE extension. The contract id maps to the standard tool name
+         * (text.embed -> text_embed — never invented per extension), and the
+         * tool's schemas come from the contract definition itself. The
+         * extension owns the name while active (task-117's probe reads the
+         * implementations' standard names too); the deactivation withdraws it.
+         */
+        registerContractImplementation: (contribution): (() => void) | undefined => {
+          const record = store.listInstalled().value.find(candidate => candidate.extensionId === contribution.extensionId)
+          if (record === undefined) return undefined
+          const discovery = discoverExtension(record.installPath)
+          // DECLARATIVE packages are served by the recipe path below, never by
+          // this standard-contract path (their contracts may share standard
+          // names, e.g. text.title, but their execution is the recipe broker).
+          if (discovery.manifest.execution?.kind === 'declarative') return undefined
+          const contract = STANDARD_CONTRACTS.find(candidate => candidate.contract === contribution.contractId)
+          if (contract === undefined) return undefined
+          const toolName = contract.toolName
+          // No duplicate: the extension's own manifest tool (when it declares
+          // one) already serves the contract under the standard name.
+          if (extensionToolOwners.get(toolName) === contribution.extensionId) return () => {}
+          const environment = environmentFor(contribution.extensionId)
+          const manifestImplementation = environment.getManifest().implementations.find(
+            candidate => candidate.contractId === contribution.contractId,
+          )
+          const registered = registerContractImplementationTool(
+            ctx as unknown as { tools: { register(definition: unknown): () => void } },
+            contract,
+            host,
+            async (args, signal) => {
+              const dispatch = await createDispatchForContract(environment, contribution.contractId)
+              if (!dispatch.ok) throw new Error(describeDispatchFailure(dispatch.failure))
+              return dispatch.execute(args, signal)
+            },
+            {
+              id: contribution.implementationId,
+              extensionId: contribution.extensionId,
+              modelId: manifestImplementation?.modelId ?? contribution.implementationId,
+            },
+          )
+          extensionToolOwners.set(toolName, contribution.extensionId)
+          return () => {
+            extensionToolOwners.delete(toolName)
+            registered.dispose()
+          }
+        },
         registerDeclarative: (contribution): (() => void) => {
           const record = store.listInstalled().value.find(candidate => candidate.extensionId === contribution.extensionId)
           if (record === undefined) return () => {}

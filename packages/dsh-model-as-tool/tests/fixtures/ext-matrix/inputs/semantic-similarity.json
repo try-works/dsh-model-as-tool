@@ -1,0 +1,21 @@
+{
+  "left": {
+    "id": "deploy-left",
+    "parts": [
+      {
+        "kind": "text",
+        "text": "The deployment finished successfully after the migration."
+      }
+    ]
+  },
+  "right": {
+    "id": "deploy-right",
+    "parts": [
+      {
+        "kind": "text",
+        "text": "The migration completed and the deployment succeeded."
+      }
+    ]
+  },
+  "dimensions": 768
+}

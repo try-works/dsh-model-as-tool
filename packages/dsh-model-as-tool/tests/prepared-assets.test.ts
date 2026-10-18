@@ -9,8 +9,16 @@ import AdmZip from 'adm-zip'
 import { createZipArchiveSource, ExtensionStore, stagedInstall } from '@try-works/tool-mode-extension-sdk'
 import { acquireAsset } from '../src/asset-acquisition.ts'
 import type { AcquisitionSource } from '../src/asset-acquisition.ts'
-import type { PlannedAsset } from '../src/deployment-coordinator.ts'
-import { createPreparedAssetRegistry, identityFor, lockGroups, parseAssetLock, plannedAssets } from '../src/prepared-assets.ts'
+import { planPreparation, type PlannedAsset } from '../src/deployment-coordinator.ts'
+import {
+  createPreparedAssetRegistry,
+  firstUnavailableAssetSource,
+  identityFor,
+  isFetchableAssetSource,
+  lockGroups,
+  parseAssetLock,
+  plannedAssets,
+} from '../src/prepared-assets.ts'
 import { createDispatch, type DispatchEnvironment, type DispatchManifest } from '../src/extension-dispatch.ts'
 import { callTool, cleanup, mountPlugin } from './helpers.ts'
 
@@ -358,6 +366,112 @@ test('the dispatch executor carries the prepared map into the provider load (bot
   await dispatch.execute({ text: 'x' }, new AbortController().signal)
   assert.equal(loads.length, 1)
   assert.equal(loads[0], map, 'the verified map reaches the load verbatim')
+})
+
+test('a PROSE-source lock refuses before any transfer and names the artifact (task-118)', async () => {
+  const cacheRoot = mkdtempSync(join(tmpdir(), 'prose-cache-'))
+  try {
+    const registry = createPreparedAssetRegistry({ cacheRoot })
+    const bytes = Buffer.from('prose-bytes')
+    const digest = createHash('sha256').update(bytes).digest('hex')
+    const lock = parseAssetLock(JSON.stringify({
+      assetSets: {
+        'laya-decision-onnx': {
+          pinning: { revision: 'fixture-revision' },
+          license: { name: 'Apache-2.0', url: 'https://example.invalid/license' },
+          groups: [{
+            id: 'text-backbone',
+            assets: [{
+              id: 'laya-encoder-onnx', file: 'encoder.onnx', bytes: bytes.byteLength,
+              source: 'the split export of the pinned checkpoint', digest,
+            }],
+          }],
+        },
+      },
+    }))
+    const plan = planPreparation(
+      identityFor('@try-works/extension-laya', 'laya', lock),
+      plannedAssets(lock, 'laya-decision-onnx'),
+      lock.license,
+    )
+    let reads = 0
+    const source: AcquisitionSource = {
+      supportsRanges: true,
+      async fetchRange() { reads += 1; throw new Error('the transport must never be called') },
+    }
+    const outcome = await registry.prepare('@try-works/extension-laya', plan, lockGroups(lock, 'laya-decision-onnx'), {
+      source, allowExecutable: true, signal: new AbortController().signal,
+    })
+    assert.equal(outcome.ok, false)
+    assert.match(outcome.reason, /no download URL for text-backbone\/laya-encoder-onnx/)
+    assert.match(outcome.reason, /produced by the documented export/)
+    assert.equal(reads, 0, 'no transfer may happen for a prose source')
+  } finally {
+    rmSync(cacheRoot, { recursive: true, force: true })
+  }
+})
+
+test('a prose-source lock prepares WITHOUT a transfer once the pinned bytes are in the cache', async () => {
+  const cacheRoot = mkdtempSync(join(tmpdir(), 'prose-cache-hit-'))
+  try {
+    const bytes = Buffer.from('pre-seeded-bytes')
+    const digest = createHash('sha256').update(bytes).digest('hex')
+    writeFileSync(join(cacheRoot, digest), bytes)
+    const registry = createPreparedAssetRegistry({ cacheRoot })
+    const lock = parseAssetLock(JSON.stringify({
+      assetSets: {
+        s: {
+          pinning: { revision: 'r' },
+          license: { name: 'L', url: '' },
+          groups: [{ id: 'g', assets: [{ id: 'a', file: 'a.bin', bytes: bytes.byteLength, source: 'prose source', digest }] }],
+        },
+      },
+    }))
+    const plan = planPreparation(identityFor('@try-works/extension-prose', 'm', lock), plannedAssets(lock, 's'), lock.license)
+    let reads = 0
+    const source: AcquisitionSource = {
+      supportsRanges: true,
+      async fetchRange() { reads += 1; throw new Error('cache hit must not fetch') },
+    }
+    assert.equal(firstUnavailableAssetSource(plannedAssets(lock, 's'), cacheRoot), undefined, 'the cached digest is a source')
+    const outcome = await registry.prepare('@try-works/extension-prose', plan, lockGroups(lock, 's'), {
+      source, allowExecutable: true, signal: new AbortController().signal,
+    })
+    assert.ok(outcome.ok, JSON.stringify(outcome))
+    assert.equal(reads, 0)
+  } finally {
+    rmSync(cacheRoot, { recursive: true, force: true })
+  }
+})
+
+test('only laya declares prose sources; the URL locks stay preparable (task-118 regression)', () => {
+  const packagesDir = join(process.cwd(), 'packages')
+  const emptyCache = mkdtempSync(join(tmpdir(), 'empty-cache-'))
+  try {
+    const prose = []
+    for (const entry of readdirSync(packagesDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue
+      const lockPath = join(packagesDir, entry.name, 'models.lock.json')
+      let text
+      try { text = readFileSync(lockPath, 'utf8') } catch { continue }
+      const lock = parseAssetLock(text)
+      for (const [setId, set] of Object.entries(lock.sets)) {
+        const assets = plannedAssets(lock, setId)
+        const unavailable = firstUnavailableAssetSource(assets, emptyCache)
+        if (unavailable !== undefined) prose.push(`${entry.name}:${setId}:${unavailable.assetId}`)
+        for (const asset of assets) {
+          if (typeof asset.source !== 'string' || asset.source.length === 0) assert.fail(`${entry.name}: asset source is empty`)
+          assert.equal(isFetchableAssetSource(asset.source), entry.name === 'extension-laya' ? false : true,
+            `${entry.name}:${asset.assetId} source must be classified honestly`)
+        }
+        assert.ok(set.groups.length >= 0)
+      }
+    }
+    assert.equal(prose.length > 0, true, 'laya prose sources must be detected')
+    assert.equal(prose.every(entry => entry.startsWith('extension-laya:')), true, `non-laya prose locks: ${prose.join(', ')}`)
+  } finally {
+    rmSync(emptyCache, { recursive: true, force: true })
+  }
 })
 
 test('the MANAGEMENT channel discloses the plan and prepares with the INJECTED source (no network)', async () => {

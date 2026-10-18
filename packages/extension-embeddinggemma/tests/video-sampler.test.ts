@@ -13,7 +13,7 @@ import { MEDIA_LIMITS, sampleVideoFrames } from '../src/media.ts'
 function context(): { extensionId: string; extensionVersion: string; activationGeneration: number; storage: { directory: string; read: () => Promise<undefined>; write: () => Promise<void> }; logger: { log: () => void }; signal: AbortSignal; configuration: Record<string, never> } {
   return {
     extensionId: '@try-works/extension-embeddinggemma',
-    extensionVersion: '0.1.0',
+    extensionVersion: '0.1.1',
     activationGeneration: 1,
     storage: { directory: '', async read() { return undefined }, async write() { /* no-op */ } },
     logger: { log: () => { /* silent */ } },

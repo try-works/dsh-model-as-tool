@@ -1,0 +1,10 @@
+{
+  "prompt": "A small team ships weekly and cannot afford downtime. Which deployment strategy should they use?",
+  "options": [
+    "Rolling deployment",
+    "Canary deployment",
+    "Blue-green deployment",
+    "Recreate (stop, then start)"
+  ],
+  "allow_abstain": false
+}
