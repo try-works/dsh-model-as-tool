@@ -5,10 +5,27 @@
   "description": "Input for structured_extract: the source text (inline or a host-authorized file) and the shape to extract into. Exactly one of `text` and `path` must be supplied; the two-source form exists so a caller can read a document the host already granted without this package ever opening a caller-supplied string itself. The exactly-one rule is a `oneOf` over the two required-key branches: a document carrying both satisfies BOTH branches and fails the `oneOf`, which is the same refusal the previous anyOf-plus-not formulation produced. Each branch restates its key as an empty property declaration so strict-mode compilers can see the required name is defined within the branch (no constraint is added).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["instruction", "schema"],
+  "required": [
+    "instruction",
+    "schema"
+  ],
   "oneOf": [
-    { "required": ["text"], "properties": { "text": {} } },
-    { "required": ["path"], "properties": { "path": {} } }
+    {
+      "required": [
+        "text"
+      ],
+      "properties": {
+        "text": {}
+      }
+    },
+    {
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {}
+      }
+    }
   ],
   "properties": {
     "text": {
@@ -33,12 +50,27 @@
       "type": "object",
       "description": "A JSON Schema object describing the record to extract. Only the subset the engine's grammar compiler accepts is used: `type`, `properties`, `required`, `items`, `enum`, `const` and `description`. Unsupported keywords are REFUSED by name rather than silently dropped, because a dropped constraint produces a plausible object that violates the caller's contract.",
       "properties": {
-        "type": { "const": "object" },
-        "properties": { "type": "object" },
-        "required": { "type": "array", "items": { "type": "string" } },
-        "description": { "type": "string" }
+        "type": {
+          "const": "object"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        }
       },
-      "required": ["properties"]
+      "required": [
+        "properties"
+      ],
+      "additionalProperties": true
     },
     "system": {
       "type": "string",

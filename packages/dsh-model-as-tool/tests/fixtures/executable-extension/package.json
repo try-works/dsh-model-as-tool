@@ -1,0 +1,13 @@
+{
+  "name": "@try-works/fixture-executable",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Executable-preparation fixture extension: one model deployment whose single locked asset is marked executable, so the RES-02 operator gate can be exercised without downloading an engine.",
+  "type": "module",
+  "exports": {
+    "./tool-mode": "./lib/index.js"
+  },
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  }
+}

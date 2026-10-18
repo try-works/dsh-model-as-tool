@@ -27,6 +27,11 @@
         "identity": "ships with the pinned checkpoint; parsed by the vendored laya-ts tokenizer (parseTokenizerJson)",
         "note": "No external tokenizer package is required: the vendored runtime parses the pinned tokenizer.json itself."
       },
+      "pinning": {
+        "state": "measured",
+        "revision": "7b928d828b7b0e022f929d9bd2e44165aa270148",
+        "reason": "This is the revision the six split-ONNX artifacts were exported at, recorded once already in the conversion section above; the planner needs it as the deployment's pinned model revision so a preparation can be planned. No digest, byte count or source is restated or changed here, and no additional revision is claimed. The asset sources below are descriptions of the split export rather than fetchable locations: the host-driven acquisition step has NOT been exercised against them, so a Settings-page Prepare for Laya refuses at the transport rather than pretending to download."
+      },
       "groups": [
         {
           "id": "text-backbone",

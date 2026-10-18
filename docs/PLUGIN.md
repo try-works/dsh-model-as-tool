@@ -157,13 +157,24 @@ The namespace exposes `describe`, `installExtension`, `enable`, `disable`, and
   `prepare(id)` is a valid call. Its raw result is an `ExtensionPrepareResult`
   with the RES-02 disclosure (`plan`: assets, bytes, storage, license,
   executable gate), the per-declared-model `readiness` record, the prepared
-  `groups`, and `activationReady`. Acquiring a plan that contains an executable
-  asset is refused with `prepared: false` and the RES-02 reason (the Remote
-  surface always passes `allowExecutable: false`); acquisition problems are
-  returned in `reason`, not thrown. It never downloads unless the operator
-  approved the disclosure through the UI. After a successful prepare, re-read
-  `describe()`: a row that previously reported `failed` now says the store
-  records no remaining preparation blocker, and the next `enable` activates it.
+  `groups`, and `activationReady`. Acquisition problems are returned in `reason`,
+  not thrown. It never downloads unless the operator approved the disclosure
+  through the UI.
+- **Executable assets need a separate RES-02 approval.** Downloading a prebuilt
+  engine counts as executable installation, so a plan containing an
+  `executable: true` asset is refused with `prepared: false` and this exact
+  reason: *"the plan includes an EXECUTABLE asset, which requires the separate
+  executable-preparation approval (RES-02); this call did not grant it"*. The
+  Settings/Remote path has no per-call flag, so the approval is the deployment's
+  standing configuration value `allowExecutablePreparation: true` (**default
+  false**). That value is the operator's consent for EVERY executable asset of
+  the digest-pinned plans this host resolves, so enable it only for first-party,
+  pinned engines (Needle 3's `needle.exe`, for example) — never for an arbitrary
+  package source. The management channel's `extensions-prepare` action keeps its
+  own per-call `allowExecutable` flag and ignores this setting.
+  After a successful prepare, re-read `describe()`: a row that previously
+  reported `failed` now says the store records no remaining preparation blocker,
+  and the next `enable` activates it.
 
 Proof without a page:
 `node --import tsx --test packages/dsh-model-as-tool/tests/remote-typert.test.ts`

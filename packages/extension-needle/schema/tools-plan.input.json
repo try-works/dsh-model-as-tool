@@ -5,7 +5,10 @@
   "description": "Input for tools_plan: a request, plus the tools the model may propose calls to. The tools are DECLARATIONS the model reads; they are never invoked by this package. `tools` is required and non-empty because a plan with no tool set is not a plan — the engine treats an empty or unparseable tool document as 'no tools declared' and returns an empty call, which is indistinguishable from a refusal.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["request", "tools"],
+  "required": [
+    "request",
+    "tools"
+  ],
   "properties": {
     "request": {
       "type": "string",
@@ -18,7 +21,9 @@
       "minItems": 1,
       "maxItems": 64,
       "description": "The tools offered for this turn. The implementation refuses a proposal naming a tool outside this list rather than passing it through.",
-      "items": { "$ref": "#/$defs/offeredTool" }
+      "items": {
+        "$ref": "#/$defs/offeredTool"
+      }
     },
     "system": {
       "type": "string",
@@ -37,7 +42,11 @@
     "offeredTool": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "description", "parameters"],
+      "required": [
+        "name",
+        "description",
+        "parameters"
+      ],
       "properties": {
         "name": {
           "type": "string",
@@ -53,7 +62,8 @@
         },
         "parameters": {
           "type": "object",
-          "description": "The tool's JSON Schema `parameters` object. Validated as a JSON Schema before it is written to the engine's tool document; the model's output is constrained by it."
+          "description": "The tool's JSON Schema `parameters` object. Validated as a JSON Schema before it is written to the engine's tool document; the model's output is constrained by it.",
+          "additionalProperties": true
         }
       }
     }

@@ -62,6 +62,18 @@ export interface ParsedAssetLock {
   readonly sets: Readonly<Record<string, LockAssetSet>>
 }
 
+/** One verified asset FILE inside a prepared group (EXT-18). */
+export interface PreparedAssetFile {
+  /** The lock's asset id, e.g. `needle-engine-win-x64`. */
+  readonly assetId: string
+  /** The lock's package-relative file path, e.g. `needle.exe`. */
+  readonly file: string
+  /** The absolute path the file was materialized at. */
+  readonly path: string
+  /** The pinned digest the materialized bytes verified against. */
+  readonly digest: string
+}
+
 /** The group directories one preparation materialized. */
 export interface PreparedGroup {
   /** The group id (text-backbone, vision-encoder, ...). */
@@ -70,6 +82,15 @@ export interface PreparedGroup {
   readonly path: string
   /** The digests this group holds. */
   readonly digests: readonly string[]
+  /**
+   * The individual verification handles of this group's assets.
+   *
+   * EXT-18's `PreparedAssetMapV1` is a mapping from asset ids to local handles, and
+   * a deployment may resolve an individual file by its lock asset id rather than a
+   * group directory (extension-needle does exactly that). Both projections are
+   * carried so neither consumer has to guess the other's convention.
+   */
+  readonly files: readonly PreparedAssetFile[]
 }
 
 /** The outcome of one preparation. */
@@ -303,13 +324,32 @@ export function createPreparedAssetRegistry(options: PreparedAssetRegistryOption
     assetMapFor(extensionId) {
       const preparation = held.get(extensionId)
       if (preparation === undefined) return undefined
-      const entries = preparation.groups.map(group => [group.groupId, group] as const)
+      /**
+       * TWO projections over one verified preparation, both truthful:
+       *
+       * - the GROUP id resolves to the group directory (embeddinggemma's selective
+       *   loading asks for `text-backbone` and reads `onnx/model.onnx` under it);
+       * - each ASSET id resolves to the individual materialized file (needle asks
+       *   for `needle-engine-win-x64` and needs the executable's path).
+       *
+       * The SDK documents the map as asset ids to local handles, so the per-asset
+       * entries are the canonical projection and the group entry is the directory
+       * convenience the first-party group consumers already rely on. An exact
+       * asset-id match wins over a group-id match; the ids are namespaced by the
+       * lock and a collision is not silently served as the other kind.
+       */
+      const groupHandles = new Map<string, { readonly path: string; readonly digest: string }>()
+      const assetHandles = new Map<string, { readonly path: string; readonly digest: string }>()
+      for (const group of preparation.groups) {
+        groupHandles.set(group.groupId, { path: group.path, digest: group.digests.join(',') })
+        for (const file of group.files) {
+          assetHandles.set(file.assetId, { path: file.path, digest: file.digest })
+        }
+      }
       return {
-        assetIds: entries.map(([groupId]) => groupId),
+        assetIds: [...groupHandles.keys(), ...assetHandles.keys()],
         get(assetId) {
-          const group = entries.find(([groupId]) => groupId === assetId)?.[1]
-          if (group === undefined) return undefined
-          return { path: group.path, digest: group.digests.join(',') }
+          return assetHandles.get(assetId) ?? groupHandles.get(assetId)
         },
       }
     },
@@ -331,6 +371,7 @@ export function createPreparedAssetRegistry(options: PreparedAssetRegistryOption
       for (const group of groups) {
         const groupDir = join(cacheRoot, 'groups', plan.identity.extensionId.replaceAll('/', '__'), plan.identity.modelId, group.id)
         const digests: string[] = []
+        const files: PreparedAssetFile[] = []
         for (const asset of group.assets) {
           const planned: PlannedAsset = {
             assetId: asset.id,
@@ -375,8 +416,9 @@ export function createPreparedAssetRegistry(options: PreparedAssetRegistryOption
             linkSync(blob.path, linkTarget)
           }
           digests.push(asset.digest)
+          files.push({ assetId: asset.id, file: asset.file, path: linkTarget, digest: asset.digest })
         }
-        prepared.push({ groupId: group.id, path: groupDir, digests })
+        prepared.push({ groupId: group.id, path: groupDir, digests, files })
       }
       held.set(extensionId, { plan, groups: prepared })
       return { ok: true, groups: prepared }

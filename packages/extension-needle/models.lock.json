@@ -46,8 +46,34 @@
           "verified": "downloaded and hashed on this host on 2026-10-14; loaded successfully by the engine in the same one-shot inference"
         }
       ],
+      "groups": [
+        {
+          "id": "native-engine",
+          "enables": ["text"],
+          "assets": [
+            {
+              "id": "needle-engine-win-x64",
+              "file": "needle.exe",
+              "bytes": 1569280,
+              "source": "https://huggingface.co/Cactus-Compute/needle3/resolve/93e88ede867e4311c39151285e74df513e4b835b/windows-x86_64/needle.exe",
+              "digest": "47cd411a022d22e393d87ce091848fd446e6d25df2ce31b12a7328337557c85b",
+              "executable": true
+            },
+            {
+              "id": "needle3-weights",
+              "file": "needle3.cact",
+              "bytes": 35335380,
+              "source": "https://huggingface.co/Cactus-Compute/needle3/resolve/93e88ede867e4311c39151285e74df513e4b835b/needle3.cact",
+              "digest": "c9d915eca282ed42d1a09b143b592adb4cc6744ffe2d294adf5cfc5548170c38",
+              "executable": false
+            }
+          ],
+          "note": "One group, because the native route is one artifact set: the CLI takes the engine executable and the .cact archive together and there is no selective sub-route to split. The group restates the SAME two pinned artifacts as the set-level assets array in the host planner's field vocabulary (file/source/digest); no digest, byte count or URL differs. The engine is marked executable (RES-02): it is a downloaded native binary, so preparing it requires the separate executable-preparation approval rather than riding along with a model download. The weights alone enable nothing without the engine, so both assets belong to this one group."
+        }
+      ],
       "pinning": {
         "state": "measured",
+        "revision": "93e88ede867e4311c39151285e74df513e4b835b",
         "reason": "Both artifacts were downloaded over HTTPS, their byte sizes recorded, their SHA-256 computed locally from the received bytes, and the engine was executed against the weights. A second artifact that is present in the repository but NOT pinned is recorded under inspectedNotPinned so a later reader can tell a deliberate omission from an unexamined one.",
         "measuredOn": "2026-10-14",
         "measuredFrom": "https://huggingface.co/Cactus-Compute/needle3 at revision 93e88ede867e4311c39151285e74df513e4b835b",

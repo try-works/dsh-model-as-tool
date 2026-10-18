@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["echoed"],
+  "properties": {
+    "echoed": {
+      "type": "string"
+    }
+  }
+}

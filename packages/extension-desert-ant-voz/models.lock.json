@@ -3,6 +3,12 @@
   "assetSets": {
     "voz-weights": {
       "assets": [],
+      "groups": [],
+      "pinning": {
+        "state": "model-managed",
+        "revision": "the version resolved from the optional dependency",
+        "reason": "The host prepares and fetches NOTHING for this asset set (assets and groups are empty by design): the vendor package downloads roughly 367 MB of weights into its own version-keyed cache on first load, at the MODEL package's initiative. This revision is the lock's own model.revision value restated so a preparation plan has an identity; it is prose on purpose, because the lock does not pin an artifact version it does not fetch. A zero-asset preparation is the truthful plan here — it records that nothing was downloaded rather than claiming bytes that were never fetched."
+      },
       "engine": {
         "version": "the onnxruntime-node version resolved beside the extension",
         "kind": "onnxruntime"

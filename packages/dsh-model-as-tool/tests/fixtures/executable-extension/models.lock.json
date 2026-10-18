@@ -1,0 +1,30 @@
+{
+  "lockVersion": 1,
+  "assetSets": {
+    "fixture-executable-set": {
+      "pinning": {
+        "revision": "fixture-executable-revision-1"
+      },
+      "license": {
+        "name": "MIT",
+        "url": "https://example.invalid/fixture-license"
+      },
+      "groups": [
+        {
+          "id": "native-engine",
+          "enables": ["text"],
+          "assets": [
+            {
+              "id": "fixture-engine",
+              "file": "engine.bin",
+              "bytes": 23,
+              "source": "fixture:engine",
+              "digest": "0a8a2597a3373d882dbd5d358fcd4b1101e1f96ecaedd029fd15acd445ca61c0",
+              "executable": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

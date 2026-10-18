@@ -21,6 +21,12 @@
         "redistribution": "not-permitted"
       },
       "assets": [],
+      "groups": [],
+      "pinning": {
+        "state": "bundled",
+        "revision": "3.6.0",
+        "reason": "Tongue ships its 2 MB weights inside the npm package, so the host prepares and fetches nothing: this asset set has no assets and no groups by design. The revision is the npm package version the lock already declares as model.revision, restated so a preparation plan has an identity. A zero-asset preparation records that nothing was downloaded rather than claiming bytes that were never fetched; readiness can then be recorded and the deployment enabled."
+      },
       "qualification": {
         "modelRevision": "3.6.0",
         "artifactSha": "sha256:2cea7b6a92be043c58596d0b6f482fbc27fb901e5697d77159247d3ec6bdf767",

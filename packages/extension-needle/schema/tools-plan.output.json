@@ -5,25 +5,36 @@
   "description": "Output for tools_plan. The proposals are DATA. Each carries the name and argument object the engine produced, plus the package's own verdict on it. There is deliberately no field an executable handle, a callback or a resolved tool could travel in: the object is closed, and the package exposes no dispatcher, so a caller that wants a call to happen must perform it itself.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["proposals", "rejected", "reasoning", "meta"],
+  "required": [
+    "proposals",
+    "rejected",
+    "reasoning",
+    "meta"
+  ],
   "properties": {
     "proposals": {
       "type": "array",
       "maxItems": 16,
       "description": "Proposed calls whose name was offered AND whose arguments satisfy the offered tool's schema. Nothing here has been executed.",
-      "items": { "$ref": "#/$defs/proposal" }
+      "items": {
+        "$ref": "#/$defs/proposal"
+      }
     },
     "rejected": {
       "type": "array",
       "maxItems": 16,
       "description": "Proposed calls this package REFUSED to pass through, each with the reason. Reported rather than dropped: a silently discarded proposal looks identical to a model that proposed nothing.",
-      "items": { "$ref": "#/$defs/proposal" }
+      "items": {
+        "$ref": "#/$defs/proposal"
+      }
     },
     "suppressed": {
       "type": "array",
       "maxItems": 16,
       "description": "Calls the ENGINE withheld, carried through so a caller sees the same suppression the engine applied.",
-      "items": { "$ref": "#/$defs/proposal" }
+      "items": {
+        "$ref": "#/$defs/proposal"
+      }
     },
     "reasoning": {
       "type": "string",
@@ -31,7 +42,10 @@
       "description": "The engine's own stated reasoning for the turn. It is the model's account of itself, not a verified explanation."
     },
     "confidence": {
-      "type": ["number", "null"],
+      "type": [
+        "number",
+        "null"
+      ],
       "minimum": 0,
       "maximum": 1,
       "description": "The engine's self-reported confidence. It is not a calibrated probability and must not be presented as one."
@@ -40,24 +54,45 @@
       "type": "object",
       "additionalProperties": false,
       "description": "The engine's grounding report, passed through unchanged. `ungrounded` names values the engine could not tie to the input.",
-      "required": ["ungrounded", "negation"],
+      "required": [
+        "ungrounded",
+        "negation"
+      ],
       "properties": {
-        "ungrounded": { "type": "array", "items": {} },
-        "negation": { "type": "boolean" }
+        "ungrounded": {
+          "type": "array",
+          "items": {}
+        },
+        "negation": {
+          "type": "boolean"
+        }
       }
     },
-    "meta": { "$ref": "#/$defs/meta" }
+    "meta": {
+      "$ref": "#/$defs/meta"
+    }
   },
   "$defs": {
     "proposal": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "arguments", "offered", "valid", "issues"],
+      "required": [
+        "name",
+        "arguments",
+        "offered",
+        "valid",
+        "issues"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
         "arguments": {
           "type": "object",
-          "description": "The argument object the engine produced, verbatim. It is data only."
+          "description": "The argument object the engine produced, verbatim. It is data only.",
+          "additionalProperties": true
         },
         "offered": {
           "type": "boolean",
@@ -70,7 +105,10 @@
         "issues": {
           "type": "array",
           "maxItems": 32,
-          "items": { "type": "string", "maxLength": 512 },
+          "items": {
+            "type": "string",
+            "maxLength": 512
+          },
           "description": "Every argument violation found, so a caller can see the whole report rather than the first problem."
         }
       }
@@ -91,15 +129,40 @@
       ],
       "description": "The host stamps this envelope. The provider never authors it (EXT-17).",
       "properties": {
-        "contract": { "type": "string" },
-        "contractVersion": { "type": "string" },
-        "implementationId": { "type": "string" },
-        "extension": { "type": "string" },
-        "extensionVersion": { "type": "string" },
-        "activationGeneration": { "type": "integer" },
-        "executionLocation": { "type": "string", "enum": ["device", "remote"] },
-        "receiptId": { "type": "string" },
-        "warnings": { "type": "array", "items": { "type": "string" } }
+        "contract": {
+          "type": "string"
+        },
+        "contractVersion": {
+          "type": "string"
+        },
+        "implementationId": {
+          "type": "string"
+        },
+        "extension": {
+          "type": "string"
+        },
+        "extensionVersion": {
+          "type": "string"
+        },
+        "activationGeneration": {
+          "type": "integer"
+        },
+        "executionLocation": {
+          "type": "string",
+          "enum": [
+            "device",
+            "remote"
+          ]
+        },
+        "receiptId": {
+          "type": "string"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     }
   }

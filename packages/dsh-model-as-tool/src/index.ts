@@ -245,6 +245,21 @@ export interface Config {
    * root); never a world-writable location.
    */
   preinstalledDependenciesRoot?: string
+  /**
+   * The operator's STANDING RES-02 approval for executable asset preparation
+   * initiated from the client/Remote path (Settings → Model as Tool → Prepare).
+   *
+   * DEFAULT FALSE. With it off, a preparation plan that contains an executable
+   * asset returns the exact RES-02 refusal: acquiring a downloaded engine is a
+   * separate approval from approving a model download, not a checkbox riding along
+   * with it. With it on, the Remote `prepare` call is the operator's approval for
+   * every executable asset of the digest-pinned, first-party plans the host
+   * resolves — which is why it should be enabled only for such engines, never for
+   * an arbitrary package source. The management channel (`model_tools`
+   * `extensions-prepare`) keeps its own PER-CALL `allowExecutable` flag and is not
+   * affected by this setting.
+   */
+  allowExecutablePreparation?: boolean
   /** INTERNAL TEST SEAM: the acquisition source extensions-prepare uses instead
    * of the ranged HTTP source. A suite injects a local file source so the
    * acquisition path is exercised with ZERO network; a deployment never sets
@@ -447,6 +462,11 @@ export const Config: z<Config> = z.object({
   extensionSourceDir: z.string().default(''),
   allowPreinstalledDependencies: z.boolean().default(false),
   preinstalledDependenciesRoot: z.string().default(''),
+  /**
+   * Standing RES-02 approval for executable assets prepared from the client path.
+   * FALSE by default: a downloaded engine still needs the explicit approval.
+   */
+  allowExecutablePreparation: z.boolean().default(false),
   persist: z.boolean().default(true),
   providers: z.dict(z.string()).default({}),
   legacyAliases: z.boolean().default(false),
@@ -762,6 +782,13 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
      */
     prepareSurface: () => prepareAssetsSurface,
     preparationSource: () => config.assetSourceFactory?.() ?? createHttpSource(),
+    /**
+     * RES-02 for the client/Remote path: the operator's standing approval, read
+     * live so a config edit applies without reconstructing the service. DEFAULT
+     * FALSE — with it off the exact executable-preparation refusal is returned and
+     * nothing is acquired. The management channel keeps its per-call flag.
+     */
+    allowExecutablePreparation: () => config.allowExecutablePreparation === true,
     /**
      * Keep the registrar's admission set in step with activation changes made
      * through the Settings surface. A failed activation revokes the admission,

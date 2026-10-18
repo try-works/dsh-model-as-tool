@@ -227,6 +227,16 @@ export interface ExtensionsServiceOptions {
    */
   readonly preparationSource?: () => AcquisitionSource
   /**
+   * Read the operator's STANDING RES-02 approval for executable assets.
+   *
+   * DEFAULT FALSE. When false, `prepare` passes `allowExecutable: false` and the
+   * prepared-assets registry returns its exact refusal without acquiring anything.
+   * When the operator explicitly configured the approval, that is the standing
+   * consent for the digest-pinned plans this host resolves; the management channel
+   * (`extensions-prepare`) still takes its own PER-CALL flag and is unaffected.
+   */
+  readonly allowExecutablePreparation?: () => boolean
+  /**
    * Notified when this service changes an extension's activation intent.
    *
    * The host's contribution registrar refuses to publish a tool for an extension
@@ -1160,11 +1170,18 @@ export class ExtensionsService implements ModelToolsRemote {
     if (lifecycle !== undefined && lifecycle.stateOf(extensionId) === undefined) {
       await this.#recordPreparationBlocker(lifecycle, extensionId, record.version)
     }
+    /**
+     * RES-02: the Remote path has no per-call executable argument, so the approval
+     * is the operator's STANDING configuration value. With it off the registry
+     * returns its exact refusal and NOTHING is acquired; with it on the same
+     * digest-pinned plan is approved as a whole.
+     */
+    const allowExecutable = this.#options.allowExecutablePreparation?.() === true
     let outcome: PreparationOutcome
     try {
       outcome = await surface.prepare(extensionId, {
         source: (this.#options.preparationSource ?? createHttpSource)(),
-        allowExecutable: false,
+        allowExecutable,
         signal: signal ?? new AbortController().signal,
       })
     } catch (error) {

@@ -228,8 +228,17 @@ test('prepare acquires every asset digest-verified, materializes group layouts, 
   const textGroup = first.groups.find(group => group.groupId === 'text-backbone')!
   assert.ok(readFileSync(join(textGroup.path, 'onnx', 'model.onnx')).equals(ASSET_BYTES['fixture-model']!), 'the lock file layout is materialized')
   const map = registry.assetMapFor('@try-works/fixture-prepared-assets')!
-  assert.deepEqual(map.assetIds, ['text-backbone', 'audio-encoder'])
+  // BOTH projections are exposed: group ids resolve to the group directory (the
+  // selective-loading consumers), asset ids resolve to the individual file (the
+  // per-artifact consumers, e.g. needle).
+  assert.deepEqual(map.assetIds, [
+    'text-backbone', 'audio-encoder',
+    'fixture-model', 'fixture-tokenizer', 'fixture-audio',
+  ])
   assert.equal(map.get('text-backbone')!.path, textGroup.path)
+  const modelFile = map.get('fixture-model')!
+  assert.equal(modelFile.path, join(textGroup.path, 'onnx', 'model.onnx'))
+  assert.equal(modelFile.digest, createHash('sha256').update(ASSET_BYTES['fixture-model']!).digest('hex'))
 
   // A second prepare is a cache hit: the verified blobs are never re-fetched.
   const second = await registry.prepare('@try-works/fixture-prepared-assets', plan, groups, {

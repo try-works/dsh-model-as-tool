@@ -1,0 +1,107 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/fixture-executable",
+  "version": "1.0.0",
+  "displayName": "Executable fixture",
+  "description": "A fixture extension with one locked EXECUTABLE asset, used to prove the RES-02 operator approval gate and its byte-for-byte refusal on the Remote prepare path, without a network, a download or a real engine.",
+  "activation": {
+    "policy": "operator",
+    "deactivatable": true
+  },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": []
+  },
+  "execution": {
+    "kind": "module",
+    "entry": "./lib/index.js"
+  },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": false
+  },
+  "network": {
+    "requiredTelemetry": false,
+    "otherNetworkUse": false
+  },
+  "licenses": [
+    {
+      "layer": "code",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "engine",
+      "name": "none: the fixture ships a 23-byte stand-in executable asset",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "weights",
+      "name": "none: the fixture owns no model",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "sdk",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "conversion-artifacts",
+      "name": "none: no conversion step is performed",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    }
+  ],
+  "models": [
+    {
+      "id": "fixture-executable-model",
+      "assetSet": "fixture-executable-set",
+      "assetLock": "./models.lock.json",
+      "platforms": [{ "os": "win32", "arch": "x64", "accelerator": "cpu" }]
+    }
+  ],
+  "tools": [
+    {
+      "id": "fixture-executable-tool",
+      "name": "fixture_executable_tool",
+      "contractId": "fixture.executable.echo",
+      "contractVersion": "1.0.0",
+      "description": "Echo a token back to prove an executable deployment can be prepared and activated. It performs no inference and touches no file or network.",
+      "inputSchema": "./schemas/input.json",
+      "outputSchema": "./schemas/output.json"
+    }
+  ],
+  "implementations": [
+    {
+      "id": "fixture-executable-tool",
+      "contractId": "fixture.executable.echo",
+      "contractVersion": "1.0.0",
+      "modelId": "fixture-executable-model",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": []
+}
