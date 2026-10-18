@@ -37,7 +37,7 @@ export interface ModelToolsBinding {
 }
 
 /** The public methods the Host service must expose for dispatch to work. */
-const REQUIRED_METHODS = ['describe', 'install', 'enable', 'disable'] as const
+const REQUIRED_METHODS = ['describe', 'install', 'enable', 'disable', 'prepare'] as const
 
 /**
  * Attach the Gateway's `typertRemote` binding to a prepared service object.
@@ -72,7 +72,7 @@ export function bindModelToolsRemote<T extends ModelToolsRemote>(service: T): T 
  *
  * The Host artifact registers strict descriptors for:
  * `describe`, `installExtension` (dispatching to the service's `install`),
- * `enable`, and `disable`.
+ * `enable`, `disable`, and `prepare`.
  *
  * @param ctx - the plugin's Cordis context that should own the service.
  * @param service - the prepared {@link ModelToolsRemote} implementation.

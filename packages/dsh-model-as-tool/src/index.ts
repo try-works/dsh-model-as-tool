@@ -713,6 +713,16 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
   let extensionLifecycle: ExtensionLifecycle | undefined
 
   /**
+   * The extensions the contribution registrar currently admits.
+   *
+   * Seeded from the durable desired-active state when the store mounts, and kept
+   * in step by the extension-management service: the registrar refuses a
+   * contribution whose extension is absent, so a runtime `enable` must admit the
+   * id BEFORE the lifecycle publishes, and `disable` must revoke it.
+   */
+  const activatedExtensions = new Set<string>()
+
+  /**
    * The host half of Settings → Model as Tool's extension management.
    *
    * Constructed even when no extension store is configured, so `describe()` can
@@ -743,6 +753,30 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
     profile: 'default',
     disabledExtensions: () => config.disabledExtensions ?? [],
     lifecycle: () => extensionLifecycle,
+    /**
+     * The prepared-assets surface is constructed inside the extension-store block
+     * below; the thunk resolves at call time, after apply has finished. The source
+     * is the SAME seam `extensions-prepare` uses, so the Settings page and the
+     * management channel acquire through one implementation (and the test suite
+     * injects a local source through `assetSourceFactory`, never the network).
+     */
+    prepareSurface: () => prepareAssetsSurface,
+    preparationSource: () => config.assetSourceFactory?.() ?? createHttpSource(),
+    /**
+     * Keep the registrar's admission set in step with activation changes made
+     * through the Settings surface. A failed activation revokes the admission,
+     * unless the lifecycle still reports the extension active under another owner
+     * (another host's surface is not this registrar's to revoke).
+     */
+    onActivationChange: (extensionId, active) => {
+      if (active) {
+        activatedExtensions.add(extensionId)
+        return
+      }
+      if (extensionLifecycle?.stateOf(extensionId)?.observedActivation !== 'active') {
+        activatedExtensions.delete(extensionId)
+      }
+    },
   })
   provideModelToolsService(ctx, extensionsService)
 
@@ -2894,12 +2928,13 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
      * check must refuse.
      */
     const extensionToolOwners = new Map<string, string>()
+    // Seed the LIVE admission set the management service also maintains; the
+    // registrar holds the same Set, not a snapshot, so a runtime enable publishes.
+    for (const entry of store.readProfileState('default').value) {
+      if (entry.desiredActivation === 'active') activatedExtensions.add(entry.extensionId)
+    }
     const registrar = createContributionRegistrar({
-      activated: new Set(
-        store.readProfileState('default').value
-          .filter(entry => entry.desiredActivation === 'active')
-          .map(entry => entry.extensionId),
-      ),
+      activated: activatedExtensions,
       registry: {
         registerTool: tool => {
           /**

@@ -682,7 +682,7 @@ window.__ModuleLoader__.load({
     }
 
     /** How an in-flight Install/Enable/Disable is spelled in the card. */
-    const EXTENSION_ACTION_LABELS = { install: 'Installing', enable: 'Enabling', disable: 'Disabling' }
+    const EXTENSION_ACTION_LABELS = { install: 'Installing', prepare: 'Preparing', enable: 'Enabling', disable: 'Disabling' }
 
     // The extension Remote is a package-local lazy chunk (`client.model-tools.js`)
     // mounted by the wire half: it installs the generated Typert namespace on
@@ -948,6 +948,71 @@ window.__ModuleLoader__.load({
     }
 
     /**
+     * Whether a describe() row says the extension's model assets must be
+     * prepared before activation.
+     *
+     * The host's reason is the only such signal the describe() row carries (the
+     * readiness map rides only the prepare result), so the check follows the
+     * phrases the host's own preparationBlockers() emits and deliberately keeps
+     * the host's TEXT untouched for rendering — this only decides whether the
+     * Prepare control is offered. A row whose reason stays unknown therefore
+     * never shows a spurious Prepare.
+     *
+     * @param state - the describe() row, or null.
+     * @returns true when the host names preparation as the blocker.
+     */
+    function extensionNeedsPreparation(state) {
+      if (state === null || state.installed !== true) return false
+      if (typeof state.reason !== 'string' || state.reason.length === 0) return false
+      const reason = state.reason.toLowerCase()
+      return reason.includes('needs its model assets prepared')
+        || reason.includes('needs preparation')
+        || reason.includes('run prepare for this extension')
+        || reason.includes('then prepare again')
+    }
+
+    /**
+     * What to show after a prepare() call.
+     *
+     * `prepare` reports acquisition failures IN BAND (`ok: true` with
+     * `prepared: false` and a reason), and RES-02 executable approval refusals
+     * arrive the same way, so the refusal text is returned verbatim and never
+     * replaced with a success claim. A successful call renders the disclosure the
+     * host returned (plan bytes/license) rather than a bare "done".
+     *
+     * @param result - the ExtensionPrepareResult.
+     * @returns one operator-facing note.
+     */
+    function prepareResultNote(result) {
+      if (result === null || result === undefined || typeof result !== 'object') {
+        return 'The host returned no preparation state.'
+      }
+      if (result.prepared !== true) {
+        return typeof result.reason === 'string' && result.reason.length > 0
+          ? result.reason
+          : 'The host reported the preparation did not complete.'
+      }
+      const plan = result.plan !== null && typeof result.plan === 'object' ? result.plan : null
+      let text
+      if (plan === null) {
+        text = 'The host reported the model assets prepared.'
+      } else {
+        text = 'Prepared ' + (typeof plan.modelId === 'string' ? plan.modelId : 'the model assets')
+        if (typeof plan.totalBytes === 'number' && typeof plan.storageBytes === 'number') {
+          text += ' — ' + plan.totalBytes + ' bytes download, ' + plan.storageBytes + ' retained'
+        }
+        if (plan.license !== null && typeof plan.license === 'object'
+          && typeof plan.license.name === 'string' && plan.license.name.length > 0) {
+          text += ' · license: ' + plan.license.name
+        }
+      }
+      if (result.activationReady === false) {
+        text += ' (activation still has remaining blockers; see the row reason)'
+      }
+      return text
+    }
+
+    /**
      * The config-only row: the switch records a `disabledExtensions` preference
      * and cannot observe or change the store. Used when the Remote is absent.
      */
@@ -985,12 +1050,13 @@ window.__ModuleLoader__.load({
      *
      * @param entry - the generated extension entry.
      * @param state - the describe() row for it, or null when not reported.
-     * @param ui - { writable, canInstall, listed, busy, pending, error, onAction }.
+     * @param ui - { writable, canInstall, listed, busy, pending, error, prepareNote, onAction }.
      */
     function extensionRemoteRow(entry, state, ui) {
       const installed = state !== null && state.installed === true
       const active = installed && state.active === true
       const pending = ui.pending !== null && ui.pending.id === entry.id ? ui.pending.action : null
+      const needsPreparation = extensionNeedsPreparation(state)
       const parts = extensionParts(entry)
       if (state !== null && typeof state.version === 'string' && state.version.length > 0) {
         parts.push('installed v' + state.version)
@@ -1001,7 +1067,13 @@ window.__ModuleLoader__.load({
       if (state === null) {
         notes.push('The extension store did not report this package. Installing asks the host for it, and any refusal is shown here.')
       }
+      // The host's reason is rendered VERBATIM: it is the authoritative
+      // explanation (e.g. the precise preparation blocker or retry guidance), and
+      // a generic replacement would hide the one sentence the operator needs.
       if (state !== null && typeof state.reason === 'string' && state.reason.length > 0) notes.push(state.reason)
+      if (ui.prepareNote !== null && ui.prepareNote !== undefined && ui.prepareNote.id === entry.id) {
+        notes.push(ui.prepareNote.text)
+      }
       if (state !== null && state.integrity === 'changed') {
         notes.push('The installed content changed since it was recorded; reinstall before enabling it.')
       }
@@ -1059,7 +1131,21 @@ window.__ModuleLoader__.load({
               : 'mtt-row-note',
             key: 'note-' + index,
           }, note))),
-        h('div', { className: 'mtt-control' }, control))
+        h('div', { className: 'mtt-control' },
+          control,
+          // Preparation is offered only when the HOST names it as the blocker; it
+          // is not a second way to force activation. After a successful prepare
+          // the row's reason changes and this control disappears.
+          needsPreparation
+            ? h('button', {
+              type: 'button',
+              className: 'mtt-button mtt-button-small',
+              disabled: ui.busy || !ui.writable,
+              'aria-busy': pending === 'prepare',
+              title: 'Prepare the model assets this extension needs before it can be enabled',
+              onClick: () => ui.onAction(entry.id, 'prepare'),
+            }, pending === 'prepare' ? 'Preparing…' : 'Prepare')
+            : null))
     }
 
     function ModelToolsSettings({ form, ctx, remoteSlot }) {
@@ -1078,6 +1164,9 @@ window.__ModuleLoader__.load({
       // The action is never rolled back for this; the note tells the operator the
       // two stores can disagree until the list is saved manually.
       const [extConfigNote, setExtConfigNote] = React.useState(null)
+      // The last prepare() disclosure/refusal, per row. It is rendered beside the
+      // host's reason so a RES-02 refusal or plan is shown verbatim.
+      const [extPrepareNote, setExtPrepareNote] = React.useState(null)
 
       /** This mount's namespace status, or null when the wire chunk is absent. */
       const mounted = () => (remoteSlot === null || remoteSlot === undefined ? null : remoteSlot.get())
@@ -1240,6 +1329,7 @@ window.__ModuleLoader__.load({
       const recheckExtensions = async () => {
         setExtRowError(null)
         setExtConfigNote(null)
+        setExtPrepareNote(null)
         setExtRemote({ kind: 'loading' })
         const namespace = modelToolsRemote(ctx, mounted())
         if (namespace === null) {
@@ -1264,6 +1354,7 @@ window.__ModuleLoader__.load({
       const runExtensionAction = async (id, action) => {
         setExtRowError(null)
         setExtConfigNote(null)
+        setExtPrepareNote(null)
         setExtPending({ id, action })
         try {
           const namespace = modelToolsRemote(ctx, mounted())
@@ -1280,6 +1371,14 @@ window.__ModuleLoader__.load({
             // ("expected 2 business argument(s) ... got 1"), so pass undefined to
             // mean "use the configured first-party source".
             unwrapRemoteResult(await install.call(namespace, id, undefined))
+          } else if (action === 'prepare') {
+            if (typeof namespace.prepare !== 'function') {
+              throw new Error('This host does not expose the extension prepare action.')
+            }
+            // prepare(id) has no optional data argument; an AbortSignal may ride
+            // as the second wire slot, which this page does not need.
+            const prepared = unwrapRemoteResult(await namespace.prepare(id))
+            setExtPrepareNote({ id, text: prepareResultNote(prepared) })
           } else if (action === 'enable') {
             unwrapRemoteResult(await namespace.enable(id))
             // Dual-write Config.disabledExtensions so a restart cannot re-disable
@@ -1349,6 +1448,7 @@ window.__ModuleLoader__.load({
               busy: extBusy,
               pending: extPending,
               error: extRowError,
+              prepareNote: extPrepareNote,
               onAction: runExtensionAction,
             })))
       } else if (extRemote.kind === 'error') {
@@ -1465,6 +1565,8 @@ window.__ModuleLoader__.load({
       describeExtensions,
       findExtensionState,
       nextDisabledExtensions,
+      extensionNeedsPreparation,
+      prepareResultNote,
     }
     return module.exports
   },

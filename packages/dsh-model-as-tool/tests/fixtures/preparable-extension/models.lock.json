@@ -1,0 +1,29 @@
+{
+  "lockVersion": 1,
+  "assetSets": {
+    "fixture-preparable-set": {
+      "pinning": {
+        "revision": "fixture-preparable-revision-1"
+      },
+      "license": {
+        "name": "MIT",
+        "url": "https://example.invalid/fixture-license"
+      },
+      "groups": [
+        {
+          "id": "text-backbone",
+          "assets": [
+            {
+              "id": "fixture-tiny-asset",
+              "file": "onnx/model.onnx",
+              "bytes": 28,
+              "source": "fixture:tiny-asset",
+              "digest": "e90e7c7d7abf03e0d05b2c20c0020527961bc2cd1c9aed12f9941568b723a218",
+              "executable": false
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

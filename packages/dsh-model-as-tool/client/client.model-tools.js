@@ -24,6 +24,9 @@ window.__ModuleLoader__.load({
     case 'boolean':
       if (typeof value !== 'boolean') throw new TypeError('expected a boolean')
       return value
+    case 'number':
+      if (typeof value !== 'number' || !Number.isFinite(value)) throw new TypeError('expected a finite number')
+      return value
     case 'null':
       if (value !== null) throw new TypeError('expected null')
       return null
@@ -37,6 +40,14 @@ window.__ModuleLoader__.load({
     case 'array':
       if (!Array.isArray(value)) throw new TypeError('expected an array')
       return value.map((item) => parseModelToolsValue(schema.of, item))
+    case 'record': {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        throw new TypeError('expected a string-keyed record')
+      }
+      const parsed = {}
+      for (const [key, item] of Object.entries(value)) parsed[key] = parseModelToolsValue(schema.of, item)
+      return parsed
+    }
     case 'object': {
       if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         throw new TypeError('expected an object')
@@ -318,6 +329,147 @@ window.__ModuleLoader__.load({
             "kind": "boolean"
           },
           "disabled": {
+            "kind": "boolean"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "prepare",
+    "description": "Acquire and verify the installed extension's model assets, then record the readiness a following enable needs.",
+    "parameters": [
+      {
+        "name": "id",
+        "wire": "id",
+        "description": "the installed extension id to prepare.",
+        "acceptsUndefined": false,
+        "typeSymbol": "@try-works/dsh-model-as-tool#modelTools/prepare:id",
+        "strictTypeSymbol": "@try-works/dsh-model-as-tool#modelTools/prepare:id",
+        "schema": {
+          "kind": "string"
+        }
+      }
+    ],
+    "result": {
+      "typeSymbol": "@try-works/dsh-model-as-tool#modelTools/prepare:result",
+      "description": "the preparation outcome, its RES-02 disclosure, and the readiness recorded for each declared model.",
+      "schema": {
+        "kind": "object",
+        "fields": {
+          "id": {
+            "kind": "string"
+          },
+          "prepared": {
+            "kind": "boolean"
+          },
+          "reason": {
+            "kind": "nullable",
+            "of": {
+              "kind": "string"
+            }
+          },
+          "plan": {
+            "kind": "nullable",
+            "of": {
+              "kind": "object",
+              "fields": {
+                "modelId": {
+                  "kind": "string"
+                },
+                "modelRevision": {
+                  "kind": "string"
+                },
+                "assets": {
+                  "kind": "array",
+                  "of": {
+                    "kind": "object",
+                    "fields": {
+                      "assetId": {
+                        "kind": "string"
+                      },
+                      "bytes": {
+                        "kind": "number"
+                      },
+                      "source": {
+                        "kind": "string"
+                      },
+                      "executable": {
+                        "kind": "boolean"
+                      }
+                    }
+                  }
+                },
+                "totalBytes": {
+                  "kind": "number"
+                },
+                "storageBytes": {
+                  "kind": "number"
+                },
+                "requiresExecutableApproval": {
+                  "kind": "boolean"
+                },
+                "license": {
+                  "kind": "object",
+                  "fields": {
+                    "name": {
+                      "kind": "string"
+                    },
+                    "url": {
+                      "kind": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "readiness": {
+            "kind": "record",
+            "of": {
+              "kind": "union",
+              "of": [
+                {
+                  "kind": "literal",
+                  "value": "unavailable"
+                },
+                {
+                  "kind": "literal",
+                  "value": "needs-preparation"
+                },
+                {
+                  "kind": "literal",
+                  "value": "preparing"
+                },
+                {
+                  "kind": "literal",
+                  "value": "prepared-cold"
+                },
+                {
+                  "kind": "literal",
+                  "value": "loading"
+                },
+                {
+                  "kind": "literal",
+                  "value": "ready"
+                },
+                {
+                  "kind": "literal",
+                  "value": "busy"
+                },
+                {
+                  "kind": "literal",
+                  "value": "failed"
+                }
+              ]
+            }
+          },
+          "groups": {
+            "kind": "array",
+            "of": {
+              "kind": "string"
+            }
+          },
+          "activationReady": {
             "kind": "boolean"
           }
         }

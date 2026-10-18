@@ -1,0 +1,107 @@
+{
+  "protocolVersion": "1.1.0",
+  "id": "@try-works/fixture-preparable",
+  "version": "1.0.0",
+  "displayName": "Preparable fixture",
+  "description": "A fixture extension with one locked model asset, used to prove the host's preparation plan, acquisition, readiness recording and precise activation blockers without a network or a real engine.",
+  "activation": {
+    "policy": "operator",
+    "deactivatable": true
+  },
+  "runtimeApi": 1,
+  "compatibility": {
+    "hostApi": "^1.1.0",
+    "requiredFeatures": []
+  },
+  "execution": {
+    "kind": "module",
+    "entry": "./lib/index.js"
+  },
+  "permissions": {
+    "networkOrigins": [],
+    "inputFiles": false,
+    "storage": "extension-private",
+    "secrets": [],
+    "nativeCode": false
+  },
+  "network": {
+    "requiredTelemetry": false,
+    "otherNetworkUse": false
+  },
+  "licenses": [
+    {
+      "layer": "code",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "weights",
+      "name": "none: the fixture ships a 28-byte stand-in asset",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "engine",
+      "name": "none: the fixture runs no engine",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "sdk",
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    },
+    {
+      "layer": "conversion-artifacts",
+      "name": "none: no conversion step is performed",
+      "url": "https://example.invalid/fixture",
+      "openSource": true,
+      "redistribution": "permitted",
+      "attributionRequired": false,
+      "obligations": []
+    }
+  ],
+  "models": [
+    {
+      "id": "fixture-preparable-model",
+      "assetSet": "fixture-preparable-set",
+      "assetLock": "./models.lock.json",
+      "platforms": [{ "os": "win32", "arch": "x64", "accelerator": "cpu" }]
+    }
+  ],
+  "tools": [
+    {
+      "id": "fixture-preparable-tool",
+      "name": "fixture_preparable_tool",
+      "contractId": "fixture.preparable.echo",
+      "contractVersion": "1.0.0",
+      "description": "Echo a token back to prove a prepared deployment can be activated and called. It performs no inference and touches no file or network.",
+      "inputSchema": "./schemas/input.json",
+      "outputSchema": "./schemas/output.json"
+    }
+  ],
+  "implementations": [
+    {
+      "id": "fixture-preparable-tool",
+      "contractId": "fixture.preparable.echo",
+      "contractVersion": "1.0.0",
+      "modelId": "fixture-preparable-model",
+      "recipeVersion": "1.0.0"
+    }
+  ],
+  "skills": []
+}

@@ -131,7 +131,7 @@ function preinstalledGraph(resolver: DependencyResolver, overrides: Partial<Inst
 }
 
 /** Materialize a preinstalled fixture directory with a script-declaring package.json. */
-function makePreinstalledDir(root: string, options: { name?: string; version?: string; files?: number } = {}): string {
+function makePreinstalledDir(root: string, options: { name?: string; version?: string; files?: number; nested?: boolean } = {}): string {
   const dir = join(root, 'installed', 'onnxruntime-node')
   mkdirSync(dir, { recursive: true })
   writeFileSync(join(dir, 'package.json'), `${JSON.stringify({
@@ -143,6 +143,13 @@ function makePreinstalledDir(root: string, options: { name?: string; version?: s
   const count = options.files ?? 2
   for (let i = 0; i < count; i += 1) {
     writeFileSync(join(dir, `payload-${i}.bin`), Buffer.alloc(64, i))
+  }
+  if (options.nested === true) {
+    mkdirSync(join(dir, 'dist', 'nested', 'deep'), { recursive: true })
+    writeFileSync(join(dir, 'dist', 'nested', 'deep', 'file.js'), Buffer.from('export const nested = true\n'))
+    // An EMPTY subdirectory too: the walk's directory branch mkdirs every
+    // directory (empty or not), so it is recreated rather than dropped.
+    mkdirSync(join(dir, 'dist', 'empty'), { recursive: true })
   }
   return dir
 }

@@ -243,6 +243,11 @@ function copyPreinstalledTree(
         )
       }
       if (entry.isDirectory()) {
+        // The parent directory for this subtree must EXIST before any nested
+        // file is copied into it: copyFileSync does not create parents, and on
+        // Windows a missing parent raises ENOENT on the destination side
+        // (task-88: the live MiniLM install failed copying dist/… before this).
+        mkdirSync(toPath, { recursive: true })
         walk(fromPath, toPath)
         continue
       }

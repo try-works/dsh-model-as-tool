@@ -124,6 +124,15 @@ test('the client half ships both extension flows: host Remote and config-only fa
     'installExtension must be called with its source positional slot filled')
   assert.match(source, /\.enable\(id\)/, 'the page must enable an installed extension through the Remote')
   assert.match(source, /\.disable\(id\)/, 'the page must disable an installed extension through the Remote')
+  // Preparation: a blocked installed row offers Prepare, calls prepare(id), and
+  // shows a busy label; the host's own reason text is rendered, not replaced.
+  assert.match(source, /namespace\.prepare\(id\)/, 'the page must prepare model assets through the Remote')
+  assert.match(source, /'Preparing…'/, 'a prepare in flight must be visible, not a silent click')
+  assert.match(source, /notes\.push\(state\.reason\)/,
+    'an installed row must render the host reason verbatim')
+  assert.match(source, /extensionNeedsPreparation/,
+    'the Prepare control must be offered only for a host-named preparation blocker')
+  assert.match(source, /prepareResultNote/, 'a prepare result must render the host disclosure/refusal')
   assert.match(source, /'Installing…'/, 'an install in flight must be visible, not a silent click')
   // Two durable sources describe "disabled": the lifecycle the Remote changes and
   // Config.disabledExtensions, which the restore filter re-checks. Every
@@ -158,6 +167,8 @@ test('the generated client helpers map both Remote result shapes to the rows the
   const describeExtensions = clientHelper(exports, 'describeExtensions')
   const findExtensionState = clientHelper(exports, 'findExtensionState')
   const nextDisabledExtensions = clientHelper(exports, 'nextDisabledExtensions')
+  const extensionNeedsPreparation = clientHelper(exports, 'extensionNeedsPreparation')
+  const prepareResultNote = clientHelper(exports, 'prepareResultNote')
 
   const namespace = {
     describe: async () => ({ ok: true, value: { store: 'C:/store', writable: true, extensions: [] } }),
@@ -227,6 +238,50 @@ test('the generated client helpers map both Remote result shapes to the rows the
   assert.deepEqual(nextDisabledExtensions(undefined, 'a', 'disable'), ['a'])
   assert.deepEqual(nextDisabledExtensions([null, 7, 'b'], 'a', 'disable'), ['a', 'b'])
   assert.deepEqual(nextDisabledExtensions(['a'], 'a', 'enable'), [])
+
+  // Prepare is offered only when the HOST names preparation as the blocker; the
+  // detector follows the host's own blocker phrases and must not guess from a
+  // missing/other reason (a spurious Prepare would send the operator in circles).
+  const blocked = {
+    installed: true,
+    active: false,
+    reason: 'activation blocked: embeddinggemma-2 needs its model assets prepared — run prepare for this extension',
+  }
+  assert.equal(extensionNeedsPreparation(blocked), true)
+  assert.equal(extensionNeedsPreparation({ ...blocked, reason: 'the model needs preparation before use' }), true)
+  assert.equal(extensionNeedsPreparation({ ...blocked, reason: 'activation blocked: broken schema' }), false)
+  assert.equal(extensionNeedsPreparation({ ...blocked, reason: null }), false)
+  assert.equal(extensionNeedsPreparation({ ...blocked, installed: false }), false)
+  assert.equal(extensionNeedsPreparation(null), false)
+
+  // prepare() reports acquisition refusals in band (ok:true, prepared:false); the
+  // refusal text is shown verbatim. Success renders the host disclosure instead of
+  // a bare "done", and activationReady:false is never called a success.
+  assert.equal(
+    prepareResultNote({ prepared: false, reason: 'executable asset needs separate approval (RES-02)' }),
+    'executable asset needs separate approval (RES-02)',
+  )
+  assert.match(String(prepareResultNote({ prepared: false, reason: null })), /did not complete/)
+  const prepared = prepareResultNote({
+    prepared: true,
+    reason: null,
+    activationReady: true,
+    plan: {
+      modelId: 'embeddinggemma-2',
+      modelRevision: 'r1',
+      assets: [],
+      totalBytes: 1234,
+      storageBytes: 1200,
+      requiresExecutableApproval: false,
+      license: { name: 'Gemma Terms', url: 'https://example.invalid/terms' },
+    },
+  })
+  assert.match(String(prepared), /Prepared embeddinggemma-2/)
+  assert.match(String(prepared), /1234 bytes download/)
+  assert.match(String(prepared), /Gemma Terms/)
+  assert.doesNotMatch(String(prepared), /remaining blockers/)
+  const partiallyReady = prepareResultNote({ prepared: true, plan: null, activationReady: false })
+  assert.match(String(partiallyReady), /remaining blockers/)
 })
 
 test('the Settings-editable fields are marked volatile so the host exposes them', async (t) => {

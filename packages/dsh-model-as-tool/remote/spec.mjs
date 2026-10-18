@@ -74,6 +74,45 @@ const TOGGLE_RESULT = {
   fields: { id: STRING, active: BOOLEAN, disabled: BOOLEAN },
 }
 const OPTIONAL_STRING = { kind: 'optional', of: STRING }
+const NUMBER = { kind: 'number' }
+/** The readiness vocabulary from `extensions-api.ts` (EXT-25 / RES-04). */
+const MODEL_READINESS = {
+  kind: 'union',
+  of: ['unavailable', 'needs-preparation', 'preparing', 'prepared-cold', 'loading', 'ready', 'busy', 'failed']
+    .map(value => ({ kind: 'literal', value })),
+}
+const PREPARATION_ASSET = {
+  kind: 'object',
+  fields: { assetId: STRING, bytes: NUMBER, source: STRING, executable: BOOLEAN },
+}
+const PREPARATION_LICENSE = {
+  kind: 'object',
+  fields: { name: STRING, url: STRING },
+}
+const PREPARATION_PLAN = {
+  kind: 'object',
+  fields: {
+    modelId: STRING,
+    modelRevision: STRING,
+    assets: { kind: 'array', of: PREPARATION_ASSET },
+    totalBytes: NUMBER,
+    storageBytes: NUMBER,
+    requiresExecutableApproval: BOOLEAN,
+    license: PREPARATION_LICENSE,
+  },
+}
+const PREPARE_RESULT = {
+  kind: 'object',
+  fields: {
+    id: STRING,
+    prepared: BOOLEAN,
+    reason: NULLABLE_STRING,
+    plan: { kind: 'nullable', of: PREPARATION_PLAN },
+    readiness: { kind: 'record', of: MODEL_READINESS },
+    groups: STRING_LIST,
+    activationReady: BOOLEAN,
+  },
+}
 
 /**
  * Validate one boundary value against the declarative schema.
@@ -90,6 +129,9 @@ export function parseModelToolsValue(schema, value) {
     case 'boolean':
       if (typeof value !== 'boolean') throw new TypeError('expected a boolean')
       return value
+    case 'number':
+      if (typeof value !== 'number' || !Number.isFinite(value)) throw new TypeError('expected a finite number')
+      return value
     case 'null':
       if (value !== null) throw new TypeError('expected null')
       return null
@@ -103,6 +145,14 @@ export function parseModelToolsValue(schema, value) {
     case 'array':
       if (!Array.isArray(value)) throw new TypeError('expected an array')
       return value.map((item) => parseModelToolsValue(schema.of, item))
+    case 'record': {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        throw new TypeError('expected a string-keyed record')
+      }
+      const parsed = {}
+      for (const [key, item] of Object.entries(value)) parsed[key] = parseModelToolsValue(schema.of, item)
+      return parsed
+    }
     case 'object': {
       if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         throw new TypeError('expected an object')
@@ -275,6 +325,26 @@ export const METHOD_SPECS = [
       schema: TOGGLE_RESULT,
     },
   },
+  {
+    method: 'prepare',
+    description: 'Acquire and verify the installed extension\'s model assets, then record the readiness a following enable needs.',
+    parameters: [
+      {
+        name: 'id',
+        wire: 'id',
+        description: 'the installed extension id to prepare.',
+        acceptsUndefined: false,
+        typeSymbol: PACKAGE + '#' + NAMESPACE + '/prepare:id',
+        strictTypeSymbol: PACKAGE + '#' + NAMESPACE + '/prepare:id',
+        schema: STRING,
+      },
+    ],
+    result: {
+      typeSymbol: PACKAGE + '#' + NAMESPACE + '/prepare:result',
+      description: 'the preparation outcome, its RES-02 disclosure, and the readiness recorded for each declared model.',
+      schema: PREPARE_RESULT,
+    },
+  },
 ]
 
 /** The mountable Client contribution (and the Host artifact's invocation source). */
@@ -285,9 +355,9 @@ export function buildContribution() {
   }
 }
 
-/** Host documentation for the four methods, kept beside their specs. */
+/** Host documentation for the methods, kept beside their specs. */
 const SERVICE_MODEL = {
-  description: 'Host service backing the generated `ctx.remote.modelTools` namespace. It reports the extension store truthfully (store null when unconfigured) and performs staged installs plus persisted enable/disable.',
+  description: 'Host service backing the generated `ctx.remote.modelTools` namespace. It reports the extension store truthfully (store null when unconfigured), performs staged installs, persisted enable/disable, and model-asset preparation with the RES-02 disclosure.',
   summary: 'Host service backing the generated `ctx.remote.modelTools` namespace.',
   tags: [],
   jsDoc: '/** Host service backing the generated `ctx.remote.modelTools` namespace. */',
@@ -300,7 +370,9 @@ const SERVICE_MODEL = {
       ? 'describe(signal?: AbortSignal): Promise<ExtensionsDescribeResult>'
       : spec.method === 'installExtension'
         ? 'install(id: string, source?: string, signal?: AbortSignal): Promise<ExtensionInstallResult>'
-        : `${spec.method}(id: string, signal?: AbortSignal): Promise<ExtensionToggleResult>`,
+        : spec.method === 'prepare'
+          ? 'prepare(id: string, signal?: AbortSignal): Promise<ExtensionPrepareResult>'
+          : `${spec.method}(id: string, signal?: AbortSignal): Promise<ExtensionToggleResult>`,
     description: spec.description,
     jsDoc: `/** ${spec.description} */`,
   })),

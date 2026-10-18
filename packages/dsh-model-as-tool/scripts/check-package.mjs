@@ -96,6 +96,14 @@ if (client !== undefined) {
       note(/installExtension/.test(source) && /install\.call\(namespace, id, undefined\)/.test(source)
         && /\.enable\(id\)/.test(source) && /\.disable\(id\)/.test(source),
         'the client half must call installExtension(id, undefined)/enable(id)/disable(id) through the Remote')
+      // Preparation: a host-named blocker must offer Prepare(id); the host's
+      // reason and any prepare refusal must be rendered verbatim, never replaced.
+      note(/namespace\.prepare\(id\)/.test(source) && source.includes("'Preparing…'"),
+        'the client half must offer Prepare(id) with a busy state for a preparation blocker')
+      note(/notes\.push\(state\.reason\)/.test(source),
+        'the client half must render the host reason verbatim')
+      note(/extensionNeedsPreparation/.test(source) && /prepareResultNote/.test(source),
+        'the client half must gate Prepare on the host reason and render the prepare result')
       // Two sources describe "disabled": the lifecycle the Remote changes and
       // Config.disabledExtensions, which the restore filter re-checks. Losing
       // either half of the dual-write lets a restart undo the operator's choice.

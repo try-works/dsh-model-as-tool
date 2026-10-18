@@ -63,6 +63,89 @@ export interface ExtensionToggleResult {
   readonly disabled: boolean
 }
 
+/**
+ * The readiness vocabulary a preparation reports (EXT-25 / RES-04).
+ *
+ * Only `prepared-cold`, `loading`, `ready` and `busy` permit activation; the
+ * others name WHY they do not.
+ */
+export type ExtensionModelReadiness =
+  | 'unavailable'
+  | 'needs-preparation'
+  | 'preparing'
+  | 'prepared-cold'
+  | 'loading'
+  | 'ready'
+  | 'busy'
+  | 'failed'
+
+/**
+ * Readiness for each DECLARED model deployment, keyed by the manifest's model id.
+ *
+ * Declared ids are the projection: a stale readiness entry for a deployment the
+ * current manifest no longer declares is not reported.
+ */
+export type ExtensionReadinessMap = Readonly<Record<string, ExtensionModelReadiness>>
+
+/** One asset in the RES-02 preparation disclosure. */
+export interface ExtensionPreparationAsset {
+  /** The stable asset id (`<group>/<asset>`). */
+  readonly assetId: string
+  /** Download size in bytes. */
+  readonly bytes: number
+  /** The pinned source the bytes come from. */
+  readonly source: string
+  /** Whether the asset is executable, which needs the separate approval (RES-02). */
+  readonly executable: boolean
+}
+
+/**
+ * The pre-approval disclosure of what a preparation downloads (RES-02).
+ *
+ * The same fields the management channel's `extensions-prepare-plan` action
+ * discloses; it travels with the result so the page can show bytes, storage,
+ * terms and the executable gate.
+ */
+export interface ExtensionPreparationPlan {
+  /** The manifest model deployment the assets belong to. */
+  readonly modelId: string
+  /** The pinned model revision. */
+  readonly modelRevision: string
+  /** Every asset the preparation acquires. */
+  readonly assets: readonly ExtensionPreparationAsset[]
+  /** Total download bytes. */
+  readonly totalBytes: number
+  /** Total bytes retained after installation (stated separately from download). */
+  readonly storageBytes: number
+  /** Whether any asset is executable and therefore needs the separate approval. */
+  readonly requiresExecutableApproval: boolean
+  /** The pinned license terms, surfaced before the download. */
+  readonly license: { readonly name: string; readonly url: string }
+}
+
+/** The result of a preparation request. */
+export interface ExtensionPrepareResult {
+  readonly id: string
+  /** Whether every declared asset was verified and the readiness was recorded. */
+  readonly prepared: boolean
+  /** Why the preparation did not complete, when it did not; null on success. */
+  readonly reason: string | null
+  /** The RES-02 disclosure this call executed, when a plan could be resolved. */
+  readonly plan: ExtensionPreparationPlan | null
+  /** The readiness per DECLARED model deployment after the call. */
+  readonly readiness: ExtensionReadinessMap
+  /** The prepared asset group ids (empty when nothing was prepared). */
+  readonly groups: readonly string[]
+  /**
+   * Whether no KNOWN blocker remains for activation: the installed bytes verify
+   * and every declared deployment is in a callable readiness state.
+   *
+   * This is the preparation question only; it does not promise that activation
+   * will publish (a schema or contribution refusal can still fail an enable).
+   */
+  readonly activationReady: boolean
+}
+
 /** The methods the HOST service implements (raw values, in-process). */
 export interface ModelToolsRemote {
   /** Read the current state; the page calls this on mount and after each action. */
@@ -73,6 +156,11 @@ export interface ModelToolsRemote {
   enable(id: string, signal?: AbortSignal): Promise<ExtensionToggleResult>
   /** Deactivate an extension (adds it to `disabledExtensions`). */
   disable(id: string, signal?: AbortSignal): Promise<ExtensionToggleResult>
+  /**
+   * Acquire and verify the installed extension's model assets, then record the
+   * resulting readiness so a following `enable` can activate it.
+   */
+  prepare(id: string, signal?: AbortSignal): Promise<ExtensionPrepareResult>
 }
 
 /**
@@ -107,4 +195,9 @@ export interface ModelToolsRemoteClient {
   ): Promise<RemoteResult<ExtensionInstallResult>>
   enable(id: string, signal?: AbortSignal): Promise<RemoteResult<ExtensionToggleResult>>
   disable(id: string, signal?: AbortSignal): Promise<RemoteResult<ExtensionToggleResult>>
+  /**
+   * Acquire/verify the extension's model assets and record readiness. The wire
+   * name is `prepare` (no collision with the namespace service's members).
+   */
+  prepare(id: string, signal?: AbortSignal): Promise<RemoteResult<ExtensionPrepareResult>>
 }

@@ -64,12 +64,33 @@ import {
 } from '@try-works/tool-mode-extension-sdk'
 import type {
   ExtensionInstallResult,
+  ExtensionModelReadiness,
+  ExtensionPreparationPlan,
+  ExtensionPrepareResult,
+  ExtensionReadinessMap,
   ExtensionState,
   ExtensionToggleResult,
   ExtensionsDescribeResult,
   ModelToolsRemote,
 } from './extensions-api.ts'
 import { createFirstPartyDependencyGraph } from './extension-dependencies.ts'
+import type { AcquisitionSource } from './asset-acquisition.ts'
+import { createHttpSource } from './http-acquisition.ts'
+import type { PreparationOutcome, PrepareAssetsSurface } from './prepared-assets.ts'
+import type { PreparationPlan } from './deployment-coordinator.ts'
+
+/**
+ * The readiness values that permit activation (the SDK's callable set).
+ *
+ * `prepared-cold` is callable: the model loads on first use. Every other value is
+ * a concrete blocker this service names in a row reason and in the enable refusal.
+ */
+const CALLABLE_READINESS: ReadonlySet<string> = new Set<string>([
+  'prepared-cold',
+  'loading',
+  'ready',
+  'busy',
+])
 
 /** The lifecycle surface this service needs. Narrower than the class, so a test can double it. */
 export type ExtensionActivation = Pick<ExtensionLifecycle, 'stateOf' | 'activate' | 'deactivate'>
@@ -107,6 +128,12 @@ export type ExtensionsServiceErrorCode =
   | 'extension-activation-unavailable'
   /** `activate` refused or failed; the SDK's named error is carried in the message. */
   | 'extension-activation-failed'
+  /** Activation is refused because a declared model's assets were never prepared. */
+  | 'extension-preparation-required'
+  /** The host mounted no prepared-assets surface, so assets cannot be prepared here. */
+  | 'extension-preparation-unavailable'
+  /** The preparation plan could not be resolved or its readiness could not be recorded. */
+  | 'extension-preparation-failed'
   /** `deactivate` refused or failed; the SDK's named error is carried in the message. */
   | 'extension-deactivation-failed'
   /** The host's disabled-list writer rejected the new list after the action landed. */
@@ -187,6 +214,27 @@ export interface ExtensionsServiceOptions {
   readonly allowPreinstalledDependencies?: boolean
   /** The operator-configured root preinstalled dependency directories must live under. */
   readonly preinstalledDependenciesRoot?: string
+  /**
+   * The mounted prepared-assets surface, read lazily (the plugin constructs it in
+   * `apply` after this service). Absent means the host mounted no asset surface,
+   * and `prepare` refuses with `extension-preparation-unavailable`.
+   */
+  readonly prepareSurface?: () => PrepareAssetsSurface | undefined
+  /**
+   * The acquisition source a preparation uses. Defaults to the real ranged HTTP
+   * source; a test injects a local source and the suite therefore performs no
+   * network.
+   */
+  readonly preparationSource?: () => AcquisitionSource
+  /**
+   * Notified when this service changes an extension's activation intent.
+   *
+   * The host's contribution registrar refuses to publish a tool for an extension
+   * absent from its activated set, so a runtime `enable` must admit the id BEFORE
+   * the lifecycle publishes and revoke it when activation fails or the extension is
+   * disabled. The host implementations may reconcile against the lifecycle state.
+   */
+  readonly onActivationChange?: (extensionId: string, active: boolean) => void
 }
 
 /** One first-party package found under the configured source directory. */
@@ -236,6 +284,103 @@ function assertUsableId(extensionId: string): void {
 /** A message from an arbitrary thrown value. */
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+/** What an installed copy's manifest declares, as far as the management surface reads it. */
+interface DeclaredManifest {
+  readonly tools: readonly string[]
+  readonly models: readonly string[]
+}
+
+/** The declared tools and model deployments of an installed copy, or empty lists. */
+function declaredManifest(packageDir: string): DeclaredManifest {
+  try {
+    const discovery = discoverExtension(packageDir)
+    return {
+      tools: discovery.manifest.tools.map(tool => tool.name),
+      models: discovery.manifest.models.map(model => model.id),
+    }
+  } catch {
+    // An unreadable installed manifest contributes nothing it can be trusted to
+    // declare; the row's other facts (integrity, state) still travel.
+    return { tools: [], models: [] }
+  }
+}
+
+/**
+ * Every declared deployment whose recorded readiness does not permit activation.
+ *
+ * A deployment with NO recorded readiness is reported as `needs-preparation`
+ * because that is the constant the SDK's lifecycle projects for an undeclared
+ * state (`#readinessOf` defaults every declared model to `needs-preparation`);
+ * reporting anything else would invent a fact the host does not hold.
+ * @param readiness - the persisted readiness map (may be empty).
+ * @param declaredModels - the manifest's model deployment ids.
+ * @returns one operator-facing line per blocker, most actionable phrasing first.
+ */
+function preparationBlockers(
+  readiness: Readonly<Record<string, string>>,
+  declaredModels: readonly string[],
+): string[] {
+  const blockers: string[] = []
+  for (const modelId of declaredModels) {
+    const value = readiness[modelId] ?? 'needs-preparation'
+    if (CALLABLE_READINESS.has(value)) continue
+    if (value === 'needs-preparation') {
+      blockers.push(`${modelId} needs its model assets prepared — run prepare for this extension`)
+    } else if (value === 'preparing') {
+      blockers.push(`${modelId} is still preparing its model assets`)
+    } else if (value === 'unavailable') {
+      blockers.push(`${modelId} is unavailable on this host — its runtime or assets are missing`)
+    } else if (value === 'failed') {
+      blockers.push(`${modelId} failed inspection on this host — repair or reinstall its assets, then prepare again`)
+    } else {
+      blockers.push(`${modelId} is ${value}, which does not permit activation`)
+    }
+  }
+  return blockers
+}
+
+/** Project the SDK/coordinator readiness map onto the wire readiness vocabulary. */
+function readinessView(
+  readiness: Readonly<Record<string, string>>,
+  declaredModels: readonly string[],
+): ExtensionReadinessMap {
+  const view: Record<string, ExtensionModelReadiness> = {}
+  for (const modelId of declaredModels) {
+    const value = readiness[modelId]
+    // SAFETY: a readiness value read from the SDK's state is one of the SDK's
+    // ModelReadiness literals, which is the same union as ExtensionModelReadiness;
+    // an absent entry is projected as its documented default.
+    view[modelId] = value === undefined ? 'needs-preparation' : value as ExtensionModelReadiness
+  }
+  return view
+}
+
+/**
+ * Project the coordinator's plan onto the wire disclosure.
+ *
+ * The digest and identity fields the provider needs stay host-side; the page gets
+ * the bytes, sources, executable flags, totals, terms and revision an operator
+ * approves (the same fields the management channel discloses).
+ * @param plan - the resolved preparation plan.
+ * @returns the wire disclosure.
+ */
+function preparationPlanView(plan: PreparationPlan): ExtensionPreparationPlan {
+  return {
+    modelId: plan.identity.modelId,
+    modelRevision: plan.identity.modelRevision,
+    assets: plan.assets.map(asset => ({
+      assetId: asset.assetId,
+      bytes: asset.bytes,
+      source: asset.source,
+      executable: asset.executable,
+    })),
+    totalBytes: plan.totalBytes,
+    storageBytes: plan.storageBytes,
+    requiresExecutableApproval: plan.requiresExecutableApproval,
+    license: { name: plan.license.name, url: plan.license.url },
+  }
 }
 
 /**
@@ -531,13 +676,14 @@ export class ExtensionsService implements ModelToolsRemote {
       : createFirstPartyDependencyGraph({ ...base, preinstalledRoot: root })).graph
   }
 
-  /** The declared tool names of an installed copy, or `[]` when its manifest is unreadable. */
-  #declaredTools(installPath: string): readonly string[] {
-    try {
-      return discoverExtension(installPath).manifest.tools.map(tool => tool.name)
-    } catch {
-      return []
-    }
+  /**
+   * The declared tools AND model deployments of an installed copy.
+   *
+   * One discovery call feeds both: the row's tool list and the activation-blocker
+   * computation, so the two can never describe different packages.
+   */
+  #declaredManifest(installPath: string): { readonly tools: readonly string[]; readonly models: readonly string[] } {
+    return declaredManifest(installPath)
   }
 
   /**
@@ -642,16 +788,16 @@ export class ExtensionsService implements ModelToolsRemote {
       && state.observedActivation === 'active'
       && (state.ownerPid === undefined || state.ownerPid === process.pid)
 
-    const declaredTools = record === undefined ? [] : this.#declaredTools(record.installPath)
+    const declared = record === undefined ? { tools: [], models: [] } : this.#declaredManifest(record.installPath)
     const stateTools = state?.tools.map(tool => tool.toolName) ?? []
-    const tools = declaredTools.length > 0
-      ? declaredTools
+    const tools = declared.tools.length > 0
+      ? declared.tools
       : stateTools.length > 0
         ? stateTools
         : view.sourcePackage?.tools ?? []
 
     const version = record?.version ?? view.sourcePackage?.version ?? null
-    const reason = this.#reasonFor({ ...view, state, integrityReason, active, installed })
+    const reason = this.#reasonFor({ ...view, state, integrityReason, active, installed, declaredModels: declared.models })
 
     return {
       id: view.id,
@@ -677,6 +823,7 @@ export class ExtensionsService implements ModelToolsRemote {
     readonly sourcePackage: SourcePackage | undefined
     readonly disabled: boolean
     readonly state: SdkExtensionState | undefined
+    readonly declaredModels: readonly string[]
     readonly integrityReason: string | null
     readonly active: boolean
     readonly installed: boolean
@@ -691,11 +838,20 @@ export class ExtensionsService implements ModelToolsRemote {
     if (view.storeDir === '') {
       return 'the extension store is not configured (config.extensionStore)'
     }
+    /**
+     * The readiness map is the concrete activation blocker the store holds. The SDK
+     * state carries no diagnostic TEXT (no failure-reason field exists), so this is
+     * derived from what is persisted rather than invented.
+     */
+    const blockers = preparationBlockers(view.state?.readiness ?? {}, view.declaredModels)
+    const blocked = blockers.length > 0 ? `activation blocked: ${blockers.join('; ')}` : null
     if (view.state?.observedActivation === 'failed') {
-      return 'activation failed in this host; re-enable it after fixing the reported package problem'
+      return blocked
+        ?? 'activation failed earlier in this host; the store records no remaining preparation blocker, so retry enable to see whether it succeeds'
     }
     if (view.state?.observedActivation === 'quarantined') {
-      return 'the host quarantined it: some contributions could not be withdrawn, so it is not fully stopped'
+      const quarantine = 'the host quarantined it: some contributions could not be withdrawn, so it is not fully stopped'
+      return blocked === null ? quarantine : `${quarantine}; additionally, ${blocked}`
     }
     if (view.state?.observedActivation === 'activating' || view.state?.observedActivation === 'deactivating') {
       return `a ${view.state.observedActivation} operation was interrupted; the recorded state is not settled`
@@ -716,6 +872,7 @@ export class ExtensionsService implements ModelToolsRemote {
         : `not installed; the first-party package is available at ${join(view.sourceDir, packageDirFor(view.id))}`
     }
     if (!view.active) {
+      if (blocked !== null) return blocked
       if (view.state === undefined) return 'installed but never activated in this profile'
       return `installed; this host observes it as ${view.state.observedActivation} (desired ${view.state.desiredActivation})`
     }
@@ -870,12 +1027,33 @@ export class ExtensionsService implements ModelToolsRemote {
     }
 
     const current = lifecycle.stateOf(extensionId)
+    /**
+     * A preparation blocker is a REFUSAL WITH A DIAGNOSTIC, not a bare failure.
+     * Activation would throw the SDK's generic "cannot be activated" after
+     * recording `failed`; naming the model and the prepare action here is both
+     * more actionable and leaves the dormant failed state untouched.
+     */
+    const blocked = preparationBlockers(current?.readiness ?? {}, declaredManifest(record.installPath).models)
+    if (blocked.length > 0) {
+      throw new ExtensionsServiceError(
+        'extension-preparation-required',
+        `activation blocked: ${blocked.join('; ')}`,
+      )
+    }
     const ownedHere = current?.observedActivation === 'active'
       && (current.ownerPid === undefined || current.ownerPid === process.pid)
     if (!ownedHere) {
+      /**
+       * The registrar refuses a contribution from an extension outside its
+       * activated set, so the id must be admitted BEFORE the lifecycle publishes.
+       * A failed activation revokes the admission again (the host implementation
+       * reconciles against the lifecycle state).
+       */
+      this.#options.onActivationChange?.(extensionId, true)
       try {
         await lifecycle.activate(extensionId, record.version)
       } catch (error) {
+        this.#options.onActivationChange?.(extensionId, false)
         const named = error instanceof ManagementError ? `[${error.code}] ` : ''
         throw new ExtensionsServiceError(
           'extension-activation-failed',
@@ -893,6 +1071,132 @@ export class ExtensionsService implements ModelToolsRemote {
       active: observed?.observedActivation === 'active'
         && (observed.ownerPid === undefined || observed.ownerPid === process.pid),
       disabled: this.#effectiveDisabled().has(extensionId),
+    }
+  }
+
+  /**
+   * Record the failed activation attempt a fresh extension needs before its
+   * readiness can be written.
+   *
+   * The SDK's `recordReadiness` refuses an extension the profile has never seen,
+   * and a freshly installed extension has no profile state until an activation is
+   * attempted. The probe therefore performs the SAME attempt the operator's failed
+   * Enable performs: every declared deployment defaults to `needs-preparation`, so
+   * the SDK refuses at the readiness assessment, records the state, and publishes
+   * nothing. Any other refusal is a real problem and is reported.
+   * @param lifecycle - the mounted lifecycle.
+   * @param extensionId - the installed extension.
+   * @param version - its installed version.
+   * @throws ExtensionsServiceError when the probe fails for a reason other than the
+   *   expected preparation refusal.
+   */
+  async #recordPreparationBlocker(
+    lifecycle: ExtensionActivation,
+    extensionId: string,
+    version: string,
+  ): Promise<void> {
+    try {
+      await lifecycle.activate(extensionId, version)
+    } catch (error) {
+      if (error instanceof ManagementError && error.code === 'EXTENSION_FAULT') return
+      throw new ExtensionsServiceError(
+        'extension-preparation-failed',
+        `the extension's activation record could not be written before preparation: ${messageOf(error)}`,
+        { cause: error },
+      )
+    }
+  }
+
+  /**
+   * Acquire and verify an installed extension's model assets, then record the
+   * resulting readiness.
+   *
+   * This is the management-channel `extensions-prepare-plan` + `extensions-prepare`
+   * pair behind one call, over the SAME host surface: the plan is resolved from the
+   * installed manifest's asset lock, the acquisition runs through the injectable
+   * source (the real ranged HTTP source unless the host injects one), and a
+   * successful acquisition records `prepared-cold` through the lifecycle — which is
+   * what lets a following `enable` activate the extension.
+   *
+   * The RES-02 executable gate is deliberately CLOSED here: the Remote call carries
+   * no executable-approval argument, so a plan containing an executable asset is
+   * returned as `prepared: false` with the registry's own reason rather than
+   * acquired. The pinned EmbeddingGemma assets are not executable.
+   * @param extensionId - the installed extension to prepare.
+   * @param signal - cancellation.
+   * @returns the disclosure that was executed and the resulting readiness.
+   * @throws ExtensionsServiceError for every precondition and plan failure.
+   */
+  async prepare(extensionId: string, signal?: AbortSignal): Promise<ExtensionPrepareResult> {
+    signal?.throwIfAborted()
+    assertUsableId(extensionId)
+    const storeDir = this.#requireStoreDir()
+    const record = this.#requireInstalled(storeDir, extensionId)
+    const surface = this.#options.prepareSurface?.()
+    if (surface === undefined) {
+      throw new ExtensionsServiceError(
+        'extension-preparation-unavailable',
+        `the prepared-assets surface is not mounted, so ${extensionId}'s model assets cannot be prepared by this host`,
+      )
+    }
+    const declaredModels = declaredManifest(record.installPath).models
+    if (declaredModels.length === 0) {
+      throw new ExtensionsServiceError(
+        'extension-preparation-failed',
+        `${extensionId} declares no model deployment to prepare`,
+      )
+    }
+    let plan: PreparationPlan
+    try {
+      plan = surface.plan(extensionId)
+    } catch (error) {
+      throw new ExtensionsServiceError(
+        'extension-preparation-failed',
+        `the preparation plan for ${extensionId} could not be resolved: ${messageOf(error)}`,
+        { cause: error },
+      )
+    }
+    const lifecycle = this.#lifecycle()
+    if (lifecycle !== undefined && lifecycle.stateOf(extensionId) === undefined) {
+      await this.#recordPreparationBlocker(lifecycle, extensionId, record.version)
+    }
+    let outcome: PreparationOutcome
+    try {
+      outcome = await surface.prepare(extensionId, {
+        source: (this.#options.preparationSource ?? createHttpSource)(),
+        allowExecutable: false,
+        signal: signal ?? new AbortController().signal,
+      })
+    } catch (error) {
+      throw new ExtensionsServiceError(
+        'extension-preparation-failed',
+        `the preparation of ${extensionId} could not be recorded: ${messageOf(error)}`,
+        { cause: error },
+      )
+    }
+    const state = lifecycle?.stateOf(extensionId)
+    const readiness = readinessView(state?.readiness ?? {}, declaredModels)
+    if (!outcome.ok) {
+      return {
+        id: extensionId,
+        prepared: false,
+        reason: outcome.reason,
+        plan: preparationPlanView(plan),
+        readiness,
+        groups: [],
+        activationReady: false,
+      }
+    }
+    const integrity = new ExtensionStore(storeDir).verifyUnchanged(record).unchanged
+    const blockers = preparationBlockers(state?.readiness ?? {}, declaredModels)
+    return {
+      id: extensionId,
+      prepared: true,
+      reason: null,
+      plan: preparationPlanView(plan),
+      readiness,
+      groups: outcome.groups.map(group => group.groupId),
+      activationReady: integrity && blockers.length === 0,
     }
   }
 
@@ -945,6 +1249,9 @@ export class ExtensionsService implements ModelToolsRemote {
 
     this.#rememberDisabled(extensionId, true)
     await this.#persistDisabled()
+    // The registrar's activated set follows the lifecycle: a deactivated extension
+    // must not stay admitted to publish.
+    this.#options.onActivationChange?.(extensionId, false)
     const observed = lifecycle.stateOf(extensionId)
     return {
       id: extensionId,

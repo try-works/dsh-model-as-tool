@@ -37,6 +37,7 @@ const WIRE_ENDPOINTS = [
   'modelTools/installExtension',
   'modelTools/enable',
   'modelTools/disable',
+  'modelTools/prepare',
 ]
 
 /** One extension row the host can report. */
@@ -58,6 +59,27 @@ const DESCRIBE_VALUE = {
   writable: true,
   sourceDir: null,
   extensions: [EXTENSION_ROW],
+}
+
+/** A preparation result carrying the disclosure, readiness record and outcome. */
+const PREPARE_VALUE = {
+  id: '@try-works/extension-embeddinggemma',
+  prepared: true,
+  reason: null,
+  plan: {
+    modelId: 'embeddinggemma-2',
+    modelRevision: '2026-06-01',
+    assets: [
+      { assetId: 'text-backbone/model.onnx', bytes: 1_172_750_848, source: 'https://example.invalid/model.onnx', executable: false },
+    ],
+    totalBytes: 1_172_750_848,
+    storageBytes: 1_180_000_000,
+    requiresExecutableApproval: false,
+    license: { name: 'Gemma Terms', url: 'https://ai.google.dev/gemma/terms' },
+  },
+  readiness: { 'embeddinggemma-2': 'prepared-cold' },
+  groups: ['text-backbone'],
+  activationReady: true,
 }
 
 /** Compare descriptors by wire-visible data (codec parsers are per-artifact closures). */
@@ -144,7 +166,7 @@ describe('modelTools host artifact', () => {
     assert.equal(manifest.face, 'host')
     assert.deepEqual(manifest.invocations.map(invocation => `${invocation.namespace}/${invocation.method}`), WIRE_ENDPOINTS)
     assert.deepEqual(manifest.invocations.map(invocation => invocation.service), [
-      MODEL_TOOLS_SERVICE, MODEL_TOOLS_SERVICE, MODEL_TOOLS_SERVICE, MODEL_TOOLS_SERVICE,
+      MODEL_TOOLS_SERVICE, MODEL_TOOLS_SERVICE, MODEL_TOOLS_SERVICE, MODEL_TOOLS_SERVICE, MODEL_TOOLS_SERVICE,
     ])
   })
 
@@ -160,6 +182,15 @@ describe('modelTools host artifact', () => {
     assert.deepEqual(install.cancellation, { parameter: 'signal' })
   })
 
+  it('exposes prepare as a direct id-only endpoint with the same Host member name', () => {
+    const manifest = validateTypertManifest(PACKAGE, TYPERT)
+    const prepare = manifest.invocations.find(invocation => invocation.method === 'prepare')
+    assert.ok(prepare)
+    assert.equal(prepare.implementation, undefined)
+    assert.deepEqual(prepare.parameters.map(parameter => [parameter.wire, parameter.acceptsUndefined]), [['id', undefined]])
+    assert.deepEqual(prepare.cancellation, { parameter: 'signal' })
+  })
+
   it('declares strict codecs that enforce the wire schema', () => {
     const describe = descriptorCodec(TYPERT_REMOTE, 'describe')
     const resultCodec = describe.result as { mode: string; create: () => { parse: (value: unknown) => unknown } }
@@ -170,12 +201,36 @@ describe('modelTools host artifact', () => {
     assert.throws(() => resultCodec.create().parse({ store: null }), /missing field/)
   })
 
+  it('validates the preparation disclosure, readiness record and outcome', () => {
+    const prepare = descriptorCodec(TYPERT_REMOTE, 'prepare')
+    const resultCodec = prepare.result as { mode: string; create: () => { parse: (value: unknown) => unknown } }
+    assert.equal(resultCodec.mode, 'strict')
+    assert.deepEqual(resultCodec.create().parse(PREPARE_VALUE), PREPARE_VALUE)
+    assert.deepEqual(resultCodec.create().parse({ ...PREPARE_VALUE, plan: null, prepared: false, reason: 'digest mismatch', groups: [] }), {
+      ...PREPARE_VALUE,
+      plan: null,
+      prepared: false,
+      reason: 'digest mismatch',
+      groups: [],
+    })
+    assert.throws(() => resultCodec.create().parse({ ...PREPARE_VALUE, readiness: { 'embeddinggemma-2': 'maybe' } }), /union/)
+    assert.throws(() => resultCodec.create().parse({ ...PREPARE_VALUE, activationReady: 'yes' }), /boolean/)
+    assert.throws(() => resultCodec.create().parse({
+      ...PREPARE_VALUE,
+      plan: { ...PREPARE_VALUE.plan, assets: [{ ...PREPARE_VALUE.plan.assets[0], bytes: '1GB' }] },
+    }), /finite number/)
+    assert.throws(() => {
+      const { activationReady: _omitted, ...rest } = PREPARE_VALUE
+      return resultCodec.create().parse(rest)
+    }, /missing field "activationReady"/)
+  })
+
   it('declares METHOD_SPECS that match the descriptors one-for-one', () => {
     assert.deepEqual(
       TYPERT_REMOTE.descriptors.map(descriptor => descriptor.method),
       METHOD_SPECS.map((spec: { method: string }) => spec.method),
     )
-    assert.equal(TYPERT_REMOTE.descriptors.length, 4)
+    assert.equal(TYPERT_REMOTE.descriptors.length, 5)
     assert.equal(NAMED_REMOTE, TYPERT_REMOTE)
   })
 })
@@ -188,6 +243,7 @@ describe('modelTools host service binding', () => {
       install: async (id: string) => ({ id, version: '1.0.0', active: false }),
       enable: async (id: string) => ({ id, active: true, disabled: false }),
       disable: async (id: string) => ({ id, active: false, disabled: true }),
+      prepare: async (id: string) => ({ ...PREPARE_VALUE, id }),
     }
     provideModelToolsService(ctx, service)
     const binding = (service as { typertRemote?: { service: unknown; serviceKey: string; namespace: string } }).typertRemote
@@ -201,7 +257,7 @@ describe('modelTools host service binding', () => {
     const service = { describe: async () => DESCRIBE_VALUE, install: async () => ({ id: 'x', version: '1', active: false }) }
     assert.throws(
       () => bindModelToolsRemote(service as never),
-      /missing "enable", "disable"/,
+      /missing "enable", "disable", "prepare"/,
     )
   })
 })
@@ -220,13 +276,13 @@ describe('modelTools client contribution', () => {
     assert.deepEqual(ctx.typert.remotes.list(), [])
   })
 
-  it('mounts through the shipping client gateway and dispatches describe() over the carrier', async () => {
+  it('mounts through the shipping client gateway and dispatches describe()/enable()/prepare() over the carrier', async () => {
     const calls: { endpoint: string; payload: unknown }[] = []
     const { ctx, dispose } = await mountInFakePage(calls, DESCRIBE_VALUE)
 
     const namespace = ctx.remote.modelTools as Record<string, (...args: unknown[]) => Promise<RemoteResult<unknown>>>
     assert.deepEqual(Object.keys(namespace).filter(key => !['ctx', 'name', 'methods', 'namespace', 'invokeRemote'].includes(key)), [
-      'describe', 'installExtension', 'enable', 'disable',
+      'describe', 'installExtension', 'enable', 'disable', 'prepare',
     ])
 
     const described = await namespace.describe!()
@@ -243,6 +299,13 @@ describe('modelTools client contribution', () => {
     assert.deepEqual(JSON.parse(JSON.stringify(calls[2])), {
       endpoint: 'modelTools/installExtension',
       payload: { args: { id: '@try-works/extension-laya' } },
+    })
+
+    const prepared = await namespace.prepare!('@try-works/extension-embeddinggemma')
+    assert.equal(prepared.ok, true)
+    assert.deepEqual(JSON.parse(JSON.stringify(calls[3])), {
+      endpoint: 'modelTools/prepare',
+      payload: { args: { id: '@try-works/extension-embeddinggemma' } },
     })
 
     await dispose()

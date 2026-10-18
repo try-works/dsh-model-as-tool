@@ -1,0 +1,13 @@
+{
+  "name": "@try-works/fixture-preparable",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Preparation fixture extension: one deterministic tool bound to one model deployment whose single locked asset is tiny, so the host's plan/prepare/readiness path is exercised without a download.",
+  "type": "module",
+  "exports": {
+    "./tool-mode": "./lib/index.js"
+  },
+  "toolMode": {
+    "manifest": "./tool-mode.extension.json"
+  }
+}

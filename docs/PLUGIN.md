@@ -132,7 +132,7 @@ Remote namespace mounted as `ctx.remote.modelTools`:
 | Source of truth | `remote/spec.mjs` | descriptors, codecs, and documentation the three artifacts are built from (`scripts/gen-remote-artifacts.mjs`; `--check` catches drift) |
 | Host wiring | `src/extensions-remote.ts` | `provideModelToolsService(ctx, service)` attaches the Gateway's `typertRemote` binding and provides the `modelTools` Cordis service |
 
-Two wire facts a caller must respect:
+Three wire facts a caller must respect:
 
 - **Every client method resolves a `RemoteResult`, not a bare value** —
   `{ ok: true, value }` or `{ ok: false, error }`. Unwrap `.ok` before rendering
@@ -143,17 +143,35 @@ Two wire facts a caller must respect:
   gateway refuses any Remote method that collides with it
   (`client api: method "modelTools/install" conflicts with its namespace
   service`). The Host service keeps its member `install`; the descriptor's
-  `implementation` maps the wire name to it.
+  `implementation` maps the wire name to it. `prepare` has no such collision and
+  keeps its name.
 - **Optional wire parameters still occupy a positional slot.** `source` is
   optional on the host, but a client call must pass it explicitly:
   `installExtension(id, undefined)` uses the configured first-party source.
+
+The namespace exposes `describe`, `installExtension`, `enable`, `disable`, and
+`prepare`:
+
+- **`prepare(id)`** acquires and verifies the installed extension's model assets
+  and records the readiness a following `enable` needs. `prepare` is id-only, so
+  `prepare(id)` is a valid call. Its raw result is an `ExtensionPrepareResult`
+  with the RES-02 disclosure (`plan`: assets, bytes, storage, license,
+  executable gate), the per-declared-model `readiness` record, the prepared
+  `groups`, and `activationReady`. Acquiring a plan that contains an executable
+  asset is refused with `prepared: false` and the RES-02 reason (the Remote
+  surface always passes `allowExecutable: false`); acquisition problems are
+  returned in `reason`, not thrown. It never downloads unless the operator
+  approved the disclosure through the UI. After a successful prepare, re-read
+  `describe()`: a row that previously reported `failed` now says the store
+  records no remaining preparation blocker, and the next `enable` activates it.
 
 Proof without a page:
 `node --import tsx --test packages/dsh-model-as-tool/tests/remote-typert.test.ts`
 validates the host artifact with the shipping Typert loader, mounts the client
 contribution through the shipping Typert registry and Gateway client over a
-fake Connection carrier, and asserts `describe()`/`enable()`/`installExtension()`
-send the exact `/api/<namespace>/<method>` payload and return a `RemoteResult`.
+fake Connection carrier, and asserts `describe()`/`enable()`/`installExtension()`/
+`prepare()` send the exact `/api/<namespace>/<method>` payload and return a
+`RemoteResult`.
 
 ## Troubleshooting (observed while validating this install)
 
