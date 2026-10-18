@@ -1,6 +1,6 @@
 {
   "name": "@try-works/extension-desert-ant-tongue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "First-party Tool Mode extension implementing tool-mode/lang_detect on the Desert Ant Labs Tongue model",
   "license": "MIT",
@@ -13,10 +13,10 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib",
     "tool-mode.extension.json",
-    "schemas",
+    "lib",
     "models.lock.json",
+    "schemas",
     "README.md"
   ],
   "toolMode": {
@@ -41,5 +41,9 @@
     "@try-works/tool-mode-extension-sdk": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

@@ -16,10 +16,10 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib",
-    "schema",
     "tool-mode.extension.json",
+    "lib",
     "models.lock.json",
+    "schema",
     "README.md"
   ],
   "toolMode": {
@@ -46,5 +46,9 @@
     "@try-works/tool-mode-extension-sdk": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

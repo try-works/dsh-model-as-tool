@@ -1,7 +1,6 @@
 {
   "name": "@try-works/extension-minilm-rerank",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "description": "The ms-marco MiniLM text_rerank cross-encoder extension (ranking_logit, TOOL-05).",
   "license": "Apache-2.0",
@@ -11,10 +10,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib",
     "tool-mode.extension.json",
-    "models.lock.json",
-    "README.md"
+    "lib",
+    "models.lock.json"
   ],
   "toolMode": {
     "manifest": "./tool-mode.extension.json"
@@ -33,5 +31,9 @@
     "@try-works/tool-mode-extension-sdk": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

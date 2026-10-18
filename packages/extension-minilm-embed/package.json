@@ -1,7 +1,6 @@
 {
   "name": "@try-works/extension-minilm-embed",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "description": "The MiniLM-L6 text_embed compatibility extension (384-d space, TOOL-04).",
   "license": "Apache-2.0",
@@ -11,11 +10,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib",
-    "schema",
     "tool-mode.extension.json",
-    "models.lock.json",
-    "README.md"
+    "lib",
+    "models.lock.json"
   ],
   "toolMode": {
     "manifest": "./tool-mode.extension.json"
@@ -34,5 +31,9 @@
     "@try-works/tool-mode-extension-sdk": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

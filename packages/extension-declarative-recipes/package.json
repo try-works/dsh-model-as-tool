@@ -1,7 +1,6 @@
 {
   "name": "@try-works/extension-declarative-recipes",
   "version": "0.1.0",
-  "private": true,
   "description": "A declarative Tool Mode package: ships no code, contributes tools as static recipe files interpreted by the host broker.",
   "license": "MIT",
   "type": "module",
@@ -14,5 +13,9 @@
   },
   "toolMode": {
     "manifest": "./tool-mode.extension.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

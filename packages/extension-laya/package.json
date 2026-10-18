@@ -1,7 +1,6 @@
 {
   "name": "@try-works/extension-laya",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "description": "Tool Mode extension implementing the Laya decision family (decision_choose / decision_test / decision_score) on the pinned multilingual Laya checkpoint, with the vendored laya-ts runtime.",
   "license": "Apache-2.0",
@@ -10,11 +9,11 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib",
-    "vendor",
-    "schema",
     "tool-mode.extension.json",
+    "lib",
     "models.lock.json",
+    "schema",
+    "vendor",
     "README.md"
   ],
   "toolMode": {
@@ -34,5 +33,9 @@
   "devDependencies": {
     "@try-works/tool-mode-extension-sdk": "workspace:*",
     "ajv": "^8.20.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

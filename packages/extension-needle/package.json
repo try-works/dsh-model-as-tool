@@ -16,12 +16,12 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib",
-    "schema",
     "tool-mode.extension.json",
+    "lib",
     "models.lock.json",
-    "PINNING.md",
-    "README.md"
+    "schema",
+    "README.md",
+    "PINNING.md"
   ],
   "toolMode": {
     "manifest": "./tool-mode.extension.json"
@@ -44,5 +44,9 @@
     "@try-works/tool-mode-extension-sdk": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

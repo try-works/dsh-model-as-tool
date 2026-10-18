@@ -80,6 +80,47 @@ show the Settings page:
 node D:\deepseek-harness\apps\cli\lib\bin.js plugin --profile <profile> add @deepseek-ai/dsh-web-app@0.2.1-rc.2
 ```
 
+## Extensions are npm packages too
+
+The first-party Tool Mode extensions are published under `@try-works/extension-*`
+so a deployment can install them the same way the plugin installs: from the
+registry, with a verified digest, never from an unverified path.
+
+| Package | Published |
+|---|---|
+| `@try-works/extension-desert-ant-tongue` | 0.1.1 |
+| `@try-works/extension-desert-ant-voz` | 0.1.1 |
+| `@try-works/extension-embeddinggemma` | 0.1.0 |
+| `@try-works/extension-laya` | 1.0.0 |
+| `@try-works/extension-minilm-embed` | 1.0.0 |
+| `@try-works/extension-minilm-rerank` | 1.0.0 |
+| `@try-works/extension-needle` | 0.1.0 |
+| `@try-works/extension-declarative-recipes` | 0.1.0 |
+
+Each package ships its extension manifest (`tool-mode.extension.json`), built
+`lib/`, asset lock (`models.lock.json`), schemas/recipes, and its license. The
+model weights are NOT in the package: they are acquired by the host's
+`prepare` step from the pinned URLs and digests in the lock, so publishing stays
+small and the assets remain verifiable independently.
+
+To publish an extension:
+
+```powershell
+cd packages/extension-<name>
+npm publish --userconfig $npmrc --access public
+```
+
+Bump the version for any republish; `private` must be absent and
+`publishConfig.access` must be `public` (both are set in this repository). The
+package's `files` list must keep covering everything its manifest references —
+a schema path pointing at a file the tarball omits fails at activation, not at
+publish time.
+
+An extension installed from npm materializes its declared runtime dependencies
+through the same dependency-graph discipline as the plugin (digest-verified,
+never into the host's tree). Model assets still require the operator's
+`prepare` step.
+
 If pnpm refuses on ignored build scripts (for example `koffi`), approve or skip
 them; the plugin itself has no install scripts.
 
