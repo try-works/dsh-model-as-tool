@@ -32,10 +32,17 @@
     "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@try-works/tool-mode-extension-sdk": "^0.1.0",
     "ajv": "^8.20.0"
   },
   "devDependencies": {
     "@try-works/tool-mode-extension-sdk": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@try-works/tool-mode-extension-sdk": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@try-works/tool-mode-extension-sdk": {
+      "optional": true
+    }
   }
 }

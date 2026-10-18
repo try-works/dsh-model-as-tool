@@ -23,6 +23,14 @@
  * INSTALLATION IS NOT ACTIVATION (EXT-07): `install` returns `active: false` and
  * never calls the lifecycle. `enable`/`disable` are the only activation paths.
  *
+ * FIRST-PARTY DEPENDENCIES (EXT-09): a source-directory install also supplies the
+ * SDK's dependency graph (`extension-dependencies.ts`), which resolves every
+ * declared runtime dependency from the host's own installed tree and refuses the
+ * install by name when one is missing. With the operator's preinstalled-content
+ * gate on, the resolved directory is copied by the SDK and recorded with
+ * `provenance: 'preinstalled'`; with it off (the default), the dependency is served
+ * as verified archive bytes and EXT-10's lifecycle-script refusal applies.
+ *
  * PERSISTENCE, STATED HONESTLY:
  *
  * - Activation intent is durable through the SDK: `ExtensionLifecycle.activate`
@@ -51,6 +59,7 @@ import {
   stagedInstallFromDirectory,
   type ExtensionLifecycle,
   type ExtensionState as SdkExtensionState,
+  type InstallDependencyGraph,
   type InstalledRecord,
 } from '@try-works/tool-mode-extension-sdk'
 import type {
@@ -60,6 +69,7 @@ import type {
   ExtensionsDescribeResult,
   ModelToolsRemote,
 } from './extensions-api.ts'
+import { createFirstPartyDependencyGraph } from './extension-dependencies.ts'
 
 /** The lifecycle surface this service needs. Narrower than the class, so a test can double it. */
 export type ExtensionActivation = Pick<ExtensionLifecycle, 'stateOf' | 'activate' | 'deactivate'>
@@ -87,6 +97,8 @@ export type ExtensionsServiceErrorCode =
   | 'extension-digest-unavailable'
   /** The SDK installer refused or failed; its own named error is carried in the message. */
   | 'extension-install-failed'
+  /** A declared runtime dependency could not be resolved, verified or materialized. */
+  | 'extension-dependency-unsatisfied'
   /** The extension has no installed record in the store, so it cannot be activated. */
   | 'extension-not-installed'
   /** The store lock or the profile state document is unreadable, so activation state cannot be trusted. */
@@ -153,6 +165,28 @@ export interface ExtensionsServiceOptions {
   readonly installDirectory?: DirectoryInstaller
   /** INTERNAL TEST SEAM: the content digest, defaulting to the SDK's installed-content digest. */
   readonly digestContent?: (directory: string) => string
+  /**
+   * INTERNAL TEST SEAM: the dependency graph for a first-party source checkout.
+   *
+   * The default resolves each declared dependency from the host's own installed
+   * tree (`extension-dependencies.ts`) and refuses the install, by name, when one
+   * is not installed or is inadmissible. The graph is part of the same
+   * developer-mode source-directory gate; it is never consulted for anything else.
+   */
+  readonly dependencyGraph?: (sourcePackageDir: string) => InstallDependencyGraph
+  /**
+   * Operator gate for PREINSTALLED dependency content (task-84); DEFAULT OFF.
+   *
+   * When on, a dependency resolved from the host's installed tree is copied by the
+   * SDK into the extension's own install directory and recorded with
+   * `provenance: 'preinstalled'` — the content arrived from an operator-completed
+   * install and this installer ran no lifecycle script. When off, the bytes arm
+   * applies and EXT-10's script refusal is unchanged. Requires
+   * {@link ExtensionsServiceOptions.preinstalledDependenciesRoot}.
+   */
+  readonly allowPreinstalledDependencies?: boolean
+  /** The operator-configured root preinstalled dependency directories must live under. */
+  readonly preinstalledDependenciesRoot?: string
 }
 
 /** One first-party package found under the configured source directory. */
@@ -475,6 +509,28 @@ export class ExtensionsService implements ModelToolsRemote {
     return install(options)
   }
 
+  /**
+   * The dependency graph a first-party source install resolves against.
+   *
+   * The SDK calls it only when the package declares runtime dependencies; the
+   * default graph resolves each one from the host's own installed tree and refuses
+   * by name when it cannot. Constructing it is cheap and performs no I/O.
+   * @param sourcePackageDir - the checkout being installed.
+   * @returns the graph the SDK's directory installer consumes.
+   */
+  #dependencyGraph(sourcePackageDir: string): InstallDependencyGraph {
+    const supplied = this.#options.dependencyGraph
+    if (supplied !== undefined) return supplied(sourcePackageDir)
+    const root = this.#options.preinstalledDependenciesRoot
+    const base = {
+      sourcePackageDir,
+      allowPreinstalled: this.#options.allowPreinstalledDependencies === true,
+    }
+    return (root === undefined
+      ? createFirstPartyDependencyGraph(base)
+      : createFirstPartyDependencyGraph({ ...base, preinstalledRoot: root })).graph
+  }
+
   /** The declared tool names of an installed copy, or `[]` when its manifest is unreadable. */
   #declaredTools(installPath: string): readonly string[] {
     try {
@@ -755,8 +811,22 @@ export class ExtensionsService implements ModelToolsRemote {
         sourceDir,
         storeDir,
         allowSourceDirectories: true,
+        /**
+         * The dependency graph is supplied only on this developer-mode path. It is
+         * consulted by the SDK only when the package declares runtime dependencies;
+         * every declared dependency is then resolved from the host's own installed
+         * tree or the install fails with a named DEPENDENCY_UNSATISFIED reason.
+         */
+        dependencies: this.#dependencyGraph(sourceDir),
       })
     } catch (error) {
+      if (error instanceof ManagementError && error.code === 'DEPENDENCY_UNSATISFIED') {
+        throw new ExtensionsServiceError(
+          'extension-dependency-unsatisfied',
+          `[DEPENDENCY_UNSATISFIED] ${error.message}`,
+          { cause: error },
+        )
+      }
       const named = error instanceof ManagementError ? `[${error.code}] ` : ''
       throw new ExtensionsServiceError(
         'extension-install-failed',

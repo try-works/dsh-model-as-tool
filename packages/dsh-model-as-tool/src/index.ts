@@ -224,6 +224,27 @@ export interface Config {
    * the tree rather than linking it, and the installation lands INACTIVE.
    */
   extensionSourceDir?: string
+  /**
+   * Operator gate: allow dependency content that arrived already materialized.
+   *
+   * OFF by default. When off, a declared dependency whose package.json carries
+   * install-time scripts refuses (EXT-10), exactly as before. When on, the
+   * resolver may supply the host's installed tree for such a dependency (for
+   * example onnxruntime-node after the operator's npm ran its postinstall); the
+   * SDK copies it into the extension's own installation directory and records
+   * `provenance: 'preinstalled'` with the source — stating that the installer
+   * did NOT run the scripts, rather than silently skipping them.
+   */
+  allowPreinstalledDependencies?: boolean
+  /**
+   * The root a preinstalled dependency directory must live under.
+   *
+   * Required when {@link allowPreinstalledDependencies} is on: the SDK refuses a
+   * preinstalled directory outside it as a path escape. Point it at a root that
+   * contains the host dependency tree (for example the repository or profile
+   * root); never a world-writable location.
+   */
+  preinstalledDependenciesRoot?: string
   /** INTERNAL TEST SEAM: the acquisition source extensions-prepare uses instead
    * of the ranged HTTP source. A suite injects a local file source so the
    * acquisition path is exercised with ZERO network; a deployment never sets
@@ -424,6 +445,8 @@ export const Config: z<Config> = z.object({
    * Empty by default: a deployment with no first-party source advertises none.
    */
   extensionSourceDir: z.string().default(''),
+  allowPreinstalledDependencies: z.boolean().default(false),
+  preinstalledDependenciesRoot: z.string().default(''),
   persist: z.boolean().default(true),
   providers: z.dict(z.string()).default({}),
   legacyAliases: z.boolean().default(false),
@@ -707,6 +730,16 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
     storeDir: config.extensionStore ?? '',
     sourceDir: config.extensionSourceDir ?? '',
     allowSourceDirectories: config.extensions?.allowSourceDirectories === true,
+    /**
+     * The operator gate for already-materialized dependencies. OFF by default:
+     * a dependency whose package.json declares install-time scripts still
+     * refuses (EXT-10). When ON, the resolver may supply content from a
+     * completed host install (e.g. onnxruntime-node after the operator's npm
+     * ran its postinstall), and the SDK records provenance rather than
+     * pretending it ran the scripts.
+     */
+    allowPreinstalledDependencies: config.allowPreinstalledDependencies === true,
+    preinstalledDependenciesRoot: config.preinstalledDependenciesRoot ?? '',
     profile: 'default',
     disabledExtensions: () => config.disabledExtensions ?? [],
     lifecycle: () => extensionLifecycle,

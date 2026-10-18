@@ -101,6 +101,7 @@ export {
 export {
   installDependencyGraph,
   refuseInstallScripts,
+  type DependencyContent,
   type DependencyResolver,
   type InstallDependencyGraph,
   type LockedDependency,

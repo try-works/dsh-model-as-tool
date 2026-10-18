@@ -25,9 +25,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json"
   },
-  "dependencies": {
-    "@try-works/tool-mode-extension-sdk": "^0.1.0"
-  },
+  "dependencies": {},
   "optionalDependencies": {
     "@desert-ant-labs/tongue": "^3.6.0"
   },
@@ -35,5 +33,13 @@
     "@try-works/tool-mode-extension-sdk": "^0.1.0",
     "@types/semver": "^7.7.0",
     "semver": "^7.7.0"
+  },
+  "peerDependencies": {
+    "@try-works/tool-mode-extension-sdk": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@try-works/tool-mode-extension-sdk": {
+      "optional": true
+    }
   }
 }

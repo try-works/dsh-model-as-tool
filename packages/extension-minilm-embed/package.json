@@ -24,8 +24,15 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@try-works/tool-mode-extension-sdk": "workspace:*",
     "@huggingface/transformers": ">=3.0.0",
     "onnxruntime-node": ">=1.19.0"
+  },
+  "peerDependencies": {
+    "@try-works/tool-mode-extension-sdk": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@try-works/tool-mode-extension-sdk": {
+      "optional": true
+    }
   }
 }

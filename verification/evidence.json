@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-18T04:21:46.290Z",
+  "generatedAt": "2026-10-18T04:58:12.593Z",
   "git": {
-    "commit": "a1ace17a08b9a1a8394290ba4fe88a8b7dd758e9",
+    "commit": "815dc924bda0b012a9ce7a2c087f9d69a8fcbaca",
     "branch": "main",
     "dirty": true
   },
@@ -31,7 +31,7 @@
   "packages": [
     {
       "name": "@try-works/dsh-model-as-tool",
-      "version": "0.1.12",
+      "version": "0.2.0",
       "path": "packages/dsh-model-as-tool"
     },
     {
