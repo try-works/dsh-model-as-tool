@@ -39,6 +39,7 @@ window.__ModuleLoader__.load({
         "name": "Align",
         "summary": "Word-timestamp refinement for any transcript, on device, from 0.7MB.",
         "package": "@desert-ant-labs/align",
+        "extension": null,
         "capability": "audio.word-alignment",
         "sizeMB": 0.7,
         "license": "source-available",
@@ -50,6 +51,7 @@ window.__ModuleLoader__.load({
         "name": "Clear",
         "summary": "On-device speech enhancement: denoise, dereverb and loudness-normalize to 48 kHz.",
         "package": "@desert-ant-labs/clear",
+        "extension": null,
         "capability": "audio.speech-enhancement",
         "sizeMB": null,
         "license": "source-available",
@@ -61,6 +63,7 @@ window.__ModuleLoader__.load({
         "name": "Clips",
         "summary": "Clip selection that turns a long recording into ranked shorts and highlights from a transcript.",
         "package": null,
+        "extension": null,
         "capability": "video.clip-selection",
         "sizeMB": null,
         "license": "source-available",
@@ -72,6 +75,7 @@ window.__ModuleLoader__.load({
         "name": "Ear",
         "summary": "On-device spoken language identification across 102 languages from a short audio stretch.",
         "package": "@desert-ant-labs/ear",
+        "extension": null,
         "capability": "audio.spoken-language-identification",
         "sizeMB": null,
         "license": "source-available",
@@ -83,6 +87,7 @@ window.__ModuleLoader__.load({
         "name": "Emo",
         "summary": "Type a task or message and get the emoji that fit, in 22 languages, on the device.",
         "package": "@desert-ant-labs/emo",
+        "extension": null,
         "capability": "text.emoji-suggestion",
         "sizeMB": 10.2,
         "license": "source-available",
@@ -94,6 +99,7 @@ window.__ModuleLoader__.load({
         "name": "Eye",
         "summary": "On-device frame scoring that tells you which shot to keep, what is in it, and which shots repeat.",
         "package": null,
+        "extension": null,
         "capability": "image.frame-scoring",
         "sizeMB": null,
         "license": "source-available",
@@ -105,6 +111,7 @@ window.__ModuleLoader__.load({
         "name": "Face",
         "summary": "On-device face matching that finds the same person across a photo library or through a video.",
         "package": null,
+        "extension": null,
         "capability": "image.face-matching",
         "sizeMB": null,
         "license": "source-available",
@@ -116,6 +123,7 @@ window.__ModuleLoader__.load({
         "name": "Gist",
         "summary": "On-device topic tagging across a 36-topic taxonomy, in 101 languages, with no server call.",
         "package": "@desert-ant-labs/gist",
+        "extension": null,
         "capability": "text.topic-tagging",
         "sizeMB": null,
         "license": "source-available",
@@ -127,6 +135,7 @@ window.__ModuleLoader__.load({
         "name": "Moderator",
         "summary": "On-device NSFW detection that flags nudity before upload, trained only on licensed and synthetic data.",
         "package": "@desert-ant-labs/moderator",
+        "extension": null,
         "capability": "image.nsfw-detection",
         "sizeMB": 9.2,
         "license": "source-available",
@@ -138,6 +147,7 @@ window.__ModuleLoader__.load({
         "name": "Redact",
         "summary": "On-device redaction that strips personal data as you type, in 27 languages, with restore support.",
         "package": "@desert-ant-labs/redact",
+        "extension": null,
         "capability": "text.pii-redaction",
         "sizeMB": null,
         "license": "source-available",
@@ -149,6 +159,7 @@ window.__ModuleLoader__.load({
         "name": "Schemer",
         "summary": "Extract typed fields from any text against your own schema, on device, with empty fields left empty.",
         "package": null,
+        "extension": null,
         "capability": "text.structured-extraction",
         "sizeMB": null,
         "license": "source-available",
@@ -160,6 +171,7 @@ window.__ModuleLoader__.load({
         "name": "Shapes",
         "summary": "On-device shape recognition that turns one hand-drawn stroke into a rectangle, ellipse, triangle, star or line in under 10ms.",
         "package": "@desert-ant-labs/shapes",
+        "extension": null,
         "capability": "stroke.shape-recognition",
         "sizeMB": null,
         "license": "source-available",
@@ -171,6 +183,7 @@ window.__ModuleLoader__.load({
         "name": "Title",
         "summary": "On-device titles and descriptions: a short factual title and a one- or two-sentence description for any passage.",
         "package": null,
+        "extension": null,
         "capability": "text.title-generation",
         "sizeMB": null,
         "license": "source-available",
@@ -182,6 +195,7 @@ window.__ModuleLoader__.load({
         "name": "Tongue",
         "summary": "On-device language identification for short text across 84 languages, from just a few words.",
         "package": "@desert-ant-labs/tongue",
+        "extension": "@try-works/extension-desert-ant-tongue",
         "capability": "text.language-identification",
         "sizeMB": 2,
         "license": "source-available",
@@ -192,6 +206,7 @@ window.__ModuleLoader__.load({
         "name": "Toxic",
         "summary": "On-device moderation that flags hateful, abusive and threatening text in 23 European languages.",
         "package": null,
+        "extension": null,
         "capability": "text.toxicity-detection",
         "sizeMB": null,
         "license": "source-available",
@@ -203,6 +218,7 @@ window.__ModuleLoader__.load({
         "name": "Uhm",
         "summary": "On-device filler detection that marks every um, uh and hmm to within 20ms, an hour of audio in 12s.",
         "package": null,
+        "extension": null,
         "capability": "audio.filler-detection",
         "sizeMB": null,
         "license": "source-available",
@@ -214,6 +230,7 @@ window.__ModuleLoader__.load({
         "name": "Voz",
         "summary": "Transcribe 10 minutes of audio in 2s on an iPhone, 14x faster than Whisper, with word timestamps.",
         "package": "@desert-ant-labs/voz",
+        "extension": "@try-works/extension-desert-ant-voz",
         "capability": "audio.speech-recognition",
         "sizeMB": 349,
         "license": "source-available",
@@ -224,11 +241,135 @@ window.__ModuleLoader__.load({
         "name": "Who",
         "summary": "On-device speaker labeling that turns a recording into per-person turns with face boxes and timestamps.",
         "package": null,
+        "extension": null,
         "capability": "audio.speaker-labeling",
         "sizeMB": null,
         "license": "source-available",
         "runnable": false,
         "reason": "Who is in closed beta: the weights are published at https://huggingface.co/desert-ant-labs/who but no SDK ships them yet, so it cannot be installed as a tool."
+      }
+    ]
+
+    /**
+     * The Tool Mode extensions this repository ships, embedded at build time.
+     *
+     * Each entry: { id, name, package, version, license, summary, models, tools,
+     * contracts }. These are installed and activated through the extension
+     * store, so the page lists them as provided-but-not-observable here rather
+     * than inventing an installed/uninstalled state.
+     */
+    const EXTENSIONS = /*__EXTENSIONS_JSON__*/
+    [
+      {
+        "id": "@try-works/extension-declarative-recipes",
+        "name": "declarative recipes",
+        "package": "@try-works/extension-declarative-recipes",
+        "version": "0.1.0",
+        "license": "MIT",
+        "summary": "Ships NO CODE.",
+        "models": [],
+        "tools": [],
+        "contracts": [
+          "text.title",
+          "image.describe"
+        ]
+      },
+      {
+        "id": "@try-works/extension-embeddinggemma",
+        "name": "EmbeddingGemma 2",
+        "package": "@try-works/extension-embeddinggemma",
+        "version": "0.1.0",
+        "license": "MIT",
+        "summary": "Multimodal embedding and retrieval tools over EmbeddingGemma 2 (google/embeddinggemma-2 through a pinned ONNX conversion): multimodal_embed produces 768-, 51…",
+        "models": [
+          "embeddinggemma-2"
+        ],
+        "tools": [
+          "multimodal_embed",
+          "semantic_similarity",
+          "semantic_rank",
+          "semantic_classify",
+          "semantic_deduplicate",
+          "media_find_moments"
+        ],
+        "contracts": [
+          "@try-works/extension-embeddinggemma/multimodal_embed",
+          "@try-works/extension-embeddinggemma/semantic_similarity",
+          "@try-works/extension-embeddinggemma/semantic_rank",
+          "@try-works/extension-embeddinggemma/semantic_classify",
+          "@try-works/extension-embeddinggemma/semantic_deduplicate",
+          "@try-works/extension-embeddinggemma/media_find_moments"
+        ]
+      },
+      {
+        "id": "@try-works/extension-laya",
+        "name": "Laya",
+        "package": "@try-works/extension-laya",
+        "version": "1.0.0",
+        "license": "Apache-2.0",
+        "summary": "The Laya decision family (H5): decision_choose (a choice over the caller's options), decision_test (yes/no) and decision_score (an ordinal level) over the pi…",
+        "models": [
+          "laya"
+        ],
+        "tools": [
+          "decision_choose",
+          "decision_test",
+          "decision_score"
+        ],
+        "contracts": [
+          "@try-works/extension-laya/decision_choose",
+          "@try-works/extension-laya/decision_test",
+          "@try-works/extension-laya/decision_score"
+        ]
+      },
+      {
+        "id": "@try-works/extension-minilm-rerank",
+        "name": "MiniLM Rerank",
+        "package": "@try-works/extension-minilm-rerank",
+        "version": "1.0.0",
+        "license": "Apache-2.0",
+        "summary": "The ms-marco MiniLM-L-6 cross-encoder reranking extension (TOOL-05): query/document pairs cross-encoded to ranking logits, returned with the caller's own ids…",
+        "models": [
+          "minilm-rerank"
+        ],
+        "tools": [],
+        "contracts": [
+          "text.rerank"
+        ]
+      },
+      {
+        "id": "@try-works/extension-minilm-embed",
+        "name": "MiniLM-L6",
+        "package": "@try-works/extension-minilm-embed",
+        "version": "1.0.0",
+        "license": "Apache-2.0",
+        "summary": "The legacy 384-dimensional MiniLM-L6 text embedding space (TOOL-04, BASE-12): mean pooling, L2 normalization, input order preserved.",
+        "models": [
+          "minilm-l6"
+        ],
+        "tools": [],
+        "contracts": [
+          "text.embed"
+        ]
+      },
+      {
+        "id": "@try-works/extension-needle",
+        "name": "Needle 3",
+        "package": "@try-works/extension-needle",
+        "version": "0.1.0",
+        "license": "MIT",
+        "summary": "Tool proposal and structured extraction over the pinned Cactus Needle 3 native engine (Cactus-Compute/needle3, windows-x86_64/needle.exe at revision 93e88ede…",
+        "models": [
+          "needle3"
+        ],
+        "tools": [
+          "tools_plan",
+          "structured_extract"
+        ],
+        "contracts": [
+          "@try-works/extension-needle/tools_plan",
+          "@try-works/extension-needle/structured_extract"
+        ]
       }
     ]
 
@@ -484,9 +625,15 @@ window.__ModuleLoader__.load({
 
     /** One model row: identity, package, size and status, with the toggle. */
     function modelRow(entry, enabled, disabled, onToggle) {
-      const badge = entry.runnable === true
-        ? h('span', { className: 'mtt-badge mtt-badge-on' }, 'runnable here')
-        : h('span', { className: 'mtt-badge' }, 'unavailable here')
+      // An extension-backed model is provided by another package; only the HOST
+      // can tell whether it is installed, so the row says "extension" instead of
+      // promising it runs here.
+      const badge = entry.extension !== null && entry.extension !== undefined
+        ? h('span', { className: 'mtt-badge' }, 'extension')
+        : entry.runnable === true
+          ? h('span', { className: 'mtt-badge mtt-badge-on' }, 'runnable here')
+          : h('span', { className: 'mtt-badge' }, 'unavailable here')
+      const source = entry.extension ?? (entry.package === null ? 'no package' : entry.package)
       return h('div', { className: 'mtt-row', key: entry.id },
         h('div', { className: 'mtt-row-text' },
           h('span', { className: 'mtt-label' },
@@ -496,24 +643,42 @@ window.__ModuleLoader__.load({
           h('span', { className: 'mtt-meta' },
             entry.id,
             ' · ',
-            entry.package === null ? 'no package' : entry.package,
-            ' · ',
-            entry.sizeMB + ' MB',
+            source,
+            entry.sizeMB === null ? '' : ' · ' + entry.sizeMB + ' MB',
             ' · ',
             entry.license,
-            entry.runnable !== true && entry.reason ? ' · ' + entry.reason : '')),
+            entry.extension !== null && entry.extension !== undefined
+              ? ' · provided by the Tool Mode extension; install and activate it to run'
+              : entry.runnable !== true && entry.reason ? ' · ' + entry.reason : '')),
         h('div', { className: 'mtt-control' },
           h('button', {
             type: 'button',
             className: 'mtt-toggle',
             'data-on': enabled ? 'true' : 'false',
-            disabled: disabled || entry.runnable !== true,
+            disabled: disabled,
             'aria-pressed': enabled,
-            title: entry.runnable !== true
-              ? 'Not runnable in this process: ' + (entry.reason || 'no runtime')
-              : enabled ? 'Disable this model' : 'Enable this model',
+            title: enabled ? 'Disable this model' : 'Enable this model',
             onClick: () => onToggle(entry.id, !enabled),
           }, h('span', { className: 'mtt-knob' }))))
+    }
+
+    /** One extension row: identity, tools, models and the store-owned state. */
+    function extensionRow(entry) {
+      const parts = []
+      if (entry.tools.length > 0) parts.push('tools: ' + entry.tools.join(', '))
+      if (entry.contracts.length > 0) parts.push('contracts: ' + entry.contracts.join(', '))
+      if (entry.models.length > 0) parts.push('models: ' + entry.models.join(', '))
+      return h('div', { className: 'mtt-row', key: entry.id },
+        h('div', { className: 'mtt-row-text' },
+          h('span', { className: 'mtt-label' },
+            h('span', { className: 'mtt-name' }, entry.name),
+            h('span', { className: 'mtt-badge' }, 'extension')),
+          h('p', { className: 'mtt-help' }, entry.summary),
+          h('span', { className: 'mtt-meta' },
+            entry.id,
+            parts.length > 0 ? ' · ' + parts.join(' · ') : '',
+            ' · ',
+            entry.license ?? 'no license')))
     }
 
     function ModelToolsSettings({ form }) {
@@ -590,14 +755,19 @@ window.__ModuleLoader__.load({
         h('style', null, CSS),
         h('h2', { className: 'mtt-title' }, 'Model as Tool'),
         h('p', { className: 'mtt-intro' },
-          'On-device models from the Desert Ant catalog. A model becomes a tool only when this process '
-          + 'can actually run it; the rest stay listed so model_tools can explain what is missing.'),
+          'On-device models from the Desert Ant catalog, exposed as tools and skills. A model becomes a tool only when this '
+          + 'process can actually run it; extension-backed models are listed with the extension that provides them.'),
         h('div', { className: 'mtt-card' },
           h('p', { className: 'mtt-help' },
             runnable.length + ' of ' + CATALOG.length + ' catalog models are runnable in this process. '
             + 'Unavailable models are listed with the reason they cannot run here.'),
           runnable.map(entry => modelRow(entry, isEnabled(entry.id), disabled, toggleModel)),
           unavailable.map(entry => modelRow(entry, false, disabled, toggleModel))),
+        EXTENSIONS.length === 0 ? null : h('div', { className: 'mtt-card' },
+          h('p', { className: 'mtt-help' },
+            'Tool Mode extensions shipped with this plugin. They register their tools when the extension store '
+            + 'installs and activates them; this page cannot observe that state.'),
+          EXTENSIONS.map(extensionRow)),
         h('div', { className: 'mtt-card' }, FIELDS.map(field => fieldRow(field, value, draft, edit, disabled))),
         h('div', { className: 'mtt-actions' },
           h('button', {

@@ -34,6 +34,16 @@ window.__ModuleLoader__.load({
      */
     const CATALOG = /*__CATALOG_JSON__*/ []
 
+    /**
+     * The Tool Mode extensions this repository ships, embedded at build time.
+     *
+     * Each entry: { id, name, package, version, license, summary, models, tools,
+     * contracts }. These are installed and activated through the extension
+     * store, so the page lists them as provided-but-not-observable here rather
+     * than inventing an installed/uninstalled state.
+     */
+    const EXTENSIONS = /*__EXTENSIONS_JSON__*/ []
+
     /** Page styles, prefixed to avoid colliding with host styles. */
     const CSS = `
 .mtt-page {
@@ -286,9 +296,15 @@ window.__ModuleLoader__.load({
 
     /** One model row: identity, package, size and status, with the toggle. */
     function modelRow(entry, enabled, disabled, onToggle) {
-      const badge = entry.runnable === true
-        ? h('span', { className: 'mtt-badge mtt-badge-on' }, 'runnable here')
-        : h('span', { className: 'mtt-badge' }, 'unavailable here')
+      // An extension-backed model is provided by another package; only the HOST
+      // can tell whether it is installed, so the row says "extension" instead of
+      // promising it runs here.
+      const badge = entry.extension !== null && entry.extension !== undefined
+        ? h('span', { className: 'mtt-badge' }, 'extension')
+        : entry.runnable === true
+          ? h('span', { className: 'mtt-badge mtt-badge-on' }, 'runnable here')
+          : h('span', { className: 'mtt-badge' }, 'unavailable here')
+      const source = entry.extension ?? (entry.package === null ? 'no package' : entry.package)
       return h('div', { className: 'mtt-row', key: entry.id },
         h('div', { className: 'mtt-row-text' },
           h('span', { className: 'mtt-label' },
@@ -298,24 +314,42 @@ window.__ModuleLoader__.load({
           h('span', { className: 'mtt-meta' },
             entry.id,
             ' · ',
-            entry.package === null ? 'no package' : entry.package,
-            ' · ',
-            entry.sizeMB + ' MB',
+            source,
+            entry.sizeMB === null ? '' : ' · ' + entry.sizeMB + ' MB',
             ' · ',
             entry.license,
-            entry.runnable !== true && entry.reason ? ' · ' + entry.reason : '')),
+            entry.extension !== null && entry.extension !== undefined
+              ? ' · provided by the Tool Mode extension; install and activate it to run'
+              : entry.runnable !== true && entry.reason ? ' · ' + entry.reason : '')),
         h('div', { className: 'mtt-control' },
           h('button', {
             type: 'button',
             className: 'mtt-toggle',
             'data-on': enabled ? 'true' : 'false',
-            disabled: disabled || entry.runnable !== true,
+            disabled: disabled,
             'aria-pressed': enabled,
-            title: entry.runnable !== true
-              ? 'Not runnable in this process: ' + (entry.reason || 'no runtime')
-              : enabled ? 'Disable this model' : 'Enable this model',
+            title: enabled ? 'Disable this model' : 'Enable this model',
             onClick: () => onToggle(entry.id, !enabled),
           }, h('span', { className: 'mtt-knob' }))))
+    }
+
+    /** One extension row: identity, tools, models and the store-owned state. */
+    function extensionRow(entry) {
+      const parts = []
+      if (entry.tools.length > 0) parts.push('tools: ' + entry.tools.join(', '))
+      if (entry.contracts.length > 0) parts.push('contracts: ' + entry.contracts.join(', '))
+      if (entry.models.length > 0) parts.push('models: ' + entry.models.join(', '))
+      return h('div', { className: 'mtt-row', key: entry.id },
+        h('div', { className: 'mtt-row-text' },
+          h('span', { className: 'mtt-label' },
+            h('span', { className: 'mtt-name' }, entry.name),
+            h('span', { className: 'mtt-badge' }, 'extension')),
+          h('p', { className: 'mtt-help' }, entry.summary),
+          h('span', { className: 'mtt-meta' },
+            entry.id,
+            parts.length > 0 ? ' · ' + parts.join(' · ') : '',
+            ' · ',
+            entry.license ?? 'no license')))
     }
 
     function ModelToolsSettings({ form }) {
@@ -392,14 +426,19 @@ window.__ModuleLoader__.load({
         h('style', null, CSS),
         h('h2', { className: 'mtt-title' }, 'Model as Tool'),
         h('p', { className: 'mtt-intro' },
-          'On-device models from the Desert Ant catalog. A model becomes a tool only when this process '
-          + 'can actually run it; the rest stay listed so model_tools can explain what is missing.'),
+          'On-device models from the Desert Ant catalog, exposed as tools and skills. A model becomes a tool only when this '
+          + 'process can actually run it; extension-backed models are listed with the extension that provides them.'),
         h('div', { className: 'mtt-card' },
           h('p', { className: 'mtt-help' },
             runnable.length + ' of ' + CATALOG.length + ' catalog models are runnable in this process. '
             + 'Unavailable models are listed with the reason they cannot run here.'),
           runnable.map(entry => modelRow(entry, isEnabled(entry.id), disabled, toggleModel)),
           unavailable.map(entry => modelRow(entry, false, disabled, toggleModel))),
+        EXTENSIONS.length === 0 ? null : h('div', { className: 'mtt-card' },
+          h('p', { className: 'mtt-help' },
+            'Tool Mode extensions shipped with this plugin. They register their tools when the extension store '
+            + 'installs and activates them; this page cannot observe that state.'),
+          EXTENSIONS.map(extensionRow)),
         h('div', { className: 'mtt-card' }, FIELDS.map(field => fieldRow(field, value, draft, edit, disabled))),
         h('div', { className: 'mtt-actions' },
           h('button', {

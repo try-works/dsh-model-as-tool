@@ -84,9 +84,15 @@ The bundle patch mounts the row with the catalog defaults; a top-level
 Installing the plugin also adds a **Model as Tool** page to the Harness Settings
 dialog (`client/index.js`, declared by `dsh.client` in the package manifest).
 
-- **Every catalog model is a row with an enable/disable toggle** — name, package,
+- **Every catalog model is a row with an enable/disable toggle** — name, source,
   size, license, and whether it is runnable in this process. Unavailable models
   stay listed with a disabled toggle and the reason they cannot run here.
+- **Extension-backed models are first-class catalog entries.** Laya, Needle 3,
+  MiniLM-L6, MiniLM Rerank, EmbeddingGemma 2, Tongue and Voz carry a `provider`
+  binding to their Tool Mode extension, so they appear in the list (and in
+  `model_tools`) beside the Desert Ant models. Their row is badged `extension`
+  rather than `runnable here`: only the host can see whether that extension is
+  installed and active, so the page does not promise it.
 - Toggles write the `exclude` list; the advanced **Allowlist override** pins an
   exact set when a config-file operator needs one.
 - The remaining operator switches (expose unavailable, register skills, register

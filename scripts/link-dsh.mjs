@@ -127,6 +127,12 @@ const WORKSPACE = {
   '@try-works/extension-embeddinggemma': 'packages/extension-embeddinggemma',
   '@try-works/extension-needle': 'packages/extension-needle',
   '@try-works/extension-declarative-recipes': 'packages/extension-declarative-recipes',
+  // The three models the Settings page showed as missing. A package absent from
+  // this map cannot be imported by anything, so its model reports unavailable and
+  // its tools never register — the outage looks like a catalog gap, not a link.
+  '@try-works/extension-minilm-embed': 'packages/extension-minilm-embed',
+  '@try-works/extension-minilm-rerank': 'packages/extension-minilm-rerank',
+  '@try-works/extension-laya': 'packages/extension-laya',
 }
 let workspaceLinked = 0
 for (const [specifier, relative] of Object.entries(WORKSPACE)) {

@@ -80,7 +80,10 @@ if (client !== undefined) {
       // The page renders one row per model, so the catalog must be embedded and
       // current; a template placeholder left in place means the build was skipped.
       note(!source.includes('/*__CATALOG_JSON__*/ []'), 'the catalog placeholder must be replaced by the build')
+      note(!source.includes('/*__EXTENSIONS_JSON__*/ []'), 'the extensions placeholder must be replaced by the build')
       note(source.includes('"id": "tongue"'), 'the generated catalog must list the catalog models')
+      note(source.includes('"name": "Laya"'), 'the generated extensions must list the Laya extension')
+      note(source.includes('"name": "Needle 3"'), 'the generated extensions must list the Needle extension')
       note(/mtt-toggle/.test(source), 'the client half must render model toggles')
     }
     note((manifest.files ?? []).includes('client/index.js'),
