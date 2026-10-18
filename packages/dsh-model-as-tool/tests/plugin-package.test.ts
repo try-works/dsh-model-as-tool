@@ -40,6 +40,50 @@ test('the manifest declares the bundle patch and the plugin row mounts by publis
   assert.ok((manifest.files ?? []).includes('cordis.patch.yml'))
 })
 
+test('the client half is a generated ModuleLoader bundle with the model list embedded', () => {
+  const manifest = JSON.parse(readFileSync(join(PACKAGE_DIR, 'package.json'), 'utf8'))
+  assert.equal(manifest.dsh?.client?.platform, 'web')
+  assert.ok((manifest.dsh?.client?.inject ?? []).includes('@deepseek-ai/dsh-client-ui-settings'),
+    'the client half needs the settings UI slot provider injected')
+  const clientExport = manifest.exports?.['./client']
+  const target = typeof clientExport === 'string' ? clientExport : clientExport?.default
+  assert.equal(typeof target, 'string', 'exports["./client"] must resolve to a file')
+  const source = readFileSync(join(PACKAGE_DIR, String(target).replace(/^\.\//, '')), 'utf8')
+  assert.match(source, /window\.__ModuleLoader__\.load\(/)
+  assert.ok(source.includes(`id: '${manifest.name}'`), 'the loader id must be the package name')
+  assert.match(source, /settings\.section/)
+  assert.match(source, /label: 'Model as Tool'/)
+  // One row per catalog model with a toggle, not a free-text field.
+  assert.ok(!source.includes('/*__CATALOG_JSON__*/ []'), 'the catalog placeholder must be replaced by the build')
+  assert.match(source, /"id": "tongue"/)
+  assert.match(source, /mtt-toggle/)
+  assert.ok((manifest.files ?? []).includes('client/index.js'), 'files[] must ship the generated bundle')
+  assert.ok(!(manifest.files ?? []).some(f => String(f).includes('template')),
+    'files[] must not ship the template')
+
+  // Drift guard: the committed bundle must equal what the generator produces now.
+  const generated = spawnSync(process.execPath, [join(PACKAGE_DIR, 'scripts', 'gen-client-catalog.mjs'), '--check'], { encoding: 'utf8' })
+  assert.equal(generated.status, 0, `${generated.stdout}\n${generated.stderr}`)
+})
+
+test('the Settings-editable fields are marked volatile so the host exposes them', async (t) => {
+  if (!existsSync(join(PACKAGE_DIR, 'lib', 'index.js'))) {
+    return t.skip('the package lib/ is not built; run the host build first')
+  }
+  // schemastery exposes a Config field to the settings mirror ONLY when it carries
+  // the volatile marker; without it the page renders "namespace not exposed".
+  const { pathToFileURL } = await import('node:url')
+  const { Config } = await import(pathToFileURL(join(PACKAGE_DIR, 'lib', 'index.js')).href) as {
+    Config: { dict?: Record<string, { meta?: { volatile?: boolean } }> }
+  }
+  for (const key of ['models', 'exclude', 'exposeUnavailable', 'registerSkills',
+    'registerControlTool', 'allowNpm', 'managedWorkers', 'repairAttempts', 'approvedRoots']) {
+    const field = Config.dict?.[key]
+    assert.ok(field !== undefined, `${key} must exist on Config`)
+    assert.equal(field.meta?.volatile, true, `${key} must be marked .volatile() for the Settings page`)
+  }
+})
+
 test('schemastery is a pinned dependency, never a peer (the profile cannot supply it)', () => {
   const manifest = JSON.parse(readFileSync(join(PACKAGE_DIR, 'package.json'), 'utf8'))
   assert.equal(Object.hasOwn(manifest.peerDependencies ?? {}, '@deepseek-ai/schemastery'), false)

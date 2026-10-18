@@ -61,6 +61,35 @@ note(files.some((f) => String(f).startsWith('catalog/')), 'files[] must ship the
 note(files.some((f) => String(f).startsWith('bin')), 'files[] must ship the launcher bin/')
 note(existsSync(join(root, 'README.md')) && files.includes('README.md'), 'files[] must ship README.md')
 
+// Client half: the Settings page. Without it the plugin is visible only in
+// config files, which is what "the settings need to be exposed in Settings" means.
+const client = manifest.dsh?.client
+note(client !== undefined, 'dsh.client must be declared for the Settings page')
+if (client !== undefined) {
+  note(client.platform === 'web', 'dsh.client.platform must be "web"')
+  const clientExport = manifest.exports?.['./client']
+  const target = typeof clientExport === 'string' ? clientExport : clientExport?.default
+  note(typeof target === 'string', 'exports["./client"] must resolve to a file')
+  if (typeof target === 'string') {
+    note(existsSync(join(root, target)), 'client half missing: ' + target)
+    if (existsSync(join(root, target))) {
+      const source = readFileSync(join(root, target), 'utf8')
+      note(source.includes('__ModuleLoader__.load'), 'the client half must call window.__ModuleLoader__.load')
+      note(source.includes(`id: '${manifest.name}'`), 'the client loader id must be the package name')
+      note(source.includes('settings.section'), 'the client half must register a settings.section')
+      // The page renders one row per model, so the catalog must be embedded and
+      // current; a template placeholder left in place means the build was skipped.
+      note(!source.includes('/*__CATALOG_JSON__*/ []'), 'the catalog placeholder must be replaced by the build')
+      note(source.includes('"id": "tongue"'), 'the generated catalog must list the catalog models')
+      note(/mtt-toggle/.test(source), 'the client half must render model toggles')
+    }
+    note((manifest.files ?? []).includes('client/index.js'),
+      'files[] must ship the GENERATED client/index.js (not the template)')
+    note(!(manifest.files ?? []).some(f => String(f).includes('template')),
+      'files[] must not ship the client template')
+  }
+}
+
 // Peers: a missing declaration means an unresolvable import in a clean profile.
 for (const peer of ['@deepseek-ai/cordis', '@deepseek-ai/dsh-tools']) {
   note(Object.hasOwn(manifest.peerDependencies ?? {}, peer),

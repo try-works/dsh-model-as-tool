@@ -1,6 +1,6 @@
 {
   "name": "@try-works/dsh-model-as-tool",
-  "version": "0.1.3",
+  "version": "0.1.9",
   "description": "Install Desert Ant Labs on-device models as DSH tools and skills, with per-platform capability gating",
   "keywords": [
     "dsh",
@@ -32,6 +32,7 @@
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./client": "./client/index.js",
     "./catalog": {
       "types": "./lib/catalog.d.ts",
       "default": "./lib/catalog.js"
@@ -44,6 +45,7 @@
     "lib/**/*.js",
     "lib/**/*.d.ts",
     "lib/**/*.d.ts.map",
+    "client/index.js",
     "catalog/desert-ant-models.json",
     "catalog/playbooks.json",
     "cordis.patch.yml",
@@ -53,6 +55,13 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings"
+      ],
+      "external": []
     }
   },
   "engines": {
@@ -69,7 +78,8 @@
     }
   },
   "scripts": {
-    "build": "node scripts/clean-lib.mjs && tsc -p tsconfig.build.json",
+    "build": "node scripts/clean-lib.mjs && tsc -p tsconfig.build.json && node scripts/gen-client-catalog.mjs",
+    "build:client": "node scripts/gen-client-catalog.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
     "prepack": "node scripts/stage-bundle.mjs && npm run build",

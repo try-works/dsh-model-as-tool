@@ -374,6 +374,21 @@ export interface Config {
 }
 
 /** Validate and default the plugin configuration. */
+/**
+ * Mark one Config field as Settings-UI editable.
+ *
+ * schemastery exposes a field to the settings mirror only when it carries the
+ * volatile marker (the reference plugin `@try-works/dsh-memory` documents this:
+ * "Only .volatile() fields are exposed to the Settings UI and may be written by
+ * the config editor"). `.volatile()` also narrows the schema's inferred type, so
+ * this helper keeps the declared `z<Config>` surface intact.
+ * @param schema - the field schema.
+ * @returns the same schema with the runtime volatile marker.
+ */
+function settingsField<T>(schema: z<T>): z<T> {
+  return schema.volatile() as unknown as z<T>
+}
+
 export const Config: z<Config> = z.object({
   catalogFile: z.string(),
   playbookFile: z.string(),
@@ -382,20 +397,27 @@ export const Config: z<Config> = z.object({
   persist: z.boolean().default(true),
   providers: z.dict(z.string()).default({}),
   legacyAliases: z.boolean().default(false),
-  approvedRoots: z.array(z.string()).default([]),
+  /**
+   * Settings → Model as Tool.
+   *
+   * Only volatile fields are exposed to the Settings UI and may be written by
+   * the config editor; every other field is config-file only. Keep this surface
+   * the operator knobs the client page edits.
+   */
+  approvedRoots: settingsField(z.array(z.string()).default([])),
   grantId: z.string().default('local-interactive'),
   recordReceipts: z.boolean().default(true),
-  repairAttempts: z.number().min(0).max(8).default(1),
+  repairAttempts: settingsField(z.number().min(0).max(8).default(1)),
   limits: z.object({
     maxInputBytes: z.number(),
     maxAudioSeconds: z.number(),
     maxResultBytes: z.number(),
   }),
-  models: z.array(z.string()).default([]),
-  exclude: z.array(z.string()).default([]),
-  exposeUnavailable: z.boolean().default(false),
-  registerSkills: z.boolean().default(true),
-  registerControlTool: z.boolean().default(true),
+  models: settingsField(z.array(z.string()).default([])),
+  exclude: settingsField(z.array(z.string()).default([])),
+  exposeUnavailable: settingsField(z.boolean().default(false)),
+  registerSkills: settingsField(z.boolean().default(true)),
+  registerControlTool: settingsField(z.boolean().default(true)),
   hostedCode: z.boolean().default(false),
   cli: z.object({
     enabled: z.boolean().default(true),
@@ -409,9 +431,9 @@ export const Config: z<Config> = z.object({
     provider: z.string(),
     model: z.string(),
   }),
-  managedWorkers: z.boolean().default(false),
+  managedWorkers: settingsField(z.boolean().default(false)),
   workerEnvPassthrough: z.array(z.string()).default([]),
-  allowNpm: z.boolean().default(true),
+  allowNpm: settingsField(z.boolean().default(true)),
   /**
    * §12 CONFIG V3: the proposed nested schemaVersion-3 shape. The spec's
    * fixed-false flags are parsed here and REJECTED when set true (unsupported
@@ -584,7 +606,47 @@ export function describeModels(resolved: readonly ResolvedModel[]): ModelDescrip
  * @param ctx - the plugin context whose tool registry receives the definitions.
  * @param config - deployment configuration for which models to expose.
  */
+/**
+ * The Config fields the Settings page edits (marked volatile in the schema).
+ *
+ * schemastery parses a volatile field into a LIVE REFERENCE (`{ get() }`) rather
+ * than a plain value, so the settings editor can commit a new value into the
+ * running fiber. Every consumer here reads the plain value, so apply unwraps
+ * them once and re-unwraps on `loader/volatile-update`.
+ */
+const VOLATILE_CONFIG_KEYS = [
+  'approvedRoots', 'repairAttempts', 'models', 'exclude', 'exposeUnavailable',
+  'registerSkills', 'registerControlTool', 'managedWorkers', 'allowNpm',
+] as const
+
+/** Read a plain value out of a volatile reference (or return it untouched). */
+function unwrapVolatile<T>(value: T | { get(): T }): T {
+  const candidate = value as { get?: () => T } | undefined
+  return candidate !== undefined && typeof candidate.get === 'function' ? candidate.get() : value as T
+}
+
+/** Replace every volatile field on the config object with its current value. */
+function absorbVolatileConfig(config: Config): void {
+  const writable = config as unknown as Record<string, unknown>
+  for (const key of VOLATILE_CONFIG_KEYS) {
+    if (key in writable) writable[key] = unwrapVolatile(writable[key])
+  }
+}
+
 export async function apply(ctx: Context, config: Config = {}): Promise<void> {
+  // Volatile fields arrive as live references; the rest of apply reads values.
+  absorbVolatileConfig(config)
+  // A Settings save commits a new volatile value into the running fiber; without
+  // this the page would persist the change and the plugin keep the old value.
+  // The event is declared by the harness loader (not by the cordis types this
+  // package compiles against), so the name is cast rather than left unchecked.
+  ctx.on('loader/volatile-update' as never, (() => {
+    try {
+      absorbVolatileConfig(config)
+    } catch (error) {
+      ctx.logger?.warn?.(`could not re-read volatile configuration: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }) as never)
   // §12: the fixed-false flags REFUSE unsupported values before anything runs.
   assertConfigV3DisabledFlags(config)
   const entries = loadCatalog(config.catalogFile)

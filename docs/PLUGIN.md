@@ -79,6 +79,38 @@ The bundle patch mounts the row with the catalog defaults; a top-level
     remote: { endpoint: '', token: '' }
 ```
 
+### Settings → Model as Tool
+
+Installing the plugin also adds a **Model as Tool** page to the Harness Settings
+dialog (`client/index.js`, declared by `dsh.client` in the package manifest).
+
+- **Every catalog model is a row with an enable/disable toggle** — name, package,
+  size, license, and whether it is runnable in this process. Unavailable models
+  stay listed with a disabled toggle and the reason they cannot run here.
+- Toggles write the `exclude` list; the advanced **Allowlist override** pins an
+  exact set when a config-file operator needs one.
+- The remaining operator switches (expose unavailable, register skills, register
+  the inspection tool, allow in-process packages, managed workers, repair
+  attempts, approved roots) are the same fields as before.
+
+The model list is **generated into the client bundle at build time**
+(`scripts/gen-client-catalog.mjs` reads the catalog and resolves each model's
+capability verdict on the host). `npm run verify:built` regenerates and compares,
+so a catalog edit cannot ship a page listing a model that no longer exists, and
+`plugin:check` refuses a bundle whose placeholder was never filled.
+
+Two rules make the page work, and both are pinned by tests:
+
+- **Only `.volatile()` Config fields are exposed to the Settings UI.** Without
+  the marker the page renders "namespace not exposed" and nothing is writable.
+- **A volatile field parses to a live reference (`{ get() }`), not a plain
+  value.** `apply` unwraps the volatile keys before reading them (and re-unwraps
+  on `loader/volatile-update`); `new Set(config.models)` on a raw reference was a
+  real mount-time `TypeError`.
+
+Credentials, the bridge endpoint, the extension store and the headless MCP
+listener stay config-file only, where the launcher and `doctor` read them.
+
 ## Troubleshooting (observed while validating this install)
 
 - **`did not activate` / `failed to import: Cannot find package "X"`** — a bundled
