@@ -62,6 +62,15 @@ function contextWith(remote: unknown): { get: (name: string) => unknown } {
   return { get: (name: string) => name === 'remote' ? remote : undefined }
 }
 
+/** The control decision shape returned by the generated requirement helper. */
+interface RequirementControlsView {
+  readonly blocked: boolean
+  readonly unmet: readonly unknown[]
+  readonly enableBlocked: boolean
+  readonly installBlocked: boolean
+  readonly prepareNeeded: boolean
+}
+
 test('the package check script passes (the shape a loader requires)', (t) => {
   if (!existsSync(join(PACKAGE_DIR, 'lib', 'index.js'))) {
     return t.skip('the package lib/ is not built; run the host build first')
@@ -128,11 +137,21 @@ test('the client half ships both extension flows: host Remote and config-only fa
   // shows a busy label; the host's own reason text is rendered, not replaced.
   assert.match(source, /namespace\.prepare\(id\)/, 'the page must prepare model assets through the Remote')
   assert.match(source, /'Preparing…'/, 'a prepare in flight must be visible, not a silent click')
-  assert.match(source, /notes\.push\(state\.reason\)/,
+  assert.match(source, /addNote\(state\.reason/,
     'an installed row must render the host reason verbatim')
   assert.match(source, /extensionNeedsPreparation/,
     'the Prepare control must be offered only for a host-named preparation blocker')
   assert.match(source, /prepareResultNote/, 'a prepare result must render the host disclosure/refusal')
+  // Requirements: satisfied ones are disclosed compactly; unmet ones are rendered
+  // prominently and gate the controls by kind/action/satisfied (never by text).
+  assert.match(source, /Requirements checked:/, 'the row must disclose the satisfied requirements')
+  assert.match(source, /mtt-row-blocker/, 'an unmet requirement must be rendered prominently')
+  assert.match(source, /requirementControls\.enableBlocked/,
+    'Enable must be disabled when the host marks the row blocked')
+  assert.match(source, /requirementControls\.installBlocked/,
+    'Install must be disabled for an unmet store/source requirement')
+  assert.match(source, /Configure the deployment to satisfy this requirement\./,
+    'a config-action blocker must carry its remediation hint')
   assert.match(source, /'Installing…'/, 'an install in flight must be visible, not a silent click')
   // Two durable sources describe "disabled": the lifecycle the Remote changes and
   // Config.disabledExtensions, which the restore filter re-checks. Every
@@ -169,6 +188,11 @@ test('the generated client helpers map both Remote result shapes to the rows the
   const nextDisabledExtensions = clientHelper(exports, 'nextDisabledExtensions')
   const extensionNeedsPreparation = clientHelper(exports, 'extensionNeedsPreparation')
   const prepareResultNote = clientHelper(exports, 'prepareResultNote')
+  const extensionRequirements = clientHelper(exports, 'extensionRequirements')
+  const unmetExtensionRequirements = clientHelper(exports, 'unmetExtensionRequirements')
+  const extensionRequirementSummary = clientHelper(exports, 'extensionRequirementSummary')
+  const requirementHint = clientHelper(exports, 'requirementHint')
+  const extensionRequirementControls = clientHelper(exports, 'extensionRequirementControls')
 
   const namespace = {
     describe: async () => ({ ok: true, value: { store: 'C:/store', writable: true, extensions: [] } }),
@@ -282,6 +306,90 @@ test('the generated client helpers map both Remote result shapes to the rows the
   assert.doesNotMatch(String(prepared), /remaining blockers/)
   const partiallyReady = prepareResultNote({ prepared: true, plan: null, activationReady: false })
   assert.match(String(partiallyReady), /remaining blockers/)
+
+  // Blocked-state behavior is keyed ONLY on requirement kind/action/satisfied and
+  // the host's `blocked` flag. The reason text is rendered verbatim but never
+  // parsed for control decisions (the host may reword it).
+  const harnessBlocked = {
+    installed: true,
+    blocked: true,
+    reason: 'this deployment composes no harness LlmProvider',
+    requirements: [
+      { kind: 'store', satisfied: true, reason: '', action: 'none' },
+      { kind: 'harness-model', satisfied: false, reason: 'this deployment composes no harness LlmProvider', action: 'config' },
+    ],
+  }
+  const harnessControls = extensionRequirementControls(harnessBlocked) as RequirementControlsView
+  assert.deepEqual([harnessControls.enableBlocked, harnessControls.installBlocked, harnessControls.prepareNeeded],
+    [true, false, false])
+  assert.equal(harnessControls.unmet.length, 1)
+  assert.equal(String(extensionRequirementSummary(harnessBlocked)), 'Requirements checked: store ✓')
+  assert.equal(String(requirementHint(harnessBlocked.requirements[1])),
+    'Configure the deployment to satisfy this requirement.')
+  assert.equal(requirementHint({ kind: 'platform', satisfied: false, reason: 'x', action: 'none' }),
+    'This requirement cannot be fixed from this page.')
+  assert.equal(requirementHint({ kind: 'assets', satisfied: false, reason: 'x', action: 'prepare' }), null)
+
+  // assets/executable keep Prepare available and block Enable; the Prepare
+  // decision uses requirements (not the reason text) on a current host.
+  const assetsBlocked = {
+    installed: true,
+    blocked: true,
+    reason: null,
+    requirements: [
+      { kind: 'assets', satisfied: false, reason: 'embeddinggemma-2 needs its model assets prepared', action: 'prepare' },
+    ],
+  }
+  const assetsControls = extensionRequirementControls(assetsBlocked) as RequirementControlsView
+  assert.deepEqual([assetsControls.enableBlocked, assetsControls.prepareNeeded], [true, true])
+  assert.equal(extensionNeedsPreparation(assetsBlocked), true)
+  assert.equal(extensionNeedsPreparation({
+    installed: true,
+    blocked: false,
+    reason: 'needs its model assets prepared',
+    requirements: [{ kind: 'assets', satisfied: true, reason: 'prepared', action: 'none' }],
+  }), false, 'requirements win over legacy reason text')
+
+  // A satisfied row: no blocked controls and no unmet line.
+  const satisfied = {
+    installed: true,
+    blocked: false,
+    requirements: [
+      { kind: 'store', satisfied: true, reason: '', action: 'none' },
+      { kind: 'platform', satisfied: true, reason: '', action: 'none' },
+    ],
+  }
+  const satisfiedControls = extensionRequirementControls(satisfied) as RequirementControlsView
+  assert.deepEqual([satisfiedControls.blocked, satisfiedControls.enableBlocked, satisfiedControls.installBlocked],
+    [false, false, false])
+
+  // unmet-but-not-blocked (the host says activation is possible) keeps Enable open.
+  const unmetNotBlocked = {
+    installed: true,
+    blocked: false,
+    requirements: [{ kind: 'assets', satisfied: false, reason: 'not prepared yet', action: 'prepare' }],
+  }
+  assert.equal((extensionRequirementControls(unmetNotBlocked) as RequirementControlsView).enableBlocked, false)
+
+  // store/source block Install; an uninstalled row has no Enable to block.
+  const storeBlocked = {
+    installed: false,
+    blocked: true,
+    requirements: [{ kind: 'store', satisfied: false, reason: 'no extension store is configured', action: 'config' }],
+  }
+  const storeControls = extensionRequirementControls(storeBlocked) as RequirementControlsView
+  assert.deepEqual([storeControls.installBlocked, storeControls.enableBlocked], [true, false])
+
+  // Legacy rows (no requirements/blocked) are not blocked and invent nothing.
+  const legacy = { installed: true, active: true, reason: null }
+  assert.deepEqual(extensionRequirements(legacy), [])
+  assert.equal(extensionRequirementSummary(legacy), null)
+  const legacyControls = extensionRequirementControls(legacy) as RequirementControlsView
+  assert.deepEqual([legacyControls.blocked, legacyControls.enableBlocked, legacyControls.installBlocked], [false, false, false])
+  // Malformed entries are dropped rather than rendered as facts.
+  assert.equal((extensionRequirements({
+    requirements: [null, { kind: 'assets' }, { kind: 'assets', satisfied: false, reason: 'x', action: 'prepare' }],
+  }) as unknown[]).length, 1)
 })
 
 test('the Settings-editable fields are marked volatile so the host exposes them', async (t) => {

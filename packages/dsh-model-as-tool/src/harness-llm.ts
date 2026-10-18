@@ -31,9 +31,182 @@ export interface HarnessModelConfig {
   readonly model: string
 }
 
+/** One discovered default route/model (the AUTO step's product). */
+export interface HarnessModelDiscovery {
+  readonly provider: string
+  readonly model: string
+}
+
+/**
+ * Discover the deployment's default/selected model for the AUTO composition
+ * (task-93 + task-97). DEFAULT-SAFE: any ambiguity or malformed entry yields
+ * `undefined` — never a guessed route.
+ *
+ * Probes, in order:
+ * 1. the settings service's `describe()` descriptor list: the descriptor whose
+ *    `ns` is `agent-default-model` (the live web profile's settings namespace),
+ *    with the resolved `{provider, model}` read from its `value` — the actual
+ *    SettingsForms API (there is no synchronous `get(ns)`, which was live bug
+ *    #2);
+ * 2. the root config's `model.default` as the `provider/model` string.
+ * @param ctx - the surfaces to probe, read structurally.
+ * @returns the discovered route/model, or undefined when none is unambiguous.
+ */
+export function discoverDefaultHarnessModel(ctx: {
+  readonly settings?: unknown
+  readonly config?: { readonly model?: { readonly default?: unknown } }
+}): HarnessModelDiscovery | undefined {
+  // 1. The agent-default-model settings descriptor (what the Web composer
+  //    writes into the profile patch; its ns is 'agent-default-model').
+  const settings = ctx.settings as { describe?: () => unknown } | undefined
+  const described = settings?.describe?.()
+  if (Array.isArray(described)) {
+    for (const descriptor of described) {
+      if (descriptor === null || typeof descriptor !== 'object') continue
+      const entry = descriptor as { ns?: unknown; value?: unknown }
+      if (entry.ns !== 'agent-default-model') continue
+      const value = entry.value
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        const resolved = value as Record<string, unknown>
+        const provider = resolved['provider']
+        const model = resolved['model']
+        if (typeof provider === 'string' && provider.length > 0 && typeof model === 'string' && model.length > 0) {
+          return { provider, model }
+        }
+      }
+      // The matching descriptor carries no unambiguous pair: refuse rather
+      // than continue probing a malformed entry.
+      return undefined
+    }
+  }
+  // 2. The root config's model.default, the `provider/model` string.
+  const declared = ctx.config?.model?.default
+  if (typeof declared === 'string') {
+    const slash = declared.indexOf('/')
+    if (slash > 0 && slash < declared.length - 1) {
+      return { provider: declared.slice(0, slash), model: declared.slice(slash + 1) }
+    }
+  }
+  return undefined
+}
+
 /** The attachment-minting surface `ctx.attachments` satisfies structurally. */
 interface DshAttachmentsSurface {
   saveImage(input: { readonly data: Uint8Array; readonly mediaType: string }): Promise<unknown>
+}
+
+/**
+ * The LlmRuntime contract the AUTO composition resolves through (read from
+ * D:\deepseek-harness\packages\llm\llm\lib\types\index.d.ts):
+ * - `resolveModelInfo(provider, model)` keys on the REGISTERED ROUTE id
+ *   (LlmRuntime.resolveModelInfo → registration(provider) → the adapter),
+ * - `listProviders(): LlmProviderInfo[]` (sync) — the registered routes,
+ * - `listConfigurableProviders(): LlmConfigurableProvider[]` (sync) — the
+ *   directory mapping a settings namespace to the route it activates
+ *   (`{provider, displayName, settingsNs, settingsPath}`),
+ * - `listModels(provider): Promise<LlmModelInfo[]>` — the per-route catalog.
+ */
+export interface HarnessLlmRuntimeSurface {
+  resolveModelInfo(provider: string, model: string, signal?: AbortSignal): Promise<unknown>
+  listProviders?(): readonly { id: string; name: string }[]
+  listConfigurableProviders?(): readonly { provider: string; displayName: string; settingsNs?: string; settingsPath?: readonly string[] }[]
+  listModels?(provider: string): Promise<readonly { provider?: string; id: string; name: string }[]>
+}
+
+/** One resolution outcome (task-98): the runnable pair, or the exact refusal. */
+export type HarnessModelResolution =
+  | { readonly ok: true; readonly route: string; readonly model: string }
+  | { readonly ok: false; readonly kind: 'not-ready-yet' | 'not-configured'; readonly reason: string }
+
+/**
+ * Resolve a RUNNABLE (route, model) pair the way the runtime does (task-98):
+ * the configured provider may be a settings namespace or display name rather
+ * than the registered ROUTE id, so a direct resolveModelInfo failure is not
+ * 'not configured' — the runtime's own listings map the configured provider to
+ * its route and confirm the model through the route's catalog. An EMPTY route
+ * registry is 'not ready yet' (the adapter plugins register after this plugin
+ * in the composition order), which is retryable — never locked in as 'none'.
+ * @param llm - the LLM surface, read structurally (the listings are optional).
+ * @param desired - the configured provider/model (the agent-default-model pair).
+ * @param log - the diagnostic sink.
+ * @returns the runnable pair, or the exact not-ready-yet/not-configured reason.
+ */
+export async function resolveRunnableHarnessModel(
+  llm: HarnessLlmRuntimeSurface,
+  desired: { readonly provider: string; readonly model: string },
+  log: (message: string) => void = () => {},
+): Promise<HarnessModelResolution> {
+  // 1. The direct pair: the config's provider IS the route.
+  try {
+    await llm.resolveModelInfo(desired.provider, desired.model)
+    return { ok: true, route: desired.provider, model: desired.model }
+  } catch (error) {
+    log(`direct ${desired.provider}/${desired.model} does not resolve: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  // 2. Map the configured provider to a registered route.
+  const providers = llm.listProviders?.() ?? []
+  if (providers.length === 0) {
+    return {
+      ok: false,
+      kind: 'not-ready-yet',
+      reason:
+        'the deployment\'s LLM surface has not registered its provider routes yet; retry once the deployment '
+        + 'finishes starting (this is not a configuration error)',
+    }
+  }
+  const byId = providers.find(entry => entry.id === desired.provider)
+  const byName = providers.find(entry => entry.name === desired.provider)
+  let route = byId?.id ?? byName?.id
+  if (route === undefined) {
+    const directory = llm.listConfigurableProviders?.() ?? []
+    const entry = directory.find(candidate => (
+      candidate.provider === desired.provider
+      || candidate.settingsNs === desired.provider
+      || candidate.displayName === desired.provider
+    ))
+    route = entry?.provider
+  }
+  if (route === undefined) {
+    return {
+      ok: false,
+      kind: 'not-configured',
+      reason:
+        `the configured provider ${JSON.stringify(desired.provider)} is not a registered LLM route in this `
+        + 'deployment; set config.harnessModel to a runnable route',
+    }
+  }
+  // 3. Confirm the model through the route's own catalog, then a direct probe.
+  if (llm.listModels !== undefined) {
+    try {
+      const catalog = await llm.listModels(route)
+      if (catalog.some(entry => entry.id === desired.model)) {
+        return { ok: true, route, model: desired.model }
+      }
+      if (catalog.length > 0) {
+        return {
+          ok: false,
+          kind: 'not-configured',
+          reason:
+            `the model ${JSON.stringify(desired.model)} is not served by the ${route} route (its catalog lists `
+            + `${catalog.map(entry => entry.id).join(', ')}); set config.harnessModel to a served model`,
+        }
+      }
+    } catch (error) {
+      log(`the ${route} catalog could not be listed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+  try {
+    await llm.resolveModelInfo(route, desired.model)
+    return { ok: true, route, model: desired.model }
+  } catch {
+    return {
+      ok: false,
+      kind: 'not-configured',
+      reason:
+        `the ${route} route does not serve the model ${JSON.stringify(desired.model)}; set config.harnessModel `
+        + 'to a served model',
+    }
+  }
 }
 
 /**

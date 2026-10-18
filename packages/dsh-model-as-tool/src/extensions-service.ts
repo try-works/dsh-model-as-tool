@@ -68,12 +68,15 @@ import type {
   ExtensionPreparationPlan,
   ExtensionPrepareResult,
   ExtensionReadinessMap,
+  ExtensionRequirement,
+  ExtensionRequirementAction,
+  ExtensionRequirementKind,
   ExtensionState,
   ExtensionToggleResult,
   ExtensionsDescribeResult,
   ModelToolsRemote,
 } from './extensions-api.ts'
-import { createFirstPartyDependencyGraph } from './extension-dependencies.ts'
+import { createFirstPartyDependencyGraph, resolveFirstPartyDependency } from './extension-dependencies.ts'
 import type { AcquisitionSource } from './asset-acquisition.ts'
 import { createHttpSource } from './http-acquisition.ts'
 import type { PreparationOutcome, PrepareAssetsSurface } from './prepared-assets.ts'
@@ -91,6 +94,89 @@ const CALLABLE_READINESS: ReadonlySet<string> = new Set<string>([
   'ready',
   'busy',
 ])
+
+/**
+ * The order an unmet requirement is surfaced in (row reason and enable preflight).
+ *
+ * Integrity and platform first (nothing the operator can do in the page will clear
+ * them), then what the operator CAN act on: dependencies, the harness model, the
+ * executable approval, model assets, activation cleanup; store/source last because
+ * an installed row already satisfied them.
+ */
+const REQUIREMENT_PRIORITY: readonly ExtensionRequirementKind[] = [
+  'integrity',
+  'platform',
+  'dependencies',
+  'harness-model',
+  'executable',
+  'assets',
+  'activation',
+  'store',
+  'source',
+]
+
+/**
+ * Whether one UNMET requirement actually prevents this row from reaching active.
+ *
+ * A not-yet-installed row is blocked only by facts that would stop the INSTALL or
+ * would make the eventual activation impossible (store/source, dependencies,
+ * platform, harness model). Readiness, executable approval, integrity and
+ * activation state describe installed bytes, so they are not meaningful before an
+ * install and do not by themselves make the Install button impossible.
+ * @param installed - whether the store holds an installed copy.
+ * @param requirement - the requirement to classify.
+ * @returns whether the unmet requirement blocks the row.
+ */
+function blocksRow(installed: boolean, requirement: ExtensionRequirement): boolean {
+  if (requirement.satisfied) return false
+  if (installed) return true
+  return requirement.kind === 'store'
+    || requirement.kind === 'source'
+    || requirement.kind === 'dependencies'
+    || requirement.kind === 'platform'
+    || requirement.kind === 'harness-model'
+}
+
+/** Build one requirement value. */
+function requirement(
+  kind: ExtensionRequirementKind,
+  satisfied: boolean,
+  reason: string,
+  action: ExtensionRequirementAction = 'none',
+): ExtensionRequirement {
+  return { kind, satisfied, reason, action }
+}
+
+/** The highest-priority UNMET requirement that blocks this row, or undefined. */
+function firstBlockingRequirement(
+  requirements: readonly ExtensionRequirement[],
+  installed: boolean,
+): ExtensionRequirement | undefined {
+  for (const kind of REQUIREMENT_PRIORITY) {
+    const found = requirements.find(candidate => candidate.kind === kind)
+    if (found !== undefined && blocksRow(installed, found)) return found
+  }
+  return undefined
+}
+
+/** What the host can report about the shared harness model provider (declarative extensions). */
+export interface HarnessProviderStatus {
+  /** Whether a provider is composed and able to serve declarative extensions. */
+  readonly available: boolean
+  /** Provider identity when available, for the satisfied reason. */
+  readonly provider?: string
+  /** Model identity the provider serves, when known. */
+  readonly model?: string
+  /**
+   * REQUIRED when `available` is false: why not, and the exact remediation.
+   *
+   * Used VERBATIM as the harness-model requirement reason (and the enable preflight
+   * message), so it must be operator-facing and name the configuration that fixes it.
+   */
+  readonly reason?: string
+  /** What clears it; defaults to `config`. */
+  readonly action?: 'config' | 'none'
+}
 
 /** The lifecycle surface this service needs. Narrower than the class, so a test can double it. */
 export type ExtensionActivation = Pick<ExtensionLifecycle, 'stateOf' | 'activate' | 'deactivate'>
@@ -134,6 +220,8 @@ export type ExtensionsServiceErrorCode =
   | 'extension-preparation-unavailable'
   /** The preparation plan could not be resolved or its readiness could not be recorded. */
   | 'extension-preparation-failed'
+  /** A prerequisite the deployment cannot satisfy blocks activation before any lifecycle call. */
+  | 'extension-requirement-unmet'
   /** `deactivate` refused or failed; the SDK's named error is carried in the message. */
   | 'extension-deactivation-failed'
   /** The host's disabled-list writer rejected the new list after the action landed. */
@@ -237,6 +325,15 @@ export interface ExtensionsServiceOptions {
    */
   readonly allowExecutablePreparation?: () => boolean
   /**
+   * Read the host's harness-model provider status (task-93 seam).
+   *
+   * Consulted only for `execution.kind === 'declarative'` extensions, which are
+   * served by the host's harness broker and therefore need a composed LlmProvider.
+   * Absent means the host cannot answer; the harness-model requirement is then
+   * reported unsatisfied with an honest "provider status unknown" reason.
+   */
+  readonly harnessProviderStatus?: () => HarnessProviderStatus | undefined
+  /**
    * Notified when this service changes an extension's activation intent.
    *
    * The host's contribution registrar refuses to publish a tool for an extension
@@ -252,8 +349,33 @@ interface SourcePackage {
   readonly id: string
   readonly version: string | null
   readonly tools: readonly string[]
+  /** Everything the requirement model reads from the checkout. */
+  readonly facts: ExtensionFacts
   /** Set when the package exists but cannot be used as an extension. */
   readonly problem: string | null
+}
+
+/** An installed copy's content-verification verdict. */
+interface IntegrityView {
+  readonly integrity: ExtensionState['integrity']
+  /** The diagnostic text when the verdict is not `unchanged`. */
+  readonly reason: string | null
+}
+
+/** Everything the requirement model needs about one row, already read by the caller. */
+interface RequirementInput {  readonly id: string
+  readonly installed: boolean
+  readonly record: InstalledRecord | undefined
+  readonly state: SdkExtensionState | undefined
+  readonly integrity: ExtensionState['integrity']
+  readonly integrityReason: string | null
+  readonly storeDir: string
+  readonly sourceDir: string
+  readonly lockCorrupt: boolean
+  readonly lockDiagnostic: string | null
+  readonly profileStates: ProfileStateView
+  readonly sourcePackage: SourcePackage | undefined
+  readonly facts: ExtensionFacts
 }
 
 /**
@@ -296,25 +418,122 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-/** What an installed copy's manifest declares, as far as the management surface reads it. */
-interface DeclaredManifest {
-  readonly tools: readonly string[]
-  readonly models: readonly string[]
+/** One platform a manifest's model deployment declares. */
+interface DeclaredPlatform {
+  readonly os: string
+  readonly arch: string
+  readonly accelerator?: string
 }
 
-/** The declared tools and model deployments of an installed copy, or empty lists. */
-function declaredManifest(packageDir: string): DeclaredManifest {
+/** One runtime dependency the extension's package.json declares. */
+interface DeclaredDependency {
+  readonly name: string
+  readonly range: string
+}
+
+/**
+ * Everything the requirement model reads from one package directory.
+ *
+ * Discovery supplies the manifest facts; package.json supplies the runtime
+ * dependencies. A package whose manifest cannot be read still yields its identity
+ * and dependency declarations when package.json is readable, so a broken checkout
+ * can be reported by name with a reason instead of vanishing.
+ */
+interface ExtensionFacts {
+  readonly packageName: string | null
+  readonly packageVersion: string | null
+  readonly packageDir: string | null
+  readonly tools: readonly string[]
+  readonly models: readonly string[]
+  /** `module` or `declarative`; undefined when the manifest could not be read. */
+  readonly executionKind: string | undefined
+  readonly platforms: readonly DeclaredPlatform[]
+  readonly dependencies: readonly DeclaredDependency[]
+  /** Set when discovery failed; the requirement/reason text reports it. */
+  readonly problem: string | null
+}
+
+/** Facts for a row with no readable package directory. */
+const EMPTY_FACTS: ExtensionFacts = {
+  packageName: null,
+  packageVersion: null,
+  packageDir: null,
+  tools: [],
+  models: [],
+  executionKind: undefined,
+  platforms: [],
+  dependencies: [],
+  problem: null,
+}
+
+/** Read a package.json's `dependencies` as name→range pairs; empty when unreadable. */
+function readDeclaredDependencies(packageDir: string | null): readonly DeclaredDependency[] {
+  if (packageDir === null) return []
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
+    if (typeof parsed !== 'object' || parsed === null) return []
+    // SAFETY: the value came from JSON.parse and the object guard above; only
+    // string-valued dependency specs are kept, so an unexpected shape yields an
+    // empty declaration rather than a trusted one.
+    const dependencies = (parsed as { readonly dependencies?: unknown }).dependencies
+    if (typeof dependencies !== 'object' || dependencies === null || Array.isArray(dependencies)) return []
+    const declared: DeclaredDependency[] = []
+    // SAFETY: the dependency container was checked to be a non-array object; only
+    // string entries become declared dependencies, and non-strings are ignored.
+    for (const [name, range] of Object.entries(dependencies as Record<string, unknown>)) {
+      if (typeof range === 'string' && range.length > 0) declared.push({ name, range })
+    }
+    return declared
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Read one package directory's declared facts without importing or executing it.
+ * @param packageDir - the installed copy or first-party checkout.
+ * @returns the facts, with `problem` set (and manifest facts empty) when discovery fails.
+ */
+function readExtensionFacts(packageDir: string): ExtensionFacts {
+  const dependencies = readDeclaredDependencies(packageDir)
   try {
     const discovery = discoverExtension(packageDir)
+    const manifest = discovery.manifest
     return {
-      tools: discovery.manifest.tools.map(tool => tool.name),
-      models: discovery.manifest.models.map(model => model.id),
+      packageName: discovery.packageName,
+      packageVersion: discovery.packageVersion,
+      packageDir,
+      tools: manifest.tools.map(tool => tool.name),
+      models: manifest.models.map(model => model.id),
+      executionKind: manifest.execution.kind,
+      platforms: manifest.models.flatMap(model => model.platforms),
+      dependencies,
+      problem: null,
     }
-  } catch {
-    // An unreadable installed manifest contributes nothing it can be trusted to
-    // declare; the row's other facts (integrity, state) still travel.
-    return { tools: [], models: [] }
+  } catch (error) {
+    return {
+      ...EMPTY_FACTS,
+      packageName: null,
+      packageVersion: null,
+      packageDir,
+      dependencies,
+      problem: `the package at ${packageDir} is not a usable extension: ${messageOf(error)}`,
+    }
   }
+}
+
+/** A short human label for one declared platform. */
+function platformLabel(platform: DeclaredPlatform): string {
+  return `${platform.os}-${platform.arch}${platform.accelerator === undefined ? '' : `-${platform.accelerator}`}`
+}
+
+/**
+ * Whether the host's own platform matches any declared deployment platform.
+ * @param platforms - the manifest's declared platforms.
+ * @returns whether this host can run the declared deployment.
+ */
+function hostPlatformMatches(platforms: readonly DeclaredPlatform[]): boolean {
+  return platforms.some(platform => platform.os === process.platform && platform.arch === process.arch)
 }
 
 /**
@@ -474,24 +693,28 @@ function listSourcePackages(sourceDir: string): readonly SourcePackage[] {
   for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
     if (!entry.isDirectory()) continue
     const directory = join(sourceDir, entry.name)
-    try {
-      const discovery = discoverExtension(directory)
+    const facts = readExtensionFacts(directory)
+    if (facts.packageName !== null && facts.problem === null) {
       packages.push({
-        id: discovery.packageName,
-        version: discovery.packageVersion,
-        tools: discovery.manifest.tools.map(tool => tool.name),
+        id: facts.packageName,
+        version: facts.packageVersion,
+        tools: facts.tools,
+        facts,
         problem: null,
       })
-    } catch (error) {
-      const id = declaredPackageName(directory)
-      if (id === undefined) continue
-      packages.push({
-        id,
-        version: null,
-        tools: [],
-        problem: `the package at ${directory} is not a usable extension: ${messageOf(error)}`,
-      })
+      continue
     }
+    const id = facts.packageName ?? declaredPackageName(directory)
+    if (id === undefined) continue
+    packages.push({
+      id,
+      version: facts.packageVersion,
+      tools: facts.tools,
+      facts: facts.problem === null
+        ? { ...facts, problem: `the package at ${directory} could not be discovered as an extension` }
+        : facts,
+      problem: facts.problem ?? `the package at ${directory} could not be discovered as an extension`,
+    })
   }
   return packages
 }
@@ -687,13 +910,310 @@ export class ExtensionsService implements ModelToolsRemote {
   }
 
   /**
-   * The declared tools AND model deployments of an installed copy.
-   *
-   * One discovery call feeds both: the row's tool list and the activation-blocker
-   * computation, so the two can never describe different packages.
+   * Verify an installed copy's content digest.
+   * @param storeDir - the configured store.
+   * @param record - the installed record, when there is one.
+   * @returns the integrity verdict plus the diagnostic text when it is not unchanged.
    */
-  #declaredManifest(installPath: string): { readonly tools: readonly string[]; readonly models: readonly string[] } {
-    return declaredManifest(installPath)
+  #integrityOf(
+    storeDir: string,
+    record: InstalledRecord | undefined,
+  ): IntegrityView {
+    if (record === undefined || storeDir === '') return { integrity: 'unknown', reason: null }
+    try {
+      const verdict = new ExtensionStore(storeDir).verifyUnchanged(record)
+      return {
+        integrity: verdict.unchanged ? 'unchanged' : 'changed',
+        reason: verdict.unchanged
+          ? null
+          : `the installed content is not the content that was recorded: ${verdict.diagnostic ?? 'it changed on disk after installation'}`,
+      }
+    } catch (error) {
+      return {
+        integrity: 'unknown',
+        reason: `the installed content could not be digested, so its integrity is unknown: ${messageOf(error)}`,
+      }
+    }
+  }
+
+  /**
+   * Compute EVERY prerequisite this deployment checked, satisfied or not.
+   *
+   * The list is the answer to "why can't I enable this?" BEFORE an enable is
+   * attempted: each unmet requirement names the exact fact and (when one exists)
+   * the action that clears it. Nothing here executes extension code; the only I/O
+   * is the store read the caller already performed, discovery of the package
+   * directory, a host-tree dependency walk, and the preparation PLAN (not an
+   * acquisition) when an executable approval might be pending.
+   * @param input - the row's already-read facts.
+   * @returns the requirements in display order (store, source, dependencies,
+   *   platform, integrity, harness-model, executable, assets, activation).
+   */
+  #computeRequirements(input: RequirementInput): readonly ExtensionRequirement[] {
+    const requirements: ExtensionRequirement[] = []
+
+    // STORE: configured and readable. Writability is a surface property the page
+    // already receives as `writable`; a read-only mount still answers reads.
+    if (input.storeDir === '') {
+      requirements.push(requirement('store', false, 'the extension store is not configured (config.extensionStore)', 'config'))
+    } else if (input.lockCorrupt) {
+      requirements.push(requirement(
+        'store', false,
+        `the extension store lock is unreadable, so no installed extension can be trusted: ${input.lockDiagnostic ?? 'unknown reason'}`,
+        'config',
+      ))
+    } else if (input.profileStates.corrupt) {
+      requirements.push(requirement(
+        'store', false,
+        `the profile activation state is unreadable, so the host restores nothing: ${input.profileStates.diagnostic ?? 'unknown reason'}`,
+        'config',
+      ))
+    } else {
+      requirements.push(requirement('store', true, `the extension store at ${input.storeDir} is configured and readable`))
+    }
+
+    // SOURCE: the package bytes an install would copy, or the installed copy.
+    if (input.installed) {
+      requirements.push(requirement(
+        'source', true,
+        `the installed copy is the source of record (version ${input.record?.version ?? 'unknown'})`,
+      ))
+    } else if (input.sourcePackage === undefined) {
+      requirements.push(requirement(
+        'source', false,
+        input.sourceDir === ''
+          ? 'not installed, and no first-party source directory is configured (config.extensionSourceDir)'
+          : `no first-party package with this identity exists under ${input.sourceDir}`,
+        input.sourceDir === '' ? 'config' : 'none',
+      ))
+    } else if (input.sourcePackage.problem !== null) {
+      requirements.push(requirement('source', false, input.sourcePackage.problem, 'none'))
+    } else if (this.#options.allowSourceDirectories !== true) {
+      requirements.push(requirement(
+        'source', false,
+        'installing from a source directory is disabled by configuration (extensions.allowSourceDirectories)',
+        'config',
+      ))
+    } else {
+      requirements.push(requirement(
+        'source', true,
+        `the first-party package is available at ${join(input.sourceDir, packageDirFor(input.id))}`,
+        'install',
+      ))
+    }
+
+    // DEPENDENCIES: declared runtime dependencies must be resolvable/materialized.
+    requirements.push(this.#dependencyRequirement(input))
+
+    // PLATFORM: the manifest's declared deployment platforms must include this host.
+    if (input.facts.problem !== null) {
+      requirements.push(requirement('platform', false, input.facts.problem, 'none'))
+    } else if (input.facts.platforms.length === 0) {
+      requirements.push(requirement('platform', true, 'the extension declares no platform-specific model deployment'))
+    } else if (hostPlatformMatches(input.facts.platforms)) {
+      requirements.push(requirement(
+        'platform', true,
+        `the declared deployment supports this host (${process.platform}/${process.arch}: ${input.facts.platforms.map(platformLabel).join(', ')})`,
+      ))
+    } else {
+      requirements.push(requirement(
+        'platform', false,
+        `the extension supports ${input.facts.platforms.map(platformLabel).join(', ')} but this host is ${process.platform}/${process.arch}`,
+        'none',
+      ))
+    }
+
+    // INTEGRITY: the installed bytes must still be the recorded bytes.
+    if (!input.installed) {
+      requirements.push(requirement('integrity', true, 'the extension is not installed, so there are no installed bytes to verify'))
+    } else if (input.integrity === 'unchanged') {
+      requirements.push(requirement('integrity', true, 'the installed content matches the recorded digest'))
+    } else {
+      requirements.push(requirement(
+        'integrity', false,
+        input.integrityReason ?? `the installed content's integrity is ${input.integrity}`,
+        'install',
+      ))
+    }
+
+    // HARNESS MODEL: only declarative packages are served by the host broker.
+    if (input.facts.executionKind === 'declarative') {
+      requirements.push(this.#harnessModelRequirement())
+    }
+
+    // Readiness drives both the executable gate and the assets requirement.
+    const blockers = preparationBlockers(input.state?.readiness ?? {}, input.facts.models)
+
+    // EXECUTABLE: a downloaded engine needs the separate RES-02 approval.
+    if (input.facts.models.length === 0) {
+      requirements.push(requirement('executable', true, 'the extension declares no model deployment, so no executable asset can be planned'))
+    } else if (!input.installed) {
+      requirements.push(requirement(
+        'executable', true,
+        'not installed yet; the executable-asset approval is checked once the preparation plan can be resolved',
+      ))
+    } else if (blockers.length === 0) {
+      requirements.push(requirement(
+        'executable', true,
+        'every declared model deployment is already prepared or callable, so no executable approval is pending',
+      ))
+    } else {
+      requirements.push(this.#executableRequirement(input.id))
+    }
+
+    // ASSETS: each declared deployment must be in a callable readiness state.
+    if (input.facts.models.length === 0) {
+      requirements.push(requirement('assets', true, 'the extension declares no model deployment to prepare'))
+    } else if (!input.installed) {
+      requirements.push(requirement(
+        'assets', false,
+        `not installed; ${input.facts.models.join(', ')} need${input.facts.models.length === 1 ? 's' : ''} model assets prepared after installation`,
+        'install',
+      ))
+    } else if (blockers.length > 0) {
+      requirements.push(requirement('assets', false, `activation blocked: ${blockers.join('; ')}`, 'prepare'))
+    } else {
+      requirements.push(requirement(
+        'assets', true,
+        `every declared model deployment is prepared or callable (${input.facts.models.join(', ')})`,
+      ))
+    }
+
+    // ACTIVATION: a stored fault that a retry cannot clear.
+    if (!input.installed) {
+      requirements.push(requirement('activation', true, 'not installed; no activation state exists'))
+    } else if (input.state?.observedActivation === 'quarantined') {
+      requirements.push(requirement(
+        'activation', false,
+        'the host quarantined it: some contributions could not be withdrawn, so it is not fully stopped',
+        'none',
+      ))
+    } else if (input.state?.observedActivation === 'activating' || input.state?.observedActivation === 'deactivating') {
+      requirements.push(requirement(
+        'activation', false,
+        `a ${input.state.observedActivation} operation was interrupted; the recorded state is not settled`,
+        'none',
+      ))
+    } else if (input.state?.observedActivation === 'failed') {
+      const explained = requirements.some(candidate => !candidate.satisfied)
+      requirements.push(requirement(
+        'activation', true,
+        explained
+          ? 'the last activation attempt failed; the unmet requirement above is the actionable blocker'
+          : 'the last activation attempt failed, but no remaining prerequisite blocks a retry, so enable retries activation',
+      ))
+    } else if (input.state === undefined) {
+      requirements.push(requirement('activation', true, 'installed but never activated in this profile; no stored activation fault'))
+    } else {
+      requirements.push(requirement('activation', true, `the stored activation state is ${input.state.observedActivation}`))
+    }
+
+    return requirements
+  }
+
+  /** The dependencies requirement: materialized in the installed copy, or resolvable in the host tree. */
+  #dependencyRequirement(input: RequirementInput): ExtensionRequirement {
+    if (input.facts.dependencies.length === 0) {
+      return requirement('dependencies', true, 'the package declares no runtime dependencies')
+    }
+    const count = input.facts.dependencies.length
+    const missing: string[] = []
+    if (input.installed && input.record !== undefined) {
+      for (const dependency of input.facts.dependencies) {
+        const installed = join(input.record.installPath, 'node_modules', ...dependency.name.split('/'), 'package.json')
+        if (!existsSync(installed)) missing.push(`${dependency.name} (declared ${dependency.range})`)
+      }
+      return missing.length === 0
+        ? requirement('dependencies', true, `all ${count} declared runtime dependenc${count === 1 ? 'y is' : 'ies are'} materialized inside the extension's own installation`)
+        : requirement(
+            'dependencies', false,
+            `the installed copy is missing ${missing.length} declared runtime dependenc${missing.length === 1 ? 'y' : 'ies'}: ${missing.join(', ')}`,
+            'install',
+          )
+    }
+    if (input.facts.packageDir === null) {
+      return requirement('dependencies', false, 'the declared runtime dependencies cannot be inspected because the package directory is unknown', 'none')
+    }
+    for (const dependency of input.facts.dependencies) {
+      try {
+        resolveFirstPartyDependency({ sourcePackageDir: input.facts.packageDir }, dependency.name, dependency.range)
+      } catch {
+        missing.push(`${dependency.name} (declared ${dependency.range})`)
+      }
+    }
+    return missing.length === 0
+      ? requirement('dependencies', true, `all ${count} declared runtime dependenc${count === 1 ? 'y resolves' : 'ies resolve'} in the host's installed tree`)
+      : requirement(
+          'dependencies', false,
+          `the host's tree is missing ${missing.length} declared runtime dependenc${missing.length === 1 ? 'y' : 'ies'}: ${missing.join(', ')}; install the dependency for the host first`,
+          'none',
+        )
+  }
+
+  /** The harness-model requirement for a declarative package. */
+  #harnessModelRequirement(): ExtensionRequirement {
+    const status = this.#options.harnessProviderStatus?.()
+    if (status === undefined) {
+      return requirement(
+        'harness-model', false,
+        'the host could not report whether a harness model provider is available (provider status unknown); '
+          + 'a declarative extension needs a composed provider, for example config.harnessModel',
+        'config',
+      )
+    }
+    if (status.available) {
+      const identity = [status.provider, status.model].filter((part): part is string => part !== undefined && part.length > 0)
+      return requirement(
+        'harness-model', true,
+        identity.length === 0
+          ? 'a harness model provider is available for declarative extensions'
+          : `a harness model provider is available (${identity.join(' / ')})`,
+      )
+    }
+    return requirement(
+      'harness-model', false,
+      status.reason
+        ?? 'no harness model provider is configured, so declarative extensions cannot be served; set config.harnessModel to a runnable model',
+      status.action ?? 'config',
+    )
+  }
+
+  /** The executable requirement for an installed, not-yet-callable model deployment. */
+  #executableRequirement(extensionId: string): ExtensionRequirement {
+    const surface = this.#options.prepareSurface?.()
+    if (surface === undefined) {
+      /**
+       * No plan exists to approve, so this requirement is NOT what blocks the row:
+       * the assets requirement names the missing preparation. Reporting it unmet
+       * here would replace the actionable "run prepare" text with a host gap the
+       * row cannot fix.
+       */
+      return requirement(
+        'executable', true,
+        'the prepared-assets surface is not mounted, so there is no preparation plan whose executable assets could be approved; '
+          + 'the assets requirement reports the missing preparation',
+      )
+    }
+    let plan: PreparationPlan
+    try {
+      plan = surface.plan(extensionId)
+    } catch (error) {
+      return requirement(
+        'executable', true,
+        `the preparation plan could not be inspected, so executable approval is not the blocker: ${messageOf(error)}`,
+      )
+    }
+    if (!plan.requiresExecutableApproval) {
+      return requirement('executable', true, 'the preparation plan declares no executable assets')
+    }
+    return this.#options.allowExecutablePreparation?.() === true
+      ? requirement('executable', true, 'the preparation plan includes an executable asset and the operator approved executable preparation (config.allowExecutablePreparation)')
+      : requirement(
+          'executable', false,
+          'activation blocked: the preparation plan includes an executable asset, and executable preparation is not approved for the client path '
+            + '(config.allowExecutablePreparation is off)',
+          'config',
+        )
   }
 
   /**
@@ -779,35 +1299,48 @@ export class ExtensionsService implements ModelToolsRemote {
     const state = view.profileStates.byId.get(view.id)
     const installed = record !== undefined
 
-    let integrity: ExtensionState['integrity'] = 'unknown'
-    let integrityReason: string | null = null
-    if (record !== undefined && view.storeDir !== '') {
-      try {
-        const verdict = new ExtensionStore(view.storeDir).verifyUnchanged(record)
-        integrity = verdict.unchanged ? 'unchanged' : 'changed'
-        if (!verdict.unchanged) {
-          integrityReason = `the installed content is not the content that was recorded: ${verdict.diagnostic ?? 'it changed on disk after installation'}`
-        }
-      } catch (error) {
-        integrity = 'unknown'
-        integrityReason = `the installed content could not be digested, so its integrity is unknown: ${messageOf(error)}`
-      }
-    }
+    const integrity = this.#integrityOf(view.storeDir, record)
+    const facts: ExtensionFacts = record !== undefined
+      ? readExtensionFacts(record.installPath)
+      : view.sourcePackage?.facts ?? EMPTY_FACTS
 
     const active = state !== undefined
       && state.observedActivation === 'active'
       && (state.ownerPid === undefined || state.ownerPid === process.pid)
 
-    const declared = record === undefined ? { tools: [], models: [] } : this.#declaredManifest(record.installPath)
     const stateTools = state?.tools.map(tool => tool.toolName) ?? []
-    const tools = declared.tools.length > 0
-      ? declared.tools
+    const tools = facts.tools.length > 0
+      ? facts.tools
       : stateTools.length > 0
         ? stateTools
         : view.sourcePackage?.tools ?? []
 
+    const requirements = this.#computeRequirements({
+      id: view.id,
+      installed,
+      record,
+      state,
+      integrity: integrity.integrity,
+      integrityReason: integrity.reason,
+      storeDir: view.storeDir,
+      sourceDir: view.sourceDir,
+      lockCorrupt: view.lockCorrupt,
+      lockDiagnostic: view.lockDiagnostic,
+      profileStates: view.profileStates,
+      sourcePackage: view.sourcePackage,
+      facts,
+    })
+    const blocked = requirements.some(candidate => blocksRow(installed, candidate))
+
     const version = record?.version ?? view.sourcePackage?.version ?? null
-    const reason = this.#reasonFor({ ...view, state, integrityReason, active, installed, declaredModels: declared.models })
+    const reason = this.#reasonFor({
+      ...view,
+      state,
+      integrityReason: integrity.reason,
+      active,
+      installed,
+      requirements,
+    })
 
     return {
       id: view.id,
@@ -816,9 +1349,11 @@ export class ExtensionsService implements ModelToolsRemote {
       installed,
       active,
       disabled: view.disabled,
-      integrity,
+      integrity: integrity.integrity,
       tools: [...tools],
       reason,
+      requirements,
+      blocked,
     }
   }
 
@@ -833,10 +1368,10 @@ export class ExtensionsService implements ModelToolsRemote {
     readonly sourcePackage: SourcePackage | undefined
     readonly disabled: boolean
     readonly state: SdkExtensionState | undefined
-    readonly declaredModels: readonly string[]
     readonly integrityReason: string | null
     readonly active: boolean
     readonly installed: boolean
+    readonly requirements: readonly ExtensionRequirement[]
   }): string | null {
     if (view.lockCorrupt) {
       return `the extension store lock is unreadable, so no installed extension can be trusted: ${view.lockDiagnostic ?? 'unknown reason'}`
@@ -849,22 +1384,22 @@ export class ExtensionsService implements ModelToolsRemote {
       return 'the extension store is not configured (config.extensionStore)'
     }
     /**
-     * The readiness map is the concrete activation blocker the store holds. The SDK
-     * state carries no diagnostic TEXT (no failure-reason field exists), so this is
-     * derived from what is persisted rather than invented.
+     * The highest-priority UNMET requirement that actually blocks this row is the
+     * single summary. The wording is the requirement's own, so the page, the
+     * preflight error and the requirement list never disagree.
      */
-    const blockers = preparationBlockers(view.state?.readiness ?? {}, view.declaredModels)
-    const blocked = blockers.length > 0 ? `activation blocked: ${blockers.join('; ')}` : null
+    const unmet = firstBlockingRequirement(view.requirements, view.installed)
     if (view.state?.observedActivation === 'failed') {
-      return blocked
+      return unmet?.reason
         ?? 'activation failed earlier in this host; the store records no remaining preparation blocker, so retry enable to see whether it succeeds'
     }
     if (view.state?.observedActivation === 'quarantined') {
-      const quarantine = 'the host quarantined it: some contributions could not be withdrawn, so it is not fully stopped'
-      return blocked === null ? quarantine : `${quarantine}; additionally, ${blocked}`
+      return unmet?.reason
+        ?? 'the host quarantined it: some contributions could not be withdrawn, so it is not fully stopped'
     }
     if (view.state?.observedActivation === 'activating' || view.state?.observedActivation === 'deactivating') {
-      return `a ${view.state.observedActivation} operation was interrupted; the recorded state is not settled`
+      return unmet?.reason
+        ?? `a ${view.state.observedActivation} operation was interrupted; the recorded state is not settled`
     }
     if (view.disabled) {
       return 'disabled by the operator (config.disabledExtensions); the host does not restore it'
@@ -881,8 +1416,8 @@ export class ExtensionsService implements ModelToolsRemote {
         ? 'not installed, and no first-party package with this identity exists under the configured source directory'
         : `not installed; the first-party package is available at ${join(view.sourceDir, packageDirFor(view.id))}`
     }
+    if (unmet !== undefined) return unmet.reason
     if (!view.active) {
-      if (blocked !== null) return blocked
       if (view.state === undefined) return 'installed but never activated in this profile'
       return `installed; this host observes it as ${view.state.observedActivation} (desired ${view.state.desiredActivation})`
     }
@@ -1038,17 +1573,41 @@ export class ExtensionsService implements ModelToolsRemote {
 
     const current = lifecycle.stateOf(extensionId)
     /**
-     * A preparation blocker is a REFUSAL WITH A DIAGNOSTIC, not a bare failure.
-     * Activation would throw the SDK's generic "cannot be activated" after
-     * recording `failed`; naming the model and the prepare action here is both
-     * more actionable and leaves the dormant failed state untouched.
+     * THE PREFLIGHT. Every prerequisite the deployment can check is evaluated
+     * BEFORE the lifecycle is touched: a deployment gap must never surface as the
+     * SDK's generic EXTENSION_FAULT after an activation attempt. The refusal's code
+     * maps the unmet requirement and its message is the requirement's own reason,
+     * so the page, `describe()` and the error cannot disagree.
      */
-    const blocked = preparationBlockers(current?.readiness ?? {}, declaredManifest(record.installPath).models)
-    if (blocked.length > 0) {
-      throw new ExtensionsServiceError(
-        'extension-preparation-required',
-        `activation blocked: ${blocked.join('; ')}`,
-      )
+    const preflightIntegrity = this.#integrityOf(storeDir, record)
+    const preflightFacts = readExtensionFacts(record.installPath)
+    const requirements = this.#computeRequirements({
+      id: extensionId,
+      installed: true,
+      record,
+      state: current,
+      integrity: preflightIntegrity.integrity,
+      integrityReason: preflightIntegrity.reason,
+      storeDir,
+      sourceDir: this.#sourceDir(),
+      lockCorrupt: false,
+      lockDiagnostic: null,
+      profileStates: readProfileStates(new ExtensionStore(storeDir), this.#profile()),
+      sourcePackage: undefined,
+      facts: preflightFacts,
+    })
+    const unmet = firstBlockingRequirement(requirements, true)
+    if (unmet !== undefined) {
+      if (unmet.kind === 'assets') {
+        // The established preparation refusal keeps its own code and wording.
+        throw new ExtensionsServiceError('extension-preparation-required', unmet.reason)
+      }
+      if (unmet.kind === 'integrity') {
+        // The activation path named the SDK's integrity code; the preflight keeps
+        // that classification while refusing before the lifecycle call.
+        throw new ExtensionsServiceError('extension-activation-failed', `[INTEGRITY_MISMATCH] ${unmet.reason}`)
+      }
+      throw new ExtensionsServiceError('extension-requirement-unmet', unmet.reason)
     }
     const ownedHere = current?.observedActivation === 'active'
       && (current.ownerPid === undefined || current.ownerPid === process.pid)
@@ -1149,7 +1708,7 @@ export class ExtensionsService implements ModelToolsRemote {
         `the prepared-assets surface is not mounted, so ${extensionId}'s model assets cannot be prepared by this host`,
       )
     }
-    const declaredModels = declaredManifest(record.installPath).models
+    const declaredModels = readExtensionFacts(record.installPath).models
     if (declaredModels.length === 0) {
       throw new ExtensionsServiceError(
         'extension-preparation-failed',

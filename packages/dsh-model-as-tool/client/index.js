@@ -509,6 +509,13 @@ window.__ModuleLoader__.load({
   line-height: 18px;
   color: var(--dsw-alias-state-error-primary, var(--dsw-alias-label-primary));
 }
+.mtt-row-blocker {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--dsw-alias-state-error-primary, var(--dsw-alias-label-primary));
+}
 .mtt-actions {
   display: flex;
   align-items: center;
@@ -948,21 +955,87 @@ window.__ModuleLoader__.load({
     }
 
     /**
+     * The requirements a describe() row reports, when the host checked them.
+     *
+     * A legacy host (older wire/host) has no `requirements` field, and [] then
+     * means "the host did not check" — never "everything is satisfied". Malformed
+     * entries are dropped rather than rendered as facts.
+     */
+    function extensionRequirements(state) {
+      if (state === null || !Array.isArray(state.requirements)) return []
+      return state.requirements.filter(requirement => requirement !== null && typeof requirement === 'object'
+        && typeof requirement.kind === 'string' && typeof requirement.satisfied === 'boolean')
+    }
+
+    /** Unmet requirements, preserving the host's order. */
+    function unmetExtensionRequirements(state) {
+      return extensionRequirements(state).filter(requirement => requirement.satisfied !== true)
+    }
+
+    /** A compact disclosure of what the host checked and satisfied. */
+    function extensionRequirementSummary(state) {
+      const satisfied = extensionRequirements(state).filter(requirement => requirement.satisfied === true)
+      if (satisfied.length === 0) return null
+      return 'Requirements checked: ' + satisfied.map(requirement => requirement.kind + ' ✓').join(' · ')
+    }
+
+    /**
+     * The one hint an unmet requirement carries, derived from `action` — never
+     * from the message text, because the host may reword its reasons. Assets and
+     * executable requirements get no hint: the Prepare control is their fix.
+     *
+     * @param requirement - one unmet ExtensionRequirement.
+     * @returns a hint line, or null when the row's controls say it.
+     */
+    function requirementHint(requirement) {
+      if (requirement.kind === 'assets' || requirement.kind === 'executable') return null
+      if (requirement.action === 'config') return 'Configure the deployment to satisfy this requirement.'
+      if (requirement.action === 'none') return 'This requirement cannot be fixed from this page.'
+      if (requirement.action === 'install') return 'Install the extension to satisfy this requirement.'
+      return null
+    }
+
+    /**
+     * What a row's controls may do, keyed ONLY on requirement kind/action/satisfied
+     * and the host's `blocked` flag.
+     *
+     * Absent fields mean a legacy host: no requirements, `blocked` false, actions
+     * enabled exactly as before. Harness-model/platform/integrity/activation
+     * blockers disable Enable; assets/executable disable Enable but keep Prepare
+     * (the fix); store/source disable Install.
+     *
+     * @param state - the describe() row, or null.
+     * @returns { blocked, unmet, enableBlocked, installBlocked, prepareNeeded }.
+     */
+    function extensionRequirementControls(state) {
+      const installed = state !== null && state.installed === true
+      const blocked = state !== null && state.blocked === true
+      const unmet = unmetExtensionRequirements(state)
+      return {
+        blocked,
+        unmet,
+        enableBlocked: installed && blocked,
+        installBlocked: unmet.some(requirement => requirement.kind === 'store' || requirement.kind === 'source'),
+        prepareNeeded: installed && unmet.some(requirement => requirement.kind === 'assets'
+          || requirement.kind === 'executable'),
+      }
+    }
+
+    /**
      * Whether a describe() row says the extension's model assets must be
      * prepared before activation.
      *
-     * The host's reason is the only such signal the describe() row carries (the
-     * readiness map rides only the prepare result), so the check follows the
-     * phrases the host's own preparationBlockers() emits and deliberately keeps
-     * the host's TEXT untouched for rendering — this only decides whether the
-     * Prepare control is offered. A row whose reason stays unknown therefore
-     * never shows a spurious Prepare.
+     * On a current host this is decided ONLY by the requirements array (an unmet
+     * assets/executable entry). A legacy host carries no requirements, so its
+     * reason text is the only signal — and it only decides whether the Prepare
+     * control is offered; the host's text is never rewritten.
      *
      * @param state - the describe() row, or null.
      * @returns true when the host names preparation as the blocker.
      */
     function extensionNeedsPreparation(state) {
       if (state === null || state.installed !== true) return false
+      if (Array.isArray(state.requirements)) return extensionRequirementControls(state).prepareNeeded
       if (typeof state.reason !== 'string' || state.reason.length === 0) return false
       const reason = state.reason.toLowerCase()
       return reason.includes('needs its model assets prepared')
@@ -1056,6 +1129,7 @@ window.__ModuleLoader__.load({
       const installed = state !== null && state.installed === true
       const active = installed && state.active === true
       const pending = ui.pending !== null && ui.pending.id === entry.id ? ui.pending.action : null
+      const requirementControls = extensionRequirementControls(state)
       const needsPreparation = extensionNeedsPreparation(state)
       const parts = extensionParts(entry)
       if (state !== null && typeof state.version === 'string' && state.version.length > 0) {
@@ -1063,33 +1137,55 @@ window.__ModuleLoader__.load({
       }
       if (installed && state.disabled === true) parts.push('disabled in config')
 
+      // Note kinds: 'note' is muted disclosure, 'blocker' is an unmet requirement
+      // (prominent), 'error' is the last action's failure. Keeping the kind per
+      // note means the class never depends on an array position.
       const notes = []
+      const addNote = (text, kind) => {
+        if (typeof text === 'string' && text.length > 0) notes.push({ text, kind: kind ?? 'note' })
+      }
+      const summary = extensionRequirementSummary(state)
+      if (summary !== null) addNote(summary)
       if (state === null) {
-        notes.push('The extension store did not report this package. Installing asks the host for it, and any refusal is shown here.')
+        addNote('The extension store did not report this package. Installing asks the host for it, and any refusal is shown here.')
       }
       // The host's reason is rendered VERBATIM: it is the authoritative
-      // explanation (e.g. the precise preparation blocker or retry guidance), and
-      // a generic replacement would hide the one sentence the operator needs.
-      if (state !== null && typeof state.reason === 'string' && state.reason.length > 0) notes.push(state.reason)
+      // explanation. On a blocked row it is that row's headline, so it is
+      // prominent instead of muted.
+      if (state !== null && typeof state.reason === 'string' && state.reason.length > 0) {
+        addNote(state.reason, requirementControls.blocked ? 'blocker' : 'note')
+      }
       if (ui.prepareNote !== null && ui.prepareNote !== undefined && ui.prepareNote.id === entry.id) {
-        notes.push(ui.prepareNote.text)
+        addNote(ui.prepareNote.text)
+      }
+      // Every unmet requirement gets its exact reason on the row. A requirement
+      // whose reason is the row reason already is not repeated; the hint comes
+      // from `action` only, never from the wording.
+      if (state !== null && Array.isArray(state.requirements)) {
+        for (const requirement of requirementControls.unmet) {
+          if (requirement.reason !== state.reason) addNote(requirement.reason, 'blocker')
+          addNote(requirementHint(requirement))
+        }
+        if (requirementControls.blocked && requirementControls.unmet.length === 0 && state.reason === null) {
+          addNote('The host reports this extension blocked but named no requirement; see the dsh logs.', 'blocker')
+        }
       }
       if (state !== null && state.integrity === 'changed') {
-        notes.push('The installed content changed since it was recorded; reinstall before enabling it.')
+        addNote('The installed content changed since it was recorded; reinstall before enabling it.')
       }
       // The store and the config list must agree across a restart. Rendering both
       // is what lets the operator fix a disagreement with one toggle instead of
       // discovering it after the next restore.
       if (installed && active && ui.listed) {
-        notes.push('The config list still names this extension; it will be disabled on restart.')
+        addNote('The config list still names this extension; it will be disabled on restart.')
       }
       if (installed && !active && !ui.listed) {
-        notes.push('The config list does not name this extension; it will not block a restore.')
+        addNote('The config list does not name this extension; it will not block a restore.')
       }
       if (!installed && !ui.canInstall) {
-        notes.push('This host exposes extension state but not the install action; install it through the extension store.')
+        addNote('This host exposes extension state but not the install action; install it through the extension store.')
       }
-      if (ui.error !== null && ui.error.id === entry.id) notes.push(ui.error.text)
+      if (ui.error !== null && ui.error.id === entry.id) addNote(ui.error.text, 'error')
 
       const canInstall = ui.canInstall
       const control = installed
@@ -1097,20 +1193,24 @@ window.__ModuleLoader__.load({
           type: 'button',
           className: 'mtt-toggle',
           'data-on': active ? 'true' : 'false',
-          disabled: ui.busy || !ui.writable,
+          disabled: ui.busy || !ui.writable || requirementControls.enableBlocked,
           'aria-pressed': active,
           'aria-busy': pending !== null,
-          title: active ? 'Disable this extension' : 'Enable this extension',
+          title: requirementControls.enableBlocked
+            ? 'Enable is blocked by a host requirement; see the row reason'
+            : active ? 'Disable this extension' : 'Enable this extension',
           onClick: () => ui.onAction(entry.id, active ? 'disable' : 'enable'),
         }, h('span', { className: 'mtt-knob' }))
         : h('button', {
           type: 'button',
           className: 'mtt-button mtt-button-small',
-          disabled: ui.busy || !ui.writable || !canInstall,
+          disabled: ui.busy || !ui.writable || !canInstall || requirementControls.installBlocked,
           'aria-busy': pending === 'install',
           title: !canInstall
             ? 'This host does not expose the extension install action'
-            : state === null ? 'Ask the host to install this extension' : 'Install this extension',
+            : requirementControls.installBlocked
+              ? 'Install is blocked by a host requirement; see the row reason'
+              : state === null ? 'Ask the host to install this extension' : 'Install this extension',
           onClick: () => ui.onAction(entry.id, 'install'),
         }, pending === 'install' ? 'Installing…' : 'Install')
 
@@ -1126,16 +1226,17 @@ window.__ModuleLoader__.load({
             ' · ',
             entry.license ?? 'no license'),
           notes.map((note, index) => h('p', {
-            className: ui.error !== null && ui.error.id === entry.id && index === notes.length - 1
+            className: note.kind === 'error'
               ? 'mtt-row-error'
-              : 'mtt-row-note',
+              : note.kind === 'blocker' ? 'mtt-row-blocker' : 'mtt-row-note',
             key: 'note-' + index,
-          }, note))),
+          }, note.text))),
         h('div', { className: 'mtt-control' },
           control,
-          // Preparation is offered only when the HOST names it as the blocker; it
-          // is not a second way to force activation. After a successful prepare
-          // the row's reason changes and this control disappears.
+          // Preparation is offered only when the HOST names it as the blocker (or
+          // an unmet assets/executable requirement names it); it is not a second
+          // way to force activation. After a successful prepare the row's
+          // requirements change and this control disappears.
           needsPreparation
             ? h('button', {
               type: 'button',
@@ -1565,6 +1666,11 @@ window.__ModuleLoader__.load({
       describeExtensions,
       findExtensionState,
       nextDisabledExtensions,
+      extensionRequirements,
+      unmetExtensionRequirements,
+      extensionRequirementSummary,
+      requirementHint,
+      extensionRequirementControls,
       extensionNeedsPreparation,
       prepareResultNote,
     }

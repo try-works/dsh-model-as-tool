@@ -100,10 +100,20 @@ if (client !== undefined) {
       // reason and any prepare refusal must be rendered verbatim, never replaced.
       note(/namespace\.prepare\(id\)/.test(source) && source.includes("'Preparing…'"),
         'the client half must offer Prepare(id) with a busy state for a preparation blocker')
-      note(/notes\.push\(state\.reason\)/.test(source),
+      note(/addNote\(state\.reason/.test(source),
         'the client half must render the host reason verbatim')
       note(/extensionNeedsPreparation/.test(source) && /prepareResultNote/.test(source),
         'the client half must gate Prepare on the host reason and render the prepare result')
+      // The host's requirement preflight gates actions BEFORE the click, keyed on
+      // kind/action/satisfied (never message text); unmet requirements render
+      // prominently and legacy rows without the field keep the old behavior.
+      note(/extensionRequirementControls/.test(source) && /requirementControls\.enableBlocked/.test(source)
+        && /requirementControls\.installBlocked/.test(source),
+        'the client half must disable blocked Install/Enable actions from the host requirements')
+      note(source.includes('Requirements checked:') && source.includes('mtt-row-blocker'),
+        'the client half must disclose satisfied requirements and render unmet ones prominently')
+      note(source.includes('Configure the deployment to satisfy this requirement.'),
+        'the client half must hint the remediation for a config-action blocker')
       // Two sources describe "disabled": the lifecycle the Remote changes and
       // Config.disabledExtensions, which the restore filter re-checks. Losing
       // either half of the dual-write lets a restart undo the operator's choice.

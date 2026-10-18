@@ -207,6 +207,95 @@ window.__ModuleLoader__.load({
                   "of": {
                     "kind": "string"
                   }
+                },
+                "requirements": {
+                  "kind": "optional",
+                  "of": {
+                    "kind": "array",
+                    "of": {
+                      "kind": "object",
+                      "fields": {
+                        "kind": {
+                          "kind": "union",
+                          "of": [
+                            {
+                              "kind": "literal",
+                              "value": "store"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "source"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "dependencies"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "assets"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "executable"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "harness-model"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "platform"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "integrity"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "activation"
+                            }
+                          ]
+                        },
+                        "satisfied": {
+                          "kind": "boolean"
+                        },
+                        "reason": {
+                          "kind": "string"
+                        },
+                        "action": {
+                          "kind": "union",
+                          "of": [
+                            {
+                              "kind": "literal",
+                              "value": "install"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "prepare"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "enable"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "config"
+                            },
+                            {
+                              "kind": "literal",
+                              "value": "none"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "blocked": {
+                  "kind": "optional",
+                  "of": {
+                    "kind": "boolean"
+                  }
                 }
               }
             }

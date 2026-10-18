@@ -80,6 +80,34 @@ The bundle patch mounts the row with the catalog defaults; a top-level
     remote: { endpoint: '', token: '' }
 ```
 
+### The harness model (declarative extensions)
+
+Declarative extension packages (e.g. `@try-works/extension-declarative-recipes`)
+are served by the host's harness broker, which needs a composed `LlmProvider`.
+The plugin resolves one in this order:
+
+1. **`config.harnessProvider`** — an explicit provider (a test double, or a
+   deployment-built provider). Always wins.
+2. **`config.harnessModel = {provider, model}`** — builds a real DSH-backed
+   provider over the deployment's `ctx.llm` for the named route.
+3. **AUTO** — when neither is set, the plugin composes from the deployment's
+   LLM surface using the deployment's default/selected model, discovered from
+   the `agent-default-model` settings entry (or `model.default` as a
+   `provider/model` string). Auto-detection is DEFAULT-SAFE: an absent LLM
+   surface, or a model that cannot be resolved unambiguously, composes NOTHING
+   — and the extension enable/describe preflight reports the exact reason
+   instead of an activation fault.
+
+When no provider can be composed the remediation is:
+
+> no chat model is configured for this deployment, so declarative extensions
+> cannot be served; set config.harnessModel = {provider, model} to a runnable
+> model
+
+The same resolution decides both the preflight status and the actual
+activation, so the reported reason can never contradict what enabling the
+extension would do.
+
 ### Settings → Model as Tool
 
 Installing the plugin also adds a **Model as Tool** page to the Harness Settings
@@ -175,6 +203,15 @@ The namespace exposes `describe`, `installExtension`, `enable`, `disable`, and
   After a successful prepare, re-read `describe()`: a row that previously
   reported `failed` now says the store records no remaining preparation blocker,
   and the next `enable` activates it.
+- **`describe()` rows carry the preflight `requirements` model.** `requirements`
+  lists every prerequisite the host checked (`store`, `source`, `dependencies`,
+  `assets`, `executable`, `harness-model`, `platform`, `integrity`,
+  `activation`) as `{ satisfied, reason, action }`, and `blocked` is the host's
+  verdict that an unmet requirement prevents activation. Unmet entries can exist
+  while `blocked` is false (for example unprepared assets on a row that can
+  still be installed), so render the unmet entries, not only `blocked`. Both
+  fields are ADDITIVE for older hosts: treat an absent `blocked` as false and an
+  absent `requirements` as "the host did not check" — never invent blockers.
 
 Proof without a page:
 `node --import tsx --test packages/dsh-model-as-tool/tests/remote-typert.test.ts`

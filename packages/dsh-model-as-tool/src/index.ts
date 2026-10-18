@@ -33,7 +33,7 @@ import { CAPTURE_PATH } from './capture-path.ts'
 import { prepareDeclarative } from './harness-serving.ts'
 import type { InvocationAccounting } from './invocation-accounting.ts'
 import { createFileCredentialStore, defaultCredentialStoreFile } from './mcp/credential-store.ts'
-import { buildHarnessLlmProvider, type HarnessModelConfig } from './harness-llm.ts'
+import { buildHarnessLlmProvider, discoverDefaultHarnessModel, resolveRunnableHarnessModel, type HarnessLlmRuntimeSurface, type HarnessModelConfig } from './harness-llm.ts'
 import { parseRecipe, type LlmProvider, type RecipeManifest } from '@try-works/tool-mode-recipes'
 import { createManagedWorkerRegistry } from './managed-workers.ts'
 import { createDispatch, describeDispatchFailure, resolveImplementation, type DispatchEnvironment, type DispatchManifest } from './extension-dispatch.ts'
@@ -93,7 +93,7 @@ import {
 } from './state.ts'
 import type { ModelCatalogEntry } from './types.ts'
 import { runLegacyStartupMigration } from './legacy-migration.ts'
-import { createExtensionsService } from './extensions-service.ts'
+import { createExtensionsService, type HarnessProviderStatus } from './extensions-service.ts'
 import { provideModelToolsService } from './extensions-remote.ts'
 
 export const name = 'model-tools'
@@ -804,6 +804,13 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
         activatedExtensions.delete(extensionId)
       }
     },
+    /**
+     * The harness-model provider status seam (task-93): the thunk evaluates the
+     * SAME composition decided below (explicit provider > config.harnessModel >
+     * AUTO discovery), so the preflight reason the extensions service reports
+     * can never contradict what activation would actually do.
+     */
+    harnessProviderStatus: () => harnessStatusThunk(),
   })
   provideModelToolsService(ctx, extensionsService)
 
@@ -880,35 +887,152 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
     : undefined
 
   /**
-   * The harness provider composition (HLM-01/02/03).
+   * The harness provider composition (HLM-01/02/03) + the AUTO step (task-93).
    *
-   * An EXPLICIT `harnessProvider` (a test double, or a deployment-built provider) always
-   * wins. Otherwise the opt-in `harnessModel` builds a REAL DSH-backed provider over the
-   * deployment's `ctx.llm` — and only when that surface can actually serve the named
-   * model; every failure falls closed to `undefined`, which is exactly the absent state
-   * the declarative path already refuses honestly. DEFAULT OFF: no flag, no provider,
-   * nothing changes anywhere.
+   * RESOLUTION ORDER: an EXPLICIT `harnessProvider` (a test double, or a
+   * deployment-built provider) always wins; then the opt-in `harnessModel`
+   * builds the named route; then AUTO composes from the deployment's LLM
+   * surface using the deployment's default/selected model when it is
+   * discoverable unambiguously (the `agent-default-model` settings entry, or
+   * `config.model.default` as `provider/model`). DEFAULT-SAFE: an absent LLM
+   * surface or an unresolvable model constructs NOTHING, and the exact reason
+   * is what the extensions service reports at preflight — the same composition
+   * decides both, so the preflight and the activation can never contradict.
    */
-  const harnessProvider = config.harnessProvider !== undefined
-    ? config.harnessProvider
-    : config.harnessModel !== undefined
-      ? await buildHarnessLlmProvider(
-          {
-            // ctx.get (not property access): the plugin declares only `tools` in its
-            // inject list, so reading an undeclared service as a property would throw;
-            // get() answers undefined for anything the deployment did not mount.
-            ...ctx.get('llm') === undefined ? {} : { llm: ctx.get('llm') as unknown },
-            ...ctx.get('attachments') === undefined
-              ? {}
-              : {
-                  attachments: ctx.get('attachments') as
-                    { saveImage(input: { data: Uint8Array; mediaType: string }): Promise<unknown> },
-                },
-          },
-          config.harnessModel,
-          message => ctx.logger?.warn?.(`model-tools: ${message}`),
-        )
-      : undefined
+  const harnessWarn = (message: string): void => {
+    ctx.logger?.warn?.(`model-tools: ${message}`)
+  }
+  const harnessBuildEnv = () => ({
+    // ctx.get (not property access): the plugin declares only `tools` in its
+    // inject list, so reading an undeclared service as a property would throw;
+    // get() answers undefined for anything the deployment did not mount.
+    ...ctx.get('llm') === undefined ? {} : { llm: ctx.get('llm') as unknown },
+    ...ctx.get('attachments') === undefined
+      ? {}
+      : {
+          attachments: ctx.get('attachments') as
+            { saveImage(input: { data: Uint8Array; mediaType: string }): Promise<unknown> },
+        },
+  })
+  let harnessProvider: LlmProvider | undefined
+  let harnessProviderStatus: HarnessProviderStatus
+  /**
+   * The harnessModel is EXPLICIT only when BOTH halves are non-empty strings.
+   * The parsed Config MATERIALIZES the nested object even when the operator
+   * set nothing ({} or {provider: undefined, model: undefined}), so a bare
+   * presence check would run the explicit branch with an undefined/undefined
+   * pair and print a nonsense reason — the live 0.3.0 regression. Absent,
+   * empty or partial always falls through to AUTO.
+   */
+  const explicitHarnessModel = config.harnessModel !== undefined
+    && typeof config.harnessModel.provider === 'string' && config.harnessModel.provider.length > 0
+    && typeof config.harnessModel.model === 'string' && config.harnessModel.model.length > 0
+    ? config.harnessModel
+    : undefined
+  /**
+   * TASK-98: the composition resolves the RUNNABLE pair the way the runtime
+   * does — the configured provider may be a settings namespace, not the
+   * registered ROUTE — and 'not ready yet' (the adapters register later in
+   * the composition order) is a RETRYABLE state, never locked in as 'none'.
+   * The refresh re-runs the same resolution; the status thunk triggers it
+   * when the last answer was not-ready-yet, so the next preflight read sees
+   * the refreshed result (preflight and activation share this ONE resolver).
+   */
+  let harnessNotReadyYet = false
+  let harnessRefreshInFlight = false
+  const refreshHarness = async (): Promise<void> => {
+    if (harnessRefreshInFlight) return
+    harnessRefreshInFlight = true
+    try {
+      const llmSurface = ctx.get('llm') as HarnessLlmRuntimeSurface | undefined
+      if (config.harnessProvider !== undefined) {
+        harnessProvider = config.harnessProvider
+        harnessProviderStatus = {
+          available: true,
+          provider: config.harnessProvider.id,
+          model: 'explicit harnessProvider',
+        }
+        harnessNotReadyYet = false
+        return
+      }
+      const desired = explicitHarnessModel ?? (() => {
+        const hostConfig = ctx.get('config') as { model?: { default?: unknown } } | undefined
+        return discoverDefaultHarnessModel({
+          settings: ctx.get('settings') as unknown,
+          ...hostConfig === undefined ? {} : { config: hostConfig },
+        })
+      })()
+      if (desired === undefined) {
+        harnessProvider = undefined
+        harnessProviderStatus = {
+          available: false,
+          reason:
+            'no chat model is configured for this deployment, so declarative extensions cannot be served; '
+            + 'set config.harnessModel = {provider, model} to a runnable model',
+          action: 'config',
+        }
+        harnessNotReadyYet = false
+        return
+      }
+      const labeled = explicitHarnessModel === undefined ? 'the deployment\'s default model' : 'config.harnessModel'
+      if (llmSurface === undefined) {
+        harnessProvider = undefined
+        harnessProviderStatus = {
+          available: false,
+          reason:
+            `${labeled} ${desired.provider}/${desired.model} cannot be served: the DSH LLM surface is not mounted `
+            + 'in this deployment; set config.harnessModel = {provider, model} to a runnable model',
+          action: 'config',
+        }
+        harnessNotReadyYet = false
+        return
+      }
+      const resolution = await resolveRunnableHarnessModel(llmSurface, desired, harnessWarn)
+      if (!resolution.ok) {
+        harnessProvider = undefined
+        harnessNotReadyYet = resolution.kind === 'not-ready-yet'
+        harnessProviderStatus = {
+          available: false,
+          reason:
+            resolution.kind === 'not-ready-yet'
+              ? resolution.reason
+              : `${labeled} ${desired.provider}/${desired.model} cannot be served: ${resolution.reason}`,
+          action: 'config',
+        }
+        return
+      }
+      const built = await buildHarnessLlmProvider(harnessBuildEnv(), { provider: resolution.route, model: resolution.model }, harnessWarn)
+      harnessProvider = built
+      harnessNotReadyYet = false
+      harnessProviderStatus = built === undefined
+        ? {
+            available: false,
+            reason:
+              `${labeled} ${desired.provider}/${desired.model} resolves to the ${resolution.route} route, but the `
+              + 'provider could not be built; set config.harnessModel = {provider, model} to a runnable model',
+            action: 'config',
+          }
+        : {
+            available: true,
+            provider: resolution.route,
+            model: resolution.model,
+          }
+    } finally {
+      harnessRefreshInFlight = false
+    }
+  }
+  await refreshHarness()
+  /**
+   * The status thunk (consumed by the extensions service): a snapshot of the
+   * SAME resolution the declarative lane uses. A not-ready-yet answer kicks a
+   * refresh (fire-and-forget), so the NEXT preflight read observes the
+   * refreshed state — the one-read lag is the honest cost of the synchronous
+   * seam over an asynchronous registry.
+   */
+  const harnessStatusThunk = (): HarnessProviderStatus => {
+    if (harnessNotReadyYet && !harnessRefreshInFlight) void refreshHarness()
+    return harnessProviderStatus
+  }
 
   /**
    * The managed-worker half (EXT-20), DEFAULT OFF.

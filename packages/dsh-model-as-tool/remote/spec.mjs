@@ -42,6 +42,43 @@ const INTEGRITY = {
     { kind: 'literal', value: 'unknown' },
   ],
 }
+/** The preflight prerequisite vocabulary (`extensions-api.ts` task-92). */
+const REQUIREMENT_KIND = {
+  kind: 'union',
+  of: [
+    'store',
+    'source',
+    'dependencies',
+    'assets',
+    'executable',
+    'harness-model',
+    'platform',
+    'integrity',
+    'activation',
+  ].map(value => ({ kind: 'literal', value })),
+}
+/** The action that clears an unmet requirement. */
+const REQUIREMENT_ACTION = {
+  kind: 'union',
+  of: ['install', 'prepare', 'enable', 'config', 'none'].map(value => ({ kind: 'literal', value })),
+}
+const EXTENSION_REQUIREMENT = {
+  kind: 'object',
+  fields: {
+    kind: REQUIREMENT_KIND,
+    satisfied: BOOLEAN,
+    reason: STRING,
+    action: REQUIREMENT_ACTION,
+  },
+}
+/**
+ * One extension row.
+ *
+ * `requirements` and `blocked` are ADDITIVE against the older row shape: both
+ * are optional here so a Host that predates the requirements model still
+ * validates. The browser half treats an absent `requirements` as "the host did
+ * not check" (no invented rows) and an absent `blocked` as false.
+ */
 const EXTENSION_STATE = {
   kind: 'object',
   fields: {
@@ -54,6 +91,8 @@ const EXTENSION_STATE = {
     integrity: INTEGRITY,
     tools: STRING_LIST,
     reason: NULLABLE_STRING,
+    requirements: { kind: 'optional', of: { kind: 'array', of: EXTENSION_REQUIREMENT } },
+    blocked: { kind: 'optional', of: BOOLEAN },
   },
 }
 const DESCRIBE_RESULT = {

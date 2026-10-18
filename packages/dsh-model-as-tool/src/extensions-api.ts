@@ -15,6 +15,43 @@
  */
 
 /** One extension, as the UI needs it. */
+/** What kind of prerequisite an extension (or a model it serves) has. */
+export type ExtensionRequirementKind =
+  | 'store'
+  | 'source'
+  | 'dependencies'
+  | 'assets'
+  | 'executable'
+  | 'harness-model'
+  | 'platform'
+  | 'integrity'
+  | 'activation'
+
+/** The action that clears an unmet requirement, when the deployment supports it. */
+export type ExtensionRequirementAction =
+  | 'install'
+  | 'prepare'
+  | 'enable'
+  | 'config'
+  | 'none'
+
+/**
+ * ONE activation prerequisite, computed by the host BEFORE install/enable.
+ *
+ * The point of this list is that a user never discovers a deployment gap by
+ * clicking Enable and reading an EXTENSION_FAULT: `blocked` rows carry the exact
+ * requirement that is unmet and the action (if any) that would satisfy it. A
+ * requirement is reported even when satisfied, so the page can distinguish
+ * "nothing to do" from "we did not look".
+ */
+export interface ExtensionRequirement {
+  readonly kind: ExtensionRequirementKind
+  readonly satisfied: boolean
+  /** Exact, actionable text; empty only when satisfied and self-evident. */
+  readonly reason: string
+  readonly action: ExtensionRequirementAction
+}
+
 export interface ExtensionState {
   /** The extension's package identity, for example `@try-works/extension-laya`. */
   readonly id: string
@@ -34,6 +71,13 @@ export interface ExtensionState {
   readonly tools: readonly string[]
   /** Why the extension cannot install or activate, when known. */
   readonly reason: string | null
+  /** Every prerequisite this deployment checked, satisfied or not. */
+  readonly requirements: readonly ExtensionRequirement[]
+  /**
+   * Whether ANY unmet requirement blocks activation. Derived from
+   * `requirements`; carried explicitly so the page never has to re-derive it.
+   */
+  readonly blocked: boolean
 }
 
 /** The state of the extension surface. */

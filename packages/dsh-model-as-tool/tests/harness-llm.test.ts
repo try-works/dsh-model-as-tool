@@ -36,7 +36,7 @@ import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { createZipArchiveSource, ExtensionStore, stagedInstall } from '@try-works/tool-mode-extension-sdk'
 
 import * as plugin from '../src/index.ts'
-import { buildHarnessLlmProvider } from '../src/harness-llm.ts'
+import { buildHarnessLlmProvider, discoverDefaultHarnessModel, resolveRunnableHarnessModel } from '../src/harness-llm.ts'
 import { cleanup, tempDir } from './helpers.ts'
 
 after(async () => { await cleanup() })
@@ -121,6 +121,45 @@ describe('HLM-01/02/03 — the injection seam reads the DSH surface structurally
   })
 })
 
+describe('task-93 — the AUTO default-model discovery is default-safe', () => {
+  it('reads the agent-default-model settings entry', () => {
+    const found = discoverDefaultHarnessModel({
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+    })
+    assert.deepEqual(found, { provider: 'deepseek-official', model: 'deepseek-flash' })
+  })
+
+  it('falls back to config.model.default as the provider/model string', () => {
+    const found = discoverDefaultHarnessModel({
+      config: { model: { default: 'deepseek-official/deepseek-flash' } },
+    })
+    assert.deepEqual(found, { provider: 'deepseek-official', model: 'deepseek-flash' })
+  })
+
+  it('refuses ambiguity: malformed entries and missing surfaces yield undefined, never a guess', () => {
+    assert.equal(discoverDefaultHarnessModel({}), undefined)
+    // The actual SettingsForms surface has NO get(ns); describe() is the API.
+    assert.equal(discoverDefaultHarnessModel({ settings: { describe: () => [] } }), undefined, 'no descriptor means no model')
+    assert.equal(
+      discoverDefaultHarnessModel({ settings: { describe: () => [{ ns: 'other', value: { provider: 'p', model: 'm' } }] } }),
+      undefined,
+      'a different namespace is not the default model',
+    )
+    assert.equal(
+      discoverDefaultHarnessModel({ settings: { describe: () => [{ ns: 'agent-default-model', value: { provider: 'p' } }] } }),
+      undefined,
+      'a missing model half is ambiguous',
+    )
+    assert.equal(
+      discoverDefaultHarnessModel({ settings: { describe: () => [{ ns: 'agent-default-model', value: { model: 'm' } }] } }),
+      undefined,
+      'a missing provider half is ambiguous',
+    )
+    assert.equal(discoverDefaultHarnessModel({ config: { model: { default: 'no-slash' } } }), undefined)
+    assert.equal(discoverDefaultHarnessModel({ config: { model: { default: '/m' } } }), undefined, 'an empty provider half is ambiguous')
+  })
+})
+
 const PACKAGE_DIR = join(process.cwd(), 'packages', 'extension-declarative-recipes')
 const EXTENSION_ID = '@try-works/extension-declarative-recipes'
 
@@ -144,6 +183,7 @@ function packPackage(): { bytes: Uint8Array; sha512: string } {
 async function mountDeclarative(options: {
   readonly harnessModel?: { provider: string; model: string }
   readonly llm?: unknown
+  readonly settings?: unknown
 }): Promise<{ ctx: Context; storeDir: string }> {
   const storeDir = tempDir()
   const { bytes, sha512 } = packPackage()
@@ -167,6 +207,7 @@ async function mountDeclarative(options: {
 
   const ctx = new Context()
   if (options.llm !== undefined) ctx.provide('llm', options.llm)
+  if (options.settings !== undefined) ctx.provide('settings', options.settings)
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
   await ctx.plugin(SkillRegistry)
@@ -243,5 +284,214 @@ describe('HLM-01 — the host pipeline serves declarative recipes through a scri
     const { ctx } = await mountDeclarative({ harnessModel: { provider: 'deepseek', model: 'deepseek-chat' } })
     await new Promise(resolve => setTimeout(resolve, 600))
     assert.equal(ctx.tools.schemas().some(schema => schema.name === 'text_title'), false, 'an unreachable surface must not half-wire the provider')
+  })
+
+  it('AUTO (task-93): no harnessModel, but the LLM surface + the default-model setting compose the provider end to end', async () => {
+    const { ctx } = await mountDeclarative({
+      llm: scriptedSurface(),
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+    })
+    const deadline = Date.now() + 15_000
+    while (Date.now() < deadline) {
+      if (ctx.tools.schemas().some(schema => schema.name === 'text_title')) break
+      await new Promise(resolve => setTimeout(resolve, 25))
+    }
+    assert.ok(
+      ctx.tools.schemas().some(schema => schema.name === 'text_title'),
+      'the AUTO composition must register text_title from the deployment default model',
+    )
+    const result = await ctx.tools.execute({
+      signal: new AbortController().signal,
+      callId: ToolCallId('harness-auto-1'),
+      name: 'text_title',
+      arguments: { text: 'A guide to automating the configuration of a deployment pipeline.' },
+    })
+    assert.equal(result.isError, false, JSON.stringify(result))
+    assert.equal(JSON.parse(result.value as string).title, 'Deployment pipeline configuration', 'the AUTO provider serves a real recipe call')
+  })
+
+  it('explicit config wins over the AUTO discovery', async () => {
+    const resolved: string[] = []
+    const recording = scriptedSurface()
+    const original = recording.resolveModelInfo
+    recording.resolveModelInfo = async (provider: string, model: string) => {
+      resolved.push(`${provider}/${model}`)
+      return original(provider, model)
+    }
+    const { ctx } = await mountDeclarative({
+      harnessModel: { provider: 'explicit-provider', model: 'explicit-model' },
+      llm: recording,
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+    })
+    const deadline = Date.now() + 15_000
+    while (Date.now() < deadline) {
+      if (ctx.tools.schemas().some(schema => schema.name === 'text_title')) break
+      await new Promise(resolve => setTimeout(resolve, 25))
+    }
+    assert.ok(resolved.length > 0, 'the provider must have resolved a model')
+    assert.ok(resolved.every(pair => pair === 'explicit-provider/explicit-model'), `only the explicit config may resolve, saw: ${resolved.join(', ')}`)
+  })
+
+  it('task-96 regression: a materialized but EMPTY harnessModel falls through to AUTO and serves', async () => {
+    // The parsed Config materializes harnessModel as {} when the operator set
+    // nothing; the explicit branch must not run (the live undefined/undefined
+    // reason) — AUTO discovers the settings default instead.
+    const { ctx } = await mountDeclarative({
+      harnessModel: {} as never,
+      llm: scriptedSurface(),
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+    })
+    const deadline = Date.now() + 15_000
+    while (Date.now() < deadline) {
+      if (ctx.tools.schemas().some(schema => schema.name === 'text_title')) break
+      await new Promise(resolve => setTimeout(resolve, 25))
+    }
+    assert.ok(
+      ctx.tools.schemas().some(schema => schema.name === 'text_title'),
+      'an empty harnessModel must fall through to AUTO and register the tool',
+    )
+    const result = await ctx.tools.execute({
+      signal: new AbortController().signal,
+      callId: ToolCallId('harness-empty-config-1'),
+      name: 'text_title',
+      arguments: { text: 'A guide to automating the configuration of a deployment pipeline.' },
+    })
+    assert.equal(result.isError, false, JSON.stringify(result))
+    assert.equal(JSON.parse(result.value as string).title, 'Deployment pipeline configuration')
+  })
+
+  it('task-96 regression: a PARTIAL harnessModel (only provider) also falls through to AUTO', async () => {
+    const { ctx } = await mountDeclarative({
+      harnessModel: { provider: 'only-provider' } as never,
+      llm: scriptedSurface(),
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+    })
+    const deadline = Date.now() + 15_000
+    while (Date.now() < deadline) {
+      if (ctx.tools.schemas().some(schema => schema.name === 'text_title')) break
+      await new Promise(resolve => setTimeout(resolve, 25))
+    }
+    assert.ok(
+      ctx.tools.schemas().some(schema => schema.name === 'text_title'),
+      'a partial harnessModel must fall through to AUTO and register the tool',
+    )
+  })
+
+  it('task-96 regression: an explicit UNSERVABLE pair still names the real pair, never undefined/undefined', async () => {
+    const logs: string[] = []
+    const built = await buildHarnessLlmProvider(
+      { llm: { resolveModelInfo: async () => { throw new Error('no route') }, stream: async function* () {} } },
+      { provider: 'broken-route', model: 'broken-model' },
+      message => logs.push(message),
+    )
+    assert.equal(built, undefined)
+    // The composition's explicit-unsatisfiable reason is built from the SAME
+    // explicit pair; the build-side diagnostic must carry the real pair.
+    assert.match(logs.join('\n'), /broken-route\/broken-model/)
+  })
+})
+
+describe('task-98 — the runtime-aware resolution maps the configured provider to a RUNNABLE route', () => {
+  /**
+   * A LlmRuntime-shaped double: resolveModelInfo succeeds only for the
+   * REGISTERED route, while listProviders/listConfigurableProviders/listModels
+   * mirror the real registry (types.d.ts: LlmProviderInfo {id, name};
+   * LlmConfigurableProvider {provider, displayName, settingsNs}; LlmModelInfo
+   * {provider, id, name}).
+   */
+  function runtimeSurface(options: {
+    readonly route: string
+    readonly models: readonly string[]
+    readonly settingsNs?: string
+    readonly displayName?: string
+  }) {
+    return {
+      resolveModelInfo: async (provider: string, model: string) => {
+        if (provider !== options.route) throw new Error(`unknown provider route ${provider}`)
+        if (!options.models.includes(model)) throw new Error(`unknown model ${model}`)
+        return { provider, id: model, name: model, inputModalities: ['text'], defaultMaxTokens: 2048 }
+      },
+      listProviders: () => [{ id: options.route, name: options.displayName ?? options.route }],
+      listConfigurableProviders: () => [{
+        provider: options.route,
+        displayName: options.displayName ?? options.route,
+        settingsNs: options.settingsNs ?? options.route,
+        settingsPath: [],
+      }],
+      listModels: async (provider: string) => (
+        provider === options.route ? options.models.map(id => ({ provider, id, name: id })) : []
+      ),
+      stream: async function* (request: Record<string, unknown>) {
+        void request
+        yield { type: 'text-delta', index: 0, text: SCRIPTED_TITLE }
+        yield { type: 'usage', usage: { inputTokens: 40, outputTokens: 12 } }
+        yield { type: 'finish', reason: { kind: 'stop' } }
+      },
+    }
+  }
+
+  it('maps a SETTINGS-NAMESPACE provider to its registered route and confirms the model (the live deepseek-official case)', async () => {
+    const llm = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash', 'deepseek-chat'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' })
+    const resolution = await resolveRunnableHarnessModel(llm, { provider: 'deepseek-official', model: 'deepseek-flash' })
+    assert.deepEqual(resolution, { ok: true, route: 'deepseek', model: 'deepseek-flash' })
+  })
+
+  it('keeps the direct pair when the configured provider IS the route', async () => {
+    const llm = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'] })
+    const resolution = await resolveRunnableHarnessModel(llm, { provider: 'deepseek', model: 'deepseek-flash' })
+    assert.deepEqual(resolution, { ok: true, route: 'deepseek', model: 'deepseek-flash' })
+  })
+
+  it('an EMPTY route registry is not-ready-yet, never not-configured', async () => {
+    const llm = {
+      resolveModelInfo: async () => { throw new Error('nothing registered') },
+      listProviders: () => [] as { id: string; name: string }[],
+    }
+    const resolution = await resolveRunnableHarnessModel(llm, { provider: 'deepseek-official', model: 'deepseek-flash' })
+    assert.equal(resolution.ok, false)
+    if (!resolution.ok) {
+      assert.equal(resolution.kind, 'not-ready-yet')
+      assert.match(resolution.reason, /has not registered its provider routes yet/)
+    }
+  })
+
+  it('an unknown provider and an unserved model are not-configured with the exact reasons', async () => {
+    const llm = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'] })
+    const unknownProvider = await resolveRunnableHarnessModel(llm, { provider: 'nobody', model: 'deepseek-flash' })
+    assert.equal(unknownProvider.ok, false)
+    if (!unknownProvider.ok) {
+      assert.equal(unknownProvider.kind, 'not-configured')
+      assert.match(unknownProvider.reason, /not a registered LLM route/)
+    }
+    const unservedModel = await resolveRunnableHarnessModel(llm, { provider: 'deepseek', model: 'deepseek-hologram' })
+    assert.equal(unservedModel.ok, false)
+    if (!unservedModel.ok) {
+      assert.equal(unservedModel.kind, 'not-configured')
+      assert.match(unservedModel.reason, /not served by the deepseek route/)
+    }
+  })
+
+  it('AUTO composes through the mapped route and serves a declarative recipe call end to end', async () => {
+    const { ctx } = await mountDeclarative({
+      llm: runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' }),
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+    })
+    const deadline = Date.now() + 15_000
+    while (Date.now() < deadline) {
+      if (ctx.tools.schemas().some(schema => schema.name === 'text_title')) break
+      await new Promise(resolve => setTimeout(resolve, 25))
+    }
+    assert.ok(
+      ctx.tools.schemas().some(schema => schema.name === 'text_title'),
+      'the mapped route must compose the provider and register the declarative tool',
+    )
+    const result = await ctx.tools.execute({
+      signal: new AbortController().signal,
+      callId: ToolCallId('harness-mapped-1'),
+      name: 'text_title',
+      arguments: { text: 'A guide to automating the configuration of a deployment pipeline.' },
+    })
+    assert.equal(result.isError, false, JSON.stringify(result))
+    assert.equal(JSON.parse(result.value as string).title, 'Deployment pipeline configuration')
   })
 })

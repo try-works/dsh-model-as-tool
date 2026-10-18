@@ -40,7 +40,7 @@ const WIRE_ENDPOINTS = [
   'modelTools/prepare',
 ]
 
-/** One extension row the host can report. */
+/** One extension row the host can report, with the preflight requirements model. */
 const EXTENSION_ROW = {
   id: '@try-works/extension-laya',
   package: '@try-works/extension-laya',
@@ -51,6 +51,62 @@ const EXTENSION_ROW = {
   integrity: 'unchanged',
   tools: ['laya_detect'],
   reason: null,
+  requirements: [
+    { kind: 'store', satisfied: true, reason: 'the extension store is configured and readable', action: 'none' },
+    { kind: 'dependencies', satisfied: true, reason: 'all declared runtime dependencies resolve', action: 'none' },
+    { kind: 'assets', satisfied: true, reason: 'every deployment is prepared-cold', action: 'none' },
+    { kind: 'activation', satisfied: true, reason: 'the extension is active', action: 'none' },
+  ],
+  blocked: false,
+}
+
+/** A source-only row: one unmet requirement does NOT block installing it. */
+const SOURCE_ONLY_ROW = {
+  id: '@try-works/extension-embeddinggemma',
+  package: '@try-works/extension-embeddinggemma',
+  version: '0.1.0',
+  installed: false,
+  active: false,
+  disabled: false,
+  integrity: 'unknown',
+  tools: [],
+  reason: null,
+  requirements: [
+    { kind: 'source', satisfied: true, reason: 'the first-party package is available', action: 'install' },
+    { kind: 'assets', satisfied: false, reason: 'not installed; embeddinggemma-2 needs model assets prepared after installation', action: 'install' },
+  ],
+  blocked: false,
+}
+
+/** A row shaped like an older Host's describe(): no requirements, no blocked. */
+const LEGACY_EXTENSION_ROW = {
+  id: '@try-works/extension-needle',
+  package: '@try-works/extension-needle',
+  version: '0.1.0',
+  installed: false,
+  active: false,
+  disabled: false,
+  integrity: 'unknown',
+  tools: ['tools_plan', 'structured_extract'],
+  reason: 'not installed',
+}
+
+/** A blocked row: an unmet harness-model requirement prevents activation. */
+const BLOCKED_ROW = {
+  id: '@try-works/extension-declarative-recipes',
+  package: '@try-works/extension-declarative-recipes',
+  version: '0.1.0',
+  installed: true,
+  active: false,
+  disabled: false,
+  integrity: 'unchanged',
+  tools: [],
+  reason: 'the host could not report whether a harness model provider is available (provider status unknown)',
+  requirements: [
+    { kind: 'harness-model', satisfied: false, reason: 'the host could not report whether a harness model provider is available (provider status unknown); a declarative extension needs a composed provider, for example config.harnessModel', action: 'config' },
+    { kind: 'assets', satisfied: false, reason: 'no model assets are prepared', action: 'prepare' },
+  ],
+  blocked: true,
 }
 
 /** A describe result carrying every wire field, valid and nullable. */
@@ -223,6 +279,40 @@ describe('modelTools host artifact', () => {
       const { activationReady: _omitted, ...rest } = PREPARE_VALUE
       return resultCodec.create().parse(rest)
     }, /missing field "activationReady"/)
+  })
+
+  it('validates preflight requirements and tolerates older rows without them', () => {
+    const describe = descriptorCodec(TYPERT_REMOTE, 'describe')
+    const resultCodec = describe.result as { create: () => { parse: (value: unknown) => { extensions: Record<string, unknown>[] } } }
+    const parseRow = (row: Record<string, unknown>) =>
+      resultCodec.create().parse({ ...DESCRIBE_VALUE, extensions: [row] }).extensions[0]!
+
+    // Satisfied + unsatisfied entries, blocked false and true.
+    assert.deepEqual(parseRow(EXTENSION_ROW), EXTENSION_ROW)
+    assert.deepEqual(parseRow(SOURCE_ONLY_ROW), SOURCE_ONLY_ROW)
+    assert.deepEqual(parseRow(BLOCKED_ROW), BLOCKED_ROW)
+
+    // An older Host: neither field present, and the parse must not invent them.
+    const legacy = parseRow(LEGACY_EXTENSION_ROW)
+    assert.deepEqual(legacy, LEGACY_EXTENSION_ROW)
+    assert.equal(Object.hasOwn(legacy, 'requirements'), false)
+    assert.equal(Object.hasOwn(legacy, 'blocked'), false)
+
+    // Malformed entries are refused, not silently flattened.
+    const requirement = EXTENSION_ROW.requirements[0]!
+    assert.throws(() => parseRow({ ...EXTENSION_ROW, requirements: [{ ...requirement, kind: 'mystery' }] }), /union/)
+    assert.throws(() => parseRow({ ...EXTENSION_ROW, requirements: [{ ...requirement, action: 'retry' }] }), /union/)
+    assert.throws(() => parseRow({ ...EXTENSION_ROW, requirements: [{ ...requirement, satisfied: 'yes' }] }), /boolean/)
+    assert.throws(() => {
+      const { reason: _reason, ...withoutReason } = requirement
+      return parseRow({ ...EXTENSION_ROW, requirements: [withoutReason] })
+    }, /missing field "reason"/)
+    assert.throws(() => {
+      const { satisfied: _satisfied, ...withoutSatisfied } = requirement
+      return parseRow({ ...EXTENSION_ROW, requirements: [withoutSatisfied] })
+    }, /missing field "satisfied"/)
+    assert.throws(() => parseRow({ ...EXTENSION_ROW, requirements: 'none' }), /array/)
+    assert.throws(() => parseRow({ ...EXTENSION_ROW, blocked: 'yes' }), /boolean/)
   })
 
   it('declares METHOD_SPECS that match the descriptors one-for-one', () => {
