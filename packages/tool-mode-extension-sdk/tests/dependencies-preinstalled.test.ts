@@ -355,6 +355,37 @@ describe('task-84 — preinstalled-content provenance', () => {
     }
   })
 
+  it('nested directories copy completely: parent dirs exist, nested bytes identical, digest covers them (task-88)', async () => {
+    const store = scratch()
+    const hostRoot = scratch()
+    const dir = makePreinstalledDir(hostRoot, { nested: true })
+    const graph = preinstalledGraph(preinstalledResolver('onnxruntime-node', dir), {
+      allowPreinstalled: true,
+      preinstalledRoot: hostRoot,
+    })
+    const result = await stagedInstall({
+      archive: extArchive(buildExtension({ 'onnxruntime-node': '^1.0.0' })),
+      expectedSha512: sha512(buildExtension({ 'onnxruntime-node': '^1.0.0' })),
+      source: { kind: 'bytes', bytes: buildExtension({ 'onnxruntime-node': '^1.0.0' }) },
+      storeDir: store,
+      dependencies: graph,
+      record: true,
+    })
+    const copiedDir = join(result.installPath, 'node_modules', 'onnxruntime-node')
+    // The top-level file copied…
+    assert.equal(existsSync(join(copiedDir, 'payload-0.bin')), true)
+    // …the nested file copied with IDENTICAL bytes (the ENOENT regression)…
+    const nested = join(copiedDir, 'dist', 'nested', 'deep', 'file.js')
+    assert.equal(existsSync(nested), true)
+    assert.deepEqual(readFileSync(nested), readFileSync(join(dir, 'dist', 'nested', 'deep', 'file.js')))
+    // …and the empty subdirectory was recreated, not dropped.
+    assert.equal(existsSync(join(copiedDir, 'dist', 'empty')), true)
+    // The recorded digest covers the nested bytes: it equals the recomputed
+    // digest of the whole copied tree.
+    const installed = new ExtensionStore(store).listInstalled().value[0]
+    assert.equal(installed?.dependencies?.[0]?.integrity, digestInstalledContent(copiedDir))
+  })
+
   it('the recorded preinstalledFrom is the resolved dir and the digest matches the copied bytes', async () => {
     const store = scratch()
     const hostRoot = scratch()
