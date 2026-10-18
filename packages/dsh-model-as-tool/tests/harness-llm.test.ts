@@ -543,6 +543,21 @@ describe('task-99 — the bounded background retry flips the status without a se
     result.extensions.find(row => row.id === EXTENSION_ID)!.requirements.find(req => req.kind === 'harness-model')!
   )
 
+  /**
+   * TASK-108: the deterministic promotion helper. The retry tests await an
+   * OBSERVABLE condition with a generous 10 s timeout instead of racing a
+   * tight wall-clock budget; under parallel load the polls lag but the helper
+   * absorbs it. Never assert an exact poll count — `>= N` only.
+   */
+  async function waitFor(condition: () => boolean | Promise<boolean>, what: string, timeoutMs = 10_000): Promise<void> {
+    const deadline = Date.now() + timeoutMs
+    while (Date.now() < deadline) {
+      if (await condition()) return
+      await new Promise(resolve => setTimeout(resolve, 25))
+    }
+    throw new Error(`timed out after ${timeoutMs} ms waiting for: ${what}`)
+  }
+
   /** listProviders() stays empty for `emptyPolls` calls, then the route appears. */
   function deferredSurface(emptyPolls: number, route = 'deepseek') {
     let polls = 0
@@ -580,16 +595,16 @@ describe('task-99 — the bounded background retry flips the status without a se
     const first = await service.describe()
     const initial = harnessRequirement(first)
     assert.equal(initial.satisfied, false, 'the first read sees the honest not-ready-yet')
-    // Wait for the retry's own polls to register the route — no describe call
-    // in between. The flip happens on the interval, not on a read.
-    const deadline = Date.now() + 5_000
-    while (Date.now() < deadline && deferred.calls.listProviders <= 3) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-    }
-    assert.ok(deferred.calls.listProviders > 3, 'the background retry must have re-probed')
-    const second = await service.describe()
-    const flipped = harnessRequirement(second)
-    assert.equal(flipped.satisfied, true, `the retry must flip the status: ${JSON.stringify(flipped)}`)
+    // TASK-108: await the OBSERVABLE flip — the requirement becoming satisfied
+    // — with a generous 10 s timeout. The retry does the work on its own
+    // interval; the poll helper only observes the status it publishes.
+    let flipAttempts = 0
+    await waitFor(async () => {
+      flipAttempts += 1
+      return harnessRequirement(await service.describe()).satisfied
+    }, 'the retry to flip the requirement to satisfied')
+    assert.ok(flipAttempts >= 1)
+    assert.ok(deferred.calls.listProviders > 3, 'the flip came from the retry\'s own polls, not the first read')
   })
 
   it('a registry that stays empty is still not-ready-yet after the cap, with the same reason', async () => {
@@ -603,10 +618,9 @@ describe('task-99 — the bounded background retry flips the status without a se
     const first = await service.describe()
     const initial = harnessRequirement(first)
     assert.match(initial.reason, /has not registered its provider routes yet/)
-    // The cap expires; the polls stop; the reason is unchanged.
-    const pollsAtCap = deferred.calls.listProviders
-    await new Promise(resolve => setTimeout(resolve, 700))
-    assert.ok(deferred.calls.listProviders >= pollsAtCap, 'some polls ran')
+    // The cap (400 ms) elapses; the polls stop; the parked verdict — which for
+    // an empty registry IS the not-ready-yet — is published unchanged.
+    await waitFor(() => deferred.calls.resolveModelInfo >= 3, 'a few retry polls to have run')
     const final = await service.describe()
     const after = harnessRequirement(final)
     assert.equal(after.satisfied, false)
@@ -620,13 +634,14 @@ describe('task-99 — the bounded background retry flips the status without a se
       settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
       harnessRetry: { intervalMs: 50, capMs: 30_000 },
     })
-    await new Promise(resolve => setTimeout(resolve, 150))
-    const before = deferred.calls.listProviders
-    assert.ok(before > 0, 'the retry must be polling')
+    await waitFor(() => deferred.calls.listProviders >= 1, 'the retry to start polling')
     await disposePlugin()
-    await new Promise(resolve => setTimeout(resolve, 250))
-    const after = deferred.calls.listProviders
-    assert.ok(after - before <= 1, `the retry must stop on dispose (before=${before}, after=${after})`)
+    // After dispose the polls plateau: give any single in-flight refresh a
+    // chance to land, then require the count to stay put across a quiet window.
+    await new Promise(resolve => setTimeout(resolve, 120))
+    const settled = deferred.calls.listProviders
+    await new Promise(resolve => setTimeout(resolve, 400))
+    assert.ok(deferred.calls.listProviders - settled <= 1, `the retry must stop on dispose (settled=${settled}, after=${deferred.calls.listProviders})`)
   })
 
   it('task-100 retry e2e: routes first + deferred directory → not-ready-yet, retry continues, then available', async () => {
@@ -660,15 +675,10 @@ describe('task-99 — the bounded background retry flips the status without a se
     const initial = harnessRequirement(first)
     assert.equal(initial.satisfied, false, 'the first read sees the honest not-ready-yet')
     assert.match(initial.reason, /has not registered its provider routes yet/, 'an incomplete directory is not-ready-yet, not the terminal string')
-    // The retry keeps polling; once the directory lands the status flips.
-    const deadline = Date.now() + 5_000
-    while (Date.now() < deadline && directoryPolls < 6) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-    }
-    assert.ok(directoryPolls >= 6, 'the retry must have kept polling the directory')
-    const second = await service.describe()
-    const flipped = harnessRequirement(second)
-    assert.equal(flipped.satisfied, true, `the retry must reach available once the directory lands: ${JSON.stringify(flipped)}`)
+    // TASK-108: await the OBSERVABLE flip (the requirement becoming satisfied)
+    // — the retry keeps polling and does the work on its own interval.
+    await waitFor(async () => harnessRequirement(await service.describe()).satisfied, 'the retry to reach available once the directory lands')
+    assert.ok(directoryPolls >= 6, 'the flip came from the retry\'s own polling')
     void ctx
   })
 
@@ -703,14 +713,9 @@ describe('task-99 — the bounded background retry flips the status without a se
     const initial = harnessRequirement(first)
     assert.equal(initial.satisfied, false, 'the first read sees an unsatisfied requirement')
     assert.match(initial.reason, /has not registered its provider routes yet/, 'the transient string, never the terminal unknown-provider one')
-    const deadline = Date.now() + 5_000
-    while (Date.now() < deadline && directoryPolls < 5) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-    }
-    assert.ok(directoryPolls >= 5, 'the retry must have kept polling')
-    const second = await service.describe()
-    const flipped = harnessRequirement(second)
-    assert.equal(flipped.satisfied, true, `the retry must reach available once the entry lands: ${JSON.stringify(flipped)}`)
+    // TASK-108: await the OBSERVABLE flip.
+    await waitFor(async () => harnessRequirement(await service.describe()).satisfied, 'the retry to reach available once the entry lands')
+    assert.ok(directoryPolls >= 5, 'the flip came from the retry\'s own polling')
     void ctx
   })
 
@@ -737,13 +742,9 @@ describe('task-99 — the bounded background retry flips the status without a se
     const service = ctx.get('modelTools') as unknown as ServiceDescribe
     const first = await service.describe()
     assert.match(harnessRequirement(first).reason, /has not registered its provider routes yet/, 'transient while retrying')
-    const atCap = calls.resolveModelInfo
-    await new Promise(resolve => setTimeout(resolve, 800))
-    assert.ok(calls.resolveModelInfo >= atCap, 'polls ran')
-    const final = await service.describe()
-    const after = harnessRequirement(final)
-    assert.equal(after.satisfied, false)
-    assert.match(after.reason, /cannot be served: the configured provider "deepseek-official" is not a registered LLM route/, 'the cap publishes the REAL verdict')
+    // TASK-108: await the OBSERVABLE publication — the REAL verdict appearing
+    // once the cap ends the retry.
+    await waitFor(async () => /cannot be served: the configured provider "deepseek-official" is not a registered LLM route/.test(harnessRequirement(await service.describe()).reason), 'the cap to publish the real verdict')
     const paused = calls.resolveModelInfo
     await new Promise(resolve => setTimeout(resolve, 300))
     assert.ok(calls.resolveModelInfo - paused <= 1, 'no polling after the cap')

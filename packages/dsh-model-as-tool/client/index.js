@@ -1526,6 +1526,23 @@ window.__ModuleLoader__.load({
             await dualWriteDisabledExtensions(id, 'disable')
           }
           setExtRemote({ kind: 'ready', namespace, ...(await describeExtensions(namespace)) })
+          // A store write and the following describe can land in either order
+          // under load. One bounded re-read after a successful action settles
+          // the row's controls (the Enable switch appears on an install) without
+          // asking the operator to reopen the page. mounted() gates a stale
+          // update after the dialog closes.
+          setTimeout(() => {
+            void (async () => {
+              try {
+                const settled = modelToolsRemote(ctx, mounted())
+                if (settled !== null) {
+                  setExtRemote({ kind: 'ready', namespace: settled, ...(await describeExtensions(settled)) })
+                }
+              } catch (settleError) {
+                // The snapshot already rendered is the last known host truth.
+              }
+            })()
+          }, 500)
         } catch (error) {
           setExtRowError({ id, text: remoteErrorText(error) })
           // The action may have changed host state before failing. Read it back,
