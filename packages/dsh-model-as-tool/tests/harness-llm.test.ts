@@ -184,6 +184,7 @@ async function mountDeclarative(options: {
   readonly harnessModel?: { provider: string; model: string }
   readonly llm?: unknown
   readonly settings?: unknown
+  readonly harnessRetry?: { intervalMs: number; capMs: number }
 }): Promise<{ ctx: Context; storeDir: string }> {
   const storeDir = tempDir()
   const { bytes, sha512 } = packPackage()
@@ -211,13 +212,17 @@ async function mountDeclarative(options: {
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
   await ctx.plugin(SkillRegistry)
-  await ctx.plugin(plugin, {
+  const pluginFiber = await ctx.plugin(plugin, {
     stateFile: join(storeDir, 'state.json'),
     credentialsFile: join(storeDir, 'credentials.json'),
     extensionStore: storeDir,
     ...options.harnessModel === undefined ? {} : { harnessModel: options.harnessModel },
+    ...options.harnessRetry === undefined ? {} : {
+      harnessRetryIntervalMs: options.harnessRetry.intervalMs,
+      harnessRetryCapMs: options.harnessRetry.capMs,
+    },
   })
-  return { ctx, storeDir }
+  return { ctx, storeDir, disposePlugin: () => pluginFiber.dispose() }
 }
 
 describe('HLM-01 — the host pipeline serves declarative recipes through a scripted DSH surface', () => {
@@ -391,44 +396,45 @@ describe('HLM-01 — the host pipeline serves declarative recipes through a scri
   })
 })
 
-describe('task-98 — the runtime-aware resolution maps the configured provider to a RUNNABLE route', () => {
-  /**
-   * A LlmRuntime-shaped double: resolveModelInfo succeeds only for the
-   * REGISTERED route, while listProviders/listConfigurableProviders/listModels
-   * mirror the real registry (types.d.ts: LlmProviderInfo {id, name};
-   * LlmConfigurableProvider {provider, displayName, settingsNs}; LlmModelInfo
-   * {provider, id, name}).
-   */
-  function runtimeSurface(options: {
-    readonly route: string
-    readonly models: readonly string[]
-    readonly settingsNs?: string
-    readonly displayName?: string
-  }) {
-    return {
-      resolveModelInfo: async (provider: string, model: string) => {
-        if (provider !== options.route) throw new Error(`unknown provider route ${provider}`)
-        if (!options.models.includes(model)) throw new Error(`unknown model ${model}`)
-        return { provider, id: model, name: model, inputModalities: ['text'], defaultMaxTokens: 2048 }
-      },
-      listProviders: () => [{ id: options.route, name: options.displayName ?? options.route }],
-      listConfigurableProviders: () => [{
-        provider: options.route,
-        displayName: options.displayName ?? options.route,
-        settingsNs: options.settingsNs ?? options.route,
-        settingsPath: [],
-      }],
-      listModels: async (provider: string) => (
-        provider === options.route ? options.models.map(id => ({ provider, id, name: id })) : []
-      ),
-      stream: async function* (request: Record<string, unknown>) {
-        void request
-        yield { type: 'text-delta', index: 0, text: SCRIPTED_TITLE }
-        yield { type: 'usage', usage: { inputTokens: 40, outputTokens: 12 } }
-        yield { type: 'finish', reason: { kind: 'stop' } }
-      },
-    }
+/**
+ * A LlmRuntime-shaped double: resolveModelInfo succeeds only for the
+ * REGISTERED route, while listProviders/listConfigurableProviders/listModels
+ * mirror the real registry (types.d.ts: LlmProviderInfo {id, name};
+ * LlmConfigurableProvider {provider, displayName, settingsNs}; LlmModelInfo
+ * {provider, id, name}).
+ */
+function runtimeSurface(options: {
+  readonly route: string
+  readonly models: readonly string[]
+  readonly settingsNs?: string
+  readonly displayName?: string
+}) {
+  return {
+    resolveModelInfo: async (provider: string, model: string) => {
+      if (provider !== options.route) throw new Error(`unknown provider route ${provider}`)
+      if (!options.models.includes(model)) throw new Error(`unknown model ${model}`)
+      return { provider, id: model, name: model, inputModalities: ['text'], defaultMaxTokens: 2048 }
+    },
+    listProviders: () => [{ id: options.route, name: options.displayName ?? options.route }],
+    listConfigurableProviders: () => [{
+      provider: options.route,
+      displayName: options.displayName ?? options.route,
+      settingsNs: options.settingsNs ?? options.route,
+      settingsPath: [],
+    }],
+    listModels: async (provider: string) => (
+      provider === options.route ? options.models.map(id => ({ provider, id, name: id })) : []
+    ),
+    stream: async function* (request: Record<string, unknown>) {
+      void request
+      yield { type: 'text-delta', index: 0, text: SCRIPTED_TITLE }
+      yield { type: 'usage', usage: { inputTokens: 40, outputTokens: 12 } }
+      yield { type: 'finish', reason: { kind: 'stop' } }
+    },
   }
+}
+
+describe('task-98 — the runtime-aware resolution maps the configured provider to a RUNNABLE route', () => {
 
   it('maps a SETTINGS-NAMESPACE provider to its registered route and confirms the model (the live deepseek-official case)', async () => {
     const llm = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash', 'deepseek-chat'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' })
@@ -471,6 +477,37 @@ describe('task-98 — the runtime-aware resolution maps the configured provider 
     }
   })
 
+  it('task-100: routes present but an EMPTY directory is not-ready-yet, never terminal', async () => {
+    // The live boot-to-ready sequence: the adapter routes register FIRST and
+    // the configurable-provider directory lands after. A provider the empty
+    // directory cannot map yet is INCOMPLETE, not misconfigured.
+    const llm = {
+      resolveModelInfo: async () => { throw new Error('not a route') },
+      listProviders: () => [{ id: 'deepseek', name: 'DeepSeek' }],
+      listConfigurableProviders: () => [] as { provider: string; displayName: string }[],
+    }
+    const resolution = await resolveRunnableHarnessModel(llm, { provider: 'deepseek-official', model: 'deepseek-flash' })
+    assert.equal(resolution.ok, false)
+    if (!resolution.ok) {
+      assert.equal(resolution.kind, 'not-ready-yet')
+      assert.match(resolution.reason, /has not registered its provider routes yet/)
+    }
+  })
+
+  it('task-100: a genuinely unknown provider WITH a non-empty directory is terminal not-configured', async () => {
+    const llm = {
+      resolveModelInfo: async () => { throw new Error('not a route') },
+      listProviders: () => [{ id: 'deepseek', name: 'DeepSeek' }],
+      listConfigurableProviders: () => [{ provider: 'deepseek', displayName: 'DeepSeek', settingsNs: 'deepseek-official' }],
+    }
+    const resolution = await resolveRunnableHarnessModel(llm, { provider: 'completely-unknown', model: 'deepseek-flash' })
+    assert.equal(resolution.ok, false)
+    if (!resolution.ok) {
+      assert.equal(resolution.kind, 'not-configured')
+      assert.match(resolution.reason, /not a registered LLM route/)
+    }
+  })
+
   it('AUTO composes through the mapped route and serves a declarative recipe call end to end', async () => {
     const { ctx } = await mountDeclarative({
       llm: runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' }),
@@ -493,5 +530,238 @@ describe('task-98 — the runtime-aware resolution maps the configured provider 
     })
     assert.equal(result.isError, false, JSON.stringify(result))
     assert.equal(JSON.parse(result.value as string).title, 'Deployment pipeline configuration')
+  })
+})
+
+describe('task-99 — the bounded background retry flips the status without a second read', () => {
+  interface ServiceDescribe {
+    describe(signal?: AbortSignal): Promise<{
+      rows: readonly { id: string; blocked: boolean; requirements: readonly { kind: string; satisfied: boolean; reason: string }[] }[]
+    }>
+  }
+  const harnessRequirement = (result: Awaited<ReturnType<ServiceDescribe['describe']>>) => (
+    result.extensions.find(row => row.id === EXTENSION_ID)!.requirements.find(req => req.kind === 'harness-model')!
+  )
+
+  /** listProviders() stays empty for `emptyPolls` calls, then the route appears. */
+  function deferredSurface(emptyPolls: number, route = 'deepseek') {
+    let polls = 0
+    const calls = { resolveModelInfo: 0, listProviders: 0 }
+    const base = runtimeSurface({ route, models: ['deepseek-flash'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' })
+    return {
+      calls,
+      surface: {
+        resolveModelInfo: async (provider: string, model: string) => {
+          calls.resolveModelInfo += 1
+          if (polls < emptyPolls) throw new Error('no routes yet')
+          return base.resolveModelInfo(provider, model)
+        },
+        listProviders: () => {
+          calls.listProviders += 1
+          polls += 1
+          if (polls <= emptyPolls) return []
+          return [{ id: route, name: 'DeepSeek Official' }]
+        },
+        listConfigurableProviders: base.listConfigurableProviders,
+        listModels: base.listModels,
+        stream: base.stream,
+      },
+    }
+  }
+
+  it('flips to available within the bounded retry WITHOUT another describe', async () => {
+    const deferred = deferredSurface(3)
+    const { ctx } = await mountDeclarative({
+      llm: deferred.surface,
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+      harnessRetry: { intervalMs: 100, capMs: 5_000 },
+    })
+    const service = ctx.get('modelTools') as unknown as ServiceDescribe
+    const first = await service.describe()
+    const initial = harnessRequirement(first)
+    assert.equal(initial.satisfied, false, 'the first read sees the honest not-ready-yet')
+    // Wait for the retry's own polls to register the route — no describe call
+    // in between. The flip happens on the interval, not on a read.
+    const deadline = Date.now() + 5_000
+    while (Date.now() < deadline && deferred.calls.listProviders <= 3) {
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    assert.ok(deferred.calls.listProviders > 3, 'the background retry must have re-probed')
+    const second = await service.describe()
+    const flipped = harnessRequirement(second)
+    assert.equal(flipped.satisfied, true, `the retry must flip the status: ${JSON.stringify(flipped)}`)
+  })
+
+  it('a registry that stays empty is still not-ready-yet after the cap, with the same reason', async () => {
+    const deferred = deferredSurface(1_000_000)
+    const { ctx } = await mountDeclarative({
+      llm: deferred.surface,
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+      harnessRetry: { intervalMs: 60, capMs: 400 },
+    })
+    const service = ctx.get('modelTools') as unknown as ServiceDescribe
+    const first = await service.describe()
+    const initial = harnessRequirement(first)
+    assert.match(initial.reason, /has not registered its provider routes yet/)
+    // The cap expires; the polls stop; the reason is unchanged.
+    const pollsAtCap = deferred.calls.listProviders
+    await new Promise(resolve => setTimeout(resolve, 700))
+    assert.ok(deferred.calls.listProviders >= pollsAtCap, 'some polls ran')
+    const final = await service.describe()
+    const after = harnessRequirement(final)
+    assert.equal(after.satisfied, false)
+    assert.match(after.reason, /has not registered its provider routes yet/, 'the reason stays the honest not-ready-yet')
+  })
+
+  it('dispose stops the retry (no leaked timers)', async () => {
+    const deferred = deferredSurface(1_000_000)
+    const { disposePlugin } = await mountDeclarative({
+      llm: deferred.surface,
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+      harnessRetry: { intervalMs: 50, capMs: 30_000 },
+    })
+    await new Promise(resolve => setTimeout(resolve, 150))
+    const before = deferred.calls.listProviders
+    assert.ok(before > 0, 'the retry must be polling')
+    await disposePlugin()
+    await new Promise(resolve => setTimeout(resolve, 250))
+    const after = deferred.calls.listProviders
+    assert.ok(after - before <= 1, `the retry must stop on dispose (before=${before}, after=${after})`)
+  })
+
+  it('task-100 retry e2e: routes first + deferred directory → not-ready-yet, retry continues, then available', async () => {
+    // The live boot sequence: routes registered, directory still empty for a
+    // few polls. The retry must NOT finalize the empty-directory verdict.
+    let directoryPolls = 0
+    const surface = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' })
+    const directoryCount = { polls: 0 }
+    const deferred = {
+      resolveModelInfo: async (provider: string, model: string) => {
+        if (directoryCount.polls < 6) throw new Error('not a route yet')
+        return surface.resolveModelInfo(provider, model)
+      },
+      listProviders: surface.listProviders,
+      listConfigurableProviders: () => {
+        directoryPolls += 1
+        directoryCount.polls = directoryPolls
+        if (directoryPolls < 6) return [] as { provider: string; displayName: string }[]
+        return surface.listConfigurableProviders()
+      },
+      listModels: surface.listModels,
+      stream: surface.stream,
+    }
+    const { ctx } = await mountDeclarative({
+      llm: deferred,
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+      harnessRetry: { intervalMs: 80, capMs: 5_000 },
+    })
+    const service = ctx.get('modelTools') as unknown as ServiceDescribe
+    const first = await service.describe()
+    const initial = harnessRequirement(first)
+    assert.equal(initial.satisfied, false, 'the first read sees the honest not-ready-yet')
+    assert.match(initial.reason, /has not registered its provider routes yet/, 'an incomplete directory is not-ready-yet, not the terminal string')
+    // The retry keeps polling; once the directory lands the status flips.
+    const deadline = Date.now() + 5_000
+    while (Date.now() < deadline && directoryPolls < 6) {
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    assert.ok(directoryPolls >= 6, 'the retry must have kept polling the directory')
+    const second = await service.describe()
+    const flipped = harnessRequirement(second)
+    assert.equal(flipped.satisfied, true, `the retry must reach available once the directory lands: ${JSON.stringify(flipped)}`)
+    void ctx
+  })
+
+  it('task-101: a NON-EMPTY directory missing the provider is transient while retrying, then available when it lands', async () => {
+    // The live 0.3.5 shape: the directory has OTHER entries but not
+    // deepseek-official yet. The safe rule presents the transient startup
+    // blocker (not the terminal string) and keeps polling.
+    let directoryPolls = 0
+    const surface = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' })
+    const deferred = {
+      resolveModelInfo: async (provider: string, model: string) => {
+        if (directoryPolls < 5) throw new Error('not a route yet')
+        return surface.resolveModelInfo(provider, model)
+      },
+      listProviders: surface.listProviders,
+      listConfigurableProviders: () => {
+        directoryPolls += 1
+        // Non-empty from the first poll: ANOTHER provider is already listed.
+        const other = { provider: 'pi-ai', displayName: 'Pi AI', settingsNs: 'pi-ai' }
+        return directoryPolls < 5 ? [other] : [...surface.listConfigurableProviders(), other]
+      },
+      listModels: surface.listModels,
+      stream: surface.stream,
+    }
+    const { ctx } = await mountDeclarative({
+      llm: deferred,
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+      harnessRetry: { intervalMs: 80, capMs: 5_000 },
+    })
+    const service = ctx.get('modelTools') as unknown as ServiceDescribe
+    const first = await service.describe()
+    const initial = harnessRequirement(first)
+    assert.equal(initial.satisfied, false, 'the first read sees an unsatisfied requirement')
+    assert.match(initial.reason, /has not registered its provider routes yet/, 'the transient string, never the terminal unknown-provider one')
+    const deadline = Date.now() + 5_000
+    while (Date.now() < deadline && directoryPolls < 5) {
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    assert.ok(directoryPolls >= 5, 'the retry must have kept polling')
+    const second = await service.describe()
+    const flipped = harnessRequirement(second)
+    assert.equal(flipped.satisfied, true, `the retry must reach available once the entry lands: ${JSON.stringify(flipped)}`)
+    void ctx
+  })
+
+  it('task-101: after the cap the REAL not-configured reason is published and polling ends', async () => {
+    // The directory is non-empty but never contains the configured provider —
+    // the transient presentation must give way to the real verdict at the cap.
+    const surface = runtimeSurface({ route: 'deepseek', models: ['deepseek-flash'], settingsNs: 'deepseek-official', displayName: 'DeepSeek Official' })
+    const calls = { resolveModelInfo: 0 }
+    const never = {
+      resolveModelInfo: async (provider: string, model: string) => {
+        calls.resolveModelInfo += 1
+        throw new Error('unknown provider route')
+      },
+      listProviders: () => [{ id: 'deepseek', name: 'DeepSeek' }],
+      listConfigurableProviders: () => [{ provider: 'pi-ai', displayName: 'Pi AI', settingsNs: 'pi-ai' }],
+      listModels: surface.listModels,
+      stream: surface.stream,
+    }
+    const { ctx } = await mountDeclarative({
+      llm: never,
+      settings: { describe: () => [{ ns: 'agent-default-model', autoGenerate: false, schema: null, value: { provider: 'deepseek-official', model: 'deepseek-flash' }, revision: 0, applies: 'live' }] },
+      harnessRetry: { intervalMs: 60, capMs: 400 },
+    })
+    const service = ctx.get('modelTools') as unknown as ServiceDescribe
+    const first = await service.describe()
+    assert.match(harnessRequirement(first).reason, /has not registered its provider routes yet/, 'transient while retrying')
+    const atCap = calls.resolveModelInfo
+    await new Promise(resolve => setTimeout(resolve, 800))
+    assert.ok(calls.resolveModelInfo >= atCap, 'polls ran')
+    const final = await service.describe()
+    const after = harnessRequirement(final)
+    assert.equal(after.satisfied, false)
+    assert.match(after.reason, /cannot be served: the configured provider "deepseek-official" is not a registered LLM route/, 'the cap publishes the REAL verdict')
+    const paused = calls.resolveModelInfo
+    await new Promise(resolve => setTimeout(resolve, 300))
+    assert.ok(calls.resolveModelInfo - paused <= 1, 'no polling after the cap')
+    void ctx
+  })
+
+  it('explicit config is never retried or overwritten', async () => {
+    const deferred = deferredSurface(0)
+    const { ctx } = await mountDeclarative({
+      harnessModel: { provider: 'broken-route', model: 'broken-model' },
+      llm: deferred.surface,
+      harnessRetry: { intervalMs: 50, capMs: 5_000 },
+    })
+    await new Promise(resolve => setTimeout(resolve, 300))
+    // The initial composition probes once (the direct pair fails, then the
+    // resolver consults listProviders once); the bounded retry must NOT add
+    // any further polls for explicit config.
+    assert.ok(deferred.calls.listProviders <= 1, `explicit config must never be retried (listProviders=${deferred.calls.listProviders})`)
+    await cleanup()
   })
 })

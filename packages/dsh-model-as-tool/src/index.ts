@@ -265,6 +265,9 @@ export interface Config {
    * acquisition path is exercised with ZERO network; a deployment never sets
    * this, and the default stays the real opt-in source. */
   assetSourceFactory?: () => AcquisitionSource
+  /** TASK-99 test seams: the bounded-retry interval/cap (defaults 250 ms / 30 s). */
+  harnessRetryIntervalMs?: number
+  harnessRetryCapMs?: number
   /** §12 config v3: the nested shape + the fixed-false flags (see the zod). */
   schemaVersion?: number
   extensions?: {
@@ -940,6 +943,21 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
    */
   let harnessNotReadyYet = false
   let harnessRefreshInFlight = false
+  let harnessRetrying = false
+  let harnessPendingStatus: HarnessProviderStatus | undefined
+  /**
+   * TASK-101: the transient presentation. While the bounded retry is ACTIVE,
+   * any failing AUTO verdict (not-ready-yet OR not-configured) is presented as
+   * the not-ready-yet string — a startup blocker, never a false configuration
+   * error — and the REAL verdict is parked; the cap publishes it.
+   */
+  const harnessNotReadyStatus = (): HarnessProviderStatus => ({
+    available: false,
+    reason:
+      'the deployment\'s LLM surface has not registered its provider routes yet; retry once the deployment '
+      + 'finishes starting (this is not a configuration error)',
+    action: 'config',
+  })
   const refreshHarness = async (): Promise<void> => {
     if (harnessRefreshInFlight) return
     harnessRefreshInFlight = true
@@ -953,6 +971,7 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
           model: 'explicit harnessProvider',
         }
         harnessNotReadyYet = false
+        harnessPendingStatus = undefined
         return
       }
       const desired = explicitHarnessModel ?? (() => {
@@ -972,6 +991,7 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
           action: 'config',
         }
         harnessNotReadyYet = false
+        harnessPendingStatus = undefined
         return
       }
       const labeled = explicitHarnessModel === undefined ? 'the deployment\'s default model' : 'config.harnessModel'
@@ -985,13 +1005,21 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
           action: 'config',
         }
         harnessNotReadyYet = false
+        harnessPendingStatus = undefined
         return
       }
       const resolution = await resolveRunnableHarnessModel(llmSurface, desired, harnessWarn)
       if (!resolution.ok) {
-        harnessProvider = undefined
-        harnessNotReadyYet = resolution.kind === 'not-ready-yet'
-        harnessProviderStatus = {
+        /**
+         * TASK-99: never downgrade a satisfied status on a later probe. A
+         * retry whose registry momentarily reports empty after a success keeps
+         * the composed provider and the satisfied status — the composed pair
+         * was built from a REAL resolution and stays the truth for the process.
+         */
+        if (harnessProvider !== undefined || harnessProviderStatus?.available === true) {
+          return
+        }
+        const realStatus: HarnessProviderStatus = {
           available: false,
           reason:
             resolution.kind === 'not-ready-yet'
@@ -999,11 +1027,31 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
               : `${labeled} ${desired.provider}/${desired.model} cannot be served: ${resolution.reason}`,
           action: 'config',
         }
+        harnessProvider = undefined
+        if (explicitHarnessModel !== undefined) {
+          // Explicit config is final: the real verdict, immediately, no retry.
+          harnessNotReadyYet = false
+          harnessProviderStatus = realStatus
+          harnessPendingStatus = undefined
+        } else if (harnessRetrying) {
+          // TASK-101: the retry is active — present the transient startup
+          // blocker and park the real verdict for the cap.
+          harnessNotReadyYet = true
+          harnessPendingStatus = realStatus
+          harnessProviderStatus = harnessNotReadyStatus()
+        } else {
+          // The initial AUTO resolution: start the retry cycle with the
+          // transient presentation.
+          harnessNotReadyYet = true
+          harnessPendingStatus = realStatus
+          harnessProviderStatus = harnessNotReadyStatus()
+        }
         return
       }
       const built = await buildHarnessLlmProvider(harnessBuildEnv(), { provider: resolution.route, model: resolution.model }, harnessWarn)
       harnessProvider = built
       harnessNotReadyYet = false
+      harnessPendingStatus = undefined
       harnessProviderStatus = built === undefined
         ? {
             available: false,
@@ -1033,6 +1081,60 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
     if (harnessNotReadyYet && !harnessRefreshInFlight) void refreshHarness()
     return harnessProviderStatus
   }
+
+  /**
+   * TASK-99/101: the bounded background retry. After a failing AUTO verdict,
+   * re-run the SAME resolution on an interval so the FIRST Settings read lands
+   * on the refreshed status instead of a blocked row the operator has to
+   * close/reopen to clear. TASK-101's safe rule: an AUTO candidate is
+   * RETRYABLE UNTIL THE CAP — the retry stops only on success, the cap, or
+   * dispose (and never starts for explicit config). While it runs, ANY failing
+   * verdict is presented as the transient not-ready-yet string; at the cap the
+   * REAL parked verdict (unknown provider / unserved model) is published and
+   * polling ends. A satisfied status is never downgraded.
+   */
+  const HARNESS_RETRY_INTERVAL_MS = config.harnessRetryIntervalMs ?? 250
+  const HARNESS_RETRY_CAP_MS = config.harnessRetryCapMs ?? 30_000
+  const HARNESS_RETRY_MAX_POLLS = Math.max(1, Math.floor(HARNESS_RETRY_CAP_MS / HARNESS_RETRY_INTERVAL_MS))
+  let harnessRetryTimer: ReturnType<typeof setInterval> | undefined
+  let harnessRetryPolls = 0
+  const stopHarnessRetry = (): void => {
+    if (harnessRetryTimer !== undefined) {
+      clearInterval(harnessRetryTimer)
+      harnessRetryTimer = undefined
+    }
+    harnessRetrying = false
+  }
+  const startHarnessRetry = (): void => {
+    // Explicit config is final: no background probe may override it.
+    if (config.harnessProvider !== undefined || explicitHarnessModel !== undefined) return
+    if (harnessRetryTimer !== undefined) return
+    harnessRetrying = true
+    harnessRetryPolls = 0
+    harnessRetryTimer = setInterval(() => {
+      harnessRetryPolls += 1
+      void refreshHarness().then(() => {
+        if (harnessProvider !== undefined) {
+          // Success: the answer is final.
+          stopHarnessRetry()
+        } else if (harnessRetryPolls >= HARNESS_RETRY_MAX_POLLS) {
+          // TASK-101: the cap publishes the REAL parked verdict and ends polling.
+          stopHarnessRetry()
+          harnessNotReadyYet = false
+          if (harnessPendingStatus !== undefined) {
+            harnessProviderStatus = harnessPendingStatus
+            harnessPendingStatus = undefined
+          }
+        }
+        // Otherwise keep retrying: an unresolved AUTO candidate is retryable
+        // until the cap, never terminal on an incomplete registry/directory.
+      })
+    }, HARNESS_RETRY_INTERVAL_MS)
+    harnessRetryTimer.unref?.()
+  }
+  if (harnessNotReadyYet) startHarnessRetry()
+  // The plugin fiber's teardown stops the retry: no leaked timers.
+  ctx.effect(() => () => stopHarnessRetry())
 
   /**
    * The managed-worker half (EXT-20), DEFAULT OFF.

@@ -157,8 +157,8 @@ export async function resolveRunnableHarnessModel(
   const byId = providers.find(entry => entry.id === desired.provider)
   const byName = providers.find(entry => entry.name === desired.provider)
   let route = byId?.id ?? byName?.id
+  const directory = llm.listConfigurableProviders?.() ?? []
   if (route === undefined) {
-    const directory = llm.listConfigurableProviders?.() ?? []
     const entry = directory.find(candidate => (
       candidate.provider === desired.provider
       || candidate.settingsNs === desired.provider
@@ -167,6 +167,22 @@ export async function resolveRunnableHarnessModel(
     route = entry?.provider
   }
   if (route === undefined) {
+    /**
+     * TASK-100: an EMPTY configurable-provider directory means the runtime is
+     * still registering — the adapter routes appear FIRST and the directory
+     * entries land after, so a provider the directory cannot map yet is
+     * not-ready-yet, never a terminal not-configured (the live 0.3.4
+     * regression finalized exactly this too early). The retry keeps polling.
+     */
+    if (directory.length === 0) {
+      return {
+        ok: false,
+        kind: 'not-ready-yet',
+        reason:
+          'the deployment\'s LLM surface has not registered its provider routes yet; retry once the deployment '
+          + 'finishes starting (this is not a configuration error)',
+      }
+    }
     return {
       ok: false,
       kind: 'not-configured',
