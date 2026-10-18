@@ -111,8 +111,9 @@ if (command === 'mcp-stdio') {
       },
     },
     launcherSeam:
-      'the host package ships no headless composition entry (no src/host.ts); `serve` therefore cannot boot a '
-      + 'DSH composition from this artifact and reports the missing seam instead of inventing service constructors (RUN-03)',
+      '`serve` boots the headless composition in lib/headless.js: config -> catalog -> contract bindings -> MCP host -> '
+      + 'HTTP with credential authentication, without the DSH CLI or a browser (RUN-03). Harness-backed program '
+      + 'execution (tool_mode_run) stays refused headless: it needs the DSH PtcHostContext (CODE-10).',
     serverStatus: 'not running (doctor does not start the listener)',
   }
   report(result)

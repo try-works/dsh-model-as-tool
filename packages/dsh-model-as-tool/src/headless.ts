@@ -25,6 +25,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { STANDARD_CONTRACTS, type ToolContract } from '@try-works/tool-mode-contracts'
 import {
+  assertValidContract,
   assertValidInput,
   assertValidOutput,
   crossFieldRules,
@@ -224,6 +225,13 @@ export async function startHeadlessServe(configPath?: string): Promise<HeadlessS
 
   const published: PublishedTool[] = []
   for (const binding of bindings.values()) {
+    /**
+     * Registration is what compiles a contract's validators. The plugin path gets
+     * this from registerContractTool; the headless surface builds the published
+     * list directly, so it must register each contract here or every real call
+     * fails with "input was validated before the contract was registered".
+     */
+    assertValidContract(binding.contract)
     published.push({ toolName: binding.contract.toolName, contract: binding.contract })
   }
   if (config.registerControlTool !== false) {

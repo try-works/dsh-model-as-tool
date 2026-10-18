@@ -116,6 +116,40 @@ async function postToolsList(url: string): Promise<{ status: number; body: strin
   return { status: response.status, body: await response.text() }
 }
 
+/** The pinned modern tools/call HTTP request. */
+async function postToolCall(
+  url: string,
+  name: string,
+  args: Record<string, unknown>,
+): Promise<{ status: number; body: string }> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/json, text/event-stream',
+      authorization: `Bearer ${TOKEN}`,
+      'mcp-protocol-version': PROTOCOL_VERSION,
+      'mcp-method': 'tools/call',
+      'mcp-name': name,
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 'headless-call',
+      method: 'tools/call',
+      params: {
+        name,
+        arguments: args,
+        _meta: {
+          [META_KEYS.protocolVersion]: PROTOCOL_VERSION,
+          [META_KEYS.clientInfo]: { name: 'headless-serve-test', version: '1.0.0' },
+          [META_KEYS.clientCapabilities]: {},
+        },
+      },
+    }),
+  })
+  return { status: response.status, body: await response.text() }
+}
+
 describe('task-74 (A) — the REAL headless serve entry', () => {
   it('starts, prints {ok, listening, url}, and answers tools/list over HTTP', async () => {
     const dir = scratch()
@@ -136,6 +170,30 @@ describe('task-74 (A) — the REAL headless serve entry', () => {
     // path is pinned in-process below, and the spawned child is terminated.
     child.kill('SIGKILL')
     await new Promise<void>(resolve => child.on('exit', () => resolve()))
+  })
+
+  it('EXECUTES a published contract end to end (lang_detect returns a real language)', async () => {
+    // The headless surface builds its published list directly, so the contracts it
+    // serves must be REGISTERED there too. Before this test existed, every call
+    // failed with "input was validated before the contract was registered" while
+    // tools/list looked healthy — a defect only a real invocation exposed.
+    const dir = scratch()
+    const configPath = join(dir, 'tool-mode.json')
+    writeFileSync(configPath, JSON.stringify({ mcpV3: { host: '127.0.0.1', port: 0, path: '/mcp' } }))
+    const { child, url } = await spawnServe(configPath)
+    try {
+      const response = await postToolCall(url, 'lang_detect', { text: 'kann ich das haben' })
+      assert.equal(response.status, 200, response.body)
+      const parsed = JSON.parse(response.body) as {
+        result?: { isError?: boolean; structuredContent?: { language?: string }; content?: { text?: string }[] }
+      }
+      assert.notEqual(parsed.result?.isError, true, JSON.stringify(parsed.result))
+      assert.equal(parsed.result?.structuredContent?.language, 'de', JSON.stringify(parsed.result))
+      assert.match(parsed.result?.content?.[0]?.text ?? '', /"language":"de"/)
+    } finally {
+      child.kill('SIGKILL')
+      await new Promise<void>(resolve => child.on('exit', () => resolve()))
+    }
   })
 
   it('shuts down cleanly when the signal source fires (in-process, deterministic on Windows)', async () => {
