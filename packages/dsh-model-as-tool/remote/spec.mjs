@@ -104,9 +104,32 @@ const DESCRIBE_RESULT = {
     extensions: { kind: 'array', of: EXTENSION_STATE },
   },
 }
+/**
+ * The install result.
+ *
+ * `source` and `resolvedVersion` are ADDITIVE against the older result shape:
+ * a Host that predates registry installs omits them and still validates. When
+ * present the route is exactly `registry` or `directory`, and the resolved
+ * version is the exact version the request resolved to.
+ */
 const INSTALL_RESULT = {
   kind: 'object',
-  fields: { id: STRING, version: STRING, active: BOOLEAN },
+  fields: {
+    id: STRING,
+    version: STRING,
+    active: BOOLEAN,
+    source: {
+      kind: 'optional',
+      of: {
+        kind: 'union',
+        of: [
+          { kind: 'literal', value: 'registry' },
+          { kind: 'literal', value: 'directory' },
+        ],
+      },
+    },
+    resolvedVersion: { kind: 'optional', of: STRING },
+  },
 }
 const TOGGLE_RESULT = {
   kind: 'object',

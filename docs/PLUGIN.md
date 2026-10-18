@@ -180,6 +180,14 @@ Three wire facts a caller must respect:
 The namespace exposes `describe`, `installExtension`, `enable`, `disable`, and
 `prepare`:
 
+- **`installExtension(id, source?)` reports where the installed bytes came
+  from.** Its raw result is `{ id, version, active: false, source: 'registry' |
+  'directory', resolvedVersion }`; installation never activates the extension.
+  `resolvedVersion` is the exact version the request resolved to (the version a
+  registry range/tag selected). Both new fields are ADDITIVE for older hosts:
+  when a result omits them, fall back to the previous "installed v<version>"
+  text rather than inventing a source.
+
 - **`prepare(id)`** acquires and verifies the installed extension's model assets
   and records the readiness a following `enable` needs. `prepare` is id-only, so
   `prepare(id)` is a valid call. Its raw result is an `ExtensionPrepareResult`

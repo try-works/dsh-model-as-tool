@@ -1,6 +1,6 @@
 {
   "name": "@try-works/extension-desert-ant-voz",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "First-party Tool Mode extension implementing tool-mode/stt_transcribe on the Desert Ant Labs Voz speech model",
   "license": "MIT",

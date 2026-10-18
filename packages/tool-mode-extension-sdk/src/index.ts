@@ -108,6 +108,7 @@ export {
 } from './install/dependencies.ts'
 
 export { stagedInstallFromDirectory } from './install/source-directory.ts'
+export { createTarGzipArchiveSource, type TarGzipLimits } from './install/tar-gzip-source.ts'
 
 export {
   LEGACY_MODEL_MIGRATIONS,

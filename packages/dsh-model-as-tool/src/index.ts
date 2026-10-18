@@ -225,6 +225,27 @@ export interface Config {
    */
   extensionSourceDir?: string
   /**
+   * How an install with no explicit source directory gets its package bytes.
+   *
+   * - `registry`: resolve the package from the npm registry (`extensionRegistry`),
+   *   verify the registry-declared sha512 and install the tarball.
+   * - `directory`: the developer-mode source-directory path above.
+   * - `auto` (default): prefer the registry; fall back to the source directory
+   *   ONLY when the registry is unreachable (transport/timeout/5xx/unconfigured)
+   *   and `extensions.allowSourceDirectories` is on. A package-level registry
+   *   refusal (404, missing integrity, bad tarball, digest mismatch) is always a
+   *   named error and is NEVER silently retried against a local directory.
+   */
+  extensionInstallSource?: 'registry' | 'directory' | 'auto'
+  /**
+   * The npm registry registry installs resolve against. Defaults to the public
+   * npm registry; set it empty to disable the registry route (directory installs
+   * still need `extensions.allowSourceDirectories`).
+   */
+  extensionRegistry?: string
+  /** Hard cap on one registry package tarball download. Default 256 MiB. */
+  extensionTarballMaxBytes?: number
+  /**
    * Operator gate: allow dependency content that arrived already materialized.
    *
    * OFF by default. When off, a declared dependency whose package.json carries
@@ -463,6 +484,16 @@ export const Config: z<Config> = z.object({
    * Empty by default: a deployment with no first-party source advertises none.
    */
   extensionSourceDir: z.string().default(''),
+  /**
+   * Install route for the Settings page: registry, directory, or auto (registry
+   * first, directory only for a transport failure when directory installs are
+   * allowed). Default auto.
+   */
+  extensionInstallSource: z.union([z.const('registry'), z.const('directory'), z.const('auto')]).default('auto'),
+  /** npm registry base URL; empty disables the registry route. Default: public npm. */
+  extensionRegistry: z.string().default('https://registry.npmjs.org/'),
+  /** Hard cap on one registry tarball download, in bytes. Default 256 MiB. */
+  extensionTarballMaxBytes: z.number().min(1).default(256 * 1024 * 1024),
   allowPreinstalledDependencies: z.boolean().default(false),
   preinstalledDependenciesRoot: z.string().default(''),
   /**
@@ -763,6 +794,15 @@ export async function apply(ctx: Context, config: Config = {}): Promise<void> {
     storeDir: config.extensionStore ?? '',
     sourceDir: config.extensionSourceDir ?? '',
     allowSourceDirectories: config.extensions?.allowSourceDirectories === true,
+    /**
+     * Registry installs (task-104). `auto` prefers the registry and uses the
+     * developer-mode directory only as a TRANSPORT-failure fallback when the
+     * source-directory gate is on; package-level registry refusals are named and
+     * never retried locally.
+     */
+    installSource: config.extensionInstallSource ?? 'auto',
+    registryUrl: config.extensionRegistry ?? 'https://registry.npmjs.org/',
+    registryTarballMaxBytes: config.extensionTarballMaxBytes ?? 256 * 1024 * 1024,
     /**
      * The operator gate for already-materialized dependencies. OFF by default:
      * a dependency whose package.json declares install-time scripts still

@@ -209,6 +209,16 @@ describe('EXT-08 — integrity', () => {
     assert.equal(verifyIntegrity(bytes, `sha512-${digest}`), digest)
   })
 
+  it('accepts the npm registry form: case-sensitive base64 SRI (task-104 discovery)', () => {
+    const bytes = Buffer.from('hello world')
+    const digest = digestOf(bytes)
+    const sri = `sha512-${createHash('sha512').update(bytes).digest('base64')}`
+    // The base64 form carries '=' padding AND case-sensitive characters; a
+    // correct digest must verify, not be corrupted by lowercasing.
+    assert.match(sri, /=$/, 'the fixture is the padded npm SRI form')
+    assert.equal(verifyIntegrity(bytes, sri), digest)
+  })
+
   it('refuses a mismatch with advice not to retry blindly', () => {
     assert.throws(() => verifyIntegrity(new Uint8Array([1]), digestOf(new Uint8Array([2]))), (error: unknown) => {
       assert.ok(error instanceof ManagementError)

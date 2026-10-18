@@ -159,12 +159,15 @@ describe('install() refuses with named errors before copying anything', () => {
   })
 
   it('refuses without a source argument or a configured source directory', async () => {
-    const error = await refuses(createExtensionsService({ storeDir: tempDir() }).install(EXTENSION_ID), 'extension-source-unconfigured')
+    const error = await refuses(
+      createExtensionsService({ storeDir: tempDir(), installSource: 'directory' }).install(EXTENSION_ID),
+      'extension-source-unconfigured',
+    )
     assert.match(error.message, /config\.extensionSourceDir/)
   })
 
   it('refuses when the resolved source package directory is missing', async () => {
-    const service = createExtensionsService({ storeDir: tempDir(), sourceDir: tempDir(), allowSourceDirectories: true })
+    const service = createExtensionsService({ storeDir: tempDir(), sourceDir: tempDir(), allowSourceDirectories: true, installSource: 'directory' })
     const error = await refuses(service.install(EXTENSION_ID), 'extension-source-missing')
     assert.match(error.message, /does not exist/)
   })
@@ -176,7 +179,7 @@ describe('install() refuses with named errors before copying anything', () => {
   })
 
   it('refuses source-directory installs unless the operator allowed them', async () => {
-    const service = createExtensionsService({ storeDir: tempDir(), sourceDir: sourceRoot() })
+    const service = createExtensionsService({ storeDir: tempDir(), sourceDir: sourceRoot(), installSource: 'directory' })
     const error = await refuses(service.install(EXTENSION_ID), 'extension-source-directories-not-allowed')
     assert.match(error.message, /extensions\.allowSourceDirectories/)
   })
@@ -187,6 +190,7 @@ describe('install() refuses with named errors before copying anything', () => {
       storeDir,
       sourceDir: sourceRoot(),
       allowSourceDirectories: true,
+      installSource: 'directory',
       digestContent: () => {
         throw new Error('the file is locked by another process')
       },
@@ -197,13 +201,13 @@ describe('install() refuses with named errors before copying anything', () => {
   })
 
   it('refuses a source whose package identity is not the requested id', async () => {
-    const service = createExtensionsService({ storeDir: tempDir(), sourceDir: sourceRoot(), allowSourceDirectories: true })
+    const service = createExtensionsService({ storeDir: tempDir(), sourceDir: sourceRoot(), allowSourceDirectories: true, installSource: 'directory' })
     const error = await refuses(service.install('@try-works/some-other-extension', FIXTURE_DIR), 'extension-source-mismatch')
     assert.match(error.message, /fixture-ext-service/)
   })
 
   it('refuses an identity that could escape the source root', async () => {
-    const service = createExtensionsService({ storeDir: tempDir(), sourceDir: sourceRoot(), allowSourceDirectories: true })
+    const service = createExtensionsService({ storeDir: tempDir(), sourceDir: sourceRoot(), allowSourceDirectories: true, installSource: 'directory' })
     await refuses(service.install('..', FIXTURE_DIR), 'extension-id-invalid')
   })
 
@@ -212,6 +216,7 @@ describe('install() refuses with named errors before copying anything', () => {
       storeDir: tempDir(),
       sourceDir: sourceRoot(),
       allowSourceDirectories: true,
+      installSource: 'directory',
       installDirectory: async () => {
         throw new ManagementError('UPGRADE_FAILED', 'install', 'the package is already installed', 'Uninstall it first.')
       },
@@ -225,6 +230,7 @@ describe('install() refuses with named errors before copying anything', () => {
       storeDir: tempDir(),
       sourceDir: sourceRoot(),
       allowSourceDirectories: true,
+      installSource: 'directory',
       installDirectory: async () => ({
         extensionId: EXTENSION_ID,
         version: '1.0.0',
@@ -249,6 +255,7 @@ describe('install then enable/disable is a truthful round-trip', () => {
       storeDir,
       sourceDir: source,
       allowSourceDirectories: true,
+      installSource: 'directory',
       lifecycle: () => lifecycle,
       disabledExtensions: () => configuredDisabled,
       persistDisabledExtensions: ids => {
@@ -259,7 +266,13 @@ describe('install then enable/disable is a truthful round-trip', () => {
 
     // INSTALLATION IS NOT ACTIVATION.
     const installed = await service.install(EXTENSION_ID)
-    assert.deepEqual(installed, { id: EXTENSION_ID, version: '1.0.0', active: false })
+    assert.deepEqual(installed, {
+      id: EXTENSION_ID,
+      version: '1.0.0',
+      active: false,
+      source: 'directory',
+      resolvedVersion: '1.0.0',
+    })
     assert.equal(lifecycle.stateOf(EXTENSION_ID), undefined, 'install must not write activation state')
 
     const afterInstall = await service.describe()

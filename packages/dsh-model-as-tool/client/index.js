@@ -1086,6 +1086,29 @@ window.__ModuleLoader__.load({
     }
 
     /**
+     * The row note for a successful install.
+     *
+     * The wire result may carry `source` ('registry' | 'directory') and the exact
+     * `resolvedVersion`. Both are OPTIONAL: an older host returns only
+     * {id, version, active}, in which case this returns null and the describe()
+     * row keeps showing today's "installed v<version>" text — provenance is never
+     * invented from an absent or unknown source.
+     *
+     * @param result - the ExtensionInstallResult (any host version).
+     * @returns the note, or null when the result does not name a known source.
+     */
+    function installResultNote(result) {
+      if (result === null || result === undefined || typeof result !== 'object') return null
+      const version = typeof result.resolvedVersion === 'string' && result.resolvedVersion.length > 0
+        ? result.resolvedVersion
+        : typeof result.version === 'string' && result.version.length > 0 ? result.version : null
+      if (version === null) return null
+      if (result.source === 'registry') return 'installed v' + version + ' from npm'
+      if (result.source === 'directory') return 'installed v' + version + ' from the local package directory'
+      return null
+    }
+
+    /**
      * The config-only row: the switch records a `disabledExtensions` preference
      * and cannot observe or change the store. Used when the Remote is absent.
      */
@@ -1123,7 +1146,7 @@ window.__ModuleLoader__.load({
      *
      * @param entry - the generated extension entry.
      * @param state - the describe() row for it, or null when not reported.
-     * @param ui - { writable, canInstall, listed, busy, pending, error, prepareNote, onAction }.
+     * @param ui - { writable, canInstall, listed, busy, pending, error, prepareNote, installNote, onAction }.
      */
     function extensionRemoteRow(entry, state, ui) {
       const installed = state !== null && state.installed === true
@@ -1157,6 +1180,9 @@ window.__ModuleLoader__.load({
       }
       if (ui.prepareNote !== null && ui.prepareNote !== undefined && ui.prepareNote.id === entry.id) {
         addNote(ui.prepareNote.text)
+      }
+      if (ui.installNote !== null && ui.installNote !== undefined && ui.installNote.id === entry.id) {
+        addNote(ui.installNote.text)
       }
       // Every unmet requirement gets its exact reason on the row. A requirement
       // whose reason is the row reason already is not repeated; the hint comes
@@ -1268,6 +1294,10 @@ window.__ModuleLoader__.load({
       // The last prepare() disclosure/refusal, per row. It is rendered beside the
       // host's reason so a RES-02 refusal or plan is shown verbatim.
       const [extPrepareNote, setExtPrepareNote] = React.useState(null)
+      // The provenance note from the last successful install, per row ("installed
+      // v<resolvedVersion> from npm / from the local package directory"). Null for
+      // a legacy host result that carries neither source nor resolvedVersion.
+      const [extInstallNote, setExtInstallNote] = React.useState(null)
 
       /** This mount's namespace status, or null when the wire chunk is absent. */
       const mounted = () => (remoteSlot === null || remoteSlot === undefined ? null : remoteSlot.get())
@@ -1431,6 +1461,7 @@ window.__ModuleLoader__.load({
         setExtRowError(null)
         setExtConfigNote(null)
         setExtPrepareNote(null)
+        setExtInstallNote(null)
         setExtRemote({ kind: 'loading' })
         const namespace = modelToolsRemote(ctx, mounted())
         if (namespace === null) {
@@ -1456,6 +1487,7 @@ window.__ModuleLoader__.load({
         setExtRowError(null)
         setExtConfigNote(null)
         setExtPrepareNote(null)
+        setExtInstallNote(null)
         setExtPending({ id, action })
         try {
           const namespace = modelToolsRemote(ctx, mounted())
@@ -1471,7 +1503,11 @@ window.__ModuleLoader__.load({
             // its positional slot. Passing only the id is refused by the gateway
             // ("expected 2 business argument(s) ... got 1"), so pass undefined to
             // mean "use the configured first-party source".
-            unwrapRemoteResult(await install.call(namespace, id, undefined))
+            const installed = unwrapRemoteResult(await install.call(namespace, id, undefined))
+            // Provenance note when the host names the route; null on a legacy
+            // result, in which case describe()'s "installed v<version>" stands.
+            const note = installResultNote(installed)
+            if (note !== null) setExtInstallNote({ id, text: note })
           } else if (action === 'prepare') {
             if (typeof namespace.prepare !== 'function') {
               throw new Error('This host does not expose the extension prepare action.')
@@ -1550,6 +1586,7 @@ window.__ModuleLoader__.load({
               pending: extPending,
               error: extRowError,
               prepareNote: extPrepareNote,
+              installNote: extInstallNote,
               onAction: runExtensionAction,
             })))
       } else if (extRemote.kind === 'error') {
@@ -1673,6 +1710,7 @@ window.__ModuleLoader__.load({
       extensionRequirementControls,
       extensionNeedsPreparation,
       prepareResultNote,
+      installResultNote,
     }
     return module.exports
   },

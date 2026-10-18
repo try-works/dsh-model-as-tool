@@ -349,6 +349,28 @@ window.__ModuleLoader__.load({
           },
           "active": {
             "kind": "boolean"
+          },
+          "source": {
+            "kind": "optional",
+            "of": {
+              "kind": "union",
+              "of": [
+                {
+                  "kind": "literal",
+                  "value": "registry"
+                },
+                {
+                  "kind": "literal",
+                  "value": "directory"
+                }
+              ]
+            }
+          },
+          "resolvedVersion": {
+            "kind": "optional",
+            "of": {
+              "kind": "string"
+            }
           }
         }
       }

@@ -230,9 +230,16 @@ describe('ExtensionsService.install materializes dependencies inside the extensi
       storeDir,
       sourceDir: tree.sourceDir,
       allowSourceDirectories: true,
+      installSource: 'directory',
     })
     const installed = await service.install(EXTENSION_ID)
-    assert.deepEqual(installed, { id: EXTENSION_ID, version: '1.0.0', active: false })
+    assert.deepEqual(installed, {
+      id: EXTENSION_ID,
+      version: '1.0.0',
+      active: false,
+      source: 'directory',
+      resolvedVersion: '1.0.0',
+    })
 
     const record = new ExtensionStore(storeDir).listInstalled().value.find(candidate => candidate.extensionId === EXTENSION_ID)
     assert.ok(record !== undefined)
@@ -255,7 +262,7 @@ describe('ExtensionsService.install materializes dependencies inside the extensi
   it('refuses with a named error when a declared dependency is missing, and installs nothing', async () => {
     const tree = hostTree()
     const storeDir = tempDir()
-    const service = createExtensionsService({ storeDir, sourceDir: tree.sourceDir, allowSourceDirectories: true })
+    const service = createExtensionsService({ storeDir, sourceDir: tree.sourceDir, allowSourceDirectories: true, installSource: 'directory' })
     // Point the extension at a dependency that is not in the host tree.
     const packageJsonPath = join(tree.extensionDir, 'package.json')
     const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as Record<string, unknown>
@@ -273,7 +280,7 @@ describe('ExtensionsService.install materializes dependencies inside the extensi
     const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as Record<string, unknown>
     pkg['dependencies'] = { '@fixture/dep': '^1.0.0' }
     writeFileSync(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`)
-    const service = createExtensionsService({ storeDir, sourceDir: tree.sourceDir, allowSourceDirectories: true })
+    const service = createExtensionsService({ storeDir, sourceDir: tree.sourceDir, allowSourceDirectories: true, installSource: 'directory' })
     await rejectsService(service.install(EXTENSION_ID), /postinstall.*EXT-10/)
     assert.deepEqual([...new ExtensionStore(storeDir).listInstalled().value], [])
   })
@@ -291,9 +298,16 @@ describe('ExtensionsService.install materializes dependencies inside the extensi
       allowSourceDirectories: true,
       allowPreinstalledDependencies: true,
       preinstalledDependenciesRoot: tree.root,
+      installSource: 'directory',
     })
     const installed = await service.install(EXTENSION_ID)
-    assert.deepEqual(installed, { id: EXTENSION_ID, version: '1.0.0', active: false })
+    assert.deepEqual(installed, {
+      id: EXTENSION_ID,
+      version: '1.0.0',
+      active: false,
+      source: 'directory',
+      resolvedVersion: '1.0.0',
+    })
 
     const record = new ExtensionStore(storeDir).listInstalled().value.find(candidate => candidate.extensionId === EXTENSION_ID)
     const locked = record?.dependencies?.[0]

@@ -96,6 +96,11 @@ if (client !== undefined) {
       note(/installExtension/.test(source) && /install\.call\(namespace, id, undefined\)/.test(source)
         && /\.enable\(id\)/.test(source) && /\.disable\(id\)/.test(source),
         'the client half must call installExtension(id, undefined)/enable(id)/disable(id) through the Remote')
+      // The install result names the route (npm vs local directory) and the exact
+      // resolved version; a legacy result without those fields must add nothing.
+      note(/installResultNote/.test(source) && source.includes('from npm')
+        && source.includes('from the local package directory'),
+        'the client half must render install provenance (registry vs local directory)')
       // Preparation: a host-named blocker must offer Prepare(id); the host's
       // reason and any prepare refusal must be rendered verbatim, never replaced.
       note(/namespace\.prepare\(id\)/.test(source) && source.includes("'Preparing…'"),

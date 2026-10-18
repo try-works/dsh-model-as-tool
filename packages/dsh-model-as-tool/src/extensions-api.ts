@@ -98,6 +98,10 @@ export interface ExtensionInstallResult {
   readonly version: string
   /** Installation is not activation: `active` is false until it is enabled. */
   readonly active: boolean
+  /** Which route actually supplied the installed bytes. */
+  readonly source: 'registry' | 'directory'
+  /** The exact version the request resolved to (equals `version` today). */
+  readonly resolvedVersion: string
 }
 
 /** The result of an enable/disable request. */

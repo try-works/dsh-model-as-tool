@@ -61,6 +61,11 @@ import {
 /** A package identity: one optional scope segment, then one name segment. */
 const PACKAGE_ID = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/i
 
+/** A message from an arbitrary thrown value. */
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 /**
  * The dependency archive byte cap.
  *
@@ -591,3 +596,577 @@ export function createFirstPartyDependencyGraph(
 
 /** Re-export for callers that want the size bound wording. */
 export { DEFAULT_ARCHIVE_LIMITS }
+
+// ============================================================================
+// npm registry installs (task-104)
+// ============================================================================
+
+/** The default npm registry. */
+export const DEFAULT_REGISTRY_URL = 'https://registry.npmjs.org/'
+
+/** Metadata response cap (a packument is JSON; 16 MiB is generous for one package). */
+const MAX_REGISTRY_METADATA_BYTES = 16 * 1024 * 1024
+
+/** How a registry operation failed. Every code is host-facing and stable. */
+export type RegistryErrorCode =
+  /** No registry URL is configured. */
+  | 'registry-not-configured'
+  /** The registry has no such package, version, or dist-tag. */
+  | 'registry-not-found'
+  /** Transport failure or 5xx: the registry did not answer usefully. This is the ONLY fallback-eligible failure. */
+  | 'registry-unavailable'
+  /** The metadata did not have the npm shape this client can verify. */
+  | 'registry-invalid-metadata'
+  /** `dist.integrity` is absent or not a sha512 SRI string: installs are refused, never unverified. */
+  | 'registry-integrity-missing'
+  /** The tarball did not download (non-2xx, truncated, aborted). */
+  | 'registry-tarball-fetch-failed'
+  /** The tarball is over the configured byte cap. */
+  | 'registry-tarball-too-large'
+  /** No published version satisfies the requested range. */
+  | 'registry-no-matching-version'
+
+/** A named registry failure. */
+export class RegistryError extends Error {
+  override readonly name = 'RegistryError'
+  readonly code: RegistryErrorCode
+  /** Whether a directory fallback may be considered under `auto`. */
+  readonly transport: boolean
+
+  constructor(code: RegistryErrorCode, message: string, options?: { readonly cause?: unknown; readonly transport?: boolean }) {
+    super(message, options?.cause === undefined ? undefined : { cause: options.cause })
+    this.code = code
+    this.transport = options?.transport === true
+  }
+}
+
+/** One package version resolved from the registry. */
+export interface RegistryPackageResolution {
+  /** The package name, exactly as requested. */
+  readonly name: string
+  /** The EXACT published version selected. */
+  readonly version: string
+  /** The tarball URL from `dist.tarball`. */
+  readonly tarball: string
+  /** The registry's sha512 SRI string from `dist.integrity` (verified before extraction). */
+  readonly integrity: string
+  /** The dist-tag that selected this version, when the request named one. */
+  readonly distTag?: string
+}
+
+/** What a registry session needs. */
+export interface RegistrySessionOptions {
+  /** Registry base URL, e.g. `https://registry.npmjs.org/`. Empty is allowed and refuses at resolve time. */
+  readonly registryUrl: string
+  /**
+   * The container decoder for the bytes the registry serves.
+   *
+   * npm serves `.tgz`; the host passes the SDK's tar-gzip ArchiveSource factory.
+   * Injectable so the session (resolution, bounds, integrity plumbing) can be
+   * tested independently of the container implementation.
+   */
+  readonly archiveFactory: (fetcher: (source: InstallSource) => Promise<Uint8Array>) => ArchiveSource
+  /** Hard cap on one downloaded package tarball; defaults to the SDK archive bound. */
+  readonly maxTarballBytes?: number
+  /** Request timeout; default 30 s. */
+  readonly timeoutMs?: number
+  /** Injected fetch, for tests. Defaults to the global fetch. */
+  readonly fetchImpl?: typeof fetch
+}
+
+/** A registry session: version resolution plus the tarball archive over the SAME registry. */
+export interface RegistrySession {
+  /** The normalized registry base URL ('' when unconfigured). */
+  readonly registryUrl: string
+  /** The ArchiveSource the install/dependency pipelines fetch through. */
+  readonly archive: ArchiveSource
+  /**
+   * Resolve `<name>@<spec>` to one exact published version.
+   * @param name - the package name.
+   * @param spec - a dist-tag (`latest`), an exact version, or a semver range.
+   * @param signal - cancellation.
+   * @returns the exact version, tarball URL and sha512 integrity.
+   */
+  resolve(name: string, spec: string, signal?: AbortSignal): Promise<RegistryPackageResolution>
+  /**
+   * Download the bytes registered for one archive source, bounded.
+   * @param source - the source returned by a previous resolve.
+   * @param signal - cancellation.
+   * @returns the tarball bytes (NOT yet digest-verified; the caller verifies).
+   */
+  download(source: InstallSource, signal?: AbortSignal): Promise<Uint8Array>
+}
+
+/** Normalize a registry base URL, or '' when unconfigured. */
+function normalizeRegistryUrl(url: string): string {
+  const trimmed = url.trim()
+  if (trimmed.length === 0) return ''
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed
+}
+
+/** Encode a package name for the registry path (`@scope%2fname`). */
+function encodePackageName(name: string): string {
+  // npm encodes scoped names' slash as %2f and leaves the leading @ readable.
+  return name.startsWith('@') ? name.replace('/', '%2f') : encodeURIComponent(name)
+}
+
+/** Read a response body with a hard byte cap enforced BEFORE allocation grows unbounded. */
+async function readBoundedBody(response: Response, maxBytes: number): Promise<Uint8Array> {
+  const declared = Number(response.headers.get('content-length') ?? Number.NaN)
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    await response.body?.cancel()
+    throw new RegistryError('registry-tarball-too-large', `the response declares ${declared} bytes, over the ${maxBytes}-byte cap`)
+  }
+  if (response.body === null) {
+    const buffer = new Uint8Array(await response.arrayBuffer())
+    if (buffer.byteLength > maxBytes) throw new RegistryError('registry-tarball-too-large', `the response is ${buffer.byteLength} bytes, over the ${maxBytes}-byte cap`)
+    return buffer
+  }
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > maxBytes) {
+      await reader.cancel()
+      throw new RegistryError('registry-tarball-too-large', `the response is over the ${maxBytes}-byte cap`)
+    }
+    chunks.push(value)
+  }
+  const joined = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    joined.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return joined
+}
+
+/** One parsed semantic version. */
+interface ParsedVersion {
+  readonly major: number
+  readonly minor: number
+  readonly patch: number
+  /** Empty for a release; identifiers (numbers or strings) for a prerelease. */
+  readonly prerelease: readonly (string | number)[]
+}
+
+/** One comparator in a range. */
+interface VersionComparator {
+  readonly operator: '=' | '>' | '>=' | '<' | '<='
+  readonly version: ParsedVersion
+}
+
+/** Parse `1.2.3`, `v1.2.3`, `1.2.3-rc.1`, tolerating a build suffix. */
+function parseVersion(text: string): ParsedVersion | undefined {
+  const match = /^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(text.trim())
+  if (match === null) return undefined
+  const prerelease = match[4] === undefined
+    ? []
+    : match[4].split('.').map(part => (/^\d+$/.test(part) ? Number(part) : part))
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+    prerelease,
+  }
+}
+
+/** Compare two parsed versions by semver precedence. */
+function compareVersions(left: ParsedVersion, right: ParsedVersion): number {
+  for (const key of ['major', 'minor', 'patch'] as const) {
+    if (left[key] !== right[key]) return left[key] < right[key] ? -1 : 1
+  }
+  if (left.prerelease.length === 0 && right.prerelease.length === 0) return 0
+  if (left.prerelease.length === 0) return 1
+  if (right.prerelease.length === 0) return -1
+  for (let index = 0; index < Math.max(left.prerelease.length, right.prerelease.length); index += 1) {
+    const leftPart = left.prerelease[index]
+    const rightPart = right.prerelease[index]
+    if (leftPart === undefined) return -1
+    if (rightPart === undefined) return 1
+    if (leftPart === rightPart) continue
+    if (typeof leftPart === 'number' && typeof rightPart === 'number') return leftPart < rightPart ? -1 : 1
+    if (typeof leftPart === 'number') return -1
+    if (typeof rightPart === 'number') return 1
+    return leftPart < rightPart ? -1 : 1
+  }
+  return 0
+}
+
+/** Build a comparator at an exact position, or undefined when the version is not numeric. */
+function comparatorAt(operator: VersionComparator['operator'], major: number, minor = 0, patch = 0): VersionComparator {
+  return { operator, version: { major, minor, patch, prerelease: [] } }
+}
+
+/** Parse the numeric parts of a range token; `undefined` marks a wildcard part. */
+function parsePartial(text: string): { readonly major: number | undefined; readonly minor: number | undefined; readonly patch: number | undefined } | undefined {
+  const parts = text.split('.')
+  if (parts.length > 3) return undefined
+  const numbers: (number | undefined)[] = []
+  for (const part of parts) {
+    if (part === '' || part === 'x' || part === 'X' || part === '*') {
+      numbers.push(undefined)
+      continue
+    }
+    if (!/^\d+$/.test(part)) return undefined
+    numbers.push(Number(part))
+  }
+  return { major: numbers[0], minor: numbers[1], patch: numbers[2] }
+}
+
+/** Expand one range token into comparators, or undefined when it cannot be parsed. */
+function expandToken(token: string): readonly VersionComparator[] | undefined {
+  const match = /^(>=|<=|>|<|=|\^|~)?(.*)$/.exec(token)
+  if (match === null) return undefined
+  // SAFETY: the only strings the capture group can contain are the three prefix
+  // characters matched by the pattern, listed in the union below.
+  const operator = (match[1] ?? '') as '' | '=' | '>' | '>=' | '<' | '<=' | '^' | '~'
+  const rest = match[2] ?? ''
+  if (rest === '' || rest === '*' || rest === 'x' || rest === 'X' || rest === 'latest') {
+    return operator === '' || operator === '=' ? [] : undefined
+  }
+  const partial = parsePartial(rest)
+  if (partial === undefined) return undefined
+  const { major, minor, patch } = partial
+  if (major === undefined) return [] // wildcard major
+  if (operator === '^') {
+    if (minor === undefined || (minor === 0 && patch === undefined)) {
+      return major === 0
+        ? [comparatorAt('>=', 0, 0, 0), comparatorAt('<', 0, 1, 0)]
+        : [comparatorAt('>=', major, 0, 0), comparatorAt('<', major + 1, 0, 0)]
+    }
+    if (patch === undefined) {
+      return major === 0
+        ? [comparatorAt('>=', 0, minor, 0), comparatorAt('<', 0, minor + 1, 0)]
+        : [comparatorAt('>=', major, minor, 0), comparatorAt('<', major + 1, 0, 0)]
+    }
+    const lower = comparatorAt('>=', major, minor, patch)
+    if (major > 0) return [lower, comparatorAt('<', major + 1, 0, 0)]
+    if (minor > 0) return [lower, comparatorAt('<', 0, minor + 1, 0)]
+    return [lower, comparatorAt('<', 0, 0, patch + 1)]
+  }
+  if (operator === '~') {
+    if (minor === undefined) return [comparatorAt('>=', major, 0, 0), comparatorAt('<', major + 1, 0, 0)]
+    return [comparatorAt('>=', major, minor, patch ?? 0), comparatorAt('<', major, minor + 1, 0)]
+  }
+  if (operator === '' || operator === '=') {
+    if (patch !== undefined) return [comparatorAt('=', major, minor ?? 0, patch)]
+    if (minor !== undefined) return [comparatorAt('>=', major, minor, 0), comparatorAt('<', major, minor + 1, 0)]
+    return [comparatorAt('>=', major, 0, 0), comparatorAt('<', major + 1, 0, 0)]
+  }
+  if (patch !== undefined) return [comparatorAt(operator, major, minor ?? 0, patch)]
+  if (minor !== undefined) {
+    if (operator === '>') return [comparatorAt('>=', major, minor + 1, 0)]
+    if (operator === '<=') return [comparatorAt('<', major, minor + 1, 0)]
+    return [comparatorAt(operator, major, minor, 0)]
+  }
+  if (operator === '>') return [comparatorAt('>=', major + 1, 0, 0)]
+  if (operator === '<=') return [comparatorAt('<', major + 1, 0, 0)]
+  return [comparatorAt(operator, major, 0, 0)]
+}
+
+/** Expand one `||` alternative of a range into comparators. */
+function expandRange(alternative: string): readonly VersionComparator[] | undefined {
+  const hyphen = /^\s*(\S+)\s+-\s+(\S+)\s*$/.exec(alternative)
+  if (hyphen !== null) {
+    const lower = parsePartial(hyphen[1] ?? '')
+    const upper = parsePartial(hyphen[2] ?? '')
+    if (lower === undefined || upper === undefined || lower.major === undefined || upper.major === undefined) return undefined
+    const comparators: VersionComparator[] = [
+      comparatorAt('>=', lower.major, lower.minor ?? 0, lower.patch ?? 0),
+    ]
+    if (upper.patch !== undefined) comparators.push(comparatorAt('<=', upper.major, upper.minor ?? 0, upper.patch))
+    else if (upper.minor !== undefined) comparators.push(comparatorAt('<', upper.major, upper.minor + 1, 0))
+    else comparators.push(comparatorAt('<', upper.major + 1, 0, 0))
+    return comparators
+  }
+  const comparators: VersionComparator[] = []
+  for (const token of alternative.split(/\s+/).filter(part => part.length > 0)) {
+    const expanded = expandToken(token)
+    if (expanded === undefined) return undefined
+    comparators.push(...expanded)
+  }
+  return comparators
+}
+
+/**
+ * Whether one published version satisfies a semver range.
+ *
+ * Supported: exact versions, `^`, `~`, x-ranges (`1.x`, `1.2`), comparison
+ * operators (`>=`, `>`, `<=`, `<`, `=`), hyphen ranges, `||`, and `*`. NOT
+ * supported (refused rather than guessed): prerelease-only ranges and npm's
+ * `tag:` protocol. A prerelease version only matches a range that itself names a
+ * prerelease.
+ * @param versionText - the published version.
+ * @param rangeText - the requested range.
+ * @returns whether the version satisfies the range.
+ */
+export function satisfiesRegistryRange(versionText: string, rangeText: string): boolean {
+  const version = parseVersion(versionText)
+  if (version === undefined) return false
+  if (version.prerelease.length > 0 && !/\d+\.\d+\.\d+-/.test(rangeText)) return false
+  const alternatives = rangeText.split('||').map(part => part.trim()).filter(part => part.length > 0)
+  const effective = alternatives.length === 0 ? ['*'] : alternatives
+  return effective.some(alternative => {
+    if (alternative === '*' || alternative === 'x' || alternative === 'X' || alternative === 'latest') return true
+    const comparators = expandRange(alternative)
+    if (comparators === undefined) return false
+    return comparators.every(comparator => {
+      const comparison = compareVersions(version, comparator.version)
+      switch (comparator.operator) {
+        case '=': return comparison === 0
+        case '>': return comparison > 0
+        case '>=': return comparison >= 0
+        case '<': return comparison < 0
+        case '<=': return comparison <= 0
+        default: return false
+      }
+    })
+  })
+}
+
+/**
+ * The highest published version satisfying a range.
+ * @param versions - the published version strings.
+ * @param rangeText - the requested range.
+ * @returns the highest satisfying version exactly as published, or undefined.
+ */
+export function highestSatisfyingVersion(versions: readonly string[], rangeText: string): string | undefined {
+  let best: { readonly text: string; readonly parsed: ParsedVersion } | undefined
+  for (const text of versions) {
+    const parsed = parseVersion(text)
+    if (parsed === undefined) continue
+    if (!satisfiesRegistryRange(text, rangeText)) continue
+    if (best === undefined || compareVersions(parsed, best.parsed) > 0) best = { text, parsed }
+  }
+  return best?.text
+}
+
+/** What one packument version's `dist` must carry. */
+interface RegistryDist {
+  readonly tarball: string
+  readonly integrity: string
+}
+
+/** Read one version's `dist` or throw the named refusal. */
+function readDist(name: string, version: string, raw: unknown): RegistryDist {
+  if (typeof raw !== 'object' || raw === null) {
+    throw new RegistryError('registry-invalid-metadata', `${name}@${version} has no dist object in the registry metadata`)
+  }
+  // SAFETY: JSON.parse output was checked to be a non-null object; every field is
+  // validated below, and a non-string/missing value is a named refusal.
+  const dist = raw as { readonly tarball?: unknown; readonly integrity?: unknown }
+  const tarball = dist.tarball
+  if (typeof tarball !== 'string' || !/^https?:\/\//i.test(tarball)) {
+    throw new RegistryError('registry-invalid-metadata', `${name}@${version} has no http(s) dist.tarball in the registry metadata`)
+  }
+  const integrity = dist.integrity
+  if (typeof integrity !== 'string' || !/^sha512-/i.test(integrity)) {
+    throw new RegistryError(
+      'registry-integrity-missing',
+      `${name}@${version} declares no sha512 dist.integrity; unverified bytes are never installed`,
+      { cause: undefined },
+    )
+  }
+  return { tarball, integrity }
+}
+
+/** The dist-tags and versions a resolution reads. */
+interface Packument {
+  readonly distTags: Readonly<Record<string, string>>
+  readonly versions: Readonly<Record<string, unknown>>
+}
+
+/** Validate the packument shape this client can trust. */
+function readPackument(name: string, raw: unknown): Packument {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    throw new RegistryError('registry-invalid-metadata', `the registry metadata for ${name} is not a JSON object`)
+  }
+  // SAFETY: JSON.parse output was checked to be a non-null non-array object; the
+  // two fields read from it are validated before use.
+  const document = raw as { readonly 'dist-tags'?: unknown; readonly versions?: unknown }
+  const versions = document.versions
+  if (typeof versions !== 'object' || versions === null || Array.isArray(versions)) {
+    throw new RegistryError('registry-invalid-metadata', `the registry metadata for ${name} declares no versions object`)
+  }
+  const distTags: Record<string, string> = {}
+  const rawTags = document['dist-tags']
+  if (typeof rawTags === 'object' && rawTags !== null) {
+    // SAFETY: the dist-tags container was checked to be a non-null object; only
+    // string tag targets are kept, so an unexpected shape contributes nothing.
+    for (const [tag, value] of Object.entries(rawTags as Record<string, unknown>)) {
+      if (typeof value === 'string') distTags[tag] = value
+    }
+  }
+  // SAFETY: the versions container was checked to be a non-null non-array object;
+  // each entry is parsed defensively by readDist before it is trusted.
+  return { distTags, versions: versions as Record<string, unknown> }
+}
+
+/** The version one request selected, plus the dist-tag that selected it. */
+interface SelectedVersion {
+  readonly version: string
+  readonly distTag?: string
+}
+
+/**
+ * Resolve which published version one spec names.
+ * @param name - the package name.
+ * @param spec - dist-tag, exact version, or range; empty means `latest`.
+ * @param packument - the validated metadata.
+ * @returns the exact version string.
+ */
+function selectPublishedVersion(name: string, spec: string, packument: Packument): SelectedVersion {
+  const requested = spec.trim()
+  if (requested.length === 0 || requested === 'latest') {
+    const latest = packument.distTags['latest']
+    if (latest === undefined) {
+      throw new RegistryError('registry-not-found', `${name} has no latest dist-tag in the registry metadata`)
+    }
+    return { version: latest, distTag: 'latest' }
+  }
+  const tagged = packument.distTags[requested]
+  if (tagged !== undefined) return { version: tagged, distTag: requested }
+  if (Object.hasOwn(packument.versions, requested)) return { version: requested }
+  const best = highestSatisfyingVersion(Object.keys(packument.versions), requested)
+  if (best === undefined) {
+    throw new RegistryError('registry-no-matching-version', `${name} has no published version satisfying ${JSON.stringify(requested)}`)
+  }
+  return { version: best }
+}
+
+/**
+ * Create a registry session over one npm registry.
+ *
+ * The same session serves the extension package and every runtime dependency, so
+ * the tarball map (key → URL) the resolver registers is the map the archive
+ * fetches through. Nothing is downloaded until a caller fetches; nothing is
+ * verified here (the SDK verifies the sha512 before extraction, and this module
+ * refuses metadata without one).
+ * @param options - registry URL, archive factory, bounds and fetch seam.
+ * @returns the session.
+ */
+export function createRegistrySession(options: RegistrySessionOptions): RegistrySession {
+  const registryUrl = normalizeRegistryUrl(options.registryUrl)
+  const maxTarballBytes = options.maxTarballBytes ?? MAX_DEPENDENCY_ARCHIVE_BYTES
+  const timeoutMs = options.timeoutMs ?? 30_000
+  const fetchImpl = options.fetchImpl ?? fetch
+  /** tarball URL per `name@version` key, registered by resolve(). */
+  const tarballs = new Map<string, string>()
+
+  const timed = (signal: AbortSignal | undefined): AbortSignal => signal === undefined
+    ? AbortSignal.timeout(timeoutMs)
+    : AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
+
+  const requireRegistry = (): string => {
+    if (registryUrl === '') {
+      throw new RegistryError('registry-not-configured', 'no npm registry is configured (config.extensionRegistry)')
+    }
+    return registryUrl
+  }
+
+  const session: RegistrySession = {
+    registryUrl,
+    archive: options.archiveFactory(source => session.download(source)),
+    async resolve(name, spec, signal) {
+      assertUsableName(name)
+      const base = requireRegistry()
+      const url = `${base}/${encodePackageName(name)}`
+      let response: Response
+      try {
+        response = await fetchImpl(url, {
+          headers: { accept: 'application/vnd.npm.install-v1+json, application/json' },
+          signal: timed(signal),
+        })
+      } catch (error) {
+        throw new RegistryError('registry-unavailable', `the npm registry ${base} could not be reached: ${messageOf(error)}`, { cause: error, transport: true })
+      }
+      if (!response.ok) {
+        await response.body?.cancel()
+        if (response.status === 404) {
+          throw new RegistryError('registry-not-found', `${name} was not found on the npm registry ${base} (HTTP 404)`)
+        }
+        if (response.status >= 500) {
+          throw new RegistryError('registry-unavailable', `the npm registry ${base} answered HTTP ${response.status} for ${name}`, { transport: true })
+        }
+        throw new RegistryError('registry-invalid-metadata', `the npm registry ${base} refused ${name} with HTTP ${response.status}`)
+      }
+      const metadata = await readBoundedBody(response, MAX_REGISTRY_METADATA_BYTES)
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(new TextDecoder().decode(metadata))
+      } catch (error) {
+        throw new RegistryError('registry-invalid-metadata', `the npm registry returned unparseable metadata for ${name}: ${messageOf(error)}`, { cause: error })
+      }
+      const packument = readPackument(name, parsed)
+      const selected = selectPublishedVersion(name, spec, packument)
+      const versionEntry = packument.versions[selected.version]
+      if (typeof versionEntry !== 'object' || versionEntry === null) {
+        throw new RegistryError('registry-invalid-metadata', `${name}@${selected.version} has no version object in the registry metadata`)
+      }
+      // SAFETY: the version object was checked above; `dist` is read defensively by
+      // readDist, which refuses a missing/non-http tarball and a missing sha512.
+      const dist = readDist(name, selected.version, (versionEntry as { readonly dist?: unknown }).dist)
+      const key = `${name}@${selected.version}`
+      tarballs.set(key, dist.tarball)
+      const published = { name, version: selected.version, tarball: dist.tarball, integrity: dist.integrity }
+      return selected.distTag === undefined ? published : { ...published, distTag: selected.distTag }
+    },
+    async download(source, signal) {
+      const url = tarballs.get(source.requested)
+      if (url === undefined) {
+        // A tarball for a package that was never resolved: the graph contract says
+        // resolve-then-fetch, so this is a programming error, not a package refusal.
+        throw new RegistryError('registry-invalid-metadata', `the registry tarball ${source.requested} was not resolved by this session`)
+      }
+      let response: Response
+      try {
+        response = await fetchImpl(url, { signal: timed(signal) })
+      } catch (error) {
+        throw new RegistryError('registry-tarball-fetch-failed', `the tarball for ${source.requested} could not be downloaded: ${messageOf(error)}`, { cause: error })
+      }
+      if (!response.ok) {
+        await response.body?.cancel()
+        throw new RegistryError('registry-tarball-fetch-failed', `the tarball for ${source.requested} answered HTTP ${response.status}`)
+      }
+      try {
+        return await readBoundedBody(response, maxTarballBytes)
+      } catch (error) {
+        if (error instanceof RegistryError) throw error
+        throw new RegistryError('registry-tarball-fetch-failed', `the tarball for ${source.requested} could not be read: ${messageOf(error)}`, { cause: error })
+      }
+    },
+  }
+  return session
+}
+
+/**
+ * Wire a registry session into the SDK dependency-graph contract.
+ *
+ * Every declared dependency is resolved to one exact published version with its
+ * sha512 integrity; the SAME session archive fetches the bytes, so the manifest
+ * the graph verifies is the manifest that was resolved. EXT-10's script refusal is
+ * the SDK's own, unchanged.
+ * @param session - the registry session.
+ * @returns the install-dependency graph.
+ */
+export function createRegistryDependencyGraph(session: RegistrySession): InstallDependencyGraph {
+  return {
+    resolver: {
+      async resolve(name, range): Promise<DependencyContent> {
+        const resolved = await session.resolve(name, range)
+        return {
+          name: resolved.name,
+          version: resolved.version,
+          tarball: { kind: 'registry', requested: `${resolved.name}@${resolved.version}` } satisfies InstallSource,
+          integrity: resolved.integrity,
+        }
+      },
+    },
+    archive: session.archive,
+  }
+}
+

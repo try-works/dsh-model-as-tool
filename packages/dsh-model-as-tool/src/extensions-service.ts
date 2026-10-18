@@ -52,10 +52,12 @@
 import { accessSync, constants, existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import {
+  createTarGzipArchiveSource,
   digestInstalledContent,
   discoverExtension,
   ExtensionStore,
   ManagementError,
+  stagedInstall,
   stagedInstallFromDirectory,
   type ExtensionLifecycle,
   type ExtensionState as SdkExtensionState,
@@ -76,7 +78,16 @@ import type {
   ExtensionsDescribeResult,
   ModelToolsRemote,
 } from './extensions-api.ts'
-import { createFirstPartyDependencyGraph, resolveFirstPartyDependency } from './extension-dependencies.ts'
+import {
+  createFirstPartyDependencyGraph,
+  createRegistryDependencyGraph,
+  createRegistrySession,
+  DEFAULT_REGISTRY_URL,
+  MAX_DEPENDENCY_ARCHIVE_BYTES,
+  RegistryError,
+  resolveFirstPartyDependency,
+  type RegistryErrorCode,
+} from './extension-dependencies.ts'
 import type { AcquisitionSource } from './asset-acquisition.ts'
 import { createHttpSource } from './http-acquisition.ts'
 import type { PreparationOutcome, PrepareAssetsSurface } from './prepared-assets.ts'
@@ -222,6 +233,20 @@ export type ExtensionsServiceErrorCode =
   | 'extension-preparation-failed'
   /** A prerequisite the deployment cannot satisfy blocks activation before any lifecycle call. */
   | 'extension-requirement-unmet'
+  /** Registry mode was selected but no registry URL is configured. */
+  | 'extension-registry-unconfigured'
+  /** The registry has no such package, version, or dist-tag (HTTP 404 / no matching version). */
+  | 'extension-registry-not-found'
+  /** The registry metadata has no sha512 `dist.integrity`; unverified bytes are never installed. */
+  | 'extension-registry-integrity-missing'
+  /** The registry metadata or tarball URL does not have the shape this host can verify. */
+  | 'extension-registry-invalid-metadata'
+  /** The tarball could not be downloaded, or exceeds the configured byte cap. */
+  | 'extension-registry-fetch-failed'
+  /** Transport failure or 5xx: the registry did not answer usefully. */
+  | 'extension-registry-unavailable'
+  /** The fetched tarball does not hash to the registry-declared sha512. */
+  | 'extension-registry-integrity-mismatch'
   /** `deactivate` refused or failed; the SDK's named error is carried in the message. */
   | 'extension-deactivation-failed'
   /** The host's disabled-list writer rejected the new list after the action landed. */
@@ -276,6 +301,22 @@ export interface ExtensionsServiceOptions {
   readonly lifecycle?: () => ExtensionActivation | undefined
   /** Declare that this host cannot write the store (read-only mount). */
   readonly readOnly?: boolean
+  /**
+   * How an install without an explicit source directory is sourced.
+   *
+   * - `registry` (and `auto`, the default) resolve the package from the npm registry.
+   * - `directory` keeps the developer-mode source-directory path.
+   * - `auto` additionally falls back to the directory ONLY for a TRANSPORT-level
+   *   registry failure (unreachable/timeout/5xx) and only when
+   *   `allowSourceDirectories` is on; a package-level refusal (404, missing
+   *   integrity, bad tarball, digest mismatch) is always named and never retried
+   *   against a local directory.
+   */
+  readonly installSource?: 'registry' | 'directory' | 'auto'
+  /** The npm registry base URL; defaults to the public npm registry. */
+  readonly registryUrl?: string
+  /** Hard cap on one registry package tarball; defaults to the SDK archive bound (256 MiB). */
+  readonly registryTarballMaxBytes?: number
   /** INTERNAL TEST SEAM: the directory installer, defaulting to the SDK's staged path. */
   readonly installDirectory?: DirectoryInstaller
   /** INTERNAL TEST SEAM: the content digest, defaulting to the SDK's installed-content digest. */
@@ -972,34 +1013,59 @@ export class ExtensionsService implements ModelToolsRemote {
       requirements.push(requirement('store', true, `the extension store at ${input.storeDir} is configured and readable`))
     }
 
-    // SOURCE: the package bytes an install would copy, or the installed copy.
+    // SOURCE: where an install would get the bytes. The registry route is preferred
+    // by `auto`; the directory route (developer mode) is named when it applies.
     if (input.installed) {
       requirements.push(requirement(
         'source', true,
         `the installed copy is the source of record (version ${input.record?.version ?? 'unknown'})`,
       ))
-    } else if (input.sourcePackage === undefined) {
-      requirements.push(requirement(
-        'source', false,
-        input.sourceDir === ''
-          ? 'not installed, and no first-party source directory is configured (config.extensionSourceDir)'
-          : `no first-party package with this identity exists under ${input.sourceDir}`,
-        input.sourceDir === '' ? 'config' : 'none',
-      ))
-    } else if (input.sourcePackage.problem !== null) {
-      requirements.push(requirement('source', false, input.sourcePackage.problem, 'none'))
-    } else if (this.#options.allowSourceDirectories !== true) {
-      requirements.push(requirement(
-        'source', false,
-        'installing from a source directory is disabled by configuration (extensions.allowSourceDirectories)',
-        'config',
-      ))
     } else {
-      requirements.push(requirement(
-        'source', true,
-        `the first-party package is available at ${join(input.sourceDir, packageDirFor(input.id))}`,
-        'install',
-      ))
+      const installSource = this.#options.installSource ?? 'auto'
+      const registryUrl = this.#registryBaseUrl()
+      const directoryRoute = input.sourceDir !== ''
+        && input.sourcePackage !== undefined
+        && input.sourcePackage.problem === null
+        && this.#options.allowSourceDirectories === true
+      const registryRoute = installSource !== 'directory' && registryUrl !== ''
+      if (registryRoute) {
+        requirements.push(requirement(
+          'source', true,
+          `the npm registry ${registryUrl} can supply ${input.id}@latest, resolved and sha512-verified at install time`
+            + (installSource === 'auto' && directoryRoute
+              ? '; a directory fallback is available if the registry is unreachable'
+              : ''),
+          'install',
+        ))
+      } else if (installSource === 'registry') {
+        requirements.push(requirement(
+          'source', false,
+          'no npm registry is configured (config.extensionRegistry), and registry-only installs are selected (config.extensionInstallSource)',
+          'config',
+        ))
+      } else if (input.sourcePackage === undefined) {
+        requirements.push(requirement(
+          'source', false,
+          input.sourceDir === ''
+            ? 'not installed, and no first-party source directory is configured (config.extensionSourceDir)'
+            : `no first-party package with this identity exists under ${input.sourceDir}`,
+          input.sourceDir === '' ? 'config' : 'none',
+        ))
+      } else if (input.sourcePackage.problem !== null) {
+        requirements.push(requirement('source', false, input.sourcePackage.problem, 'none'))
+      } else if (this.#options.allowSourceDirectories !== true) {
+        requirements.push(requirement(
+          'source', false,
+          'installing from a source directory is disabled by configuration (extensions.allowSourceDirectories)',
+          'config',
+        ))
+      } else {
+        requirements.push(requirement(
+          'source', true,
+          `the first-party package is available at ${join(input.sourceDir, packageDirFor(input.id))}`,
+          'install',
+        ))
+      }
     }
 
     // DEPENDENCIES: declared runtime dependencies must be resolvable/materialized.
@@ -1406,15 +1472,11 @@ export class ExtensionsService implements ModelToolsRemote {
     }
     if (!view.installed) {
       if (view.sourcePackage?.problem !== null && view.sourcePackage?.problem !== undefined) return view.sourcePackage.problem
-      if (view.sourceDir === '') {
-        return 'not installed, and no first-party source directory is configured (config.extensionSourceDir)'
-      }
-      if (this.#options.allowSourceDirectories !== true) {
-        return 'not installed; installing from a source directory is disabled by configuration (extensions.allowSourceDirectories)'
-      }
-      return view.sourcePackage === undefined
-        ? 'not installed, and no first-party package with this identity exists under the configured source directory'
-        : `not installed; the first-party package is available at ${join(view.sourceDir, packageDirFor(view.id))}`
+      // The route-aware source requirement already explains where an install would
+      // get the bytes (registry, directory, or why neither is available).
+      const sourceRequirement = view.requirements.find(candidate => candidate.kind === 'source')
+      if (sourceRequirement !== undefined) return sourceRequirement.reason
+      return 'not installed'
     }
     if (unmet !== undefined) return unmet.reason
     if (!view.active) {
@@ -1422,6 +1484,186 @@ export class ExtensionsService implements ModelToolsRemote {
       return `installed; this host observes it as ${view.state.observedActivation} (desired ${view.state.desiredActivation})`
     }
     return null
+  }
+
+  /**
+   * Install one extension, choosing the route from the operator configuration.
+   *
+   * - An EXPLICIT `source` path is always a developer-mode directory install (the
+   *   existing source-directory gate and refusals apply).
+   * - Otherwise `installSource` decides. `registry` resolves `id@latest` from the
+   *   npm registry. `directory` uses the configured source directory. `auto` (the
+   *   default) prefers the registry and falls back to the directory ONLY for a
+   *   transport-level registry failure (unreachable/timeout/5xx) when directory
+   *   installs are allowed — a package-level refusal (404, missing integrity, bad
+   *   tarball, digest mismatch) is always named and never retried locally.
+   *
+   * INSTALLATION IS NOT ACTIVATION: the result is always `active: false`, and it
+   * names the route that actually supplied the bytes.
+   * @param extensionId - the package identity to install.
+   * @param source - an explicit source directory (developer override), or absent.
+   * @param signal - cancellation.
+   * @returns the installed identity, version and route.
+   * @throws ExtensionsServiceError for every refusal and failure.
+   */
+  async install(extensionId: string, source?: string, signal?: AbortSignal): Promise<ExtensionInstallResult> {
+    signal?.throwIfAborted()
+    assertUsableId(extensionId)
+    const storeDir = this.#requireStoreDir()
+
+    if (source !== undefined && source.trim().length > 0) {
+      return this.#installFromDirectory(extensionId, resolve(source), storeDir, signal)
+    }
+    const mode = this.#options.installSource ?? 'auto'
+    if (mode === 'directory') {
+      return this.#installFromDirectory(extensionId, undefined, storeDir, signal)
+    }
+    try {
+      return await this.#installFromRegistry(extensionId, storeDir, signal)
+    } catch (error) {
+      const transportFallback = mode === 'auto'
+        && error instanceof ExtensionsServiceError
+        && (error.code === 'extension-registry-unavailable' || error.code === 'extension-registry-unconfigured')
+        && this.#options.allowSourceDirectories === true
+        && this.#directorySourceAvailable(extensionId)
+      if (!transportFallback) throw error
+      return this.#installFromDirectory(extensionId, undefined, storeDir, signal)
+    }
+  }
+
+  /** The configured registry base URL, trimmed ('' when the operator set it empty). */
+  #registryBaseUrl(): string {
+    return (this.#options.registryUrl ?? DEFAULT_REGISTRY_URL).trim()
+  }
+
+  /** Whether the configured source directory holds a package directory for this id. */
+  #directorySourceAvailable(extensionId: string): boolean {
+    const sourceDir = this.#sourceDir()
+    if (sourceDir === '') return false
+    try {
+      return statSync(join(sourceDir, packageDirFor(extensionId))).isDirectory()
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Map a registry failure onto this service's named codes.
+   * @param error - an error from the registry session or the SDK install.
+   * @returns the service refusal, preserving the message and cause.
+   */
+  #mapRegistryFailure(error: unknown): ExtensionsServiceError {
+    if (!(error instanceof RegistryError)) {
+      return new ExtensionsServiceError('extension-install-failed', messageOf(error), { cause: error })
+    }
+    const codes = {
+      'registry-not-configured': 'extension-registry-unconfigured',
+      'registry-not-found': 'extension-registry-not-found',
+      'registry-no-matching-version': 'extension-registry-not-found',
+      'registry-integrity-missing': 'extension-registry-integrity-missing',
+      'registry-invalid-metadata': 'extension-registry-invalid-metadata',
+      'registry-tarball-fetch-failed': 'extension-registry-fetch-failed',
+      'registry-tarball-too-large': 'extension-registry-fetch-failed',
+      'registry-unavailable': 'extension-registry-unavailable',
+    } satisfies Record<RegistryErrorCode, ExtensionsServiceErrorCode>
+    return new ExtensionsServiceError(codes[error.code], error.message, { cause: error })
+  }
+
+  /**
+   * Install the extension package from the npm registry (task-104).
+   *
+   * The registry metadata is resolved to one exact version with a sha512 integrity;
+   * the tarball is fetched bounded, verified by `stagedInstall` BEFORE extraction,
+   * and installed through the SDK's tar-gzip ArchiveSource. The extension's runtime
+   * dependencies are resolved from the SAME registry through the SDK dependency
+   * graph (never the host-tree resolver), and EXT-10's install-script refusal is the
+   * SDK's own.
+   * @param extensionId - the package identity to install.
+   * @param storeDir - the configured store.
+   * @param signal - cancellation.
+   * @returns the installed identity/version and `source: 'registry'`.
+   * @throws ExtensionsServiceError for every refusal.
+   */
+  async #installFromRegistry(
+    extensionId: string,
+    storeDir: string,
+    signal?: AbortSignal,
+  ): Promise<ExtensionInstallResult> {
+    const registryUrl = this.#registryBaseUrl()
+    if (registryUrl === '') {
+      throw new ExtensionsServiceError(
+        'extension-registry-unconfigured',
+        'no npm registry is configured (config.extensionRegistry), so registry installs are unavailable',
+      )
+    }
+    const session = createRegistrySession({
+      registryUrl,
+      archiveFactory: createTarGzipArchiveSource,
+      maxTarballBytes: this.#options.registryTarballMaxBytes ?? MAX_DEPENDENCY_ARCHIVE_BYTES,
+    })
+    let resolved
+    try {
+      // Initial slice: the Settings page does not carry a version yet, so the
+      // configured route installs the registry's `latest` dist-tag. Exact versions
+      // and semver ranges are supported by the resolver itself (dependency ranges
+      // use them); a wire version field is a later slice.
+      resolved = await session.resolve(extensionId, 'latest', signal)
+    } catch (error) {
+      throw this.#mapRegistryFailure(error)
+    }
+
+    let installed
+    try {
+      installed = await stagedInstall({
+        source: { kind: 'registry', requested: `${extensionId}@${resolved.version}` },
+        storeDir,
+        expectedSha512: resolved.integrity,
+        archive: session.archive,
+        // Registry metadata recorded AS DATA, never as trust: the bytes are
+        // verified against the same sha512 before anything is extracted.
+        provenance: { registryIntegrity: resolved.integrity },
+        dependencies: createRegistryDependencyGraph(session),
+      })
+    } catch (error) {
+      if (error instanceof RegistryError) throw this.#mapRegistryFailure(error)
+      if (error instanceof ManagementError) {
+        if (error.code === 'INTEGRITY_MISMATCH') {
+          throw new ExtensionsServiceError(
+            'extension-registry-integrity-mismatch',
+            `${extensionId}@${resolved.version}: ${error.message}`,
+            { cause: error },
+          )
+        }
+        if (error.code === 'DEPENDENCY_UNSATISFIED') {
+          throw new ExtensionsServiceError(
+            'extension-dependency-unsatisfied',
+            `[DEPENDENCY_UNSATISFIED] ${error.message}`,
+            { cause: error },
+          )
+        }
+        throw new ExtensionsServiceError('extension-install-failed', `[${error.code}] ${error.message}`, { cause: error })
+      }
+      throw new ExtensionsServiceError('extension-install-failed', messageOf(error), { cause: error })
+    }
+    if (installed.extensionId !== extensionId) {
+      throw new ExtensionsServiceError(
+        'extension-source-mismatch',
+        `the registry tarball requested as ${extensionId}@${resolved.version} contains ${JSON.stringify(installed.extensionId)}`,
+      )
+    }
+    if (installed.archiveDigest.trim().length === 0) {
+      throw new ExtensionsServiceError(
+        'extension-digest-unavailable',
+        `${installed.extensionId}@${installed.version} was installed without a content digest, so it cannot be verified before activation`,
+      )
+    }
+    return {
+      id: installed.extensionId,
+      version: installed.version,
+      active: false,
+      source: 'registry',
+      resolvedVersion: resolved.version,
+    }
   }
 
   /**
@@ -1433,31 +1675,31 @@ export class ExtensionsService implements ModelToolsRemote {
    * digested. The SDK then copies, validates, verifies and records the install; a
    * failure there is re-thrown as `extension-install-failed` with the SDK's own
    * named code in the message.
-   *
-   * INSTALLATION IS NOT ACTIVATION: the result is always `active: false`.
    * @param extensionId - the package identity to install.
-   * @param source - an explicit source directory, or absent to use the configured one.
+   * @param explicitSource - an explicit source directory, or undefined for the configured one.
+   * @param storeDir - the configured store.
    * @param signal - cancellation.
-   * @returns the installed identity and version.
+   * @returns the installed identity/version and `source: 'directory'`.
    * @throws ExtensionsServiceError for every refusal and failure.
    */
-  async install(extensionId: string, source?: string, signal?: AbortSignal): Promise<ExtensionInstallResult> {
+  async #installFromDirectory(
+    extensionId: string,
+    explicitSource: string | undefined,
+    storeDir: string,
+    signal?: AbortSignal,
+  ): Promise<ExtensionInstallResult> {
     signal?.throwIfAborted()
-    assertUsableId(extensionId)
-    const storeDir = this.#requireStoreDir()
-
-    const sourceDir = source !== undefined && source.trim().length > 0
-      ? resolve(source)
-      : (() => {
-          const configured = this.#sourceDir()
-          if (configured === '') {
-            throw new ExtensionsServiceError(
-              'extension-source-unconfigured',
-              `no source was given for ${extensionId} and no first-party source directory is configured (config.extensionSourceDir)`,
-            )
-          }
-          return join(configured, packageDirFor(extensionId))
-        })()
+    const sourceDir = explicitSource
+      ?? (() => {
+        const configured = this.#sourceDir()
+        if (configured === '') {
+          throw new ExtensionsServiceError(
+            'extension-source-unconfigured',
+            `no source was given for ${extensionId} and no first-party source directory is configured (config.extensionSourceDir)`,
+          )
+        }
+        return join(configured, packageDirFor(extensionId))
+      })()
     let sourceIsDirectory = false
     try {
       sourceIsDirectory = statSync(sourceDir).isDirectory()
@@ -1514,10 +1756,9 @@ export class ExtensionsService implements ModelToolsRemote {
         storeDir,
         allowSourceDirectories: true,
         /**
-         * The dependency graph is supplied only on this developer-mode path. It is
-         * consulted by the SDK only when the package declares runtime dependencies;
-         * every declared dependency is then resolved from the host's own installed
-         * tree or the install fails with a named DEPENDENCY_UNSATISFIED reason.
+         * The host-tree dependency graph is supplied only on this developer-mode
+         * path. Registry installs resolve dependencies from the registry instead
+         * (never from the host's tree).
          */
         dependencies: this.#dependencyGraph(sourceDir),
       })
@@ -1542,7 +1783,13 @@ export class ExtensionsService implements ModelToolsRemote {
         `${installed.extensionId}@${installed.version} was installed without a content digest, so it cannot be verified before activation`,
       )
     }
-    return { id: installed.extensionId, version: installed.version, active: false }
+    return {
+      id: installed.extensionId,
+      version: installed.version,
+      active: false,
+      source: 'directory',
+      resolvedVersion: installed.version,
+    }
   }
 
   /**

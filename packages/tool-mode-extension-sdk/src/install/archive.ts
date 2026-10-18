@@ -261,12 +261,18 @@ export function findPackageRoot(paths: readonly string[]): string {
  */
 export function verifyIntegrity(bytes: Uint8Array, expectedSha512: string): string {
   const digest = createHash('sha512').update(bytes).digest('hex')
-  const expected = expectedSha512.trim().toLowerCase().replace(/^sha512-/, '')
-  // Accept base64 as well as hex, because registry metadata uses base64 while a
-  // manifest is easier to read in hex; compare on the decoded form.
-  const expectedHex = /^[0-9a-f]+$/.test(expected)
-    ? expected
-    : Buffer.from(expected, 'base64').toString('hex')
+  // Strip the optional SRI prefix and trim, but do NOT lowercase before the
+  // format decision: base64 is CASE-SENSITIVE (npm's dist.integrity is base64
+  // SRI), so lowercasing first corrupts a correct digest. npm's base64 SRI for
+  // a SHA-512 always carries '=' padding, which hex never does — that is the
+  // deterministic discriminator, and the hex arm is lowercased only after it
+  // is recognized as hex.
+  const stripped = expectedSha512.trim().replace(/^sha512-/, '')
+  const expectedHex = stripped.includes('=')
+    ? Buffer.from(stripped, 'base64').toString('hex')
+    : /^[0-9a-f]+$/i.test(stripped)
+      ? stripped.toLowerCase()
+      : Buffer.from(stripped, 'base64').toString('hex')
 
   if (digest !== expectedHex) {
     throw new ManagementError(

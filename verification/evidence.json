@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-18T11:14:20.356Z",
+  "generatedAt": "2026-10-18T12:59:28.604Z",
   "git": {
-    "commit": "497ca0ead6ffe18ec09cf8f619da7cb161887437",
+    "commit": "8c91d6e1217d7cadeaabeb3bea39308a6e2a3c38",
     "branch": "main",
     "dirty": true
   },
@@ -31,7 +31,7 @@
   "packages": [
     {
       "name": "@try-works/dsh-model-as-tool",
-      "version": "0.3.5",
+      "version": "0.4.0",
       "path": "packages/dsh-model-as-tool"
     },
     {
@@ -46,12 +46,12 @@
     },
     {
       "name": "@try-works/extension-desert-ant-tongue",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "path": "packages/extension-desert-ant-tongue"
     },
     {
       "name": "@try-works/extension-desert-ant-voz",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "path": "packages/extension-desert-ant-voz"
     },
     {

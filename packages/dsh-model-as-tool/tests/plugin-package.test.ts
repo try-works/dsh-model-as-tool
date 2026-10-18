@@ -131,6 +131,11 @@ test('the client half ships both extension flows: host Remote and config-only fa
   // undefined or the call is refused before it reaches the host.
   assert.match(source, /install\.call\(namespace, id, undefined\)/,
     'installExtension must be called with its source positional slot filled')
+  // The install result names the route and the resolved version; a legacy result
+  // without those fields must fall back to today's rendering (no invented source).
+  assert.match(source, /installResultNote/, 'the page must render install provenance from the result')
+  assert.match(source, /from npm/, 'a registry install must say so on the row')
+  assert.match(source, /from the local package directory/, 'a directory install must say so on the row')
   assert.match(source, /\.enable\(id\)/, 'the page must enable an installed extension through the Remote')
   assert.match(source, /\.disable\(id\)/, 'the page must disable an installed extension through the Remote')
   // Preparation: a blocked installed row offers Prepare, calls prepare(id), and
@@ -188,6 +193,7 @@ test('the generated client helpers map both Remote result shapes to the rows the
   const nextDisabledExtensions = clientHelper(exports, 'nextDisabledExtensions')
   const extensionNeedsPreparation = clientHelper(exports, 'extensionNeedsPreparation')
   const prepareResultNote = clientHelper(exports, 'prepareResultNote')
+  const installResultNote = clientHelper(exports, 'installResultNote')
   const extensionRequirements = clientHelper(exports, 'extensionRequirements')
   const unmetExtensionRequirements = clientHelper(exports, 'unmetExtensionRequirements')
   const extensionRequirementSummary = clientHelper(exports, 'extensionRequirementSummary')
@@ -306,6 +312,18 @@ test('the generated client helpers map both Remote result shapes to the rows the
   assert.doesNotMatch(String(prepared), /remaining blockers/)
   const partiallyReady = prepareResultNote({ prepared: true, plan: null, activationReady: false })
   assert.match(String(partiallyReady), /remaining blockers/)
+
+  // Install provenance: the result names the route and resolved version. A legacy
+  // result (older host, no source/resolvedVersion) yields no invented note — the
+  // describe() row keeps today's "installed v<version>" text.
+  assert.equal(installResultNote({ id: 'a', version: '0.1.0', active: false, source: 'registry', resolvedVersion: '0.1.2' }),
+    'installed v0.1.2 from npm')
+  assert.equal(installResultNote({ id: 'a', version: '0.1.0', active: false, source: 'directory', resolvedVersion: '0.1.0' }),
+    'installed v0.1.0 from the local package directory')
+  assert.equal(installResultNote({ id: 'a', version: '0.1.0', active: false }), null)
+  assert.equal(installResultNote({ id: 'a', version: '0.1.0', active: false, source: 'npm' }), null)
+  assert.equal(installResultNote({ id: 'a', active: false, source: 'registry' }), null)
+  assert.equal(installResultNote(null), null)
 
   // Blocked-state behavior is keyed ONLY on requirement kind/action/satisfied and
   // the host's `blocked` flag. The reason text is rendered verbatim but never

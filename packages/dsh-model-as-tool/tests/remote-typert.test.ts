@@ -315,6 +315,32 @@ describe('modelTools host artifact', () => {
     assert.throws(() => parseRow({ ...EXTENSION_ROW, blocked: 'yes' }), /boolean/)
   })
 
+  it('validates the install source and resolved version, and tolerates an older result', () => {
+    const install = descriptorCodec(TYPERT_REMOTE, 'installExtension')
+    const resultCodec = install.result as { create: () => { parse: (value: unknown) => Record<string, unknown> } }
+    const registry = {
+      id: '@try-works/extension-needle',
+      version: '0.1.0',
+      active: false,
+      source: 'registry',
+      resolvedVersion: '0.1.0',
+    }
+    assert.deepEqual(resultCodec.create().parse(registry), registry)
+    assert.deepEqual(resultCodec.create().parse({ ...registry, source: 'directory' }), { ...registry, source: 'directory' })
+
+    // An older Host: neither additive field present; the parse must not invent them.
+    const legacy = { id: '@try-works/extension-laya', version: '1.0.0', active: false }
+    const parsed = resultCodec.create().parse(legacy)
+    assert.deepEqual(parsed, legacy)
+    assert.equal(Object.hasOwn(parsed, 'source'), false)
+    assert.equal(Object.hasOwn(parsed, 'resolvedVersion'), false)
+
+    // Present values are strict: the route is a two-literal union, the version a string.
+    assert.throws(() => resultCodec.create().parse({ ...registry, source: 'npm' }), /union/)
+    assert.throws(() => resultCodec.create().parse({ ...registry, resolvedVersion: 1 }), /string/)
+    assert.throws(() => resultCodec.create().parse({ id: registry.id, version: registry.version }), /missing field "active"/)
+  })
+
   it('declares METHOD_SPECS that match the descriptors one-for-one', () => {
     assert.deepEqual(
       TYPERT_REMOTE.descriptors.map(descriptor => descriptor.method),

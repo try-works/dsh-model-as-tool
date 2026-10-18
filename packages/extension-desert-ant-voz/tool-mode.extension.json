@@ -1,7 +1,7 @@
 {
   "protocolVersion": "1.1.0",
   "id": "@try-works/extension-desert-ant-voz",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "displayName": "Desert Ant Voz speech transcription",
   "description": "On-device speech recognition over the Desert Ant Labs Voz model, exposed as the standard tool-mode/stt_transcribe contract.",
   "license": "MIT",
